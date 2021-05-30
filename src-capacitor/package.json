@@ -1,0 +1,15 @@
+{
+  "name": "web.tdl.app",
+  "version": "0.0.1",
+  "description": "A todo list app with Big Brain Energy.",
+  "author": "Josh Buker <crypto@joshbuker.com>",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^3.0.0-beta.0",
+    "@capacitor/app": "^1.0.0",
+    "@capacitor/cli": "^3.0.0",
+    "@capacitor/core": "^3.0.0",
+    "@capacitor/local-notifications": "^1.0.0",
+    "@capacitor/splash-screen": "^1.0.0"
+  }
+}
