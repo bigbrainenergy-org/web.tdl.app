@@ -57,6 +57,12 @@
             </div>
           </q-item-section>
 
+          <q-item-section avatar v-if="taskReminder(task)">
+            <q-chip style="color: white; border: 1px solid white;" icon="fas fa-bell">
+              {{ taskReminder(task) }}
+            </q-chip>
+          </q-item-section>
+
           <q-item-section avatar v-if="taskDue(task) || taskPriority(task)">
             <template v-if="taskDue(task)">
               <q-icon color="red" name="fas fa-exclamation-circle">
@@ -224,6 +230,25 @@ export default defineComponent({
       return dueTime <= currentTime
     }
 
+    function taskReminder(task: TaskInterface) {
+      if (!task.remind_me_at) { return null }
+
+      const reminderTime = DateTime.fromISO(task.remind_me_at).toMillis()
+      const startOfToday = DateTime.local().startOf('day').toMillis();
+      const endOfToday = DateTime.local().endOf('day').toMillis();
+      const endOfTomorrow = DateTime.local().plus({ days: 1 }).endOf('day').toMillis();
+
+      if (reminderTime <= startOfToday) {
+        return DateTime.fromISO(task.remind_me_at).toFormat('MMM d - t')
+      } else if (reminderTime <= endOfToday) {
+        return `Today - ${DateTime.fromISO(task.remind_me_at).toFormat('t')}`
+      } else if (reminderTime <= endOfTomorrow) {
+        return `Tomorrow - ${DateTime.fromISO(task.remind_me_at).toFormat('t')}`
+      } else {
+        return DateTime.fromISO(task.remind_me_at).toFormat('MMM d - t')
+      }
+    }
+
     watch(
       () => props.tasks,
       (newValue) => {
@@ -239,7 +264,8 @@ export default defineComponent({
       toggleTag,
       textColor,
       taskDue,
-      taskPriority
+      taskPriority,
+      taskReminder
     };
   },
 });
