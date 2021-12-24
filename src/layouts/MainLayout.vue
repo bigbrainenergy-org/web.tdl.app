@@ -6,61 +6,72 @@
           color='green'
           icon="fas fa-plus"
           @click="openCreateTaskDialog"
+          v-if="currentPath == '/inbox'"
+        />
+        <q-btn
+          color='green'
+          @click="$router.go(-1)"
+          label="Go Back"
+          icon="fas fa-arrow-left"
+          v-if="currentPath == '/settings'"
         />
 
         <q-space />
 
-        <div class="glitch" :data-text="username">
-          {{ username }}
-        </div>
-
         <q-btn
-          flat
           dense
-          round
-          icon="fas fa-user-circle"
-          class="text-right q-ml-sm"
-          aria-label="Profile"
-        />
+          flat
+          no-wrap
+        >
+          <q-avatar rounded size="32px">
+            <q-icon name="fas fa-user-circle" />
+          </q-avatar>
+          <q-icon name="arrow_drop_down" size="24px" />
+
+          <q-menu auto-close>
+            <q-list>
+              <q-item>
+                <q-item-section class="text-center">
+                  <div>Logged in as:</div>
+                  <div class="glitch" :data-text="username">
+                    {{ username }}
+                  </div>
+                </q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable @click="$router.push({ path: '/settings' })">
+                <q-item-section>Settings</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="settings" />
+                </q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable @click="logout">
+                <q-item-section>Logout</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="fas fa-sign-out-alt" />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+
+          <q-menu context-menu auto-close>
+            <q-list>
+              <q-item clickable>
+                <q-item-section>Testing</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      :width="300"
-      :breakpoint="500"
-      side="left" elevated
-    >
-      <q-tabs v-model="drawerTabs">
-        <q-tab icon="fas fa-th-list text-light-blue-3" name="lists" label="Lists" />
-        <!-- <q-tab icon="fas fa-gem text-light-blue-3" name="projects" label="Projects" /> -->
-        <q-tab icon="fas fa-tags text-light-blue-3" name="tags" label="Tags" />
-      </q-tabs>
-
-      <q-separator />
-
-      <q-tab-panels v-model="drawerTabs" animated>
-        <q-tab-panel class="q-pa-none" name="lists">
-          <lists-control />
-        </q-tab-panel>
-
-        <q-tab-panel name="projects">
-          <p>Projects here</p>
-        </q-tab-panel>
-
-        <q-tab-panel class="q-pa-none" name="tags">
-          <tags-control />
-        </q-tab-panel>
-      </q-tab-panels>
-    </q-drawer>
-
     <q-footer elevated class="bg-grey-8 text-white">
-      <q-tabs shrink inline-label>
-        <q-route-tab icon="fas fa-inbox" to="/inbox" label="Inbox" />
-        <q-route-tab icon="fas fa-tasks" to="/next-actions" label="Next Actions" />
-        <q-route-tab icon="fas fa-user-clock" to="/waiting-for" label="Waiting For" />
-        <q-route-tab icon="fas fa-project-diagram" to="/projects" label="Projects" />
+      <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
+        <q-route-tab icon="fas fa-inbox" to="/inbox" label="Inbox" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fas fa-tasks" to="/next-actions" label="Next Actions" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fas fa-user-clock" to="/waiting-for" label="Waiting For" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fas fa-project-diagram" to="/projects" label="Projects" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
       </q-tabs>
     </q-footer>
 
@@ -77,8 +88,8 @@
 <script lang="ts">
 import { useQuasar } from 'quasar'
 import { useStore } from '../store'
-import { useRouter } from 'vue-router'
-import { computed, defineComponent, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { computed, defineComponent, ref, watch } from 'vue'
 import { api } from 'boot/axios'
 import ListsControl from 'components/ListsControl.vue'
 import TagsControl from 'components/TagsControl.vue'
@@ -96,10 +107,11 @@ export default defineComponent({
   setup () {
     const $q = useQuasar()
     const $store = useStore()
+    const $route = useRoute()
     const $router = useRouter()
 
-    const leftDrawerOpen = ref(false)
     const drawerTabs = ref('lists')
+    const currentPath = ref($route.path)
 
     const sessionToken = computed({
       get: () => $store.state.authentication.sessionToken,
@@ -199,16 +211,20 @@ export default defineComponent({
       })
     }
 
+    watch(
+      () => $route.path,
+      (newValue) => {
+        currentPath.value = newValue
+      }
+    )
+
     return {
-      leftDrawerOpen,
       drawerTabs,
       username,
       taskSearch,
-      toggleLeftDrawer () {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-      },
       logout,
-      openCreateTaskDialog
+      openCreateTaskDialog,
+      currentPath
     }
   }
 })

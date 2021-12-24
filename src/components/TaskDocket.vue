@@ -210,7 +210,7 @@ export default defineComponent({
           }).
           then(
             (response) => {
-              // Should we do anything? Notification?
+              emit('update:multiSelect', { value: false })
             },
             (error) => {
               errorNotification(error, 'Failed to bulk update review at')

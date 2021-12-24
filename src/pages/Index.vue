@@ -25,7 +25,7 @@
         />
       </div>
     </div>
-    <!-- For full height cards: <q-page class="row items-stretch justify-evenly q-col-gutter-md q-ma-md"> -->
+    <!-- For full height cards: <div class="row items-stretch justify-evenly q-col-gutter-md q-ma-md"> -->
     <div class="row items-start justify-evenly q-col-gutter-md q-ma-md">
       <div class="col-grow">
         <task-docket
@@ -89,6 +89,8 @@ export default defineComponent({
       )
     if (!isAuthenticated) {
       redirect({ path: '/login' })
+    } else {
+      redirect({ path: '/inbox' })
     }
   },
 

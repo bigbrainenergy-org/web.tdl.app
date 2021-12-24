@@ -6,6 +6,10 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/Index.vue') },
+      { path: 'inbox', component: () => import('pages/Inbox.vue') },
+      { path: 'next-actions', component: () => import('pages/NextActions.vue') },
+      { path: 'waiting-for', component: () => import('pages/WaitingFor.vue') },
+      { path: 'projects', component: () => import('pages/Projects.vue') },
       { path: 'settings', component: () => import('pages/Settings.vue') },
     ],
   },
