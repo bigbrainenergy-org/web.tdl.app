@@ -3,37 +3,25 @@
     <q-header elevated>
       <q-toolbar>
         <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
+          color='green'
+          icon="fas fa-plus"
+          @click="openCreateTaskDialog"
         />
-
-        <q-toolbar-title>
-          <div class="glitch" :data-text="username">
-            {{ username }}
-          </div>
-        </q-toolbar-title>
 
         <q-space />
 
-        <q-input
-          v-model="taskSearch"
-          borderless
-          placeholder="Task search"
-          input-class="text-right"
-          class="q-mx-md"
-          debounce="500"
-        >
-          <template v-slot:append>
-            <q-icon v-if="taskSearch === ''" name="search" />
-            <q-icon v-else name="clear" class="cursor-pointer" @click="taskSearch = ''" />
-          </template>
-        </q-input>
+        <div class="glitch" :data-text="username">
+          {{ username }}
+        </div>
 
-        <q-btn color='green' @click="logout">{{ $t('logout') }}</q-btn>
+        <q-btn
+          flat
+          dense
+          round
+          icon="fas fa-user-circle"
+          class="text-right q-ml-sm"
+          aria-label="Profile"
+        />
       </q-toolbar>
     </q-header>
 
@@ -69,8 +57,10 @@
 
     <q-footer elevated class="bg-grey-8 text-white">
       <q-tabs shrink inline-label>
-        <q-route-tab icon="fas fa-tasks" to="/" label="Tasks" />
-        <q-route-tab icon="fas fa-user-cog" to="/settings" label="Settings" />
+        <q-route-tab icon="fas fa-inbox" to="/inbox" label="Inbox" />
+        <q-route-tab icon="fas fa-tasks" to="/next-actions" label="Next Actions" />
+        <q-route-tab icon="fas fa-user-clock" to="/waiting-for" label="Waiting For" />
+        <q-route-tab icon="fas fa-project-diagram" to="/projects" label="Projects" />
       </q-tabs>
     </q-footer>
 
@@ -93,6 +83,11 @@ import { api } from 'boot/axios'
 import ListsControl from 'components/ListsControl.vue'
 import TagsControl from 'components/TagsControl.vue'
 import { errorNotification } from '../hackerman/ErrorNotification'
+
+import { Task as TaskInterface } from 'components/models';
+
+import TaskSearchDialog from 'components/TaskSearchDialog.vue'
+import CurrentTaskDialog from 'components/CurrentTaskDialog.vue'
 
 export default defineComponent({
   name: 'MainLayout',
@@ -163,6 +158,47 @@ export default defineComponent({
       )
     }
 
+    function openCreateTaskDialog() {
+      $q.dialog({
+        component: TaskSearchDialog,
+
+        componentProps: {
+          dialogTitle: 'Create Task',
+          searchLabel: 'Title',
+          onCreate: (payload: any) => { createTask(payload) },
+          onSelect: (payload: any) => { openTask(payload.task) }
+        }
+      })
+    }
+
+    function createTask(payload: any) {
+      $store.dispatch('tasks/create', payload.options).
+      then(
+        (response: any) => {
+          payload.callback()
+          $q.notify({
+            color: 'positive',
+            position: 'top',
+            message: 'Created new task',
+            icon: 'fas fa-tasks'
+          })
+        },
+        (error: any) => {
+          errorNotification(error, 'Failed to create task')
+        }
+      )
+    }
+
+    function openTask(task: TaskInterface) {
+      $q.dialog({
+        component: CurrentTaskDialog,
+
+        componentProps: {
+          task: task
+        }
+      })
+    }
+
     return {
       leftDrawerOpen,
       drawerTabs,
@@ -171,7 +207,8 @@ export default defineComponent({
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value
       },
-      logout
+      logout,
+      openCreateTaskDialog
     }
   }
 })

@@ -29,6 +29,15 @@
           color="indigo"
           label="Test Notification"
         />
+        <q-separator class="q-my-md" />
+
+        <p>
+          This app is open source! Check out the code on
+          <a
+            href="https://github.com/bigbrainenergy-org/web.tdl.app"
+            target="_blank"
+          >Github</a>.
+        </p>
       </q-card-section>
     </q-card>
   </q-page>

@@ -17,13 +17,6 @@
           @click="openCreateTaskDialog"
         />
         <q-btn
-          color="primary"
-          icon="fas fa-check-double"
-          label="Multi select"
-          class="q-ma-sm"
-          @click="multiSelectEnabled = !multiSelectEnabled"
-        />
-        <q-btn
           color="grey"
           icon="fas fa-times-circle"
           label="Clear Completed"
@@ -39,6 +32,7 @@
           title="Today"
           :tasks="today"
           :multi-select-enabled="multiSelectEnabled"
+          @update:multi-select="toggleMultiSelect"
         ></task-docket>
       </div>
       <div class="col-grow">
@@ -46,6 +40,7 @@
           title="Tomorrow"
           :tasks="tomorrow"
           :multi-select-enabled="multiSelectEnabled"
+          @update:multi-select="toggleMultiSelect"
         ></task-docket>
       </div>
       <div class="col-grow">
@@ -53,6 +48,7 @@
           title="Upcoming"
           :tasks="upcoming"
           :multi-select-enabled="multiSelectEnabled"
+          @update:multi-select="toggleMultiSelect"
         ></task-docket>
       </div>
       <div class="col-grow">
@@ -60,6 +56,7 @@
           title="Someday"
           :tasks="someday"
           :multi-select-enabled="multiSelectEnabled"
+          @update:multi-select="toggleMultiSelect"
         ></task-docket>
       </div>
     </div>
@@ -68,14 +65,14 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar'
-import { Task as TaskInterface } from 'components/models';
-import { computed, defineComponent, ref } from 'vue';
+import { Task as TaskInterface } from 'components/models'
+import { computed, defineComponent, ref } from 'vue'
 import { useStore, StateInterface } from '../store'
 import Task from '../models/task'
 
 import TaskDocket from 'components/TaskDocket.vue';
 import CurrentTaskDialog from 'components/CurrentTaskDialog.vue'
-import TaskSearchDialog from 'components/TaskSearchDialog.vue';
+import TaskSearchDialog from 'components/TaskSearchDialog.vue'
 
 import { errorNotification } from '../hackerman/ErrorNotification'
 import { syncWithBackend } from '../hackerman/sync'
@@ -238,6 +235,10 @@ export default defineComponent({
       syncWithBackend($store)
     }
 
+    function toggleMultiSelect(payload) {
+      multiSelectEnabled.value = payload.value
+    }
+
     return {
       clearCompleted,
       sessionToken,
@@ -247,7 +248,8 @@ export default defineComponent({
       someday,
       multiSelectEnabled,
       openCreateTaskDialog,
-      refresh
+      refresh,
+      toggleMultiSelect
     };
   }
 });

@@ -14,8 +14,13 @@
                 <q-item clickable v-close-popup @click="bulkEditReviewAt">
                   <q-item-section>Edit review at</q-item-section>
                 </q-item>
+                <q-separator />
                 <q-item clickable v-close-popup>
                   <q-item-section>Edit tags</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable @click="cancelSelectingBulkMenu()">
+                  <q-item-section>Cancel Selecting</q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
@@ -26,7 +31,46 @@
 
     <q-card-section>
       <q-list>
-        <q-item clickable v-ripple v-for="task in tasks" :key="task.id" @click="openTask(task)">
+        <q-item clickable v-ripple v-for="(task, index) in tasks" :key="task.id" @click="openTask(task)">
+          <q-menu context-menu :ref="el => { if(el) taskMenus[index] = el }">
+            <q-list style="min-width: 100px">
+              <q-item clickable @click="openTask(task)">
+                <q-item-section>Open</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="fas fa-external-link-alt" />
+                </q-item-section>
+              </q-item>
+
+              <q-separator />
+
+              <template v-if="!multiSelectEnabled">
+                <q-item clickable v-close-popup @click="selectTask(task, index)">
+                  <q-item-section>Select</q-item-section>
+                  <q-item-section avatar>
+                    <q-icon name="far fa-check-square" />
+                  </q-item-section>
+                </q-item>
+              </template>
+
+              <template v-else>
+                <q-item clickable v-close-popup @click="cancelSelecting(index)">
+                  <q-item-section>Cancel Selecting</q-item-section>
+                  <q-item-section avatar>
+                    <q-icon name="far fa-check-square" />
+                  </q-item-section>
+                </q-item>
+              </template>
+
+              <q-separator />
+
+              <q-item clickable @click="markTaskComplete(task)">
+                <q-item-section>Mark Complete</q-item-section>
+                <q-item-section avatar>
+                  <q-icon color="positive" name="fas fa-check" />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
           <q-item-section avatar v-if="multiSelectEnabled">
             <q-checkbox v-model="selectedTasks" :val="task.id" />
           </q-item-section>
@@ -135,7 +179,8 @@ export default defineComponent({
       default: false
     }
   },
-  setup(props) {
+  emits: ['update:multiSelect'],
+  setup(props, { emit }) {
     const $q = useQuasar()
     const $store = useStore()
 
@@ -174,6 +219,7 @@ export default defineComponent({
         }
       )
     }
+    const taskMenus = ref([])
     const selectedTasks = ref([])
 
     const allTasksSelected = computed({
@@ -249,6 +295,33 @@ export default defineComponent({
       }
     }
 
+    function markTaskComplete(task) {
+      $store.dispatch('tasks/markComplete', { id: task.id }).
+      then(
+        (response) => {},
+        (error) => {
+          errorNotification(error, 'Failed to mark task as complete')
+        }
+      )
+    }
+
+    function selectTask(task, index) {
+      emit('update:multiSelect', { value: true })
+      selectedTasks.value = [task.id]
+      taskMenus.value[index].hide()
+    }
+
+    function cancelSelecting(index) {
+      emit('update:multiSelect', { value: false })
+      selectedTasks.value = []
+      taskMenus.value[index].hide()
+    }
+
+    function cancelSelectingBulkMenu() {
+      emit('update:multiSelect', { value: false })
+      selectedTasks.value = []
+    }
+
     watch(
       () => props.tasks,
       (newValue) => {
@@ -265,7 +338,12 @@ export default defineComponent({
       textColor,
       taskDue,
       taskPriority,
-      taskReminder
+      taskReminder,
+      markTaskComplete,
+      selectTask,
+      cancelSelecting,
+      cancelSelectingBulkMenu,
+      taskMenus
     };
   },
 });
