@@ -125,3 +125,9 @@ export default defineComponent({
   }
 });
 </script>
+
+<style lang="sass">
+.text-h6
+  text-shadow: -0.06em 0 magenta, 0.06em 0 cyan
+  color: black
+</style>
