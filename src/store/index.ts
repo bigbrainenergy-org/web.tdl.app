@@ -8,6 +8,9 @@ import {
 import VuexORM from '@vuex-orm/core'
 import createPersistedState from 'vuex-persistedstate'
 
+import inboxItems from './inbox-items'
+import { InboxItemsStateInterface } from './inbox-items/state'
+
 import authentication from './authentication'
 import { AuthenticationStateInterface } from './authentication/state'
 
@@ -33,6 +36,7 @@ import { TasksStateInterface } from './tasks/state'
  */
 
 export interface StateInterface {
+  inboxItems: InboxItemsStateInterface,
   authentication: AuthenticationStateInterface,
   settings: SettingsStateInterface,
   lists: ListsStateInterface,
@@ -58,6 +62,7 @@ export default store(function (/* { ssrContext } */) {
     ],
 
     modules: {
+      inboxItems,
       authentication,
       settings,
       lists,

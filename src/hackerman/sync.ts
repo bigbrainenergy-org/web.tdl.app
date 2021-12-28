@@ -2,6 +2,12 @@ import { errorNotification } from './ErrorNotification'
 import { syncNotifications } from './ScheduledNotifications'
 
 export function syncWithBackend(store: any) {
+  store.dispatch('inboxItems/fetchInboxItems').
+  catch(
+    (error: any) => {
+      errorNotification(error, 'Failed to fetch inbox items')
+    }
+  )
   store.dispatch('settings/fetchUsername').
   catch(
     (error: any) => {

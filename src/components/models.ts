@@ -42,3 +42,9 @@ export interface Notification {
   smallIcon?: string;
   iconColor?: string;
 }
+
+export interface InboxItem {
+  id: number;
+  title: string;
+  notes?: string;
+}

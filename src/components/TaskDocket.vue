@@ -71,6 +71,7 @@
               </q-item>
             </q-list>
           </q-menu>
+
           <q-item-section avatar v-if="multiSelectEnabled">
             <q-checkbox v-model="selectedTasks" :val="task.id" />
           </q-item-section>
@@ -295,25 +296,30 @@ export default defineComponent({
       }
     }
 
-    function markTaskComplete(task) {
+    function markTaskComplete(task: any) {
       $store.dispatch('tasks/markComplete', { id: task.id }).
       then(
-        (response) => {},
+        () => {
+          // not empty I swear linter
+        },
         (error) => {
           errorNotification(error, 'Failed to mark task as complete')
         }
       )
     }
 
-    function selectTask(task, index) {
+    function selectTask(task: any, index: any) {
       emit('update:multiSelect', { value: true })
+      // @ts-ignore
       selectedTasks.value = [task.id]
+      // @ts-ignore
       taskMenus.value[index].hide()
     }
 
-    function cancelSelecting(index) {
+    function cancelSelecting(index: any) {
       emit('update:multiSelect', { value: false })
       selectedTasks.value = []
+      // @ts-ignore
       taskMenus.value[index].hide()
     }
 

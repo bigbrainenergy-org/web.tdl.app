@@ -5,7 +5,7 @@
         <q-btn
           color='green'
           icon="fas fa-plus"
-          @click="openCreateTaskDialog"
+          @click="openCreateInboxItemDialog"
           v-if="currentPath == '/inbox'"
         />
         <q-btn
@@ -97,7 +97,7 @@ import { errorNotification } from '../hackerman/ErrorNotification'
 
 import { Task as TaskInterface } from 'components/models';
 
-import TaskSearchDialog from 'components/TaskSearchDialog.vue'
+import CreateInboxItemDialog from 'components/CreateInboxItemDialog.vue'
 import CurrentTaskDialog from 'components/CurrentTaskDialog.vue'
 
 export default defineComponent({
@@ -170,33 +170,30 @@ export default defineComponent({
       )
     }
 
-    function openCreateTaskDialog() {
+    function openCreateInboxItemDialog() {
       $q.dialog({
-        component: TaskSearchDialog,
+        component: CreateInboxItemDialog,
 
         componentProps: {
-          dialogTitle: 'Create Task',
-          searchLabel: 'Title',
-          onCreate: (payload: any) => { createTask(payload) },
-          onSelect: (payload: any) => { openTask(payload.task) }
+          onCreate: (payload: any) => { createInboxItem(payload) }
         }
       })
     }
 
-    function createTask(payload: any) {
-      $store.dispatch('tasks/create', payload.options).
+    function createInboxItem(payload: any) {
+      $store.dispatch('inboxItems/create', payload.options).
       then(
         (response: any) => {
           payload.callback()
           $q.notify({
             color: 'positive',
             position: 'top',
-            message: 'Created new task',
+            message: 'Created inbox item',
             icon: 'fas fa-tasks'
           })
         },
         (error: any) => {
-          errorNotification(error, 'Failed to create task')
+          errorNotification(error, 'Failed to create inbox item')
         }
       )
     }
@@ -223,7 +220,7 @@ export default defineComponent({
       username,
       taskSearch,
       logout,
-      openCreateTaskDialog,
+      openCreateInboxItemDialog,
       currentPath
     }
   }

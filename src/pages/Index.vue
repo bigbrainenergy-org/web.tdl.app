@@ -237,7 +237,7 @@ export default defineComponent({
       syncWithBackend($store)
     }
 
-    function toggleMultiSelect(payload) {
+    function toggleMultiSelect(payload: any) {
       multiSelectEnabled.value = payload.value
     }
 
