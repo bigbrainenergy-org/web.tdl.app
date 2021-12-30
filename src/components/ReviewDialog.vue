@@ -21,267 +21,27 @@
       />
 
       <q-card-section class="full-height">
-        <div class="row items-center justify-center q-gutter-md q-pa-sm">
-          <div class="col-grow text-center">
-            <template v-if="currentStep == 'actionable'">
-              <div class="text-h3">Is it actionable?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="fas fa-lightbulb"
-                label="No, it's information"
-                @click="stepKeepForFuture"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="task_alt"
-                label="Yes, it can be completed"
-                @click="stepMoreThanOneAction"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'keepForFuture'">
-              <div class="text-h3">Do you want to keep it for the future?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="negative"
-                icon="fas fa-trash"
-                label="No, toss it"
-                @click="stepTrash"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="fas fa-clock"
-                label="Yes, and I want to be reminded"
-                @click="stepSomedayMaybe"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="fas fa-search"
-                label="Yes, but only for lookups"
-                @click="stepReference"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'somedayMaybe' || currentStep == 'reference'">
-              <div class="text-h3">
-                <template v-if="currentStep == 'somedayMaybe'">Someday/Maybe</template>
-                <template v-else-if="currentStep == 'reference'">Reference</template>
-              </div>
-
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="fas fa-check"
-                label="Done!"
-                @click="stepDone"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'moreThanOneAction'">
-              <div class="text-h3">Is there more than one action?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="far fa-check-square"
-                label="No, just one"
-                @click="stepTwoMinutes"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="fas fa-project-diagram"
-                label="Yes, multiple"
-                @click="stepProjects"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'twoMinutes'">
-              <div class="text-h3">Will it take less than 2 minutes?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                label="No"
-                @click="stepBestPerson"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                label="Yes"
-                @click="stepDoIt"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'bestPerson'">
-              <div class="text-h3">Are you the best person to complete this task?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                label="No"
-                @click="stepDelegate"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                label="Yes"
-                @click="stepDefer"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'delegate'">
-              <div class="text-h3">Create a Waiting For</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="fas fa-check"
-                label="Done"
-                @click="stepMoreActions"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'defer'">
-              <div class="text-h3">Does this need to be done at a specific time?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                label="No, next action"
-                @click="stepNextAction"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                label="Yes, calendar entry"
-                @click="stepCalendar"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'nextAction'">
-              <div class="text-h3">Create a Next Action</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="fas fa-check"
-                label="Done"
-                @click="stepMoreActions"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'calendar'">
-              <div class="text-h3">Create a Calendar Entry</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="fas fa-check"
-                label="Done"
-                @click="stepMoreActions"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'doIt'">
-              <div class="text-h3">Just DO it! Don't let your dreams be dreams!</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                label="Just kidding, this takes more than 2 minutes"
-                @click="stepDefer"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="fas fa-check"
-                label="Done!"
-                @click="stepMoreActions"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'moreActions'">
-              <div class="text-h3">Are there any more next actions to add?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="fas fa-check"
-                label="No, all done!"
-                @click="stepDone"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="add_task"
-                label="Yes, add more"
-                @click="stepTwoMinutes"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'projects'">
-              <div class="text-h3">Create a Project</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="fas fa-check"
-                label="Done"
-                @click="stepProcessNow"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'processNow'">
-              <div class="text-h3">Do you want to process it for next actions now?</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                icon="far fa-clock"
-                label="No, I'll do that later"
-                @click="stepDone"
-              />
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="primary"
-                icon="add_task"
-                label="Yes, let's do it"
-                @click="stepProjectPlans"
-              />
-            </template>
-
-            <template v-else-if="currentStep == 'projectPlans'">
-              <div class="text-h3">Review any support materials, then start adding next actions.</div>
-              <q-btn
-                padding="lg"
-                class="q-ma-lg"
-                color="secondary"
-                label="Start Processing Next Actions"
-                @click="stepTwoMinutes"
-              />
-            </template>
+        <template v-if="currentStep !== 'done'">
+          <div class="row items-center justify-center q-gutter-md q-pa-sm">
+            <div class="col-grow text-center">
+                <div>{{ currentInboxItem.title }}</div>
+                <div style="white-space: pre-line;" v-if="currentInboxItem.notes">{{ currentInboxItem.notes }}</div>
+                <div class="text-h3 q-mt-md">{{ content[currentStep].prompt }}</div>
+                <q-btn
+                  v-for="button in content[currentStep].buttons"
+                  padding="lg"
+                  class="q-ma-lg"
+                  :key="button.label"
+                  :color="button.color"
+                  :icon="button.icon"
+                  :label="button.label"
+                  @click="button.click"
+                />
+            </div>
           </div>
-        </div>
+        </template>
 
-        <q-inner-loading :showing="currentStep == 'done'" >
+        <q-inner-loading :showing="currentStep === 'done'" >
           <q-spinner-puff size="50px" color="pink" />
           <div class="text-pink q-mt-md" style="font-size: 1.1em;">Processing, please wait...</div>
         </q-inner-loading>
@@ -328,19 +88,251 @@ export default {
       }
     )
 
+    const content = {
+      "actionable": {
+        prompt: "Is it actionable?",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "fas fa-lightbulb",
+            label: "No, it's information",
+            click: stepKeepForFuture,
+          },
+          {
+            color: "primary",
+            icon: "task_alt",
+            label: "Yes, it can be completed",
+            click: stepMoreThanOneAction,
+          }
+        ]
+      },
+      "keepForFuture": {
+        prompt: "Do you want to keep it for the future?",
+        buttons: [
+          {
+            color: "negative",
+            icon: "fas fa-trash",
+            label: "No, toss it",
+            click: stepTrash,
+          },
+          {
+            color: "primary",
+            icon: "fas fa-clock",
+            label: "Yes, and I want to be reminded",
+            click: stepSomedayMaybe,
+          },
+          {
+            color: "primary",
+            icon: "fas fa-search",
+            label: "Yes, but only for lookups",
+            click: stepReference,
+          }
+        ]
+      },
+      "somedayMaybe": {
+        prompt: "Someday/Maybe",
+        buttons: [
+          {
+            color: "primary",
+            icon: "fas fa-check",
+            label: "Done!",
+            click: stepDone,
+          }
+        ]
+      },
+      "reference": {
+        prompt: "Reference",
+        buttons: [
+          {
+            color: "primary",
+            icon: "fas fa-check",
+            label: "Done!",
+            click: stepDone,
+          }
+        ]
+      },
+      "moreThanOneAction": {
+        prompt: "Is there more than one action?",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "far fa-check-square",
+            label: "No, just one",
+            click: stepTwoMinutes,
+          },
+          {
+            color: "primary",
+            icon: "fas fa-project-diagram",
+            label: "Yes, multiple",
+            click: stepProjects,
+          }
+        ]
+      },
+      "twoMinutes": {
+        prompt: "Will it take less than 2 minutes?",
+        buttons: [
+          {
+            color: "secondary",
+            label: "No",
+            click: stepBestPerson,
+          },
+          {
+            color: "primary",
+            label: "Yes",
+            click: stepDoIt,
+          }
+        ]
+      },
+      "bestPerson": {
+        prompt: "Are you the best person to complete this task?",
+        buttons: [
+          {
+            color: "secondary",
+            label: "No",
+            click: stepDelegate,
+          },
+          {
+            color: "primary",
+            label: "Yes",
+            click: stepDefer,
+          }
+        ]
+      },
+      "delegate": {
+        prompt: "Create a Waiting For",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "fas fa-check",
+            label: "Done",
+            click: stepMoreActions,
+          }
+        ]
+      },
+      "defer": {
+        prompt: "Does this need to be done at a specific time?",
+        buttons: [
+          {
+            color: "secondary",
+            label: "No, next action",
+            click: stepNextAction,
+          },
+          {
+            color: "primary",
+            label: "Yes, calendar entry",
+            click: stepCalendar,
+          }
+        ]
+      },
+      "nextAction": {
+        prompt: "Create a Next Action",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "fas fa-check",
+            label: "Done",
+            click: stepMoreActions,
+          }
+        ]
+      },
+      "calendar": {
+        prompt: "Create a Calendar Entry",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "fas fa-check",
+            label: "Done",
+            click: stepMoreActions,
+          }
+        ]
+      },
+      "doIt": {
+        prompt: "Just DO it! Don't let your dreams be dreams!",
+        buttons: [
+          {
+            color: "secondary",
+            label: "Just kidding, this takes more than 2 minutes",
+            click: stepDefer,
+          },
+          {
+            color: "primary",
+            icon: "fas fa-check",
+            label: "Done!",
+            click: stepMoreActions,
+          }
+        ]
+      },
+      "moreActions": {
+        prompt: "Are there any more next actions to add?",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "fas fa-check",
+            label: "No, all done!",
+            click: stepDone,
+          },
+          {
+            color: "primary",
+            icon: "add_task",
+            label: "Yes, add more",
+            click: stepTwoMinutes,
+          }
+        ]
+      },
+      "projects": {
+        prompt: "Create a Project",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "fas fa-check",
+            label: "Done",
+            click: stepProcessNow,
+          }
+        ]
+      },
+      "processNow": {
+        prompt: "Do you want to process it for next actions now?",
+        buttons: [
+          {
+            color: "secondary",
+            icon: "far fa-clock",
+            label: "No, I'll do that later",
+            click: stepDone,
+          },
+          {
+            color: "primary",
+            icon: "add_task",
+            label: "Yes, let's do it",
+            click: stepProjectPlans,
+          }
+        ]
+      },
+      "projectPlans": {
+        prompt: "Review any support materials, then start adding next actions.",
+        buttons: [
+          {
+            color: "secondary",
+            label: "Start Processing Next Actions",
+            click: stepTwoMinutes,
+          }
+        ]
+      }
+    }
+
     console.log(inboxItems.value.length)
 
     // TODO: Should we safe guard against if this dialog gets called and
     //       inboxItems is 0? Shouldn't happen normally (button disabled)
     const totalInboxCount = ref(inboxItems.value.length - 1)
     const currentInboxCount = ref(0)
-
     const maxStepCount = ref(1)
     const currentStepCount = ref(0)
+
     const instantFeedback = ref(false)
     const processingProjectPlans = ref(false)
 
     const currentStep = ref('actionable')
+    const currentInboxItem = ref(inboxItems.value[0])
 
     function setStepCount(current, max) {
       maxStepCount.value = max
@@ -482,6 +474,7 @@ export default {
       let timeout = setTimeout(
         () => {
           currentInboxCount.value += 1
+          currentInboxItem.value = inboxItems.value[currentInboxCount.value]
           if (currentInboxCount.value >= totalInboxCount.value) {
             // All done! Close up shop.
             onDialogOK()
@@ -504,10 +497,13 @@ export default {
 
     return {
       // Custom stuff
+      content,
+      //
       mainProgress,
       secondaryProgress,
       instantFeedback,
       currentStep,
+      currentInboxItem,
       //
       stepKeepForFuture,
       stepTrash,
