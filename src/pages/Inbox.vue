@@ -6,7 +6,7 @@
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
               <div class="col">
-                <div class="text-h6">Inbox</div>
+                <div class="text-h6 text-pain">Inbox</div>
                 <div>{{ inboxItems.length }} Items</div>
               </div>
               <div class="col text-right">
@@ -125,9 +125,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style lang="sass">
-.text-h6
-  text-shadow: -0.06em 0 magenta, 0.06em 0 cyan
-  color: black
-</style>
