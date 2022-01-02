@@ -48,6 +48,8 @@ import {
   defineComponent,
   computed,
   ref,
+  onActivated,
+  onDeactivated,
   onBeforeUnmount
 } from 'vue'
 import { useQuasar } from 'quasar'
@@ -111,14 +113,39 @@ export default defineComponent({
       )
     }
 
-    let timer = setInterval(() => {
-      currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
-    }, 1000)
+    let timer: any = null
 
-    onBeforeUnmount(
-      () => {
+    function updateCurrentTime() {
+      currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
+    }
+
+    // If timer is active, deactivate it to free up memory / CPU.
+    function clearTimer() {
+      if(timer) {
         clearInterval(timer)
+        timer = null
       }
+    }
+
+    onActivated(
+      () =>{
+        // Immediately update so the user doesn't notice a huge time jump after 1 second
+        updateCurrentTime()
+        // Restart timer
+        timer = setInterval(
+          () => {
+            updateCurrentTime()
+          },
+          1000
+        )
+      }
+    )
+
+    onDeactivated(
+      () => { clearTimer() }
+    )
+    onBeforeUnmount(
+      () => { clearTimer() }
     )
 
     return {
