@@ -1,6 +1,6 @@
 <template>
-  <q-page>
-    <div class="row items-stretch justify-evenly q-col-gutter-md q-ma-md">
+  <q-page class="q-pa-lg">
+    <div class="row items-stretch justify-evenly">
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-section class="bg-primary text-white">
@@ -10,7 +10,7 @@
                 <div>{{ inboxItems.length }} Items</div>
               </div>
               <div class="col text-right">
-                <q-btn color="positive" @click="openReviewDialog">Begin Review</q-btn>
+                <q-btn color="positive" @click="openReviewDialog" :disabled="inboxItems.length === 0">Begin Review</q-btn>
               </div>
             </div>
           </q-card-section>
@@ -69,6 +69,13 @@
                   </q-list>
                 </q-menu>
               </q-item>
+              <template v-if="inboxItems.length === 0">
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <strong>Nothing yet!</strong>
+                  </q-item-section>
+                </q-item>
+              </template>
             </q-list>
           </q-card-section>
         </q-card>

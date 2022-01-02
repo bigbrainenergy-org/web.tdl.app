@@ -1,10 +1,27 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized persistent>
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center q-mb-xs">
         <div class="text-h6">Inbox Review</div>
-        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onCancelClick" />
+        <template v-if="currentStep !== 'done'">
+          <q-btn
+            class="q-ma-sm"
+            size="md"
+            :color="content[currentStep].backColor !== undefined ? content[currentStep].backColor : 'grey'"
+            :label="content[currentStep].backLabel !== undefined ? content[currentStep].backLabel : 'Close'"
+            @click="content[currentStep].backAction !== undefined ? content[currentStep].backAction() : onCancelClick()"
+          />
+        </template>
+        <template v-else>
+          <q-btn
+            class="q-ma-sm"
+            size="md"
+            color="grey"
+            label="Close"
+            disabled
+          />
+        </template>
       </q-card-section>
 
       <q-linear-progress
@@ -24,19 +41,38 @@
         <template v-if="currentStep !== 'done'">
           <div class="row items-center justify-center q-gutter-md q-pa-sm">
             <div class="col-grow text-center">
+              <template v-if="!processingProjectPlans">
                 <div>{{ currentInboxItem.title }}</div>
                 <div style="white-space: pre-line;" v-if="currentInboxItem.notes">{{ currentInboxItem.notes }}</div>
-                <div class="text-h3 q-mt-md">{{ content[currentStep].prompt }}</div>
-                <q-btn
-                  v-for="button in content[currentStep].buttons"
-                  padding="lg"
-                  class="q-ma-lg"
-                  :key="button.label"
-                  :color="button.color"
-                  :icon="button.icon"
-                  :label="button.label"
-                  @click="button.click"
+              </template>
+              <div class="text-h3 q-mt-md">{{ content[currentStep].prompt }}</div>
+              <template v-if="currentStep === 'projects'">
+                <q-input
+                  v-model="projectTitle"
+                  class="q-my-md"
+                  filled
+                  clearable
+                  label="Title"
                 />
+                <q-input
+                  v-model="projectNotes"
+                  class="q-my-md"
+                  filled
+                  autogrow
+                  clearable
+                  label="Notes"
+                />
+              </template>
+              <q-btn
+                v-for="button in content[currentStep].buttons"
+                padding="lg"
+                class="q-ma-lg"
+                :key="button.label"
+                :color="button.color"
+                :icon="button.icon"
+                :label="button.label"
+                @click="button.click"
+              />
             </div>
           </div>
         </template>
@@ -88,233 +124,248 @@ export default {
       }
     )
 
+    const projectTitle = ref('')
+    const projectNotes = ref('')
+
     const content = {
-      "actionable": {
-        prompt: "Is it actionable?",
+      'actionable': {
+        prompt: 'Is it actionable?',
         buttons: [
           {
-            color: "secondary",
-            icon: "fas fa-lightbulb",
-            label: "No, it's information",
+            color: 'primary',
+            icon: 'task_alt',
+            label: 'Yes, it can be completed',
+            click: stepMoreThanOneAction,
+          },
+          {
+            color: 'primary',
+            icon: 'fas fa-lightbulb',
+            label: 'No, it\'s information',
             click: stepKeepForFuture,
           },
-          {
-            color: "primary",
-            icon: "task_alt",
-            label: "Yes, it can be completed",
-            click: stepMoreThanOneAction,
-          }
         ]
       },
-      "keepForFuture": {
-        prompt: "Do you want to keep it for the future?",
+      'keepForFuture': {
+        prompt: 'Do you want to keep it for the future?',
+        backLabel: 'Back',
+        backAction: stepActionable,
         buttons: [
           {
-            color: "negative",
-            icon: "fas fa-trash",
-            label: "No, toss it",
-            click: stepTrash,
+            color: 'positive',
+            icon: 'fas fa-search',
+            label: 'Yes, but only for lookups',
+            click: stepReference,
           },
           {
-            color: "primary",
-            icon: "fas fa-clock",
-            label: "Yes, and I want to be reminded",
+            color: 'positive',
+            icon: 'fas fa-clock',
+            label: 'Yes, and I want to be reminded',
             click: stepSomedayMaybe,
           },
           {
-            color: "primary",
-            icon: "fas fa-search",
-            label: "Yes, but only for lookups",
-            click: stepReference,
-          }
+            color: 'negative',
+            icon: 'fas fa-trash',
+            label: 'No, toss it',
+            click: stepTrash,
+          },
         ]
       },
-      "somedayMaybe": {
-        prompt: "Someday/Maybe",
+      'somedayMaybe': {
+        prompt: 'Someday/Maybe',
+        backLabel: 'Back',
+        backAction: stepKeepForFuture,
         buttons: [
           {
-            color: "primary",
-            icon: "fas fa-check",
-            label: "Done!",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'Done!',
             click: stepDone,
-          }
+          },
         ]
       },
-      "reference": {
-        prompt: "Reference",
+      'reference': {
+        prompt: 'Reference',
+        backLabel: 'Back',
+        backAction: stepKeepForFuture,
         buttons: [
           {
-            color: "primary",
-            icon: "fas fa-check",
-            label: "Done!",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'Done!',
             click: stepDone,
-          }
+          },
         ]
       },
-      "moreThanOneAction": {
-        prompt: "Is there more than one action?",
+      'moreThanOneAction': {
+        prompt: 'Is there more than one action?',
+        backLabel: 'Back',
+        backAction: stepActionable,
         buttons: [
           {
-            color: "secondary",
-            icon: "far fa-check-square",
-            label: "No, just one",
+            color: 'primary',
+            icon: 'far fa-check-square',
+            label: 'No, just one',
             click: stepTwoMinutes,
           },
           {
-            color: "primary",
-            icon: "fas fa-project-diagram",
-            label: "Yes, multiple",
+            color: 'positive',
+            icon: 'fas fa-project-diagram',
+            label: 'Yes, multiple',
             click: stepProjects,
-          }
+          },
         ]
       },
-      "twoMinutes": {
-        prompt: "Will it take less than 2 minutes?",
+      'twoMinutes': {
+        prompt: 'Will it take less than 2 minutes?',
         buttons: [
           {
-            color: "secondary",
-            label: "No",
+            color: 'primary',
+            label: 'No',
             click: stepBestPerson,
           },
           {
-            color: "primary",
-            label: "Yes",
+            color: 'positive',
+            label: 'Yes',
             click: stepDoIt,
-          }
+          },
         ]
       },
-      "bestPerson": {
-        prompt: "Are you the best person to complete this task?",
+      'bestPerson': {
+        prompt: 'Are you the best person to complete this task?',
         buttons: [
           {
-            color: "secondary",
-            label: "No",
+            color: 'primary',
+            label: 'No',
             click: stepDelegate,
           },
           {
-            color: "primary",
-            label: "Yes",
+            color: 'primary',
+            label: 'Yes',
             click: stepDefer,
-          }
+          },
         ]
       },
-      "delegate": {
-        prompt: "Create a Waiting For",
+      'delegate': {
+        prompt: 'Create a Waiting For',
         buttons: [
           {
-            color: "secondary",
-            icon: "fas fa-check",
-            label: "Done",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'Done',
             click: stepMoreActions,
-          }
+          },
         ]
       },
-      "defer": {
-        prompt: "Does this need to be done at a specific time?",
+      'defer': {
+        prompt: 'Does this need to be done at a specific time?',
         buttons: [
           {
-            color: "secondary",
-            label: "No, next action",
+            color: 'positive',
+            label: 'No, next action',
             click: stepNextAction,
           },
           {
-            color: "primary",
-            label: "Yes, calendar entry",
+            color: 'positive',
+            label: 'Yes, calendar entry',
             click: stepCalendar,
-          }
+          },
         ]
       },
-      "nextAction": {
-        prompt: "Create a Next Action",
+      'nextAction': {
+        prompt: 'Create a Next Action',
         buttons: [
           {
-            color: "secondary",
-            icon: "fas fa-check",
-            label: "Done",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'Done',
             click: stepMoreActions,
-          }
+          },
         ]
       },
-      "calendar": {
-        prompt: "Create a Calendar Entry",
+      'calendar': {
+        prompt: 'Create a Calendar Entry',
         buttons: [
           {
-            color: "secondary",
-            icon: "fas fa-check",
-            label: "Done",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'Done',
             click: stepMoreActions,
-          }
+          },
         ]
       },
-      "doIt": {
-        prompt: "Just DO it! Don't let your dreams be dreams!",
+      'doIt': {
+        prompt: 'Just DO it! Don\'t let your dreams be dreams!',
         buttons: [
           {
-            color: "secondary",
-            label: "Just kidding, this takes more than 2 minutes",
+            color: 'primary',
+            label: 'Just kidding, this takes more than 2 minutes',
             click: stepDefer,
           },
           {
-            color: "primary",
-            icon: "fas fa-check",
-            label: "Done!",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'Done!',
             click: stepMoreActions,
-          }
+          },
         ]
       },
-      "moreActions": {
-        prompt: "Are there any more next actions to add?",
+      'moreActions': {
+        prompt: 'Are there any more next actions to add?',
         buttons: [
           {
-            color: "secondary",
-            icon: "fas fa-check",
-            label: "No, all done!",
+            color: 'secondary',
+            icon: 'fas fa-check',
+            label: 'No, all done!',
             click: stepDone,
           },
           {
-            color: "primary",
-            icon: "add_task",
-            label: "Yes, add more",
+            color: 'primary',
+            icon: 'add_task',
+            label: 'Yes, add more',
             click: stepTwoMinutes,
-          }
+          },
         ]
       },
-      "projects": {
-        prompt: "Create a Project",
+      'projects': {
+        prompt: 'Create a Project',
+        backAction: stepMoreThanOneAction,
         buttons: [
           {
-            color: "secondary",
-            icon: "fas fa-check",
-            label: "Done",
-            click: stepProcessNow,
-          }
+            color: 'primary',
+            label: 'Create Project',
+            click: createProject,
+          },
         ]
       },
-      "processNow": {
-        prompt: "Do you want to process it for next actions now?",
+      'processNow': {
+        prompt: 'Do you want to process it for next actions now?',
+        backLabel: 'Back',
+        backAction: stepProjects,
         buttons: [
           {
-            color: "secondary",
-            icon: "far fa-clock",
-            label: "No, I'll do that later",
+            color: 'secondary',
+            icon: 'far fa-clock',
+            label: 'No, I\'ll do that later',
             click: stepDone,
           },
           {
-            color: "primary",
-            icon: "add_task",
-            label: "Yes, let's do it",
+            color: 'primary',
+            icon: 'add_task',
+            label: 'Yes, let\'s do it now',
             click: stepProjectPlans,
-          }
+          },
         ]
       },
-      "projectPlans": {
-        prompt: "Review any support materials, then start adding next actions.",
+      'projectPlans': {
+        prompt: 'Review any support materials, then start adding next actions.',
+        backLabel: 'Back',
+        backAction: stepProcessNow,
         buttons: [
           {
-            color: "secondary",
-            label: "Start Processing Next Actions",
+            color: 'primary',
+            label: 'Start Processing Next Actions',
             click: stepTwoMinutes,
-          }
+          },
         ]
       }
     }
@@ -323,7 +374,7 @@ export default {
 
     // TODO: Should we safe guard against if this dialog gets called and
     //       inboxItems is 0? Shouldn't happen normally (button disabled)
-    const totalInboxCount = ref(inboxItems.value.length - 1)
+    const totalInboxCount = ref(inboxItems.value.length)
     const currentInboxCount = ref(0)
     const maxStepCount = ref(1)
     const currentStepCount = ref(0)
@@ -374,6 +425,37 @@ export default {
     function stepMoreThanOneAction() {
       setStepCount(1, 10)
       currentStep.value = 'moreThanOneAction'
+    }
+
+    function stepProjects() {
+      setStepCount(2, 10)
+      currentStep.value = 'projects'
+    }
+
+    function createProject() {
+      $store.dispatch('projects/create', {
+        title: projectTitle.value,
+        notes: projectNotes.value
+      }).
+      then(
+        (response) => {
+          stepProcessNow()
+        },
+        (error) => {
+          errorNotification(error, 'Failed to create project')
+        }
+      )
+    }
+
+    function stepProcessNow() {
+      setStepCount(3, 10)
+      currentStep.value = 'processNow'
+    }
+
+    function stepProjectPlans() {
+      setStepCount(4, 10)
+      currentStep.value = 'projectPlans'
+      processingProjectPlans.value = true
     }
 
     function stepTwoMinutes() {
@@ -448,41 +530,29 @@ export default {
       }
     }
 
-    function stepProjects() {
-      setStepCount(2, 10)
-      currentStep.value = 'projects'
-    }
-
-    function stepProcessNow() {
-      setStepCount(3, 10)
-      currentStep.value = 'processNow'
-    }
-
-    function stepProjectPlans() {
-      setStepCount(4, 10)
-      currentStep.value = 'projectPlans'
-      processingProjectPlans.value = true
-    }
-
     function stepDone() {
       // Display spinner while loading...
       currentStep.value = 'done'
       processingProjectPlans.value = false
       setStepCount(1, 1)
       // TODO: Delete inbox item here before executing the rest below.
-      // Reset progress bar after short delay.
-      let timeout = setTimeout(
-        () => {
-          currentInboxCount.value += 1
-          currentInboxItem.value = inboxItems.value[currentInboxCount.value]
-          if (currentInboxCount.value >= totalInboxCount.value) {
+      $store.dispatch('inboxItems/delete', { id: currentInboxItem.value.id }).
+      then(
+        (response) => {
+          if (inboxItems.value.length === 0) {
             // All done! Close up shop.
             onDialogOK()
           } else {
+            currentInboxCount.value += 1
+            currentInboxItem.value = inboxItems.value[0]
+            // currentInboxItem.value = inboxItems.value[currentInboxCount.value]
             stepActionable()
           }
         },
-        1000
+        (error) => {
+          // TODO: How do error handling?
+          errorNotification(error, 'Failed to delete task')
+        }
       )
     }
 
@@ -504,6 +574,11 @@ export default {
       instantFeedback,
       currentStep,
       currentInboxItem,
+      processingProjectPlans,
+      projectTitle,
+      projectNotes,
+      //
+      createProject,
       //
       stepKeepForFuture,
       stepTrash,

@@ -11,6 +11,15 @@ import createPersistedState from 'vuex-persistedstate'
 import inboxItems from './inbox-items'
 import { InboxItemsStateInterface } from './inbox-items/state'
 
+import nextActions from './next-actions'
+import { NextActionsStateInterface } from './next-actions/state'
+
+import waitingFors from './waiting-fors'
+import { WaitingForsStateInterface } from './waiting-fors/state'
+
+import projects from './projects'
+import { ProjectsStateInterface } from './projects/state'
+
 import authentication from './authentication'
 import { AuthenticationStateInterface } from './authentication/state'
 
@@ -37,8 +46,13 @@ import { TasksStateInterface } from './tasks/state'
 
 export interface StateInterface {
   inboxItems: InboxItemsStateInterface,
+  nextActions: NextActionsStateInterface,
+  waitingFors: WaitingForsStateInterface,
+  projects: ProjectsStateInterface,
+  //
   authentication: AuthenticationStateInterface,
   settings: SettingsStateInterface,
+  //
   lists: ListsStateInterface,
   tags: TagsStateInterface,
   tasks: TasksStateInterface,
@@ -63,6 +77,9 @@ export default store(function (/* { ssrContext } */) {
 
     modules: {
       inboxItems,
+      nextActions,
+      waitingFors,
+      projects,
       authentication,
       settings,
       lists,

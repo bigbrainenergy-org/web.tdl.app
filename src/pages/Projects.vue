@@ -18,7 +18,7 @@
                   <q-list>
                     <q-tree
                       :nodes="projects"
-                      node-key="title"
+                      node-key="id"
                       label-key="title"
                       children-key="subprojects"
                       default-expand-all
@@ -27,17 +27,17 @@
                       <template v-slot:default-header="prop">
                         <q-item class="fit q-ml-md" clickable v-ripple @click.stop="doThing(prop)">
                           <q-item-section
-                            :class="(prop.node.next_action_count === 0) ? 'text-red' : null"
+                            :class="(prop.node.next_actions.length === 0) ? 'text-red' : null"
                           >
                             {{ prop.node.title }}
                           </q-item-section>
 
                           <q-item-section side>
                             <q-badge
-                              :color="(prop.node.next_action_count > 0) ? 'white' : 'negative'"
-                              :class="(prop.node.next_action_count > 0) ? 'text-black' : null"
+                              :color="(prop.node.next_actions.length > 0) ? 'white' : 'negative'"
+                              :class="(prop.node.next_actions.length > 0) ? 'text-black' : null"
                             >
-                              {{ prop.node.next_action_count }}
+                              {{ prop.node.next_actions.length }}
                             </q-badge>
                           </q-item-section>
 
@@ -58,8 +58,8 @@
               <template v-slot:after>
                 <div class="q-pa-md">
                   <template v-if="selectedProject">
-                    <p>{{ selectedProject.title }}</p>
-                    <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quis praesentium cumque magnam odio iure quidem, quod illum numquam possimus obcaecati commodi minima assumenda consectetur culpa fuga nulla ullam. In, libero.</p>
+                    <div class="text-h4 q-mb-lg">{{ selectedProject.title }}</div>
+                    <p style="white-space: pre-line;">{{ selectedProject.notes }}</p>
                   </template>
 
                   <template v-else>
@@ -83,70 +83,35 @@
   </q-page>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue'
+<script>
+import { defineComponent, ref, computed } from 'vue'
+import { useStore } from '../store'
+
+import Project from '../models/project'
+import { Project as ProjectInterface } from '../components/models'
+
 export default defineComponent({
   name: 'PageProjects',
 
   setup() {
-    const projects = ref([
-      {
-        title: 'Implement projects tab',
-        next_action_count: 7,
-      },
-      {
-        title: 'Implement inbox tab',
-        next_action_count: 3,
-      },
-      {
-        title: 'Implement next actions tab',
-        next_action_count: 0,
-        subprojects: [
-          { title: 'Implement next action review?', next_action_count: 2 },
-          { title: 'Other thing', next_action_count: 0 }
-        ]
-      },
-      {
-        title: 'Implement waiting for tab',
-        next_action_count: 5,
-      },
-      {
-        title: 'Implement daily review dialog',
-        next_action_count: 0,
-        subprojects: [
-          {
-            title: 'Something related to daily review',
-            next_action_count: 1,
-            subprojects: [
-              { title: 'Triple nesting action!', next_action_count: 8 },
-              {
-                title: 'With two things!',
-                next_action_count: 0,
-                subprojects: [
-                  { title: 'And even more nesting after that!', next_action_count: 4 },
-                  { title: 'Truly wild', next_action_count: 69 }
-                ]
-              }
-            ]
-          },
-          { title: 'Another daily review thing', next_action_count: 1337 }
-        ]
-      },
-      {
-        title: 'Implement weekly review dialog',
-        next_action_count: 1,
-      },
-      {
-        title: 'Implement API backend',
-        next_action_count: 1,
-      },
-    ])
+    const $store = useStore()
+
+    // TODO: Lazy load subprojects
+    const projects = computed(
+      () => $store.$repo(Project).withAllRecursive().get().filter(
+        (project) => {
+          return project.superprojects.length === 0
+        }
+      )
+    )
+
+    console.log(projects.value)
 
     const selectedProject = ref(null)
     const projectSplitter = ref(50)
 
-    function doThing(prop: any) {
-      if (selectedProject.value == prop.node) {
+    function doThing(prop) {
+      if (selectedProject.value?.id == prop.node?.id) {
         selectedProject.value = null
       } else {
         selectedProject.value = prop.node
