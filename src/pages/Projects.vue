@@ -21,7 +21,6 @@
                       node-key="id"
                       label-key="title"
                       children-key="subprojects"
-                      default-expand-all
                       dense
                     >
                       <template v-slot:default-header="prop">

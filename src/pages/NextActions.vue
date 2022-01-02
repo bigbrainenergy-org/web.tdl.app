@@ -14,49 +14,54 @@
 
           <q-card-section>
             <q-list>
-              <q-item
-                clickable
-                v-ripple
+              <q-intersection
                 v-for="(next_action, index) in nextActions"
                 :key="next_action.id"
-                @click="openNextAction(next_action)"
+                once
+                style="min-height: 48px;"
               >
-                <q-item-section>
-                  {{ next_action.title }}
-                </q-item-section>
+                <q-item
+                  clickable
+                  v-ripple
+                  @click="openNextAction(next_action)"
+                >
+                  <q-item-section>
+                    {{ next_action.title }}
+                  </q-item-section>
 
-                <q-item-section side v-if="next_action.notes">
-                  <q-icon name="description">
-                    <q-tooltip
-                      anchor="center right"
-                      self="center left"
-                      :offset="[10, 10]"
-                    >
-                      Has additional notes! Click to view.
-                    </q-tooltip>
-                  </q-icon>
-                </q-item-section>
+                  <q-item-section side v-if="next_action.notes">
+                    <q-icon name="description">
+                      <q-tooltip
+                        anchor="center right"
+                        self="center left"
+                        :offset="[10, 10]"
+                      >
+                        Has additional notes! Click to view.
+                      </q-tooltip>
+                    </q-icon>
+                  </q-item-section>
 
-                <q-menu context-menu auto-close :ref="el => { if(el) nextActionMenus[index] = el }">
-                  <q-list style="min-width: 100px">
-                    <q-item clickable @click="openNextAction(next_action)">
-                      <q-item-section>Open</q-item-section>
-                      <q-item-section avatar>
-                        <q-icon name="fas fa-external-link-alt" />
-                      </q-item-section>
-                    </q-item>
+                  <q-menu context-menu auto-close :ref="el => { if(el) nextActionMenus[index] = el }">
+                    <q-list style="min-width: 100px">
+                      <q-item clickable @click="openNextAction(next_action)">
+                        <q-item-section>Open</q-item-section>
+                        <q-item-section avatar>
+                          <q-icon name="fas fa-external-link-alt" />
+                        </q-item-section>
+                      </q-item>
 
-                    <q-separator />
+                      <q-separator />
 
-                    <q-item clickable>
-                      <q-item-section>Delete</q-item-section>
-                      <q-item-section avatar>
-                        <q-icon color="negative" name="fas fa-trash" />
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-item>
+                      <q-item clickable>
+                        <q-item-section>Delete</q-item-section>
+                        <q-item-section avatar>
+                          <q-icon color="negative" name="fas fa-trash" />
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-item>
+              </q-intersection>
               <template v-if="nextActions.length === 0">
                 <q-item clickable v-ripple>
                   <q-item-section>
