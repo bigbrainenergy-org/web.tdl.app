@@ -4,15 +4,22 @@ import { AuthenticationStateInterface } from './state';
 
 const getters: GetterTree<AuthenticationStateInterface, StateInterface> = {
   sessionToken (state) {
-    return state.sessionToken;
+    return state.sessionToken
   },
 
   bearerToken (state) {
-    return `Bearer ${state.sessionToken}`;
+    return `Bearer ${state.sessionToken}`
   },
 
-  loggedIn (state) {
-    return state.sessionToken !== ''
+  userId (state) {
+    return state.userId
+  },
+
+  isAuthenticated (state) {
+    return (
+      state.sessionToken !== null &&
+      state.sessionToken.length > 0
+    )
   },
 };
 

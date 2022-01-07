@@ -1,25 +1,9 @@
 import { MutationTree } from 'vuex';
-import { SettingsStateInterface } from './state';
-import { TimeZone } from '../../components/models'
-import { Settings } from 'luxon'
+import { LocalSettingsStateInterface } from './state';
 
-const mutation: MutationTree<SettingsStateInterface> = {
-  setUsername(state, username: string) {
-    state.username = username
-  },
-
+const mutation: MutationTree<LocalSettingsStateInterface> = {
   setTaskSearch(state, taskSearch: string) {
     state.taskSearch = taskSearch
-  },
-
-  setTimeZone(state, timeZone: string) {
-    state.timeZone = timeZone
-    // Also set default time zone for Luxon
-    Settings.defaultZone = timeZone
-  },
-
-  setTimeZones(state, timeZones: Array<TimeZone>) {
-    state.timeZones = timeZones
   },
 
   setSelectedList(state, selectedList: string) {

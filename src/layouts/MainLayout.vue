@@ -91,8 +91,6 @@ import { useStore } from '../store'
 import { useRoute, useRouter } from 'vue-router'
 import { computed, defineComponent, ref, watch } from 'vue'
 import { api } from 'boot/axios'
-import ListsControl from 'components/ListsControl.vue'
-import TagsControl from 'components/TagsControl.vue'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
 import { Task as TaskInterface } from 'components/models';
@@ -102,7 +100,6 @@ import CurrentTaskDialog from 'components/CurrentTaskDialog.vue'
 
 export default defineComponent({
   name: 'MainLayout',
-  components: { ListsControl, TagsControl },
 
   setup () {
     const $q = useQuasar()
@@ -120,19 +117,9 @@ export default defineComponent({
       }
     })
 
-    const username = computed({
-      get: () => $store.state.settings.username,
-      set: value => {
-        $store.commit('settings/setUsername', value)
-      }
-    })
-
-    const taskSearch = computed({
-      get: () => $store.state.settings.taskSearch,
-      set: value => {
-        $store.commit('settings/setTaskSearch', value)
-      }
-    })
+    const username = computed(
+      () => $store.getters['users/username']
+    )
 
     function logout() {
       if(sessionToken.value === null || sessionToken.value === '') {
@@ -216,9 +203,7 @@ export default defineComponent({
     )
 
     return {
-      drawerTabs,
       username,
-      taskSearch,
       logout,
       openCreateInboxItemDialog,
       currentPath

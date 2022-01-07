@@ -1,10 +1,12 @@
 export interface AuthenticationStateInterface {
   sessionToken: string;
+  userId: number;
 }
 
 function state(): AuthenticationStateInterface {
   return {
-    sessionToken: ''
+    sessionToken: '',
+    userId: 0,
   }
 };
 

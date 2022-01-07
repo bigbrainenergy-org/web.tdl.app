@@ -59,12 +59,7 @@ export default defineComponent({
   name: 'PageLogin',
 
   preFetch({ store, redirect }) {
-    const isAuthenticated =
-      (
-        store.state.authentication.sessionToken !== null &&
-        store.state.authentication.sessionToken.length > 0
-      )
-    if (isAuthenticated) {
+    if (store.getters['authentication/isAuthenticated']) {
       redirect({ path: '/' })
     }
   },
@@ -77,23 +72,17 @@ export default defineComponent({
     const username = ref('')
     const password = ref('')
 
-    const sessionToken = computed({
-      get: () => $store.state.authentication.sessionToken,
-      set: value => {
-        $store.commit('authentication/setSessionToken', value)
-      }
-    })
+    const sessionToken = computed(
+      () => $store.state.authentication.sessionToken
+    )
 
     function login() {
-      api.post('/login', {
+      $store.dispatch('authentication/login', {
         username: username.value,
         password: password.value,
-        dataType: 'json',
-        contentType: 'application/json'
       }).
       then(
         (response) => {
-          sessionToken.value = response.data.session_token
           username.value = ''
           password.value = ''
           $q.notify({

@@ -57,16 +57,13 @@ import { useStore } from '../store'
 import { DateTime } from 'luxon'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
+import { TimeZone as TimeZoneInterface } from '../components/models'
+
 export default defineComponent({
   name: 'PageSettings',
 
   preFetch({ store, redirect }) {
-    const isAuthenticated =
-      (
-        store.state.authentication.sessionToken !== null &&
-        store.state.authentication.sessionToken.length > 0
-      )
-    if (!isAuthenticated) {
+    if (!store.getters.authentication.isAuthenticated) {
       redirect({ path: '/login' })
     }
   },
@@ -77,21 +74,18 @@ export default defineComponent({
 
     const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
 
-    const timeZone = computed({
-      get: () => $store.state.settings.timeZone,
-      set: value => {
-        $store.commit('settings/setTimeZone', value)
-      }
-    })
+    const timeZone = computed(
+      () => $store.getters.users.timeZone
+    )
 
     const timeZones = computed(
-      () => $store.state.settings.timeZones
+      () => $store.state.timeZones.timeZones
     )
 
     function timeZoneName(tzToFind: any) {
       // @ts-ignore
       return timeZones.value.find(
-        (tz) => {
+        (tz: TimeZoneInterface) => {
           return tz.value === tzToFind
         }
       ).name
@@ -103,7 +97,8 @@ export default defineComponent({
     })
 
     function updateTimeZone() {
-      $store.dispatch('settings/updateTimeZone', {
+      $store.dispatch('users/update', {
+        // Double value is intentional
         timeZone: editTimeZone.value.value
       }).
       catch(

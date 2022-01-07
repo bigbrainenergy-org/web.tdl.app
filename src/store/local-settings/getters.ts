@@ -1,20 +1,8 @@
 import { GetterTree } from 'vuex';
 import { StateInterface } from '../index';
-import { SettingsStateInterface } from './state';
+import { LocalSettingsStateInterface } from './state';
 
-const getters: GetterTree<SettingsStateInterface, StateInterface> = {
-  username (state) {
-    return state.username;
-  },
-
-  timeZone (state) {
-    return state.timeZone;
-  },
-
-  timeZones (state) {
-    return state.timeZones;
-  },
-
+const getters: GetterTree<LocalSettingsStateInterface, StateInterface> = {
   selectedList (state) {
     return state.selectedList;
   },
@@ -29,7 +17,7 @@ const getters: GetterTree<SettingsStateInterface, StateInterface> = {
 
   taskSearch (state) {
     return state.taskSearch;
-  }
+  },
 };
 
 export default getters;

@@ -32,6 +32,28 @@
               debounce="1000"
               label="Notes"
             />
+            <br>
+            <q-select
+              v-model="editNextActionProject"
+              filled
+              clearable
+              @update:model-value="updateNextActionProject"
+              :options="projects"
+              option-value="id"
+              option-label="title"
+              label="Project"
+            />
+            <br>
+            <q-select
+              v-model="editNextActionContext"
+              filled
+              clearable
+              @update:model-value="updateNextActionContext"
+              :options="contexts"
+              option-value="id"
+              option-label="title"
+              label="Context"
+            />
           </div>
         </div>
       </q-card-section>

@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/Index.vue') },
+      { path: '', redirect: 'inbox' },
       { path: 'inbox', component: () => import('pages/Inbox.vue') },
       { path: 'next-actions', component: () => import('pages/NextActions.vue') },
       { path: 'waiting-for', component: () => import('pages/WaitingFor.vue') },

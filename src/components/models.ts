@@ -84,3 +84,10 @@ export interface Context {
   order: number;
   next_actions: Array<NextAction>
 }
+
+export interface User {
+  id: number;
+  username: string;
+  locale: string;
+  time_zone: string;
+}
