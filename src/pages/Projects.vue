@@ -104,8 +104,6 @@ export default defineComponent({
       )
     )
 
-    console.log(projects.value)
-
     const selectedProject = ref(null)
     const projectSplitter = ref(50)
 

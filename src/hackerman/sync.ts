@@ -32,6 +32,12 @@ export function syncWithBackend(store: any) {
       errorNotification(error, 'Failed to fetch projects')
     }
   )
+  store.dispatch('contexts/fetchContexts').
+  catch(
+    (error: any) => {
+      errorNotification(error, 'Failed to fetch contexts')
+    }
+  )
   store.dispatch('timeZones/fetchTimeZones').
   catch(
     (error: any) => {

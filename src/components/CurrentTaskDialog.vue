@@ -239,13 +239,13 @@ export default {
     const selectedTags = ref([])
     selectedTags.value = temp
 
-    const lists = computed({
-      get: () => $store.$repo(List).with('tasks').orderBy('order').orderBy('title').get()
-    })
+    const lists = computed(
+      () => $store.$repo(List).with('tasks').orderBy('order').orderBy('title').get()
+    )
 
-    const tags = computed({
-      get: () => $store.$repo(Tag).orderBy('order').orderBy('title').get()
-    })
+    const tags = computed(
+      () => $store.$repo(Tag).orderBy('order').orderBy('title').get()
+    )
 
     function setCurrentTask(newTask) {
       currentTask.value = $store.$repo(Task).

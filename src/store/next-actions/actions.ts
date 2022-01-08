@@ -12,13 +12,16 @@ const actions: ActionTree<NextActionsStateInterface, StateInterface> = {
         api.post('/next_actions',
           {
             title: options.title,
-            notes: options.notes
+            notes: options.notes,
+            remind_me_at: options.remind_me_at,
+            context_id: options.context_id,
+            project_id: options.project_id,
           },
           {
             headers: {
               Authorization: rootGetters['authentication/bearerToken']
             }
-          }
+          },
         ).
         then(
           (response) => {
@@ -60,13 +63,16 @@ const actions: ActionTree<NextActionsStateInterface, StateInterface> = {
         api.patch(`/next_actions/${options.id}`,
           {
             title: options.title,
-            notes: options.notes
+            notes: options.notes,
+            remind_me_at: options.remind_me_at,
+            context_id: options.context_id,
+            project_id: options.project_id,
           },
           {
             headers: {
               Authorization: rootGetters['authentication/bearerToken']
             }
-          }
+          },
         ).
         then(
           (response) => {

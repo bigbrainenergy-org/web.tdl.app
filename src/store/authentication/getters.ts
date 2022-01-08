@@ -15,7 +15,7 @@ const getters: GetterTree<AuthenticationStateInterface, StateInterface> = {
     return state.userId
   },
 
-  isAuthenticated (state) {
+  loggedIn (state) {
     return (
       state.sessionToken !== null &&
       state.sessionToken.length > 0

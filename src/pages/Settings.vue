@@ -63,7 +63,7 @@ export default defineComponent({
   name: 'PageSettings',
 
   preFetch({ store, redirect }) {
-    if (!store.getters.authentication.isAuthenticated) {
+    if (store.getters['authentication/loggedIn'] !== true) {
       redirect({ path: '/login' })
     }
   },
@@ -75,20 +75,23 @@ export default defineComponent({
     const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
 
     const timeZone = computed(
-      () => $store.getters.users.timeZone
+      () => $store.getters['users/timeZone']
     )
 
     const timeZones = computed(
-      () => $store.state.timeZones.timeZones
+      () => $store.getters['timeZones/timeZones']
     )
 
     function timeZoneName(tzToFind: any) {
-      // @ts-ignore
-      return timeZones.value.find(
-        (tz: TimeZoneInterface) => {
-          return tz.value === tzToFind
-        }
-      ).name
+      if (timeZones.value.length > 0) {
+        return timeZones.value.find(
+          (tz: TimeZoneInterface) => {
+            return tz.value === tzToFind
+          }
+        ).name
+      } else {
+        return undefined
+      }
     }
 
     const editTimeZone = ref({

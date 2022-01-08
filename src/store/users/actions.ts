@@ -16,7 +16,7 @@ const actions: ActionTree<UsersStateInterface, StateInterface> = {
     return response
   },
 
-  async updateUser({ commit, rootGetters }, options) {
+  async update({ commit, rootGetters }, options) {
     return new Promise(
       (resolve, reject) => {
         const userId = rootGetters['authentication/userId']

@@ -178,8 +178,6 @@ export default {
     const projectTitle = ref('')
     const projectNotes = ref('')
 
-    console.log(inboxItems.value.length)
-
     // TODO: Should we safe guard against if this dialog gets called and
     //       inboxItems is 0? Shouldn't happen normally (button disabled)
     const totalInboxCount = ref(inboxItems.value.length)
