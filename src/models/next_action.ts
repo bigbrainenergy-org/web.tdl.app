@@ -17,10 +17,12 @@ export default class NextAction extends Model {
       order: this.attr(0),
       completed: this.attr(false),
       remind_me_at: this.attr(''),
-      hard_pre_ids: this.attr([]),
-      hard_post_ids: this.attr([]),
-      hard_prereqs: this.hasManyBy(NextAction, 'hard_pre_ids'),
-      hard_postreqs: this.hasManyBy(NextAction, 'hard_post_ids'),
+      mental_energy_required: this.attr(0),
+      physical_energy_required: this.attr(0),
+      hard_prereq_ids: this.attr([]),
+      hard_postreq_ids: this.attr([]),
+      hard_prereqs: this.hasManyBy(NextAction, 'hard_prereq_ids'),
+      hard_postreqs: this.hasManyBy(NextAction, 'hard_postreq_ids'),
     }
   }
 }

@@ -11,11 +11,17 @@ const actions: ActionTree<NextActionsStateInterface, StateInterface> = {
       (resolve, reject) => {
         api.post('/next_actions',
           {
-            title: options.title,
-            notes: options.notes,
-            remind_me_at: options.remind_me_at,
-            context_id: options.context_id,
-            project_id: options.project_id,
+            next_action: {
+              context_id: options.context_id,
+              project_id: options.project_id,
+              title: options.title,
+              notes: options.notes,
+              remind_me_at: options.remind_me_at,
+              mental_energy_required: options.mental_energy_required,
+              physical_energy_required: options.physical_energy_required,
+              hard_prereq_ids: options.hard_prereq_ids,
+              hard_postreq_ids: options.hard_postreq_ids,
+            }
           },
           {
             headers: {
@@ -62,11 +68,17 @@ const actions: ActionTree<NextActionsStateInterface, StateInterface> = {
       (resolve, reject) => {
         api.patch(`/next_actions/${options.id}`,
           {
-            title: options.title,
-            notes: options.notes,
-            remind_me_at: options.remind_me_at,
-            context_id: options.context_id,
-            project_id: options.project_id,
+            next_action: {
+              context_id: options.context_id,
+              project_id: options.project_id,
+              title: options.title,
+              notes: options.notes,
+              remind_me_at: options.remind_me_at,
+              mental_energy_required: options.mental_energy_required,
+              physical_energy_required: options.physical_energy_required,
+              hard_prereq_ids: options.hard_prereq_ids,
+              hard_postreq_ids: options.hard_postreq_ids,
+            }
           },
           {
             headers: {
@@ -85,6 +97,15 @@ const actions: ActionTree<NextActionsStateInterface, StateInterface> = {
         )
       }
     )
+  },
+
+  async fetchNextAction({ rootGetters }, options) {
+    const response = await api.get(`/next_actions/${options.id}`, {
+      headers: { Authorization: rootGetters['authentication/bearerToken'] },
+      params: {}
+    })
+    this.$repo(NextAction).save(response.data)
+    return response
   },
 
   async fetchNextActions({ rootGetters }) {

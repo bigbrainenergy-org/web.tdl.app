@@ -20,53 +20,43 @@
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
             <div class="text-h4 text-primary">{{ currentNextAction.title }}</div>
-            <br>
             <q-input
-              v-model="editNextActionTitle"
+              v-model="editTitle"
               filled
               label="Task title"
               :placeholder="currentNextAction.title"
-              @keyup.enter="updateNextActionTitle"
+              @keyup.enter="updateNextAction({ title: editTitle })"
               clearable
+              class="q-my-md"
             />
-            <br>
-            <q-input
-              v-model="editNextActionNotes"
-              filled
-              autogrow
-              @update:model-value="updateNextActionNotes"
-              debounce="1000"
-              label="Notes"
-            />
-            <br>
             <q-select
               v-model="selectedContext"
               filled
               clearable
-              @update:model-value="updateContext"
+              @update:model-value="updateNextAction({ context_id: selectedContext == null ? null : selectedContext.id })"
               :options="contexts"
               option-value="id"
               option-label="title"
               label="Context"
+              class="q-my-md"
             />
-            <br>
             <q-select
               v-model="selectedProject"
               filled
               clearable
-              @update:model-value="updateProject"
+              @update:model-value="updateNextAction({ project_id: selectedProject == null ? null : selectedProject.id })"
               :options="projects"
               option-value="id"
               option-label="title"
               label="Project"
+              class="q-my-md"
             />
-            <br>
             <q-datetime-input
-              v-model="editNextActionRemindMeAt"
-              @update:model-value="updateNextActionRemindMeAt"
+              v-model="editRemindMeAt"
+              @update:model-value="updateNextAction({ remind_me_at: editRemindMeAt })"
               label="Remind me at"
+              class="q-my-md"
             />
-            <br>
             <q-list>
               <q-item class="q-my-sm">
                 <q-item-section side>
@@ -79,6 +69,7 @@
 
                     <q-slider
                       v-model="editMentalEnergyRequired"
+                      @change="updateNextAction({ mental_energy_required: editMentalEnergyRequired })"
                       :min="0"
                       :max="100"
                       :step="1"
@@ -106,6 +97,7 @@
 
                     <q-slider
                       v-model="editPhysicalEnergyRequired"
+                      @change="updateNextAction({ physical_energy_required: editPhysicalEnergyRequired })"
                       :min="0"
                       :max="100"
                       :step="1"
@@ -122,33 +114,44 @@
                 </q-item-section>
               </q-item>
             </q-list>
+            <br>
+            <q-input
+              v-model="editNotes"
+              filled
+              autogrow
+              @update:model-value="updateNextAction({ notes: editNotes })"
+              debounce="1000"
+              label="Notes"
+            />
           </div>
 
           <div class="col-12 col-md">
             <div class="row">
               <div class="col">
-                <div class="text-h5">Subtasks</div>
-              </div>
-              <div class="col text-right">
-                <q-btn color="primary" icon="fas fa-tasks" label="Add Subtask" />
-              </div>
-            </div>
-            <q-list class="q-my-md">
-              <q-item clickable v-ripple>
-                <q-item-section>No subtasks</q-item-section>
-              </q-item>
-            </q-list>
-            <div class="row">
-              <div class="col">
                 <div class="text-h5">Prerequisites</div>
               </div>
               <div class="col text-right">
-                <q-btn color="primary" icon="fas fa-link" label="Add Prerequisite" />
+                <q-btn color="primary" icon="fas fa-link" label="Add Prerequisite" @click="openPrerequisiteDialog" />
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple>
+              <q-item clickable v-ripple v-if="!currentNextAction.hard_prereqs.length">
                 <q-item-section>No prerequisites</q-item-section>
+              </q-item>
+              <q-item
+                clickable
+                v-ripple
+                v-for="pre in currentNextAction.hard_prereqs"
+                :key="pre.id"
+                @click="setCurrentNextAction(pre)"
+              >
+                <q-item-section>
+                  {{ pre.title }}
+                </q-item-section>
+
+                <q-item-section avatar>
+                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="true" />
+                </q-item-section>
               </q-item>
             </q-list>
             <div class="row">
@@ -160,8 +163,36 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple>
+              <q-item clickable v-ripple v-if="!currentNextAction.hard_postreqs.length">
                 <q-item-section>No postrequisites</q-item-section>
+              </q-item>
+              <q-item
+                clickable
+                v-ripple
+                v-for="post in currentNextAction.hard_postreqs"
+                :key="post.id"
+                @click="setCurrentNextAction(post)"
+              >
+                <q-item-section>
+                  {{ post.title }}
+                </q-item-section>
+
+                <q-item-section avatar>
+                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="true" />
+                </q-item-section>
+              </q-item>
+            </q-list>
+            <div class="row">
+              <div class="col">
+                <div class="text-h5">Subtasks</div>
+              </div>
+              <div class="col text-right">
+                <q-btn color="primary" icon="fas fa-tasks" label="Add Subtask" />
+              </div>
+            </div>
+            <q-list class="q-my-md">
+              <q-item clickable v-ripple>
+                <q-item-section>No subtasks</q-item-section>
               </q-item>
             </q-list>
           </div>
@@ -178,6 +209,7 @@ import { computed, defineComponent, ref } from 'vue';
 import { useStore } from '../store'
 
 import QDatetimeInput from 'components/QDatetimeInput.vue';
+import NextActionSearchDialog from 'components/NextActionSearchDialog.vue';
 
 import Context from '../models/context'
 import Project from '../models/project'
@@ -214,11 +246,11 @@ export default {
     const $store = useStore()
 
     const currentNextAction = ref(props.next_action)
-    const editNextActionTitle = ref(currentNextAction.value.title)
-    const editNextActionNotes = ref(currentNextAction.value.notes)
-    const editNextActionRemindMeAt = ref(currentNextAction.value.remind_me_at)
-    const editMentalEnergyRequired = ref(50)
-    const editPhysicalEnergyRequired = ref(50)
+    const editTitle = ref(currentNextAction.value.title)
+    const editNotes = ref(currentNextAction.value.notes)
+    const editRemindMeAt = ref(currentNextAction.value.remind_me_at)
+    const editMentalEnergyRequired = ref(currentNextAction.value.mental_energy_required)
+    const editPhysicalEnergyRequired = ref(currentNextAction.value.physical_energy_required)
 
     const projects = computed(
       () => $store.$repo(Project).all()
@@ -248,10 +280,12 @@ export default {
     const selectedProject = ref(getSelectedProject(currentNextAction.value))
 
     function setCurrentNextAction(newNextAction) {
-      currentNextAction.value = $store.$repo(NextAction).with('project').with('context').find(newNextAction.id)
-      editNextActionTitle.value = currentNextAction.value.title
-      editNextActionNotes.value = currentNextAction.value.notes
-      editNextActionRemindMeAt.value = currentNextAction.value.remind_me_at
+      currentNextAction.value = $store.$repo(NextAction).withAll().find(newNextAction.id)
+      editTitle.value = currentNextAction.value.title
+      editNotes.value = currentNextAction.value.notes
+      editRemindMeAt.value = currentNextAction.value.remind_me_at
+      editMentalEnergyRequired.value = currentNextAction.value.mental_energy_required
+      editPhysicalEnergyRequired.value = currentNextAction.value.physical_energy_required
       selectedContext.value = getSelectedContext(currentNextAction.value)
       selectedProject.value = getSelectedProject(currentNextAction.value)
     }
@@ -282,83 +316,58 @@ export default {
       )
     }
 
-    function updateNextActionTitle() {
-      if (editNextActionTitle.value === currentNextAction.value.title) { return }
-
+    function updateNextAction(options) {
       $store.dispatch('nextActions/update', {
         id: currentNextAction.value.id,
-        title: editNextActionTitle.value
+        ...options
       }).
       then(
         (response) => {
           setCurrentNextAction(currentNextAction.value)
         },
         (error) => {
-          errorNotification(error, 'Failed to update next action title')
+          errorNotification(error, 'Failed to update next action')
         }
       )
     }
 
-    function updateNextActionNotes() {
-      if (editNextActionNotes.value === currentNextAction.value.notes) { return }
+    function openPrerequisiteDialog() {
+      $q.dialog({
+        component: NextActionSearchDialog,
 
-      $store.dispatch('nextActions/update', {
-        id: currentNextAction.value.id,
-        notes: editNextActionNotes.value
-      }).
-      then(
-        (response) => {
-          setCurrentNextAction(currentNextAction.value)
-        },
-        (error) => {
-          errorNotification(error, 'Failed to update next action notes')
+        componentProps: {
+          dialogTitle: 'Add Prerequisite',
+          nextAction: currentNextAction.value,
+          onSelect: (payload) => { addPrereq(payload) },
         }
-      )
+      })
     }
 
-    function updateNextActionRemindMeAt() {
-      if (editNextActionRemindMeAt.value === currentNextAction.value.remind_me_at) { return }
-
+    function addPrereq(payload) {
       $store.dispatch('nextActions/update', {
         id: currentNextAction.value.id,
-        remind_me_at: editNextActionRemindMeAt.value
+        hard_prereq_ids: [
+          ...currentNextAction.value.hard_prereq_ids,
+          payload.nextAction.id
+        ]
       }).
       then(
         (response) => {
+          $store.dispatch('nextActions/fetchNextAction', {
+            id: payload.nextAction.id
+          })
           setCurrentNextAction(currentNextAction.value)
+          // hurr durr I'm a bad javascript programmer, but it works
+          payload.callback(payload.nextAction)
+          $q.notify({
+            color: 'positive',
+            position: 'top',
+            message: 'Added Prerequisite',
+            icon: 'fas fa-link'
+          })
         },
         (error) => {
-          errorNotification(error, 'Failed to update next action remind me at')
-        }
-      )
-    }
-
-    function updateContext() {
-      $store.dispatch('nextActions/update', {
-        id: currentNextAction.value.id,
-        context_id: selectedContext.value == null ? null : selectedContext.value.id
-      }).
-      then(
-        (response) => {
-          setCurrentNextAction(currentNextAction.value)
-        },
-        (error) => {
-          errorNotification(error, 'Failed to update next action context')
-        }
-      )
-    }
-
-    function updateProject() {
-      $store.dispatch('nextActions/update', {
-        id: currentNextAction.value.id,
-        project_id: selectedProject.value == null ? null : selectedProject.value.id
-      }).
-      then(
-        (response) => {
-          setCurrentNextAction(currentNextAction.value)
-        },
-        (error) => {
-          errorNotification(error, 'Failed to update next action project')
+          errorNotification(error, 'Failed to add prereq')
         }
       )
     }
@@ -366,24 +375,23 @@ export default {
     return {
       // Custom stuff
       currentNextAction,
-      editNextActionTitle,
-      editNextActionNotes,
-      editNextActionRemindMeAt,
+      //
+      editTitle,
+      editNotes,
+      editRemindMeAt,
       editMentalEnergyRequired,
       editPhysicalEnergyRequired,
-      //
       selectedContext,
       selectedProject,
       //
       contexts,
       projects,
       //
-      updateNextActionTitle,
-      updateNextActionNotes,
-      updateNextActionRemindMeAt,
-      updateContext,
-      updateProject,
+      setCurrentNextAction,
+      updateNextAction,
       deleteNextAction,
+      //
+      openPrerequisiteDialog,
       //
 
       // This is REQUIRED;

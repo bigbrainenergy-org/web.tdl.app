@@ -97,6 +97,12 @@ import ReviewDialog from 'components/ReviewDialog.vue'
 export default defineComponent({
   name: 'PageInbox',
 
+  preFetch({ store, redirect }) {
+    if (store.getters['authentication/loggedIn'] !== true) {
+      redirect({ path: '/login' })
+    }
+  },
+
   setup() {
     const $q = useQuasar()
     const $store = useStore()

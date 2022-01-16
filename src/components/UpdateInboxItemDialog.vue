@@ -12,26 +12,26 @@
       <q-separator />
 
       <q-card-section>
-        <div class="row q-gutter-md q-pa-sm">
-          <div class="col-12 col-md">
+        <div class="row q-pa-sm">
+          <div class="col">
             <div class="text-h4 text-primary">{{ currentInboxItem.title }}</div>
-            <br>
             <q-input
               v-model="editInboxItemTitle"
               filled
               label="Task title"
               :placeholder="currentInboxItem.title"
-              @keyup.enter="updateInboxItemTitle"
+              @keyup.enter="updateInboxItem({ title: editInboxItemTitle })"
               clearable
+              class="q-my-md"
             />
-            <br>
             <q-input
               v-model="editInboxItemNotes"
               filled
               autogrow
-              @update:model-value="updateInboxItemNotes"
+              @update:model-value="updateInboxItem({ notes: editInboxItemNotes })"
               debounce="1000"
               label="Notes"
+              class="q-my-md"
             />
           </div>
         </div>
@@ -112,36 +112,17 @@ export default {
       )
     }
 
-    function updateInboxItemTitle() {
-      if (editInboxItemTitle.value === currentInboxItem.value.title) { return }
-
+    function updateInboxItem(options) {
       $store.dispatch('inboxItems/update', {
         id: currentInboxItem.value.id,
-        title: editInboxItemTitle.value
+        ...options
       }).
       then(
         (response) => {
           setCurrentInboxItem(currentInboxItem.value)
         },
         (error) => {
-          errorNotification(error, 'Failed to update inbox item title')
-        }
-      )
-    }
-
-    function updateInboxItemNotes() {
-      if (editInboxItemNotes.value === currentInboxItem.value.notes) { return }
-
-      $store.dispatch('inboxItems/update', {
-        id: currentInboxItem.value.id,
-        notes: editInboxItemNotes.value
-      }).
-      then(
-        (response) => {
-          setCurrentInboxItem(currentInboxItem.value)
-        },
-        (error) => {
-          errorNotification(error, 'Failed to update inbox item notes')
+          errorNotification(error, 'Failed to update inbox item')
         }
       )
     }
@@ -152,8 +133,7 @@ export default {
       editInboxItemTitle,
       editInboxItemNotes,
       //
-      updateInboxItemTitle,
-      updateInboxItemNotes,
+      updateInboxItem,
       deleteInboxItem,
       //
 

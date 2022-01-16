@@ -94,7 +94,7 @@ export default defineComponent({
     const $store = useStore()
 
     const nextActions = computed(
-      () => $store.$repo(NextAction).with('project').with('context').get()
+      () => $store.$repo(NextAction).withAll().get()
     )
 
     const nextActionMenus = ref([])

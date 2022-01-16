@@ -93,10 +93,7 @@ import { computed, defineComponent, ref, watch } from 'vue'
 import { api } from 'boot/axios'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
-import { Task as TaskInterface } from 'components/models';
-
 import CreateInboxItemDialog from 'components/CreateInboxItemDialog.vue'
-import CurrentTaskDialog from 'components/CurrentTaskDialog.vue'
 
 export default defineComponent({
   name: 'MainLayout',
@@ -183,16 +180,6 @@ export default defineComponent({
           errorNotification(error, 'Failed to create inbox item')
         }
       )
-    }
-
-    function openTask(task: TaskInterface) {
-      $q.dialog({
-        component: CurrentTaskDialog,
-
-        componentProps: {
-          task: task
-        }
-      })
     }
 
     watch(
