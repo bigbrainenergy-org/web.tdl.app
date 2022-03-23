@@ -13,6 +13,7 @@ declare module '@vue/runtime-core' {
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
+// FIXME: Hidden if/else chain is a code smell, fix it.
 let api: AxiosInstance
 if(!process.env.DEV)
   api = axios.create({ baseURL: 'https://api.tdl.app' });
