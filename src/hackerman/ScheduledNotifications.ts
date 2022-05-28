@@ -1,6 +1,6 @@
 import {
   Notification as NotificationInterface,
-  Task as TaskInterface
+  NextAction as NextActionInterface
 } from '../components/models'
 import { DateTime } from 'luxon'
 
@@ -28,19 +28,19 @@ export function scheduleNotification(notification: NotificationInterface) {
   scheduleNotifications([notification])
 }
 
-export function scheduleTaskNotification(task: TaskInterface) {
-  if (task.remind_me_at) {
+export function scheduleNextActionNotification(nextAction: NextActionInterface) {
+  if (nextAction.remind_me_at) {
     scheduleNotification({
-      id: task.id,
-      title: task.title,
-      schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
-      group: 'tasks'
+      id: nextAction.id,
+      title: nextAction.title,
+      schedule: { at: DateTime.fromISO(nextAction.remind_me_at).toJSDate() },
+      group: 'nextActions'
     })
   }
 }
 
-export function cancelTaskNotification(task: TaskInterface) {
-  cancelNotification({ id: task.id })
+export function cancelNextActionNotification(nextAction: NextActionInterface) {
+  cancelNotification({ id: nextAction.id })
 }
 
 export function cancelNotification(notification: NotificationInterface) {
@@ -58,25 +58,26 @@ export function cancelNotifications(notifications: Array<NotificationInterface>)
 export async function syncNotifications(store: any) {
   if (process.env.MODE === 'capacitor') {
     const previouslyScheduled = await Notifications.getPending()
-    const currentlyScheduled = store.getters['tasks/tasksWithReminders'](store)
+    const currentlyScheduled = store.getters['nextActions/nextActionsWithReminders'](store)
     const toBeCancelled = previouslyScheduled.notifications.filter(
       (notification: NotificationInterface) => {
         return !(
           currentlyScheduled.some(
-            (task: TaskInterface) => {
-              return notification.id === task.id
+            (nextAction: NextActionInterface) => {
+              return notification.id === nextAction.id
             }
           )
         )
       }
     ) // previouslyScheduled where not currentlyScheduled
     const toBeScheduled = currentlyScheduled.map(
-      (task: TaskInterface) => {
+      (nextAction: NextActionInterface) => {
         return {
-          id: task.id,
-          title: task.title,
-          schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
-          group: 'tasks'
+          id: nextAction.id,
+          title: nextAction.title,
+          // @ts-ignore
+          schedule: { at: DateTime.fromISO(nextAction.remind_me_at).toJSDate() },
+          group: 'nextActions'
         }
       }
     )
@@ -89,16 +90,16 @@ export async function syncNotifications(store: any) {
   }
 }
 
-// const createTasksChannel = (
+// const createNextActionsChannel = (
 //  () => {
 //   let executed = false
 //   return () => {
 //     if (!executed) {
 //       executed = true
 //       const newChannel = LocalNotifications.createChannel({
-//         id: 'tdl-app-tasks',
-//         name: 'TDL App Tasks',
-//         description: 'Tasks from TDL App',
+//         id: 'tdl-app-nextActions',
+//         name: 'TDL App NextActions',
+//         description: 'NextActions from TDL App',
 //         sound: null,
 //         vibration: false
 //       })
@@ -108,12 +109,12 @@ export async function syncNotifications(store: any) {
 //  }
 // )()
 
-// export function createTasksChannel() {
+// export function createNextActionsChannel() {
 //   if (process.env.MODE === 'capacitor') {
 //     const newChannel = Notifications.createChannel({
-//       id: 'tdl-app-tasks',
-//       name: 'TDL App Tasks',
-//       description: 'Tasks from TDL App',
+//       id: 'tdl-app-nextActions',
+//       name: 'TDL App NextActions',
+//       description: 'NextActions from TDL App',
 //       sound: 'tuturu.wav',
 //       importance: 3,
 //       vibration: false

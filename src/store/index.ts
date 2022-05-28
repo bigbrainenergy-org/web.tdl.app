@@ -8,20 +8,35 @@ import {
 import VuexORM from '@vuex-orm/core'
 import createPersistedState from 'vuex-persistedstate'
 
+import inboxItems from './inbox-items'
+import { InboxItemsStateInterface } from './inbox-items/state'
+
+import nextActions from './next-actions'
+import { NextActionsStateInterface } from './next-actions/state'
+
+import waitingFors from './waiting-fors'
+import { WaitingForsStateInterface } from './waiting-fors/state'
+
+import projects from './projects'
+import { ProjectsStateInterface } from './projects/state'
+
+import contexts from './contexts'
+import { ContextsStateInterface } from './contexts/state'
+
+import subtasks from './subtasks'
+import { SubtasksStateInterface } from './subtasks/state'
+
 import authentication from './authentication'
 import { AuthenticationStateInterface } from './authentication/state'
 
-import settings from './settings'
-import { SettingsStateInterface } from './settings/state'
+import localSettings from './local-settings'
+import { LocalSettingsStateInterface } from './local-settings/state'
 
-import lists from './lists'
-import { ListsStateInterface } from './lists/state'
+import timeZones from './time-zones'
+import { TimeZonesStateInterface } from './time-zones/state'
 
-import tags from './tags'
-import { TagsStateInterface } from './tags/state'
-
-import tasks from './tasks'
-import { TasksStateInterface } from './tasks/state'
+import users from './users'
+import { UsersStateInterface } from './users/state'
 
 /*
  * If not building with SSR mode, you can
@@ -33,11 +48,19 @@ import { TasksStateInterface } from './tasks/state'
  */
 
 export interface StateInterface {
+  inboxItems: InboxItemsStateInterface,
+  nextActions: NextActionsStateInterface,
+  waitingFors: WaitingForsStateInterface,
+  projects: ProjectsStateInterface,
+  //
+  contexts: ContextsStateInterface,
+  subtasks: SubtasksStateInterface,
+  //
   authentication: AuthenticationStateInterface,
-  settings: SettingsStateInterface,
-  lists: ListsStateInterface,
-  tags: TagsStateInterface,
-  tasks: TasksStateInterface,
+  localSettings: LocalSettingsStateInterface,
+  //
+  timeZones: TimeZonesStateInterface,
+  users: UsersStateInterface,
 }
 
 // provide typings for `this.$store`
@@ -58,11 +81,19 @@ export default store(function (/* { ssrContext } */) {
     ],
 
     modules: {
+      inboxItems,
+      nextActions,
+      waitingFors,
+      projects,
+      //
+      contexts,
+      subtasks,
+      //
       authentication,
-      settings,
-      lists,
-      tags,
-      tasks
+      localSettings,
+      //
+      timeZones,
+      users,
     },
 
     // enable strict mode (adds overhead!)

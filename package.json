@@ -23,15 +23,17 @@
     "luxon": "^2.0.2",
     "quasar": "^2.0.1",
     "serve-static": "^1.14.1",
+    "vue": "^3.0.0",
     "vue-i18n": "^9.0.0-beta.0",
     "vue-recaptcha-v3": "^2.0.1",
+    "vue-router": "^4.0.0",
     "vuedraggable": "^4.0.3",
     "vuex": "^4.0.1",
     "vuex-persistedstate": "^4.0.0-beta.3"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.13.14",
-    "@quasar/app": "^3.0.1",
+    "@quasar/app-webpack": "^3.4.7",
     "@types/luxon": "^2.0.0",
     "@types/node": "^10.17.15",
     "@typescript-eslint/eslint-plugin": "^4.16.1",

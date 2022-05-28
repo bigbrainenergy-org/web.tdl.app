@@ -49,9 +49,8 @@
 import { useQuasar } from 'quasar'
 import { useStore } from '../store'
 import { useRouter } from 'vue-router'
-// import { Login } from 'components/models';
-import { computed, defineComponent, ref } from 'vue'
-import { api } from 'boot/axios'
+import { defineComponent, ref } from 'vue'
+
 import { errorNotification } from '../hackerman/ErrorNotification'
 import { syncWithBackend } from '../hackerman/sync'
 
@@ -59,12 +58,7 @@ export default defineComponent({
   name: 'PageLogin',
 
   preFetch({ store, redirect }) {
-    const isAuthenticated =
-      (
-        store.state.authentication.sessionToken !== null &&
-        store.state.authentication.sessionToken.length > 0
-      )
-    if (isAuthenticated) {
+    if (store.getters['authentication/loggedIn'] === true) {
       redirect({ path: '/' })
     }
   },
@@ -77,32 +71,22 @@ export default defineComponent({
     const username = ref('')
     const password = ref('')
 
-    const sessionToken = computed({
-      get: () => $store.state.authentication.sessionToken,
-      set: value => {
-        $store.commit('authentication/setSessionToken', value)
-      }
-    })
-
     function login() {
-      api.post('/login', {
+      $store.dispatch('authentication/login', {
         username: username.value,
         password: password.value,
-        dataType: 'json',
-        contentType: 'application/json'
       }).
       then(
         (response) => {
-          sessionToken.value = response.data.session_token
           username.value = ''
           password.value = ''
+          syncWithBackend($store)
           $q.notify({
             color: 'positive',
             position: 'top',
             message: 'Logged in successfully',
             icon: 'fas fa-sign-out-alt'
           })
-          syncWithBackend($store)
           void $router.push({ path: '/' })
         },
         (error) => {
@@ -111,7 +95,7 @@ export default defineComponent({
       )
     }
 
-    return { sessionToken, username, password, login };
+    return { username, password, login };
   }
 });
 </script>

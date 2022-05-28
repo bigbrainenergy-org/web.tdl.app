@@ -4,11 +4,13 @@ import { syncWithBackend } from '../hackerman/sync'
 import { Settings } from 'luxon'
 
 export default boot(({ store }) => {
-  const savedZone = store.getters['settings/timeZone']
+  const savedZone = store.getters['users/timeZone']
   if (savedZone) {
     Settings.defaultZone = savedZone
   }
-  if (store.getters['authentication/loggedIn'] == true) {
+  if (store.getters['authentication/loggedIn'] === true) {
     syncWithBackend(store)
+  } else {
+    // console.log('not logged in')
   }
 });

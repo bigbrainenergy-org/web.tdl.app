@@ -1,29 +1,52 @@
-export interface Tag {
-  id: number,
-  title: string;
-  order: number;
-}
-
-export interface List {
+export interface InboxItem {
   id: number;
   title: string;
-  order: number;
+  notes?: string;
 }
 
-export interface Task {
+export interface NextAction {
+  id: number;
+  project?: Project;
+  context?: Context;
+  title: string;
+  notes?: string;
+  order: number;
+  completed: boolean;
+  remind_me_at?: string;
+  mental_energy_required: number;
+  physical_energy_required: number;
+  hard_prereqs: Array<any>;
+  hard_postreqs: Array<any>;
+}
+
+export interface WaitingFor {
   id: number;
   title: string;
-  list_id: number;
-  tag_ids: Array<number>;
-  list: List;
-  tags: Array<Tag>;
+  notes?: string;
+}
+
+export interface Project {
+  id: number;
+  title: string;
+  notes?: string;
+  superprojects: Array<any>;
+  subprojects: Array<any>;
+}
+
+export interface Context {
+  id: number;
+  title: string;
+  color: string;
+  icon: string;
   order: number;
-  review_at: string;
-  remind_me_at: string;
-  prioritize_at: string;
-  deadline_at: string;
-  completed_at: string;
-  prereqs: Array<any>;
+  next_actions: Array<NextAction>
+}
+
+export interface User {
+  id: number;
+  username: string;
+  locale: string;
+  time_zone: string;
 }
 
 export interface TimeZone {

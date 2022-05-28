@@ -5,13 +5,17 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/Index.vue') },
+      { path: '', redirect: 'inbox' },
+      { path: 'inbox', component: () => import('pages/Inbox.vue') },
+      { path: 'next-actions', component: () => import('pages/NextActions.vue') },
+      { path: 'waiting-for', component: () => import('pages/WaitingFor.vue') },
+      { path: 'projects', component: () => import('pages/Projects.vue') },
       { path: 'settings', component: () => import('pages/Settings.vue') },
     ],
   },
   {
     path: '/',
-    component: () => import('layouts/AuthLayout.vue'),
+    component: () => import('layouts/GuestLayout.vue'),
     children: [
       { path: 'login', component: () => import('pages/Login.vue') },
       { path: 'request-access', component: () => import('pages/RequestAccess.vue') }

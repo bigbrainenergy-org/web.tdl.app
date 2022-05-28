@@ -29,6 +29,15 @@
           color="indigo"
           label="Test Notification"
         />
+        <q-separator class="q-my-md" />
+
+        <p>
+          This app is open source! Check out the code on
+          <a
+            href="https://github.com/bigbrainenergy-org/web.tdl.app"
+            target="_blank"
+          >Github</a>.
+        </p>
       </q-card-section>
     </q-card>
   </q-page>
@@ -39,6 +48,8 @@ import {
   defineComponent,
   computed,
   ref,
+  onActivated,
+  onDeactivated,
   onBeforeUnmount
 } from 'vue'
 import { useQuasar } from 'quasar'
@@ -46,16 +57,13 @@ import { useStore } from '../store'
 import { DateTime } from 'luxon'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
+import { TimeZone as TimeZoneInterface } from '../components/models'
+
 export default defineComponent({
   name: 'PageSettings',
 
   preFetch({ store, redirect }) {
-    const isAuthenticated =
-      (
-        store.state.authentication.sessionToken !== null &&
-        store.state.authentication.sessionToken.length > 0
-      )
-    if (!isAuthenticated) {
+    if (store.getters['authentication/loggedIn'] !== true) {
       redirect({ path: '/login' })
     }
   },
@@ -66,24 +74,24 @@ export default defineComponent({
 
     const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
 
-    const timeZone = computed({
-      get: () => $store.state.settings.timeZone,
-      set: value => {
-        $store.commit('settings/setTimeZone', value)
-      }
-    })
+    const timeZone = computed(
+      () => $store.getters['users/timeZone']
+    )
 
     const timeZones = computed(
-      () => $store.state.settings.timeZones
+      () => $store.getters['timeZones/timeZones']
     )
 
     function timeZoneName(tzToFind: any) {
-      // @ts-ignore
-      return timeZones.value.find(
-        (tz) => {
-          return tz.value === tzToFind
-        }
-      ).name
+      if (timeZones.value.length > 0) {
+        return timeZones.value.find(
+          (tz: TimeZoneInterface) => {
+            return tz.value === tzToFind
+          }
+        ).name
+      } else {
+        return undefined
+      }
     }
 
     const editTimeZone = ref({
@@ -92,7 +100,8 @@ export default defineComponent({
     })
 
     function updateTimeZone() {
-      $store.dispatch('settings/updateTimeZone', {
+      $store.dispatch('users/update', {
+        // Double value is intentional
         timeZone: editTimeZone.value.value
       }).
       catch(
@@ -102,14 +111,39 @@ export default defineComponent({
       )
     }
 
-    let timer = setInterval(() => {
-      currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
-    }, 1000)
+    let timer: any = null
 
-    onBeforeUnmount(
-      () => {
+    function updateCurrentTime() {
+      currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
+    }
+
+    // If timer is active, deactivate it to free up memory / CPU.
+    function clearTimer() {
+      if(timer) {
         clearInterval(timer)
+        timer = null
       }
+    }
+
+    onActivated(
+      () =>{
+        // Immediately update so the user doesn't notice a huge time jump after 1 second
+        updateCurrentTime()
+        // Restart timer
+        timer = setInterval(
+          () => {
+            updateCurrentTime()
+          },
+          1000
+        )
+      }
+    )
+
+    onDeactivated(
+      () => { clearTimer() }
+    )
+    onBeforeUnmount(
+      () => { clearTimer() }
     )
 
     return {
