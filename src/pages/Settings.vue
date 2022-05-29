@@ -29,6 +29,40 @@
           color="indigo"
           label="Test Notification"
         />
+
+        <q-separator class="q-my-md" />
+
+        <q-input
+          v-model="currentPassword"
+          class="q-my-md"
+          filled
+          type="password"
+          label="Current Password"
+        />
+        <q-input
+          v-model="newPassword"
+          class="q-my-md"
+          filled
+          type="password"
+          label="New Password"
+          name="password"
+        />
+        <q-input
+          v-model="confirmPassword"
+          class="q-my-md"
+          filled
+          type="password"
+          label="Confirm Password"
+          name="confirm_password"
+        />
+        <q-btn
+          class="full-width"
+          color="orange"
+          outline
+          label="Change Password"
+          @click="changePassword"
+        />
+
         <q-separator class="q-my-md" />
 
         <p>
@@ -73,6 +107,9 @@ export default defineComponent({
     const $store = useStore()
 
     const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
+    const currentPassword = ref('')
+    const newPassword = ref('')
+    const confirmPassword = ref('')
 
     const timeZone = computed(
       () => $store.getters['users/timeZone']
@@ -107,6 +144,39 @@ export default defineComponent({
       catch(
         (error) => {
           errorNotification(error, 'Failed to update time zone')
+        }
+      )
+    }
+
+    function changePassword() {
+      if(newPassword.value !== confirmPassword.value) {
+        $q.notify({
+          color: 'negative',
+          position: 'top',
+          message: 'New password and confirm password didn\'t match, please try again',
+          icon: 'report_problem'
+        })
+        newPassword.value = ''
+        confirmPassword.value = ''
+        return
+      }
+      $store.dispatch('users/changePassword', {
+        current_password: currentPassword.value,
+        password: newPassword.value
+      }).
+      then(
+        (response) => {
+          currentPassword.value = ''
+          newPassword.value = ''
+          confirmPassword.value = ''
+          $q.notify({
+            color: 'positive',
+            position: 'top',
+            message: 'Password changed!'
+          })
+        },
+        (error) => {
+          errorNotification(error, 'Failed to change password')
         }
       )
     }
@@ -148,6 +218,10 @@ export default defineComponent({
 
     return {
       currentTime,
+      currentPassword,
+      newPassword,
+      confirmPassword,
+      changePassword,
       timeZone,
       timeZones,
       editTimeZone,
