@@ -49,15 +49,15 @@
 
       const nextactions = computed(
         () => $store.$repo(NextAction).withAllRecursive().get().filter(
-          (nextaction) => {
-            return nextaction.hard_prereqs.length === 0
+          (nextaction: any) => {
+            return (nextaction.hard_prereqs.length === 0)
           }
         )
       )
 
       function randomAction() {
-        this.selectedAction = this.nextactions[Math.floor(Math.random()*this.nextactions.length)]
-        console.log('selected: ', this.selectedAction)
+        selectedAction.value = nextactions.value[Math.floor(Math.random()*nextactions.value.length)]
+        console.log('selected: ', selectedAction.value)
       }
 
       function openNextAction(next_action: NextActionInterface) {
@@ -68,10 +68,10 @@
             next_action: next_action
           }
         })
-        this.randomAction()
+        randomAction()
       }
 
-      const selectedAction = ref(null)
+      const selectedAction = ref({})
 
       return {
         nextactions,
