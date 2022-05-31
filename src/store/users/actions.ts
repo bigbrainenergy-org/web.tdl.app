@@ -43,6 +43,38 @@ const actions: ActionTree<UsersStateInterface, StateInterface> = {
         )
       }
     )
+  },
+
+  async changePassword({ commit, rootGetters }, options) {
+    return new Promise(
+      (resolve, reject) => {
+        const userId = rootGetters['authentication/userId']
+        const bearerToken = rootGetters['authentication/bearerToken']
+
+        api.patch(`/users/${userId}/change-password`,
+          {
+            user: {
+              current_password: options.current_password,
+              password: options.password
+            }
+          },
+          {
+            headers: {
+              Authorization: bearerToken
+            }
+          }
+        ).
+        then(
+          (response) => {
+            commit('setUser', response.data)
+            resolve(response)
+          },
+          (error) => {
+            reject(error)
+          }
+        )
+      }
+    )
   }
 };
 
