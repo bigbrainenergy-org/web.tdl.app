@@ -11,6 +11,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'waiting-for', component: () => import('pages/WaitingFor.vue') },
       { path: 'projects', component: () => import('pages/Projects.vue') },
       { path: 'settings', component: () => import('pages/Settings.vue') },
+      { path: 'tree', component: () => import('pages/TaskTreePage.vue') },
+      { path: 'random', component: () => import('pages/RandomAction.vue') }
     ],
   },
   {
