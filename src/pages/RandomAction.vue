@@ -72,6 +72,7 @@
       }
 
       const selectedAction = ref({})
+      randomAction()
 
       return {
         nextactions,
@@ -79,10 +80,6 @@
         openNextAction,
         randomAction
       }
-    },
-
-    mounted() {
-      this.randomAction()
     }
   })
 </script>
