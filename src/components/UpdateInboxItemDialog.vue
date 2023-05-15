@@ -44,7 +44,7 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { defineComponent, ref } from 'vue';
 
-import { useStore } from '../store'
+
 
 import InboxItem from '../models/inbox_item'
 import { errorNotification } from '../hackerman/ErrorNotification'
@@ -74,7 +74,7 @@ export default {
     // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
     const $q = useQuasar()
-    const $store = useStore()
+    
 
     const currentInboxItem = ref(props.inbox_item)
     const editInboxItemTitle = ref(currentInboxItem.value.title)

@@ -20,7 +20,7 @@
               <q-item
                 clickable
                 v-ripple
-                v-for="(inbox_item, index) in inboxItems"
+                v-for="(inbox_item) in inboxItems"
                 :key="inbox_item.id"
                 @click="openInboxItem(inbox_item)"
               >
@@ -40,7 +40,7 @@
                   </q-icon>
                 </q-item-section>
 
-                <q-menu context-menu auto-close :ref="el => { if(el) inboxItemMenus[index] = el }">
+                <q-menu context-menu auto-close :ref="getRef">
                   <q-list style="min-width: 100px">
                     <q-item clickable @click="openInboxItem(inbox_item)">
                       <q-item-section>Open</q-item-section>
@@ -87,33 +87,36 @@
 <script lang="ts">
 import { useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue'
-import { useStore } from '../store'
+
 
 import InboxItem from '../models/inbox_item'
-import { InboxItem as InboxItemInterface } from 'components/models'
+import { IInboxItem } from 'components/models'
 import UpdateInboxItemDialog from 'components/UpdateInboxItemDialog.vue'
 import ReviewDialog from 'components/ReviewDialog.vue'
+import { useRepo } from 'pinia-orm'
 
 export default defineComponent({
   name: 'PageInbox',
 
-  preFetch({ store, redirect }) {
-    if (store.getters['authentication/loggedIn'] !== true) {
-      redirect({ path: '/login' })
-    }
-  },
-
   setup() {
     const $q = useQuasar()
-    const $store = useStore()
+    const inboxItemRepo = useRepo(InboxItem)
 
     const inboxItems = computed(
-      () => $store.$repo(InboxItem).all()
+      () => inboxItemRepo.all()
     )
 
-    const inboxItemMenus = ref([])
+    const inboxItemMenus = ref<IInboxItem[]>([])
 
-    function openInboxItem(inbox_item: InboxItemInterface) {
+    const getRef = (index: number) => {
+      return (el: any) => {
+        if (el) {
+          inboxItemMenus.value[index] = el
+        }
+      }
+    }
+
+    function openInboxItem(inbox_item: IInboxItem) {
       $q.dialog({
         component: UpdateInboxItemDialog,
 
@@ -132,6 +135,7 @@ export default defineComponent({
     return {
       inboxItems,
       inboxItemMenus,
+      getRef,
       openInboxItem,
       openReviewDialog
     }

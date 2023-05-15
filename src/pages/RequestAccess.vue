@@ -186,30 +186,27 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { useStore } from '../store'
+
 import { useRouter } from 'vue-router'
 import { useReCaptcha } from 'vue-recaptcha-v3'
 import { api } from 'boot/axios'
 
 import { errorNotification } from '../hackerman/ErrorNotification'
+import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
 
 export default defineComponent({
   name: 'PageRegister',
 
-  preFetch({ store, redirect }) {
-    const isAuthenticated =
-      (
-        store.state.authentication.sessionToken !== null &&
-        store.state.authentication.sessionToken.length > 0
-      )
-    if (isAuthenticated) {
-      redirect({ path: '/' })
+  preFetch() {
+    const authenticationStore = useAuthenticationStore()
+    if(authenticationStore.getLoggedIn){
+      this.$router.push('/')
     }
   },
 
   setup() {
     const $q = useQuasar()
-    const $store = useStore()
+    
     const $router = useRouter()
     // @ts-ignore
     const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()

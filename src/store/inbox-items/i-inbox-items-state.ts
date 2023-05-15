@@ -1,1 +1,1 @@
-export interface IInboxItems {}
+export interface IInboxItemsState {}

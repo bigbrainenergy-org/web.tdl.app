@@ -80,21 +80,23 @@
 <script lang="ts">
 import { useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue'
-import { useStore } from '../store'
+
 
 import NextAction from '../models/next_action'
 import { NextAction as NextActionInterface } from 'components/models'
 import UpdateNextActionDialog from 'components/UpdateNextActionDialog.vue'
+import { useRepo } from 'pinia-orm'
 
 export default defineComponent({
   name: 'PageNextActions',
 
   setup() {
     const $q = useQuasar()
-    const $store = useStore()
+    const nextActionRepo = useRepo(NextAction)
+    
 
     const nextActions = computed(
-      () => $store.$repo(NextAction).withAll().get()
+      () => nextActionRepo.withAll().get()
     )
 
     const nextActionMenus = ref([])

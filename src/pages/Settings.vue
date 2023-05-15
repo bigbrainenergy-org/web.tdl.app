@@ -87,24 +87,31 @@ import {
   onBeforeUnmount
 } from 'vue'
 import { useQuasar } from 'quasar'
-import { useStore } from '../store'
+
 import { DateTime } from 'luxon'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
-import { TimeZone as TimeZoneInterface } from '../components/models'
+import { TimeZoneInterface } from '../components/models'
+import { useRepo } from 'pinia-orm'
+import User from 'src/models/user'
+import TimeZone from 'src/models/time_zone'
+import { useUsersStore } from 'src/store/users/pinia-users'
+import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
 
 export default defineComponent({
   name: 'PageSettings',
 
-  preFetch({ store, redirect }) {
-    if (store.getters['authentication/loggedIn'] !== true) {
-      redirect({ path: '/login' })
+  preFetch() {
+    const authenticationStore = useAuthenticationStore()
+    if(authenticationStore.getLoggedIn !== true) {
+      this.$router.push('/login')
     }
   },
 
   setup () {
     const $q = useQuasar()
-    const $store = useStore()
+    const timeZoneRepo = useRepo(TimeZone)
+    const userStore = useUsersStore()
 
     const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
     const currentPassword = ref('')
@@ -112,11 +119,11 @@ export default defineComponent({
     const confirmPassword = ref('')
 
     const timeZone = computed(
-      () => $store.getters['users/timeZone']
+      () => userStore.timeZone
     )
 
     const timeZones = computed(
-      () => $store.getters['timeZones/timeZones']
+      () => timeZoneRepo.all()
     )
 
     function timeZoneName(tzToFind: any) {
@@ -125,7 +132,7 @@ export default defineComponent({
           (tz: TimeZoneInterface) => {
             return tz.value === tzToFind
           }
-        ).name
+        )?.name
       } else {
         return undefined
       }
@@ -137,12 +144,9 @@ export default defineComponent({
     })
 
     function updateTimeZone() {
-      $store.dispatch('users/update', {
-        // Double value is intentional
-        timeZone: editTimeZone.value.value
-      }).
+      userStore.update({ timeZone: editTimeZone.value.value }).
       catch(
-        (error) => {
+        (error: any) => {
           errorNotification(error, 'Failed to update time zone')
         }
       )
@@ -160,12 +164,12 @@ export default defineComponent({
         confirmPassword.value = ''
         return
       }
-      $store.dispatch('users/changePassword', {
+      userStore.changePassword({
         current_password: currentPassword.value,
         password: newPassword.value
       }).
       then(
-        (response) => {
+        (response: any) => {
           currentPassword.value = ''
           newPassword.value = ''
           confirmPassword.value = ''
@@ -175,7 +179,7 @@ export default defineComponent({
             message: 'Password changed!'
           })
         },
-        (error) => {
+        (error: any) => {
           errorNotification(error, 'Failed to change password')
         }
       )

@@ -33,8 +33,8 @@
               <q-item>
                 <q-item-section class="text-center">
                   <div class="text-pain">Logged in as:</div>
-                  <div class="text-glitch text-h4" :data-text="username">
-                    {{ username }}
+                  <div class="text-glitch text-h4" :data-text="usernameComputed">
+                    {{ usernameComputed }}
                   </div>
                 </q-item-section>
               </q-item>
@@ -87,39 +87,45 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar'
-import { useStore } from '../store'
+
 import { useRoute, useRouter } from 'vue-router'
 import { computed, defineComponent, ref, watch } from 'vue'
 import { api } from 'boot/axios'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
 import CreateInboxItemDialog from 'components/CreateInboxItemDialog.vue'
+import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
+import { useUsersStore } from 'src/store/users/pinia-users'
+import { useInboxItemsStore } from 'src/store/inbox-items/pinia-inbox-items'
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup () {
     const $q = useQuasar()
-    const $store = useStore()
+    
     const $route = useRoute()
     const $router = useRouter()
 
     const drawerTabs = ref('lists')
     const currentPath = ref($route.path)
 
-    const sessionToken = computed({
-      get: () => $store.state.authentication.sessionToken,
+    const authenticationStore = useAuthenticationStore()
+    const userStore = useUsersStore()
+
+    const sessionTokenComputed = computed({
+      get: () => authenticationStore.sessionToken,
       set: value => {
-        $store.commit('authentication/setSessionToken', value)
+        authenticationStore.setSessionToken(value)
       }
     })
 
-    const username = computed(
-      () => $store.getters['users/username']
+    const usernameComputed = computed(
+      () => userStore.username
     )
 
     function logout() {
-      if(sessionToken.value === null || sessionToken.value === '') {
+      if(sessionTokenComputed.value === null || sessionTokenComputed.value === '') {
         $q.notify({
           color: 'negative',
           position: 'top',
@@ -130,14 +136,14 @@ export default defineComponent({
       }
       api.delete('/logout', {
         headers: {
-          Authorization: `Bearer ${sessionToken.value}`,
+          Authorization: `Bearer ${sessionTokenComputed.value}`,
           'Content-Type': 'application/json',
           Accept: 'application/json'
         }
       }).
       then(
         () => {
-          sessionToken.value = ''
+          sessionTokenComputed.value = ''
           void $router.push({ path: '/login' })
           $q.notify({
             color: 'positive',
@@ -147,7 +153,7 @@ export default defineComponent({
           })
         },
         (error) => {
-          sessionToken.value = '' // Remove token even if it fails
+          sessionTokenComputed.value = '' // Remove token even if it fails
           void $router.push({ path: '/login' })
           errorNotification(error, 'Failed to logout properly')
         }
@@ -165,7 +171,8 @@ export default defineComponent({
     }
 
     function createInboxItem(payload: any) {
-      $store.dispatch('inboxItems/create', payload.options).
+      const inboxItemStore = useInboxItemsStore()
+      inboxItemStore.create(payload.options).
       then(
         (response: any) => {
           payload.callback()
@@ -190,7 +197,7 @@ export default defineComponent({
     )
 
     return {
-      username,
+      usernameComputed,
       logout,
       openCreateInboxItemDialog,
       currentPath

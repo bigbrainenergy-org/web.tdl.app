@@ -11,10 +11,10 @@ export const useAuthenticationStore = defineStore('authentication', {
     }
   },
   getters: {
-    sessionToken: (state) => state.sessionToken,
-    bearerToken: (state) => `Bearer ${state.sessionToken}`,
-    userId: (state) => state.userId,
-    loggedIn: (state) => state.sessionToken !== null && state.sessionToken.length > 0
+    getSessionToken: (state) => state.sessionToken,
+    getBearerToken: (state) => `Bearer ${state.sessionToken}`,
+    getUserId: (state) => state.userId,
+    getLoggedIn: (state) => state.sessionToken !== null && typeof state.sessionToken !== 'undefined' && state.sessionToken.length > 0
   },
   actions: {
     setSessionToken(sessionToken: string) {

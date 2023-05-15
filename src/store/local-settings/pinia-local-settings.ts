@@ -9,10 +9,15 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       tagsFilter: ''
     }
   },
+
   getters: {
     selectedList: (state) => state.selectedList,
     selectedTags: (state) => state.selectedTags,
     tagsFilter: (state) => state.tagsFilter,
     taskSearch: (state) => state.taskSearch
+  },
+
+  actions: {
+    
   }
 })

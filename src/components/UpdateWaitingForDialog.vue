@@ -43,7 +43,7 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { defineComponent, ref } from 'vue';
 
-import { useStore } from '../store'
+
 
 import WaitingFor from '../models/waiting_for'
 import { errorNotification } from '../hackerman/ErrorNotification'
@@ -73,7 +73,7 @@ export default {
     // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
     const $q = useQuasar()
-    const $store = useStore()
+    
 
     const currentWaitingFor = ref(props.waiting_for)
     const editWaitingForTitle = ref(currentWaitingFor.value.title)

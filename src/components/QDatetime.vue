@@ -63,7 +63,7 @@ import {
   Ref,
 } from 'vue';
 import { useQuasar } from 'quasar'
-import { useStore } from '../store'
+
 import { DateTime } from 'luxon'
 
 const DEFAULT_DATE = ''
@@ -91,7 +91,7 @@ export default {
 
   setup (props, { emit }) {
     const $q = useQuasar()
-    const $store = useStore()
+    
 
     const activeTab = ref('date')
     const date = ref(DEFAULT_DATE)

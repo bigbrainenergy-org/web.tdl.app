@@ -1,6 +1,10 @@
-import { Model } from '@vuex-orm/core'
+import { Model } from 'pinia-orm'
+import { IWaitingFor } from 'src/components/models'
 
-export default class WaitingFor extends Model {
+export default class WaitingFor extends Model implements IWaitingFor {
+  id!: number
+  title!: string
+  notes?: string | undefined
   static entity = 'waiting_fors'
 
   static fields () {

@@ -47,49 +47,46 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar'
-import { useStore } from '../store'
+
 import { useRouter } from 'vue-router'
 import { defineComponent, ref } from 'vue'
 
 import { errorNotification } from '../hackerman/ErrorNotification'
 import { syncWithBackend } from '../hackerman/sync'
+import { useUsersStore } from 'src/store/users/pinia-users'
+import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
 
 export default defineComponent({
   name: 'PageLogin',
 
-  preFetch({ store, redirect }) {
-    if (store.getters['authentication/loggedIn'] === true) {
-      redirect({ path: '/' })
-    }
-  },
-
   setup() {
     const $q = useQuasar()
-    const $store = useStore()
+    const authenticationStore = useAuthenticationStore()
+    const userStore = useUsersStore()
+    
     const $router = useRouter()
 
     const username = ref('')
     const password = ref('')
 
     function login() {
-      $store.dispatch('authentication/login', {
+      authenticationStore.login({
         username: username.value,
-        password: password.value,
+        password: password.value
       }).
       then(
-        (response) => {
+        (response: any) => {
           username.value = ''
           password.value = ''
-          syncWithBackend($store)
           $q.notify({
             color: 'positive',
             position: 'top',
             message: 'Logged in successfully',
             icon: 'fas fa-sign-out-alt'
           })
-          void $router.push({ path: '/' })
+          $router.push({ path: '/' })
         },
-        (error) => {
+        (error: any) => {
           errorNotification(error, 'Failed to login')
         }
       )
