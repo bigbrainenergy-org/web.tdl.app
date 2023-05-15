@@ -131,7 +131,7 @@
 
 <script>
 import { useDialogPluginComponent, useQuasar } from 'quasar'
-import { useStore } from '../store'
+
 import {
   ref,
   computed,
@@ -152,7 +152,7 @@ export default {
 
   setup (props, { emit }) {
     const $q = useQuasar()
-    const $store = useStore()
+    
 
     const inboxItems = computed(
       () => $store.$repo(InboxItem).all()

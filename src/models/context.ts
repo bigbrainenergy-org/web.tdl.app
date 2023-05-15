@@ -1,4 +1,4 @@
-import { Model } from '@vuex-orm/core'
+import { Model } from 'pinia-orm'
 import NextAction from './next_action'
 
 export default class Context extends Model {

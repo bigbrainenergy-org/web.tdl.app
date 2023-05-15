@@ -5,7 +5,7 @@ A todo list app with Big Brain Energy.
 ## Install the dependencies
 
 ```bash
-yarn
+pnpm install
 ```
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
@@ -17,7 +17,7 @@ quasar dev
 ### Lint the files
 
 ```bash
-yarn run lint
+pnpm lint
 ```
 
 ### Build the app for production

@@ -68,7 +68,7 @@
 
 <script>
 import { useDialogPluginComponent } from 'quasar'
-import { useStore } from '../store'
+
 import {
   defineComponent,
   PropType,
@@ -109,7 +109,7 @@ export default {
   ],
 
   setup (props, { emit }) {
-    const $store = useStore()
+    
 
     // REQUIRED; must be called inside of setup()
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()

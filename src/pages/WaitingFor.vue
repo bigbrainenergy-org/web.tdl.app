@@ -75,24 +75,22 @@
 <script lang="ts">
 import { useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue'
-import { useStore } from '../store'
 
 import WaitingFor from '../models/waiting_for'
-import { WaitingFor as WaitingForInterface } from 'components/models'
+import { IWaitingFor as WaitingForInterface } from 'components/models'
 import UpdateWaitingForDialog from 'components/UpdateWaitingForDialog.vue'
+import { useRepo } from 'pinia-orm'
 
 export default defineComponent({
   name: 'PageWaitingFor',
 
   setup() {
+    const waitingForsRepo = useRepo(WaitingFor)
+    const waitingFors = computed(() => waitingForsRepo.all())
+
     const $q = useQuasar()
-    const $store = useStore()
 
-    const waitingFors = computed(
-      () => $store.$repo(WaitingFor).all()
-    )
-
-    const waitingForMenus = ref([])
+    const waitingForMenus = ref<WaitingForInterface[]>([])
 
     function openWaitingFor(waiting_for: WaitingForInterface) {
       $q.dialog({

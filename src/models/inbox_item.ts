@@ -1,13 +1,11 @@
-import { Model } from '@vuex-orm/core'
+import { Model } from 'pinia-orm'
+import { IInboxItem } from 'src/components/models'
+import { Attr, Str } from 'pinia-orm/dist/decorators'
 
-export default class InboxItem extends Model {
+export default class InboxItem extends Model implements IInboxItem {
   static entity = 'inbox_items'
 
-  static fields () {
-    return {
-      id: this.attr(null),
-      title: this.attr(''),
-      notes: this.attr('')
-    }
-  }
+  @Attr(null) declare id: number
+  @Str('') declare title: string
+  @Str(null) declare notes: string
 }

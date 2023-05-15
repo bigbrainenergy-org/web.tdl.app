@@ -1,4 +1,4 @@
-export interface InboxItem {
+export interface IInboxItem {
   id: number;
   title: string;
   notes?: string;
@@ -19,7 +19,7 @@ export interface NextAction {
   hard_postreqs: Array<any>;
 }
 
-export interface WaitingFor {
+export interface IWaitingFor {
   id: number;
   title: string;
   notes?: string;
@@ -49,7 +49,7 @@ export interface User {
   time_zone: string;
 }
 
-export interface TimeZone {
+export interface TimeZoneInterface {
   name: string;
   value: string;
 }

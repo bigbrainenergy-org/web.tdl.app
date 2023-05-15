@@ -206,7 +206,7 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue';
 
-import { useStore } from '../store'
+
 
 import QDatetimeInput from 'components/QDatetimeInput.vue';
 import NextActionSearchDialog from 'components/NextActionSearchDialog.vue';
@@ -243,7 +243,7 @@ export default {
     // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
     const $q = useQuasar()
-    const $store = useStore()
+    
 
     const currentNextAction = ref(props.next_action)
     const editTitle = ref(currentNextAction.value.title)

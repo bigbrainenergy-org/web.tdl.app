@@ -84,7 +84,7 @@
 
 <script>
 import { defineComponent, ref, computed } from 'vue'
-import { useStore } from '../store'
+
 
 import Project from '../models/project'
 import { Project as ProjectInterface } from '../components/models'
@@ -93,7 +93,7 @@ export default defineComponent({
   name: 'PageProjects',
 
   setup() {
-    const $store = useStore()
+    
 
     // TODO: Lazy load subprojects
     const projects = computed(
