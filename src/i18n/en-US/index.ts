@@ -1,10 +1,7 @@
+// This is just an example,
+// so you can safely delete all default props below
+
 export default {
-  name: 'Name',
-  email: 'Email',
-  username: 'Username',
-  password: 'Password',
-  reasonForInterest: 'Why are you interested in TDL App?',
-  login: 'Login',
-  logout: 'Logout',
-  requestAccess: 'Request Access'
+  failed: 'Action failed',
+  success: 'Action was successful'
 };

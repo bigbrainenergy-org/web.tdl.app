@@ -17,10 +17,6 @@
   </q-layout>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-
-export default defineComponent({
-  name: 'GuestLayout',
-})
+<script setup lang="ts">
+console.warn('In Guest Layout')
 </script>

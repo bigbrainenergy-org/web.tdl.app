@@ -7,7 +7,7 @@
             <div class="row items-center">
               <div class="col">
                 <div class="text-h6 text-pain">Waiting For</div>
-                <div>{{ waitingFors.length }} Items</div>
+                <div>{{ tasks.length }} Items</div>
               </div>
             </div>
           </q-card-section>
@@ -17,15 +17,15 @@
               <q-item
                 clickable
                 v-ripple
-                v-for="(waiting_for, index) in waitingFors"
-                :key="waiting_for.id"
-                @click="openWaitingFor(waiting_for)"
+                v-for="(currentTask, index) in tasks"
+                :key="currentTask.id"
+                @click="openTask(currentTask)"
               >
                 <q-item-section>
-                  {{ waiting_for.title }}
+                  {{ currentTask.title }}
                 </q-item-section>
 
-                <q-item-section side v-if="waiting_for.notes">
+                <q-item-section side v-if="currentTask.notes">
                   <q-icon name="description">
                     <q-tooltip
                       anchor="center right"
@@ -37,9 +37,9 @@
                   </q-icon>
                 </q-item-section>
 
-                <q-menu context-menu auto-close :ref="el => { if(el) waitingForMenus[index] = el }">
+                <q-menu context-menu auto-close :ref="el => { if(el) taskMenus[index] = el }">
                   <q-list style="min-width: 100px">
-                    <q-item clickable @click="openWaitingFor(waiting_for)">
+                    <q-item clickable @click="openTask(currentTask)">
                       <q-item-section>Open</q-item-section>
                       <q-item-section avatar>
                         <q-icon name="fas fa-external-link-alt" />
@@ -57,7 +57,7 @@
                   </q-list>
                 </q-menu>
               </q-item>
-              <template v-if="waitingFors.length === 0">
+              <template v-if="tasks.length === 0">
                 <q-item clickable v-ripple>
                   <q-item-section>
                     <strong>Nothing yet!</strong>
@@ -76,36 +76,36 @@
 import { useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue'
 
-import WaitingFor from '../models/waiting_for'
-import { IWaitingFor as WaitingForInterface } from 'components/models'
-import UpdateWaitingForDialog from 'components/UpdateWaitingForDialog.vue'
+import Task from '../models/task'
+import { ITask as TaskInterface } from 'components/models'
+import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
 import { useRepo } from 'pinia-orm'
 
 export default defineComponent({
-  name: 'PageWaitingFor',
+  name: 'PageTask',
 
   setup() {
-    const waitingForsRepo = useRepo(WaitingFor)
-    const waitingFors = computed(() => waitingForsRepo.all())
+    const tasksRepo = useRepo(Task)
+    const tasks = computed(() => tasksRepo.all())
 
     const $q = useQuasar()
 
-    const waitingForMenus = ref<WaitingForInterface[]>([])
+    const taskMenus = ref<TaskInterface[]>([])
 
-    function openWaitingFor(waiting_for: WaitingForInterface) {
+    function openTask(currentTask: TaskInterface) {
       $q.dialog({
-        component: UpdateWaitingForDialog,
+        component: UpdateTaskDialog,
 
         componentProps: {
-          waiting_for: waiting_for
+          currentTask: currentTask
         }
       })
     }
 
     return {
-      waitingFors,
-      waitingForMenus,
-      openWaitingFor
+      tasks,
+      taskMenus,
+      openTask
     }
   }
 });

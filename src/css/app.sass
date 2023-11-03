@@ -1,12 +1,13 @@
 // app global css in Sass form
 body
-  background: url(~assets/background.jpg) no-repeat center center fixed !important
+  background: url(src/assets/background.jpg) no-repeat center center fixed !important
   background-size: cover !important
+  color: green
 
 // Oh baby
 .text-pain
   text-shadow: -0.06em 0 magenta, 0.06em 0 cyan
-  color: black
+  color: green
 
 .text-glitch
   color: #20C20E
@@ -45,6 +46,13 @@ body
   overflow: hidden
   clip: rect(0, 900px, 0, 0)
   animation: noise-anim-2 2s infinite linear alternate-reverse
+
+
+.body--light
+  color: rgba(0, 0, 0, 0.87)
+  
+.body--dark
+  color: rgba(0, 0, 0, 0)
 
 @keyframes noise-anim
   0%

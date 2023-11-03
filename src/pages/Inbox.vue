@@ -7,10 +7,10 @@
             <div class="row items-center">
               <div class="col">
                 <div class="text-h6 text-pain">Inbox</div>
-                <div>{{ inboxItems.length }} Items</div>
+                <div>{{ tasks.length }} Items</div>
               </div>
               <div class="col text-right">
-                <q-btn color="positive" @click="openReviewDialog" :disabled="inboxItems.length === 0">Begin Review</q-btn>
+                <q-btn color="positive" @click="openReviewDialog" :disabled="tasks.length === 0">Begin Review</q-btn>
               </div>
             </div>
           </q-card-section>
@@ -20,15 +20,15 @@
               <q-item
                 clickable
                 v-ripple
-                v-for="(inbox_item) in inboxItems"
-                :key="inbox_item.id"
-                @click="openInboxItem(inbox_item)"
+                v-for="(current_task, index) in tasks"
+                :key="index"
+                @click="openTask(current_task)"
               >
                 <q-item-section>
-                  {{ inbox_item.title }}
+                  {{ current_task.title }}
                 </q-item-section>
 
-                <q-item-section side v-if="inbox_item.notes">
+                <q-item-section side v-if="current_task.notes">
                   <q-icon name="description">
                     <q-tooltip
                       anchor="center right"
@@ -42,7 +42,7 @@
 
                 <q-menu context-menu auto-close :ref="getRef">
                   <q-list style="min-width: 100px">
-                    <q-item clickable @click="openInboxItem(inbox_item)">
+                    <q-item clickable @click="openTask(current_task)">
                       <q-item-section>Open</q-item-section>
                       <q-item-section avatar>
                         <q-icon name="fas fa-external-link-alt" />
@@ -69,7 +69,7 @@
                   </q-list>
                 </q-menu>
               </q-item>
-              <template v-if="inboxItems.length === 0">
+              <template v-if="tasks.length === 0">
                 <q-item clickable v-ripple>
                   <q-item-section>
                     <strong>Nothing yet!</strong>
@@ -89,9 +89,8 @@ import { useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue'
 
 
-import InboxItem from '../models/inbox_item'
-import { IInboxItem } from 'components/models'
-import UpdateInboxItemDialog from 'components/UpdateInboxItemDialog.vue'
+import { Task } from 'src/stores/tasks/task'
+import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
 import ReviewDialog from 'components/ReviewDialog.vue'
 import { useRepo } from 'pinia-orm'
 
@@ -100,28 +99,28 @@ export default defineComponent({
 
   setup() {
     const $q = useQuasar()
-    const inboxItemRepo = useRepo(InboxItem)
+    const taskRepo = useRepo(Task)
 
-    const inboxItems = computed(
-      () => inboxItemRepo.all()
+    const tasks = computed(
+      () => taskRepo.all()
     )
 
-    const inboxItemMenus = ref<IInboxItem[]>([])
+    const taskMenus = ref<Task[]>([])
 
     const getRef = (index: number) => {
       return (el: any) => {
         if (el) {
-          inboxItemMenus.value[index] = el
+          taskMenus.value[index] = el
         }
       }
     }
 
-    function openInboxItem(inbox_item: IInboxItem) {
+    function openTask(current_task: Task) {
       $q.dialog({
-        component: UpdateInboxItemDialog,
+        component: UpdateTaskDialog,
 
         componentProps: {
-          inbox_item: inbox_item
+          current_task: current_task
         }
       })
     }
@@ -133,10 +132,10 @@ export default defineComponent({
     }
 
     return {
-      inboxItems,
-      inboxItemMenus,
+      tasks,
+      taskMenus,
       getRef,
-      openInboxItem,
+      openTask,
       openReviewDialog
     }
   }

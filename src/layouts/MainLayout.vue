@@ -4,9 +4,9 @@
       <q-toolbar>
         <q-btn
           color='green'
-          icon="fas fa-plus"
-          @click="openCreateInboxItemDialog"
-          v-if="currentPath == '/inbox'"
+          icon='fa-solid fa-plus'
+          @click="openCreateTaskDialog"
+          v-if="currentPath == '/tasks'"
         />
         <q-btn
           color='green'
@@ -33,8 +33,8 @@
               <q-item>
                 <q-item-section class="text-center">
                   <div class="text-pain">Logged in as:</div>
-                  <div class="text-glitch text-h4" :data-text="usernameComputed">
-                    {{ usernameComputed }}
+                  <div class="text-glitch text-h4" :data-text="ur.username">
+                    {{ ur.username }}
                   </div>
                 </q-item-section>
               </q-item>
@@ -68,140 +68,123 @@
 
     <q-footer elevated class="bg-grey-8 text-white">
       <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
-        <q-route-tab icon="fas fa-inbox" to="/inbox" label="Inbox" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fas fa-tasks" to="/next-actions" label="Next Actions" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fas fa-user-clock" to="/waiting-for" label="Waiting For" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fas fa-project-diagram" to="/projects" label="Projects" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-inbox" to="/tasks" label="Tasks" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/lists" label="Lists" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/tasks-tree" label="Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/reverse-tasks-tree" label="Reverse Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
       </q-tabs>
     </q-footer>
 
     <q-page-container>
-      <router-view v-slot="{ Component }">
-        <keep-alive>
-          <component :is="Component" />
-        </keep-alive>
-      </router-view>
+      <router-view keep-alive></router-view>
+      <!-- <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        
+      </router-view> -->
     </q-page-container>
   </q-layout>
 </template>
 
-<script lang="ts">
-import { useQuasar } from 'quasar'
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useQuasar } from 'quasar';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
+import { api } from 'src/boot/axios';
+import errorNotification from 'src/hackerman/ErrorNotification';
+import CreateTaskDialog from 'src/components/CreateTaskDialog.vue';
+import { UserRepo } from 'src/stores/users/user'
+import { useRepo } from 'pinia-orm'
+import { CreateTaskOptions, TaskRepo } from 'src/stores/tasks/task'
+import { Utils } from 'src/util'
+import { syncWithBackend } from 'src/hackerman/sync'
 
-import { useRoute, useRouter } from 'vue-router'
-import { computed, defineComponent, ref, watch } from 'vue'
-import { api } from 'boot/axios'
-import { errorNotification } from '../hackerman/ErrorNotification'
+console.debug('In Main Layout')
 
-import CreateInboxItemDialog from 'components/CreateInboxItemDialog.vue'
-import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
-import { useUsersStore } from 'src/store/users/pinia-users'
-import { useInboxItemsStore } from 'src/store/inbox-items/pinia-inbox-items'
+const $q = useQuasar()
+const $route = useRoute()
+const $router = useRouter()
 
-export default defineComponent({
-  name: 'MainLayout',
+const currentPath = ref($route.path)
 
-  setup () {
-    const $q = useQuasar()
-    
-    const $route = useRoute()
-    const $router = useRouter()
+const authenticationStore = useAuthenticationStore()
+const ur = useRepo(UserRepo)
 
-    const drawerTabs = ref('lists')
-    const currentPath = ref($route.path)
+await syncWithBackend()
 
-    const authenticationStore = useAuthenticationStore()
-    const userStore = useUsersStore()
-
-    const sessionTokenComputed = computed({
-      get: () => authenticationStore.sessionToken,
-      set: value => {
-        authenticationStore.setSessionToken(value)
-      }
-    })
-
-    const usernameComputed = computed(
-      () => userStore.username
-    )
-
-    function logout() {
-      if(sessionTokenComputed.value === null || sessionTokenComputed.value === '') {
-        $q.notify({
-          color: 'negative',
-          position: 'top',
-          message: 'You can checkout anytime, but you can never leave.',
-          icon: 'report_problem'
-        })
-        return
-      }
-      api.delete('/logout', {
-        headers: {
-          Authorization: `Bearer ${sessionTokenComputed.value}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        }
-      }).
-      then(
-        () => {
-          sessionTokenComputed.value = ''
-          void $router.push({ path: '/login' })
-          $q.notify({
-            color: 'positive',
-            position: 'top',
-            message: 'Logged out successfully',
-            icon: 'fas fa-sign-out-alt'
-          })
-        },
-        (error) => {
-          sessionTokenComputed.value = '' // Remove token even if it fails
-          void $router.push({ path: '/login' })
-          errorNotification(error, 'Failed to logout properly')
-        }
-      )
-    }
-
-    function openCreateInboxItemDialog() {
-      $q.dialog({
-        component: CreateInboxItemDialog,
-
-        componentProps: {
-          onCreate: (payload: any) => { createInboxItem(payload) }
-        }
-      })
-    }
-
-    function createInboxItem(payload: any) {
-      const inboxItemStore = useInboxItemsStore()
-      inboxItemStore.create(payload.options).
-      then(
-        (response: any) => {
-          payload.callback()
-          $q.notify({
-            color: 'positive',
-            position: 'top',
-            message: 'Created inbox item',
-            icon: 'fas fa-tasks'
-          })
-        },
-        (error: any) => {
-          errorNotification(error, 'Failed to create inbox item')
-        }
-      )
-    }
-
-    watch(
-      () => $route.path,
-      (newValue) => {
-        currentPath.value = newValue
-      }
-    )
-
-    return {
-      usernameComputed,
-      logout,
-      openCreateInboxItemDialog,
-      currentPath
-    }
+const sessionTokenComputed = computed({
+  get: () => authenticationStore.sessionToken,
+  set: value => {
+    authenticationStore.sessionToken = value
   }
 })
+
+const logout = () => {
+  if(sessionTokenComputed.value === null || sessionTokenComputed.value === '') {
+    $q.notify({
+      color: 'negative',
+      position: 'top',
+      message: 'You can checkout anytime, but you can never leave.',
+      icon: 'report_problem'
+    })
+    return
+  }
+  api.delete('/logout', {
+    headers: {
+      Authorization: `Bearer ${sessionTokenComputed.value}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    }
+  }).
+  then(
+    () => {
+      sessionTokenComputed.value = ''
+      void $router.push({ path: '/login' })
+      $q.notify({
+        color: 'positive',
+        position: 'top',
+        message: 'Logged out successfully',
+        icon: 'fas fa-sign-out-alt'
+      })
+    },
+    (error) => {
+      sessionTokenComputed.value = '' // Remove token even if it fails
+      void $router.push({ path: '/login' })
+      errorNotification(error, 'Failed to logout properly')
+    }
+  )
+}
+
+const createTask = (payload: CreateTaskOptions) => {
+  const tr = useRepo(TaskRepo)
+  tr.add(payload)
+  .then(
+    () => {
+      $q.notify({
+        color: 'positive',
+        position: 'top',
+        message: 'Created task',
+        icon: 'fas fa-tasks'
+      })
+    },
+    Utils.handleError('Failed to create task.')
+  )
+}
+
+const openCreateTaskDialog = () => {
+  $q.dialog({
+    component: CreateTaskDialog,
+    componentProps: {
+      onCreate: (payload: {options: CreateTaskOptions, callback: () => void}) => { 
+        const newTask = payload.options
+        newTask.hard_prereq_ids = []
+        newTask.hard_postreq_ids = []
+        createTask(newTask) 
+      }
+    }
+  })
+}
+
 </script>

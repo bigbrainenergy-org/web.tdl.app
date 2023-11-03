@@ -1,13 +1,12 @@
 import {
-  Notification as NotificationInterface,
-  NextAction as NextActionInterface
-} from '../components/models'
+  Task
+} from '../stores/tasks/task'
+import { Notification as NotificationInterface } from 'src/models/Notification'
 import { DateTime } from 'luxon'
 
 let Notifications: any = null
 
 if (process.env.MODE === 'capacitor') {
-  // @ts-ignore
   import('@capacitor/local-notifications').then(
     ({ LocalNotifications }) => {
       Notifications = LocalNotifications
@@ -28,19 +27,21 @@ export function scheduleNotification(notification: NotificationInterface) {
   scheduleNotifications([notification])
 }
 
-export function scheduleNextActionNotification(nextAction: NextActionInterface) {
-  if (nextAction.remind_me_at) {
+export function scheduleTaskNotification(task: Task) {
+  if(task.id === null) return
+  if (task.remind_me_at) {
     scheduleNotification({
-      id: nextAction.id,
-      title: nextAction.title,
-      schedule: { at: DateTime.fromISO(nextAction.remind_me_at).toJSDate() },
-      group: 'nextActions'
+      id: task.id,
+      title: task.title,
+      schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
+      group: 'tasks'
     })
   }
 }
 
-export function cancelNextActionNotification(nextAction: NextActionInterface) {
-  cancelNotification({ id: nextAction.id })
+export function cancelTaskNotification(task: Task) {
+  if(task.id === null) return
+  cancelNotification({ id: task.id })
 }
 
 export function cancelNotification(notification: NotificationInterface) {
@@ -58,26 +59,25 @@ export function cancelNotifications(notifications: Array<NotificationInterface>)
 export async function syncNotifications(store: any) {
   if (process.env.MODE === 'capacitor') {
     const previouslyScheduled = await Notifications.getPending()
-    const currentlyScheduled = store.getters['nextActions/nextActionsWithReminders'](store)
+    const currentlyScheduled = store.getters['tasks/tasksWithReminders'](store)
     const toBeCancelled = previouslyScheduled.notifications.filter(
       (notification: NotificationInterface) => {
         return !(
           currentlyScheduled.some(
-            (nextAction: NextActionInterface) => {
-              return notification.id === nextAction.id
+            (task: Task) => {
+              return notification.id === task.id
             }
           )
         )
       }
     ) // previouslyScheduled where not currentlyScheduled
     const toBeScheduled = currentlyScheduled.map(
-      (nextAction: NextActionInterface) => {
+      (task: Task) => {
         return {
-          id: nextAction.id,
-          title: nextAction.title,
-          // @ts-ignore
-          schedule: { at: DateTime.fromISO(nextAction.remind_me_at).toJSDate() },
-          group: 'nextActions'
+          id: task.id,
+          title: task.title,
+          schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
+          group: 'tasks'
         }
       }
     )
@@ -90,16 +90,16 @@ export async function syncNotifications(store: any) {
   }
 }
 
-// const createNextActionsChannel = (
+// const createTasksChannel = (
 //  () => {
 //   let executed = false
 //   return () => {
 //     if (!executed) {
 //       executed = true
 //       const newChannel = LocalNotifications.createChannel({
-//         id: 'tdl-app-nextActions',
-//         name: 'TDL App NextActions',
-//         description: 'NextActions from TDL App',
+//         id: 'tdl-app-tasks',
+//         name: 'TDL App Tasks',
+//         description: 'Tasks from TDL App',
 //         sound: null,
 //         vibration: false
 //       })
@@ -109,12 +109,12 @@ export async function syncNotifications(store: any) {
 //  }
 // )()
 
-// export function createNextActionsChannel() {
+// export function createTasksChannel() {
 //   if (process.env.MODE === 'capacitor') {
 //     const newChannel = Notifications.createChannel({
-//       id: 'tdl-app-nextActions',
-//       name: 'TDL App NextActions',
-//       description: 'NextActions from TDL App',
+//       id: 'tdl-app-tasks',
+//       name: 'TDL App Tasks',
+//       description: 'Tasks from TDL App',
 //       sound: 'tuturu.wav',
 //       importance: 3,
 //       vibration: false

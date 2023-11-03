@@ -3,31 +3,30 @@ import { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: () => import('src/layouts/MainLayout.vue'),
     children: [
-      { path: '', name: 'Empty', redirect: 'inbox' },
-      { path: 'inbox', name: 'Inbox', component: () => import('pages/Inbox.vue') },
-      { path: 'next-actions', name: 'Next Actions', component: () => import('pages/NextActions.vue') },
-      { path: 'waiting-for', name: 'Waiting For', component: () => import('pages/WaitingFor.vue') },
-      { path: 'projects', name: 'Projects', component: () => import('pages/Projects.vue') },
-      { path: 'settings', name: 'Settings', component: () => import('pages/Settings.vue') },
-    ],
+      { path: '', name: 'Empty', redirect: 'tasks' },
+      { path: 'tasks', name: 'Tasks', component: () => import('src/pages/Tasks.vue') },
+      { path: 'tasks-tree', name: 'Tree', component: () => import('src/pages/TaskTree.vue') },
+      { path: 'reverse-tasks-tree', name: 'ReverseTree', component: () => import('src/pages/ReverseTaskTree.vue') },
+      { path: 'lists', name: 'Lists', component: () => import('src/pages/Lists.vue') },
+      { path: 'settings', name: 'Settings', component: () => import('src/pages/Settings.vue') },
+    ]
   },
   {
     path: '/', 
-    component: () => import('layouts/GuestLayout.vue'),
+    component: () => import('src/layouts/GuestLayout.vue'),
     children: [
-      { path: 'login', name: 'Login', component: () => import('pages/Login.vue') },
-      { path: 'request-access', name: 'Request Access', component: () => import('pages/RequestAccess.vue') }
+      { path: 'login', name: 'Login', component: () => import('src/pages/Login.vue') },
+      { path: 'request-access', name: 'Request Access', component: () => import('src/pages/RequestAccess.vue') }
     ]
   },
-
   // Always leave this as last one,
   // but you can also remove it
   {
     path: '/:catchAll(.*)*',
     name: 'Error 404',
-    component: () => import('pages/Error404.vue'),
+    component: () => import('src/pages/ErrorNotFound.vue'),
   },
 ];
 

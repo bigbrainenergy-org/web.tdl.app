@@ -44,26 +44,26 @@
               <div class="text-h3">{{ content[currentStep].prompt }}</div>
 
               <div class="q-my-lg">
-                <template v-if="currentProject">
-                  <div>{{ currentProject.title }}</div>
-                  <div style="white-space: pre-line;" v-if="currentProject.notes">{{ currentProject.notes }}</div>
+                <template v-if="currentList">
+                  <div>{{ currentList.title }}</div>
+                  <div style="white-space: pre-line;" v-if="currentList.notes">{{ currentList.notes }}</div>
                 </template>
                 <template v-else>
-                  <div>{{ currentInboxItem.title }}</div>
-                  <div style="white-space: pre-line;" v-if="currentInboxItem.notes">{{ currentInboxItem.notes }}</div>
+                  <div>{{ currentTask.title }}</div>
+                  <div style="white-space: pre-line;" v-if="currentTask.notes">{{ currentTask.notes }}</div>
                 </template>
               </div>
 
               <template v-if="currentStep === 'nextAction'">
                 <q-input
-                  v-model="nextActionTitle"
+                  v-model="nextTaskTitle"
                   class="q-my-md"
                   filled
                   clearable
                   label="Title"
                 />
                 <q-input
-                  v-model="nextActionNotes"
+                  v-model="nextTaskNotes"
                   class="q-my-md"
                   filled
                   autogrow
@@ -73,14 +73,14 @@
               </template>
               <template v-else-if="currentStep === 'delegate'">
                 <q-input
-                  v-model="waitingForTitle"
+                  v-model="taskTitle"
                   class="q-my-md"
                   filled
                   clearable
                   label="Title"
                 />
                 <q-input
-                  v-model="waitingForNotes"
+                  v-model="taskNotes"
                   class="q-my-md"
                   filled
                   autogrow
@@ -90,14 +90,14 @@
               </template>
               <template v-else-if="currentStep === 'projects'">
                 <q-input
-                  v-model="projectTitle"
+                  v-model="listTitle"
                   class="q-my-md"
                   filled
                   clearable
                   label="Title"
                 />
                 <q-input
-                  v-model="projectNotes"
+                  v-model="listNotes"
                   class="q-my-md"
                   filled
                   autogrow
@@ -137,10 +137,7 @@ import {
   computed,
 } from 'vue';
 
-import InboxItem from '../models/inbox_item'
-import Project from '../models/project'
-
-import CreateInboxItemDialog from 'components/CreateInboxItemDialog.vue'
+import CreateTaskDialog from 'src/components/CreateTaskDialog.vue'
 import { errorNotification } from '../hackerman/ErrorNotification'
 
 export default {
@@ -154,13 +151,13 @@ export default {
     const $q = useQuasar()
     
 
-    const inboxItems = computed(
-      () => $store.$repo(InboxItem).all()
+    const taskItems = computed(
+      () => $store.$repo(Task).all()
     )
 
     const mainProgress = computed(
       () => {
-        return (currentInboxCount.value / totalInboxCount.value)
+        return (currentTaskCount.value / totalTaskCount.value)
       }
     )
     const secondaryProgress = computed(
@@ -169,19 +166,19 @@ export default {
       }
     )
 
-    const nextActionTitle = ref('')
-    const nextActionNotes = ref('')
+    const nextTaskTitle = ref('')
+    const nextTaskNotes = ref('')
 
-    const waitingForTitle = ref('')
-    const waitingForNotes = ref('')
+    const taskTitle = ref('')
+    const taskNotes = ref('')
 
-    const projectTitle = ref('')
-    const projectNotes = ref('')
+    const listTitle = ref('')
+    const listNotes = ref('')
 
     // TODO: Should we safe guard against if this dialog gets called and
-    //       inboxItems is 0? Shouldn't happen normally (button disabled)
-    const totalInboxCount = ref(inboxItems.value.length)
-    const currentInboxCount = ref(0)
+    //       taskItems is 0? Shouldn't happen normally (button disabled)
+    const totalTaskCount = ref(taskItems.value.length)
+    const currentTaskCount = ref(0)
     const maxStepCount = ref(1)
     const currentStepCount = ref(0)
 
@@ -189,8 +186,8 @@ export default {
     const processingProjectPlans = ref(false)
 
     const currentStep = ref('actionable')
-    const currentInboxItem = ref(inboxItems.value[0])
-    const currentProject = ref(null)
+    const currentTask = ref(taskItems.value[0])
+    const currentList = ref(null)
 
     function setStepCount(current, max) {
       maxStepCount.value = max
@@ -239,16 +236,16 @@ export default {
       currentStep.value = 'projects'
     }
 
-    function createProject() {
-      $store.dispatch('projects/create', {
-        title: projectTitle.value,
-        notes: projectNotes.value
+    function createList() {
+      $store.dispatch('lists/create', {
+        title: listTitle.value,
+        notes: listNotes.value
       }).
       then(
         (response) => {
-          currentProject.value = $store.$repo(Project).find(response.data.id)
-          projectTitle.value = ''
-          projectNotes.value = ''
+          currentList.value = $store.$repo(List).find(response.data.id)
+          listTitle.value = ''
+          listNotes.value = ''
           stepProcessNow()
         },
         (error) => {
@@ -295,15 +292,15 @@ export default {
       currentStep.value = 'delegate'
     }
 
-    function createWaitingFor() {
-      $store.dispatch('waitingFors/create', {
-        title: waitingForTitle.value,
-        notes: waitingForNotes.value
+    function createTask() {
+      $store.dispatch('tasks/create', {
+        title: taskTitle.value,
+        notes: taskNotes.value
       }).
       then(
         (response) => {
-          waitingForTitle.value = ''
-          waitingForNotes.value = ''
+          taskTitle.value = ''
+          taskNotes.value = ''
           stepMoreActions()
         },
         (error) => {
@@ -330,19 +327,19 @@ export default {
       currentStep.value = 'nextAction'
     }
 
-    function createNextAction() {
-      $store.dispatch('nextActions/create', {
-        title: nextActionTitle.value,
-        notes: nextActionNotes.value
+    function createTask() {
+      $store.dispatch('tasks/create', {
+        title: nextTaskTitle.value,
+        notes: nextTaskNotes.value
       }).
       then(
         (response) => {
-          nextActionTitle.value = ''
-          nextActionNotes.value = ''
+          nextTaskTitle.value = ''
+          nextTaskNotes.value = ''
           stepMoreActions()
         },
         (error) => {
-          errorNotification(error, 'Failed to create next action')
+          errorNotification(error, 'Failed to create task')
         }
       )
     }
@@ -378,19 +375,19 @@ export default {
       // Display spinner while loading...
       currentStep.value = 'done'
       processingProjectPlans.value = false
-      currentProject.value = null
+      currentList.value = null
       setStepCount(1, 1)
       // TODO: Delete inbox item here before executing the rest below.
-      $store.dispatch('inboxItems/delete', { id: currentInboxItem.value.id }).
+      $store.dispatch('tasks/delete', { id: currentTask.value.id }).
       then(
         (response) => {
-          if (inboxItems.value.length === 0) {
+          if (taskItems.value.length === 0) {
             // All done! Close up shop.
             onDialogOK()
           } else {
-            currentInboxCount.value += 1
-            currentInboxItem.value = inboxItems.value[0]
-            // currentInboxItem.value = inboxItems.value[currentInboxCount.value]
+            currentTaskCount.value += 1
+            currentTask.value = taskItems.value[0]
+            // currentTask.value = taskItems.value[currentTaskCount.value]
             stepActionable()
           }
         },
@@ -496,7 +493,7 @@ export default {
           {
             color: 'primary',
             label: 'Create Project',
-            click: createProject,
+            click: createList,
           },
         ]
       },
@@ -572,7 +569,7 @@ export default {
           {
             color: 'secondary',
             label: 'Create Waiting For',
-            click: createWaitingFor,
+            click: createTask,
           },
         ]
       },
@@ -599,7 +596,7 @@ export default {
           {
             color: 'secondary',
             label: 'Create Next Action',
-            click: createNextAction,
+            click: createTask,
           },
         ]
       },
@@ -667,20 +664,19 @@ export default {
       secondaryProgress,
       instantFeedback,
       currentStep,
-      currentInboxItem,
-      currentProject,
+      currentTask,
+      currentList,
       processingProjectPlans,
       //
-      nextActionTitle,
-      nextActionNotes,
-      waitingForTitle,
-      waitingForNotes,
-      projectTitle,
-      projectNotes,
+      nextTaskTitle,
+      nextTaskNotes,
+      taskTitle,
+      taskNotes,
+      listTitle,
+      listNotes,
       //
-      createNextAction,
-      createWaitingFor,
-      createProject,
+      createTask,
+      createList,
       //
       stepKeepForFuture,
       stepTrash,

@@ -52,15 +52,9 @@
 </template>
 
 <script>
-import { useDialogPluginComponent } from 'quasar'
 import {
-  defineComponent,
-  PropType,
-  computed,
   watch,
   ref,
-  toRef,
-  Ref,
 } from 'vue';
 import { useQuasar } from 'quasar'
 

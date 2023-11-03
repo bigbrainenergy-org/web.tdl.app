@@ -1,47 +1,17 @@
-import { errorNotification } from './ErrorNotification'
-import { syncNotifications } from './ScheduledNotifications'
+import { useRepo } from 'pinia-orm'
+import { ListRepo } from 'src/stores/lists/list'
+import { TaskRepo } from 'src/stores/tasks/task'
+import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
+import { UserRepo } from 'src/stores/users/user'
+import { Utils } from 'src/util'
 
-export function syncWithBackend(store: any) {
-  store.dispatch('users/fetchUser').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch user metadata')
-    }
-  )
-  store.dispatch('inboxItems/fetchInboxItems').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch inbox items')
-    }
-  )
-  store.dispatch('nextActions/fetchNextActions').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch next actions')
-    }
-  )
-  store.dispatch('waitingFors/fetchWaitingFors').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch waiting fors')
-    }
-  )
-  store.dispatch('projects/fetchProjects').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch projects')
-    }
-  )
-  store.dispatch('contexts/fetchContexts').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch contexts')
-    }
-  )
-  store.dispatch('timeZones/fetchTimeZones').
-  catch(
-    (error: any) => {
-      errorNotification(error, 'Failed to fetch time zones')
-    }
-  )
+export async function syncWithBackend() {
+  await useRepo(UserRepo).fetchUser().
+  catch(Utils.handleError('Failed to fetch user metadata'))
+  await useRepo(TaskRepo).fetch().
+  catch(Utils.handleError('Failed to fetch tasks'))
+  await useRepo(ListRepo).fetch().
+  catch(Utils.handleError('Failed to fetch lists'))
+  await useRepo(TimeZoneRepo).fetch().
+  catch(Utils.handleError('Failed to fetch time zones'))
 }

@@ -1,12 +1,9 @@
+import { AxiosError } from 'axios'
 import { Notify } from 'quasar'
 
-export function errorNotification(error: any, fallbackMessage: string) {
-  let errorMessage = ''
-  if (typeof error.response !== 'undefined') {
-    errorMessage = error.response.data.error
-  } else {
-    errorMessage = `${fallbackMessage}: ${error.message}`
-  }
+export default function errorNotification(error: Error | AxiosError, fallbackMessage: string) {
+  const errorMessage = `${fallbackMessage}: ${error.message}`
+
   Notify.create({
     color: 'negative',
     position: 'top',

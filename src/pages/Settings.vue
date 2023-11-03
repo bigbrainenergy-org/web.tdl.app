@@ -77,59 +77,59 @@
   </q-page>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
-  defineComponent,
   computed,
   ref,
   onActivated,
   onDeactivated,
-  onBeforeUnmount
+  onBeforeUnmount,
+defineComponent
 } from 'vue'
 import { useQuasar } from 'quasar'
 
 import { DateTime } from 'luxon'
-import { errorNotification } from '../hackerman/ErrorNotification'
 
-import { TimeZoneInterface } from '../components/models'
 import { useRepo } from 'pinia-orm'
-import User from 'src/models/user'
-import TimeZone from 'src/models/time_zone'
-import { useUsersStore } from 'src/store/users/pinia-users'
-import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
+import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
+import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
+import { UserRepo } from 'src/stores/users/user'
+import errorNotification from 'src/hackerman/ErrorNotification'
+import { useRouter } from 'vue-router'
+import { Utils } from 'src/util'
 
-export default defineComponent({
-  name: 'PageSettings',
+defineComponent({name: 'SettingsPage'})
 
-  preFetch() {
-    const authenticationStore = useAuthenticationStore()
-    if(authenticationStore.getLoggedIn !== true) {
-      this.$router.push('/login')
-    }
-  },
+const r = useRouter()
 
-  setup () {
-    const $q = useQuasar()
-    const timeZoneRepo = useRepo(TimeZone)
-    const userStore = useUsersStore()
+  const authenticationStore = useAuthenticationStore()
+  if(authenticationStore.isLoggedIn !== true) {
+    r.push('/login')
+  }
+
+  const $q = useQuasar()
+    const tzr = useRepo(TimeZoneRepo)
+    const ur = useRepo(UserRepo)
 
     const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
     const currentPassword = ref('')
     const newPassword = ref('')
     const confirmPassword = ref('')
 
-    const timeZone = computed(
-      () => userStore.timeZone
+    const userTimeZone = computed(
+      () => Utils.hardCheck(ur.getUser(), 'no user found in authentication store or user repo').timeZoneObj
     )
 
     const timeZones = computed(
-      () => timeZoneRepo.all()
+      () => tzr.all()
     )
+
+    const user = computed(() => Utils.hardCheck(ur.getUser(), 'user not found in authentication store or user repo'))
 
     function timeZoneName(tzToFind: any) {
       if (timeZones.value.length > 0) {
         return timeZones.value.find(
-          (tz: TimeZoneInterface) => {
+          (tz) => {
             return tz.value === tzToFind
           }
         )?.name
@@ -138,19 +138,9 @@ export default defineComponent({
       }
     }
 
-    const editTimeZone = ref({
-      value: timeZone.value,
-      name: timeZoneName(timeZone.value)
-    })
+    const editTimeZone = ref(Utils.hardCheck(ur.getUser(), 'user not found').timeZoneObj)
 
-    function updateTimeZone() {
-      userStore.update({ timeZone: editTimeZone.value.value }).
-      catch(
-        (error: any) => {
-          errorNotification(error, 'Failed to update time zone')
-        }
-      )
-    }
+    const updateTimeZone = async () => await ur.update({ id: user.value.id ?? -1, payload: { user: { timeZone: Utils.hardCheck(editTimeZone.value).value } } })
 
     function changePassword() {
       if(newPassword.value !== confirmPassword.value) {
@@ -164,12 +154,12 @@ export default defineComponent({
         confirmPassword.value = ''
         return
       }
-      userStore.changePassword({
+      ur.changePassword({
         current_password: currentPassword.value,
         password: newPassword.value
       }).
       then(
-        (response: any) => {
+        () => {
           currentPassword.value = ''
           newPassword.value = ''
           confirmPassword.value = ''
@@ -179,13 +169,11 @@ export default defineComponent({
             message: 'Password changed!'
           })
         },
-        (error: any) => {
-          errorNotification(error, 'Failed to change password')
-        }
+        Utils.handleError('Failed to change password.')
       )
     }
 
-    let timer: any = null
+    let timer: NodeJS.Timeout | null = null
 
     function updateCurrentTime() {
       currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
@@ -220,18 +208,4 @@ export default defineComponent({
       () => { clearTimer() }
     )
 
-    return {
-      currentTime,
-      currentPassword,
-      newPassword,
-      confirmPassword,
-      changePassword,
-      timeZone,
-      timeZones,
-      editTimeZone,
-      updateTimeZone,
-      timeZoneName
-    }
-  }
-})
 </script>

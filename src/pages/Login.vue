@@ -51,10 +51,8 @@ import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { defineComponent, ref } from 'vue'
 
-import { errorNotification } from '../hackerman/ErrorNotification'
-import { syncWithBackend } from '../hackerman/sync'
-import { useUsersStore } from 'src/store/users/pinia-users'
-import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
+import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
+import { Utils } from 'src/util'
 
 export default defineComponent({
   name: 'PageLogin',
@@ -62,7 +60,6 @@ export default defineComponent({
   setup() {
     const $q = useQuasar()
     const authenticationStore = useAuthenticationStore()
-    const userStore = useUsersStore()
     
     const $router = useRouter()
 
@@ -75,7 +72,7 @@ export default defineComponent({
         password: password.value
       }).
       then(
-        (response: any) => {
+        () => {
           username.value = ''
           password.value = ''
           $q.notify({
@@ -86,9 +83,7 @@ export default defineComponent({
           })
           $router.push({ path: '/' })
         },
-        (error: any) => {
-          errorNotification(error, 'Failed to login')
-        }
+        Utils.handleError('Failed to log in')
       )
     }
 

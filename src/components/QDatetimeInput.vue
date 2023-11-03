@@ -14,7 +14,6 @@
 import QDatetime from 'components/QDatetime.vue';
 import {
   defineComponent,
-  PropType,
   computed,
   watch,
   ref,
@@ -61,8 +60,7 @@ export default defineComponent({
           return
         }
         let luxonDatetime = DateTime.fromFormat(value, DEFAULT_DATETIME_FORMAT)
-        // @ts-ignore
-        if (luxonDatetime.invalid === null) {
+        if (luxonDatetime.isValid) {
           parseDatetime(luxonDatetime)
         }
       }
@@ -70,9 +68,9 @@ export default defineComponent({
 
     function parseDatetime(updatedDatetime: DateTime | Date | string) {
       if (updatedDatetime instanceof DateTime) {
-        datetime.value = updatedDatetime.toISO()
+        datetime.value = updatedDatetime.toISO()!
       } else if (updatedDatetime instanceof Date) {
-        datetime.value = DateTime.fromJSDate(updatedDatetime).toISO()
+        datetime.value = DateTime.fromJSDate(updatedDatetime).toISO()!
       } else if (typeof updatedDatetime === 'string') {
         datetime.value = updatedDatetime
       } else {
