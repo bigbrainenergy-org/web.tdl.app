@@ -6,14 +6,20 @@
           color='green'
           icon='fa-solid fa-plus'
           @click="openCreateTaskDialog"
-          v-if="currentPath == '/tasks'"
+          v-if="pagesWithNewTaskButton.includes(currentPath)"
         />
         <q-btn
           color='green'
           @click="$router.go(-1)"
           label="Go Back"
-          icon="fas fa-arrow-left"
-          v-if="currentPath == '/settings'"
+          icon="fa-solid fa-arrow-left"
+          v-if="currentPath === '/settings'"
+        />
+        <q-btn
+          color='green'
+          @click="openCreateListDialog"
+          icon="fa-solid fa-plus"
+          v-if="currentPath === '/lists'"
         />
 
         <q-space />
@@ -100,6 +106,7 @@ import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, TaskRepo } from 'src/stores/tasks/task'
 import { Utils } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
+import { AxiosError } from 'axios'
 
 console.debug('In Main Layout')
 
@@ -107,7 +114,13 @@ const $q = useQuasar()
 const $route = useRoute()
 const $router = useRouter()
 
-const currentPath = ref($route.path)
+const currentPath = computed(() => $route.path)
+
+const pagesWithNewTaskButton = [
+  '/tasks',
+  '/tasks-tree',
+  '/reverse-tasks-tree'
+]
 
 const authenticationStore = useAuthenticationStore()
 const ur = useRepo(UserRepo)
@@ -142,14 +155,9 @@ const logout = () => {
     () => {
       sessionTokenComputed.value = ''
       void $router.push({ path: '/login' })
-      $q.notify({
-        color: 'positive',
-        position: 'top',
-        message: 'Logged out successfully',
-        icon: 'fas fa-sign-out-alt'
-      })
+      Utils.notifySuccess('Logged out successfully', 'fa-solid fa-sign-out-alt')
     },
-    (error) => {
+    (error: AxiosError | Error) => {
       sessionTokenComputed.value = '' // Remove token even if it fails
       void $router.push({ path: '/login' })
       errorNotification(error, 'Failed to logout properly')
@@ -161,14 +169,7 @@ const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
   tr.add(payload)
   .then(
-    () => {
-      $q.notify({
-        color: 'positive',
-        position: 'top',
-        message: 'Created task',
-        icon: 'fas fa-tasks'
-      })
-    },
+    Utils.handleSuccess('Created task', 'fa-solid fa-tasks'),
     Utils.handleError('Failed to create task.')
   )
 }
@@ -185,6 +186,10 @@ const openCreateTaskDialog = () => {
       }
     }
   })
+}
+
+const openCreateListDialog = () => {
+  Utils.notifySuccess('Coming soon')
 }
 
 </script>

@@ -1,3 +1,31 @@
+<template>
+  <q-page class="q-pa-lg">
+    <div class="row items-stretch justify-evenly">
+      <div class="col-grow">
+        <q-card class="full-height q-pl-md" style="background-color: #1d1d1df6">
+          <q-tree
+          :nodes="layerZeroTasks"
+          node-key="key"
+          dense
+          @lazy-load="loadPrereqs"
+          ref="theTree"
+          v-model:expanded="expanded"
+          @update:expanded="onExpanded"
+          >
+            <template v-slot:default-header="prop">
+              <q-item>
+                <q-item-label @click="openTask(prop.node.obj)" class="text-primary">
+                  {{ prop.node.label }}
+                </q-item-label>
+              </q-item>
+            </template>
+          </q-tree>
+        </q-card>
+      </div>
+    </div>
+  </q-page>
+</template>
+
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
@@ -75,26 +103,3 @@ const onExpanded = (list: readonly any[]) => {
 }
 
 </script>
-
-<template>
-  <q-page class="q-pa-lg">
-    <q-tree
-    :nodes="layerZeroTasks"
-    node-key="key"
-    dense
-    @lazy-load="loadPrereqs"
-    style="background-color: black"
-    ref="theTree"
-    v-model:expanded="expanded"
-    @update:expanded="onExpanded"
-    >
-      <template v-slot:default-header="prop">
-        <q-item>
-          <q-item-label @click="openTask(prop.node.obj)" class="text-primary">
-            {{ prop.node.label }}
-          </q-item-label>
-        </q-item>
-      </template>
-    </q-tree>
-  </q-page>
-</template>

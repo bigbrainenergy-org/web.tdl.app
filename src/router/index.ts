@@ -23,7 +23,7 @@ export default route(function (/* { store, ssrContext } */) {
     ? createMemoryHistory
     : (process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory);
 
-  const Router = createRouter({
+  const router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
     routes,
 
@@ -33,11 +33,11 @@ export default route(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
-  Router.beforeEach((to, from, next) => {
+  router.beforeEach((to, from, next) => {
     const authenticationStore = useAuthenticationStore()
     if(authenticationStore.isLoggedIn !== true && to.name !== 'Login') next({ name: 'Login' })
     else next()
   })
 
-  return Router;
+  return router;
 });
