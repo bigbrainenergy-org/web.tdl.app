@@ -53,7 +53,7 @@ export default class CustomRepo<iCreateT, iUpdateT extends iOptions, T extends i
     this.loaded = false
     await api.get(`/${this.apidir}/${id}`, this.commonHeader()).then((response: AxiosResponse) => {
       console.log(response.data as T[])
-      this.save(response.data)
+      this.save(response.data as T[])
     }, Utils.handleError(`Could not get ${this.apidir} id ${id}`))
     this.loaded = true
   }
@@ -62,7 +62,7 @@ export default class CustomRepo<iCreateT, iUpdateT extends iOptions, T extends i
     console.debug('add item: ', { newItem });
     const response = await api.post(`/${this.apidir}`, newItem, this.commonHeader());
     console.debug('response: ', response);
-    this.save(response.data);
+    this.save(response.data as T[]);
   };
 
   delete = async (id: number) => {
@@ -75,7 +75,7 @@ export default class CustomRepo<iCreateT, iUpdateT extends iOptions, T extends i
     console.debug(`${this.apidir} UPDATE`)
     const newValue = await (await api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())).data
     console.debug(`${this.apidir} patch return value: `, newValue)
-    this.save(newValue)
+    this.save(newValue as T)
   };
 
   // includeEntity: name of entity to include. * invokes withAll. ** invokes withAllRecursive.

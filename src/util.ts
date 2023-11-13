@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios';
 import errorNotification from './hackerman/ErrorNotification'
-import { useQuasar } from 'quasar'
+import { Notify } from 'quasar'
 
 export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
@@ -9,8 +9,7 @@ export class Utils {
     return (error: Error | AxiosError) => errorNotification(error, memo)
   }
   static notifySuccess(memo?: string, icon?: string) {
-    const $q = useQuasar()
-    $q.notify({
+    Notify.create({
       color: 'positive',
       position: 'top',
       message: memo ?? 'I am so happy',
@@ -30,5 +29,10 @@ export class Utils {
       throw e
     }
     return t
+  }
+  static arrayDelete<T>(arr: Array<T>, element: T) {
+    const i = arr.indexOf(element)
+    if(i === -1) console.warn('element to delete was not found in array')
+    arr.splice(i, 1)
   }
 }

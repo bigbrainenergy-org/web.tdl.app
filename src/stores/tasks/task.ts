@@ -1,8 +1,12 @@
-import { Model } from 'pinia-orm'
+import { Model, useRepo } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Attr, BelongsTo, Bool, HasManyBy, Num } from 'pinia-orm/dist/decorators'
+import { Attr, BelongsTo, HasOne, HasManyBy, Num } from 'pinia-orm/dist/decorators'
 import { List } from '../lists/list'
 import CustomRepo from '../generics/generic-repo'
+import ExpandedState from '../expanded-state/expanded-state'
+import { SimpleTreeNode } from 'src/quasar-interfaces'
+import { X } from 'pinia-orm/dist/shared/pinia-orm.ed84a779'
+import { Utils } from 'src/util'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -58,11 +62,24 @@ export class Task extends Model implements iRecord {
   @Attr([]) declare hard_prereq_ids: number[]
   @Attr([]) declare hard_postreq_ids: number[]
   @Attr([]) declare tag_ids: number[]
-  @Bool(false) declare expanded: boolean
 
   @BelongsTo(() => List, 'list_id') declare list: List | null
   @HasManyBy(() => Task, 'hard_prereq_ids') declare hard_prereqs: Task[]
   @HasManyBy(() => Task, 'hard_postreq_ids') declare hard_postreqs: Task[]
+
+  get hasPostreqs() { return this.hard_postreq_ids.length > 0 }
+  get hasPrereqs() { return this.hard_prereq_ids.length > 0 }
+
+  treeNode(parentKey = ''): SimpleTreeNode<Task> {
+    return {
+      id: this.id ?? -1,
+      obj: this,
+      label: this.title,
+      expandable: this.hasPostreqs,
+      lazy: this.hasPostreqs,
+      key: this.id + '.' + parentKey
+    }
+  }
 
   static piniaOptions = {
     persist: true
@@ -72,4 +89,12 @@ export class Task extends Model implements iRecord {
 export class TaskRepo extends CustomRepo<CreateTaskOptions, UpdateTaskOptions, Task> {
   use = Task
   apidir = Task.entity
+
+  getTaskWithKey = (key: string, ...properties: string[]) => {
+    const id = parseInt(key.slice(0, key.indexOf('.')))
+    const taskWithKey = this.where((x) => x.id === id).get()
+    if(taskWithKey.length === 0) console.warn('getTaskWithKey did not find any match')
+    properties.forEach((p) => this.with(p).load(taskWithKey))
+    return taskWithKey[0]
+  }
 }
