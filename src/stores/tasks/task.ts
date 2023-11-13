@@ -70,15 +70,20 @@ export class Task extends Model implements iRecord {
   get hasPostreqs() { return this.hard_postreq_ids.length > 0 }
   get hasPrereqs() { return this.hard_prereq_ids.length > 0 }
 
-  treeNode(parentKey = ''): SimpleTreeNode<Task> {
+  treeNode(): SimpleTreeNode<Task> {
     return {
       id: this.id ?? -1,
       obj: this,
       label: this.title,
       expandable: this.hasPostreqs,
       lazy: this.hasPostreqs,
-      key: this.id + '.' + parentKey
+      key: this.id + '.' + Math.round(Math.random()*10000)
     }
+  }
+
+  hardPostreqTreeNodes(): SimpleTreeNode<Task>[] {
+    const repo = useRepo(TaskRepo)
+    return repo.where((x: Task) => this.hard_postreq_ids.includes(x.id ?? -1)).get().map((x) => x.treeNode())
   }
 
   static piniaOptions = {

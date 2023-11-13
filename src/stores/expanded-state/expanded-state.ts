@@ -16,9 +16,7 @@ export class ExpandedStateRepo extends Repository<ExpandedState> {
   use = ExpandedState
 
   getByTaskID = (task_id: number) => {
-    let tmp = this.find(task_id)
-    if(tmp === null || typeof tmp === 'undefined') tmp = this.save({ id: task_id, expanded: false })
-    return tmp
+    return this.find(task_id) ?? this.save({ id: task_id, expanded: false })
   }
 
   isExpanded = (task_id: number) => {

@@ -9,7 +9,7 @@
           :nodes="layerZero"
           node-key="key"
           dense
-          @lazy-load="loadPostreqs"
+          @lazy-load="loadPostreqs2"
           ref="theTree"
           @update:expanded="onExpanded"
           v-model:expanded="expandedNodes"
@@ -52,7 +52,7 @@ const layerZero = ref(layerZeroTasks())
 
 let allTaskNodes = Array.from(layerZero.value)
 
-const theTree = ref<QTreeComponent<Task> | undefined>()
+const theTree = ref<QTreeComponent<Task>>()
 
 type NodeKey = {
   id: number,
@@ -62,8 +62,6 @@ type NodeKey = {
 // forgive me
 let queueCollapse: NodeKey[] = []
 const collapseNodesInQueue = () => {
-  const t = theTree.value
-  if(typeof t === 'undefined') throw new Error('tree ref was undefined')
   queueCollapse = queueCollapse.filter((x) => t.isExpanded(x.key))
   if(queueCollapse.length === 0) {
     previousExpanded = expandedNodes.value
@@ -76,7 +74,6 @@ const collapseNodesInQueue = () => {
 // i hate that this works
 let queueExpand: NodeKey[] = []
 const expandNodesInQueue = () => {
-  const t = Utils.hardCheck(theTree.value, 'tree ref was undefined')
   queueExpand = queueExpand.filter((x) => !t.isExpanded(x.key))
   if(queueExpand.length === 0) {
     previousExpanded = expandedNodes.value
@@ -109,9 +106,20 @@ const loadPostreqs = (d: details<Task>) => {
   console.debug('loadPostreqs of ', d.node.key)
   esr.value.setKeyExpanded(d.node.key, true)
   tr.value.with('hard_postreqs').load([d.node.obj])
-  const postreqTreeNodes = d.node.obj.hard_postreqs.map((x) => x.treeNode(d.node.key))
+  const postreqTreeNodes = d.node.obj.hard_postreqs.map((x) => x.treeNode())
   console.debug({ postreqTreeNodes })
   postreqTreeNodes.filter((x) => esr.value.isExpanded(x.id ?? -1) === true).forEach((x) => queueExpand.push({ id: x.id, key: x.key }))
+  d.done(postreqTreeNodes)
+  allTaskNodes.push(...postreqTreeNodes)
+  handleExpandAndCollapse()
+}
+
+const loadPostreqs2 = (d: details<Task>) => {
+  //console.debug('loadPostreqs of ', d.node.key)
+  esrc.setExpanded(d.node.id, true)
+  const postreqTreeNodes = d.node.obj.hardPostreqTreeNodes()
+  //console.debug({ postreqTreeNodes })
+  postreqTreeNodes.filter((x) => esrc.isExpanded(x.id ?? -1) === true).forEach((x) => queueExpand.push({ id: x.id, key: x.key }))
   d.done(postreqTreeNodes)
   allTaskNodes.push(...postreqTreeNodes)
   handleExpandAndCollapse()
@@ -128,7 +136,7 @@ const onExpanded = (list: readonly any[]) => {
     const diff: string[] = previousExpanded.filter((x) => !list.includes(x)) // anything no longer in the list of expanded tasks
     if(diff.length !== 0) {
       diff.forEach((key) => esr.value.setKeyExpanded(key, false))
-      console.debug({'setToCollapsed': diff})
+      // console.debug({'setToCollapsed': diff})
     }
     else {
       console.error('wut', {previousExpanded, list})
@@ -138,7 +146,7 @@ const onExpanded = (list: readonly any[]) => {
     const diff: string[] = list.filter((x) => !previousExpanded.includes(x as string)) // anything new to the list of expanded tasks
     if(diff.length !== 0) {
       diff.forEach((key) => esr.value.setKeyExpanded(key, true))
-      console.debug({'setToExpanded': diff})
+      // console.debug({'setToExpanded': diff})
     }
     else {
       console.error('wut', {previousExpanded, list})
@@ -148,13 +156,14 @@ const onExpanded = (list: readonly any[]) => {
   previousExpanded = list as string[]
 }
 
+const esrc = esr.value
 const handleExpandAndCollapse = () => {
-  console.debug('handleExpandAndCollapse')
-  const t = Utils.hardCheck(theTree.value)
+  // console.debug('handleExpandAndCollapse')
+  let shouldBeExpanded
   allTaskNodes.forEach((x) => {
-    const shouldBeExpanded = esr.value.isExpanded(x.id)
-    if(t.isExpanded(x.key) !== esr.value.isExpanded(x.id)) {
-      console.log(x.key, ' needs to be ', shouldBeExpanded ? 'expanded' : 'collapsed')
+    shouldBeExpanded = esrc.isExpanded(x.id)
+    if(t.isExpanded(x.key) !== shouldBeExpanded) {
+      // console.log(x.key, ' needs to be ', shouldBeExpanded ? 'expanded' : 'collapsed')
       if(shouldBeExpanded) {
         queueExpand.push({ id: x.id, key: x.key })
       }
@@ -164,27 +173,23 @@ const handleExpandAndCollapse = () => {
     }
   })
   if(queueExpand.length !== 0) {
-    console.debug('handleExpandAndCollapse: expanding nodes in queue')
-    console.debug({queueExpand})
+    // console.debug('handleExpandAndCollapse: expanding nodes in queue')
+    // console.debug({queueExpand})
     expandNodesInQueue()
   }
   if(queueCollapse.length !== 0) {
-    console.debug('handleExpandAndCollapse: collapsing nodes in queue')
-    console.debug({queueCollapse})
+    // console.debug('handleExpandAndCollapse: collapsing nodes in queue')
+    // console.debug({queueCollapse})
     collapseNodesInQueue()
   }
-  else if(queueCollapse.length === 0 && queueExpand.length === 0) {
-    console.debug('nothing to expand or collapse')
-  }
-  console.debug('= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =')
 }
+
+let t: QTreeComponent<Task>
 
 onMounted(() => {
   console.debug('onMounted')
-  console.log(esr.value.all())
+  t = Utils.hardCheck(theTree.value)
   handleExpandAndCollapse()
 })
-
-// todo: on page load, expand all tasks that have expanded = true in their store.
 
 </script>
