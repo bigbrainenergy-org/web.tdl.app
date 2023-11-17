@@ -60,7 +60,7 @@ export default defineComponent({
   setup() {
     const $q = useQuasar()
     const authenticationStore = useAuthenticationStore()
-    
+
     const $router = useRouter()
 
     const username = ref('')
