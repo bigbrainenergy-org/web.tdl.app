@@ -1,5 +1,5 @@
 {
-  "name": "new-web-tdl-app",
+  "name": "web-tdl-app",
   "version": "0.0.1",
   "description": "TDLAPP by Big Brain Energy",
   "productName": "TDLAPP",
@@ -9,8 +9,8 @@
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build"
+    "dev": "yarn exec quasar dev",
+    "build": "yarn exec quasar build"
   },
   "dependencies": {
     "@capacitor/local-notifications": "^5.0.6",
@@ -23,6 +23,7 @@
     "pinia-orm": "^1.7.2",
     "pinia-plugin-persistedstate": "^3.2.0",
     "quasar": "^2.6.0",
+    "@quasar/cli": "2.x",
     "vue": "^3.0.0",
     "vue-i18n": "^9.2.2",
     "vue-router": "^4.0.0"
