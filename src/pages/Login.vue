@@ -72,6 +72,7 @@ export default defineComponent({
         password: password.value
       }).
       then(
+        // This is the (response) => {} handler
         () => {
           username.value = ''
           password.value = ''
@@ -83,6 +84,7 @@ export default defineComponent({
           })
           $router.push({ path: '/' })
         },
+        // This is the (error) => {} handler lambda
         Utils.handleError('Failed to log in')
       )
     }

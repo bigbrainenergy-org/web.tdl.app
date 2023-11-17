@@ -6,7 +6,7 @@ export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
 
   static handleError(memo: string) {
-    return (error: Error | AxiosError) => errorNotification(error, memo)
+    return (error: Error | AxiosError) => { errorNotification(error, memo) }
   }
   static notifySuccess(memo?: string, icon?: string) {
     Notify.create({

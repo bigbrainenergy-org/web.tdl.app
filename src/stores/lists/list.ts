@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm';
 import iRecord, { iOptions } from '../generics/i-record';
 import { Attr, HasMany, Num, Str } from 'pinia-orm/dist/decorators';
-import CustomRepo from '../generics/generic-repo';
+import GenericRepo from '../generics/generic-repo';
 import { Task } from '../tasks/task'
 
 export interface CreateListOptions {
@@ -30,7 +30,7 @@ export class List extends Model implements iRecord {
   @HasMany(() => Task, 'list_id') declare tasks: Task[];
 }
 
-export class ListRepo extends CustomRepo<CreateListOptions, UpdateListOptions, List> {
+export class ListRepo extends GenericRepo<CreateListOptions, UpdateListOptions, List> {
   use = List
   apidir = List.entity;
 }

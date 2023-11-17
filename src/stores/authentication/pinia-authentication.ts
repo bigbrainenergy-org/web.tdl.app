@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/axios';
 import { Utils } from 'src/util';
@@ -29,14 +30,26 @@ export const useAuthenticationStore = defineStore('authentication', {
   },
   actions: {
     async login(options: ILoginOptions) {
-      return new Promise((resolve) => {
-        api.post('/login', options).then((response) => {
-          this.sessionToken = response.data.session_token
-          this.userId = response.data.user_id
-          resolve(response);
-        }),
-          Utils.handleError('Issues logging in');
-      });
+      return new Promise(
+        (resolve, reject) => {
+          api.post('/login', {
+            username: options.username,
+            password: options.password,
+            dataType: 'json',
+            contentType: 'application/json'
+          }).
+          then(
+            (response) => {
+              this.sessionToken = response.data.session_token
+              this.userId = response.data.user_id
+              resolve(response)
+            },
+            (error: Error | AxiosError) => {
+              reject(error)
+            }
+          )
+        }
+      )
     },
   },
 });

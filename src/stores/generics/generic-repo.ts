@@ -6,9 +6,6 @@ import { Utils } from 'src/util'
 import { AxiosResponse } from 'axios'
 
 interface SimpleApiBackedRepo {
-  // requiring this because UI tries to update before async function is even done.
-  // TODO: there might be a way to properly await onDialogOK in particular (perhaps by making the q.dialog async)
-  loaded: boolean;
   // TODO: access T.entity somehow. In the meantime just have a string property.
   apidir: string;
 }
@@ -17,11 +14,10 @@ interface SimpleApiBackedRepo {
 // T can implement iCreateT but what really matters is iCreateT should be what that API expects
 // iUpdateT is meant to be all optional; a subset of properties can be updated
 // todo: support optional UUID client-side id generation
-export default class CustomRepo<iCreateT, iUpdateT extends iOptions, T extends iRecord>
+export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends iRecord>
   extends Repository<T>
   implements SimpleApiBackedRepo
 {
-  loaded = false;
   apidir = '';
 
   // todo: use DI perhaps, to specify the shape of a headers provider
@@ -41,21 +37,24 @@ export default class CustomRepo<iCreateT, iUpdateT extends iOptions, T extends i
   };
 
   fetch = async () => {
-    this.loaded = false;
-    await api.get(`/${this.apidir}`, this.commonHeader()).then((response: AxiosResponse) => {
-      console.debug(`${this.apidir} fetched: `, { response });
-      this.fresh(response.data as T[]);
-    }, Utils.handleError(`Could not fetch all ${this.apidir}`))
-    this.loaded = true
+    await api.get(
+      `/${this.apidir}`,
+      this.commonHeader()
+    ).
+    then(
+      (response: AxiosResponse) => {
+        console.debug(`${this.apidir} fetched: `, { response })
+        this.fresh(response.data as T[])
+      },
+      Utils.handleError(`Could not fetch all ${this.apidir}`)
+    )
   };
 
   getId = async (id: number) => {
-    this.loaded = false
     await api.get(`/${this.apidir}/${id}`, this.commonHeader()).then((response: AxiosResponse) => {
       console.log(response.data as T[])
       this.save(response.data as T[])
     }, Utils.handleError(`Could not get ${this.apidir} id ${id}`))
-    this.loaded = true
   }
 
   add = async (newItem: iCreateT) => {

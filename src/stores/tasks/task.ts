@@ -2,7 +2,7 @@ import { Model, useRepo } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
 import { Attr, BelongsTo, HasOne, HasManyBy, Num } from 'pinia-orm/dist/decorators'
 import { List } from '../lists/list'
-import CustomRepo from '../generics/generic-repo'
+import GenericRepo from '../generics/generic-repo'
 import ExpandedState from '../expanded-state/expanded-state'
 import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { X } from 'pinia-orm/dist/shared/pinia-orm.ed84a779'
@@ -91,7 +91,7 @@ export class Task extends Model implements iRecord {
   }
 }
 
-export class TaskRepo extends CustomRepo<CreateTaskOptions, UpdateTaskOptions, Task> {
+export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, Task> {
   use = Task
   apidir = Task.entity
 
