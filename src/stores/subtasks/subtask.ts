@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
 import { Attr } from 'pinia-orm/dist/decorators'
-import CustomRepo from '../generics/generic-repo'
+import GenericRepo from '../generics/generic-repo'
 
 export interface CreateSubtaskOptions {
   task_id: number
@@ -20,7 +20,7 @@ export interface UpdateSubtaskOptions extends iOptions {
       completed?: boolean
     }
   }
-  
+
 }
 
 export class Subtask extends Model implements iRecord {
@@ -34,7 +34,7 @@ export class Subtask extends Model implements iRecord {
   @Attr(false) declare completed: boolean
 }
 
-export class SubtaskRepo extends CustomRepo<CreateSubtaskOptions, UpdateSubtaskOptions, Subtask> {
+export class SubtaskRepo extends GenericRepo<CreateSubtaskOptions, UpdateSubtaskOptions, Subtask> {
   use = Subtask
   apidir = Subtask.entity
 }

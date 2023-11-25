@@ -191,7 +191,7 @@ import { useRouter } from 'vue-router'
 import { useReCaptcha } from 'vue-recaptcha-v3'
 import { api } from 'boot/axios'
 
-import { errorNotification } from '../hackerman/ErrorNotification'
+import errorNotification from '../hackerman/ErrorNotification'
 import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
 
 export default defineComponent({
@@ -206,7 +206,7 @@ export default defineComponent({
 
   setup() {
     const $q = useQuasar()
-    
+
     const $router = useRouter()
     // @ts-ignore
     const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()

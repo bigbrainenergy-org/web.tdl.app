@@ -344,9 +344,10 @@ function openPrerequisiteDialog() {
     componentProps: {
       dialogTitle: 'Add Prerequisite',
       task: currentTask.value,
-      onSelect: async (payload: { task: Task }) => { 
-        console.debug('task was selected. ', {payload})
-        await addPrereq(payload.task) 
+
+      onSelect: async (payload: { task: Task }) => {
+        console.debug({payload})
+        await addPrereq(payload.task)
       },
     }
   })
@@ -360,9 +361,9 @@ const addPrereq = async (payload: Task) => {
   await tr.update(updates).
   then(
     Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
-    // now comes the fun part though... the updateTaskDialog does 
-    // not show the prerequisites updated with the new value, and 
-    // the tasks page(s) do not update to show the new structure either.    
+    // now comes the fun part though... the updateTaskDialog does
+    // not show the prerequisites updated with the new value, and
+    // the tasks page(s) do not update to show the new structure either.
     Utils.handleError('Failed to add prereq')
   )
   refreshCurrentTask()
@@ -394,7 +395,7 @@ const onOKClick = onDialogOK
 
 // we can passthrough onDialogCancel directly
 const onCancelClick = onDialogCancel
-    
-  
+
+
 
 </script>

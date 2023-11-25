@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm';
 import iRecord, { iOptions } from '../generics/i-record';
 import { Attr, BelongsTo, Str } from 'pinia-orm/dist/decorators';
-import CustomRepo from '../generics/generic-repo';
+import GenericRepo from '../generics/generic-repo';
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { TimeZone } from '../time-zones/time-zone'
 import { api } from 'src/boot/axios'
@@ -32,7 +32,7 @@ export class User extends Model implements iRecord {
 }
 
 type passOptions = { current_password: string; password: string }
-export class UserRepo extends CustomRepo<CreateUserOptions, UpdateUserOptions, User> {
+export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, User> {
   use = User
   apidir = User.entity;
 

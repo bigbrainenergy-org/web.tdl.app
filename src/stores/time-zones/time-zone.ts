@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm';
 import iRecord, { iOptions } from '../generics/i-record';
 import { Str, Uid } from 'pinia-orm/dist/decorators';
-import CustomRepo from '../generics/generic-repo';
+import GenericRepo from '../generics/generic-repo';
 
 export interface CreateTimeZoneOptions {
   name: string;
@@ -26,7 +26,7 @@ export class TimeZone extends Model implements iRecord {
   @Str('') declare value: string;
 }
 
-export class TimeZoneRepo extends CustomRepo<CreateTimeZoneOptions, UpdateTimeZoneOptions, TimeZone> {
+export class TimeZoneRepo extends GenericRepo<CreateTimeZoneOptions, UpdateTimeZoneOptions, TimeZone> {
   use = TimeZone
   apidir = TimeZone.entity;
 }

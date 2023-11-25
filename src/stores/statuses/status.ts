@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm';
 import iRecord, { iOptions } from '../generics/i-record';
 import { Attr, BelongsTo } from 'pinia-orm/dist/decorators';
-import CustomRepo from '../generics/generic-repo';
+import GenericRepo from '../generics/generic-repo';
 import { User } from '../users/user'
 
 export interface CreateStatusOptions {
@@ -38,7 +38,7 @@ export class Status extends Model implements iRecord {
   @BelongsTo(() => User, 'user_id') declare user: User | null;
 }
 
-export class StatusRepo extends CustomRepo<CreateStatusOptions, UpdateStatusOptions, Status> {
+export class StatusRepo extends GenericRepo<CreateStatusOptions, UpdateStatusOptions, Status> {
   use = Status
   apidir = Status.entity;
 }

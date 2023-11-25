@@ -1,5 +1,5 @@
 {
-  "name": "new-web-tdl-app",
+  "name": "web-tdl-app",
   "version": "0.0.1",
   "description": "TDLAPP by Big Brain Energy",
   "productName": "TDLAPP",
@@ -8,12 +8,16 @@
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
-    "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build"
+    "test": "echo \"See package.json => scripts for available tests.\" && exit 0",
+    "dev": "yarn exec quasar dev",
+    "build": "yarn exec quasar build",
+    "test:unit:ui": "vitest --ui",
+    "test:unit": "vitest",
+    "test:unit:ci": "vitest run"
   },
   "dependencies": {
     "@capacitor/local-notifications": "^5.0.6",
+    "@quasar/cli": "2.x",
     "@quasar/extras": "^1.16.4",
     "@types/luxon": "^3.3.3",
     "axios": "^1.2.1",
@@ -32,6 +36,7 @@
     "@intlify/vite-plugin-vue-i18n": "^3.3.1",
     "@quasar/app-vite": "^1.3.0",
     "@types/d3": "^7.4.3",
+    "@quasar/quasar-app-extension-testing-unit-vitest": "^0.4.0",
     "@types/node": "^12.20.21",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
@@ -47,7 +52,9 @@
     "workbox-expiration": "^7.0.0",
     "workbox-precaching": "^7.0.0",
     "workbox-routing": "^7.0.0",
-    "workbox-strategies": "^7.0.0"
+    "workbox-strategies": "^7.0.0",
+    "@vue/test-utils": "^2.4.1",
+    "vitest": "^0.34.0"
   },
   "engines": {
     "node": "^18",
