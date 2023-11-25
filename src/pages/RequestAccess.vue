@@ -192,14 +192,14 @@ import { useReCaptcha } from 'vue-recaptcha-v3'
 import { api } from 'boot/axios'
 
 import errorNotification from '../hackerman/ErrorNotification'
-import { useAuthenticationStore } from 'src/store/authentication/pinia-authentication'
+import { useAuthenticationStore}  from '../stores/authentication/pinia-authentication'
 
 export default defineComponent({
   name: 'PageRegister',
 
   preFetch() {
     const authenticationStore = useAuthenticationStore()
-    if(authenticationStore.getLoggedIn){
+    if(authenticationStore.isLoggedIn){
       this.$router.push('/')
     }
   },
