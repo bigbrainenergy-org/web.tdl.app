@@ -188,11 +188,12 @@ import { defineComponent, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import { useRouter } from 'vue-router'
-import { useReCaptcha } from 'vue-recaptcha-v3'
+import VueRecaptcha
 import { api } from 'boot/axios'
 
 import errorNotification from '../hackerman/ErrorNotification'
 import { useAuthenticationStore}  from '../stores/authentication/pinia-authentication'
+import { Utils } from 'src/util'
 
 export default defineComponent({
   name: 'PageRegister',
@@ -268,9 +269,7 @@ export default defineComponent({
             icon: 'fas fa-laptop-code'
           })
         },
-        (error) => {
-          errorNotification(error, 'Failed to request access')
-        }
+        Utils.handleError('Failed to request access')
       )
     }
 
