@@ -188,10 +188,7 @@ import { defineComponent, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import { useRouter } from 'vue-router'
-import VueRecaptcha
 import { api } from 'boot/axios'
-
-import errorNotification from '../hackerman/ErrorNotification'
 import { useAuthenticationStore}  from '../stores/authentication/pinia-authentication'
 import { Utils } from 'src/util'
 
