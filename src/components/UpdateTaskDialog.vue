@@ -10,7 +10,7 @@
         <template v-else>
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" />
         </template>
-        <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask.id)" />
+        <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask.id!)" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
 
@@ -130,13 +130,13 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple v-if="!currentTask.hard_prereqs.length">
+              <q-item clickable v-ripple v-if="!allPres.length">
                 <q-item-section>No prerequisites</q-item-section>
               </q-item>
               <q-item
                 clickable
                 v-ripple
-                v-for="pre, index in currentTask.hard_prereqs"
+                v-for="pre, index in allPres"
                 :key="index"
                 @click="setCurrentTask(pre as Task)"
               >
@@ -145,7 +145,7 @@
                 </q-item-section>
 
                 <q-item-section avatar>
-                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="true" />
+                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="removePrerequisite(pre as Task)" />
                 </q-item-section>
               </q-item>
             </q-list>
@@ -158,13 +158,13 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple v-if="!currentTask.hard_postreqs.length">
+              <q-item clickable v-ripple v-if="!allPosts.length">
                 <q-item-section>No postrequisites</q-item-section>
               </q-item>
               <q-item
                 clickable
                 v-ripple
-                v-for="post, index in currentTask.hard_postreqs"
+                v-for="post, index in allPosts"
                 :key="index"
                 @click="setCurrentTask(post as Task)"
               >
@@ -208,7 +208,7 @@ import TaskSearchDialog from 'components/TaskSearchDialog.vue';
 
 import { ListRepo } from 'src/stores/lists/list';
 import { AllOptionalTaskProperties, Task, TaskRepo, UpdateTaskOptions } from 'src/stores/tasks/task';
-import { useRepo } from 'pinia-orm';
+import { Item, useRepo } from 'pinia-orm';
 import { Utils } from 'src/util'
 
 const props = defineProps<{ task: Task }>()
@@ -228,22 +228,36 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginC
 // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
 const $q = useQuasar()
+const listsRepo = useRepo(ListRepo)
+const tr = useRepo(TaskRepo)
 
 console.debug('UpdateTaskDialog: task prop value: ', props.task)
-const currentTask = ref<Task>(Utils.hardCheck(props.task, 'Task is null or undefined'))
+const taskID = ref(Utils.hardCheck(props.task.id))
+const updatedFlag = ref(false)
+const currentTask = ref<Task>(props.task)
+const refreshCurrentTask = () => currentTask.value = Utils.hardCheck(tr.withAll().find(props.task.id!))
+refreshCurrentTask()
 const editTitle = ref(currentTask.value.title)
 const editNotes = ref(currentTask.value.notes)
 const editRemindMeAt = ref(currentTask.value.remind_me_at)
 const editMentalEnergyRequired = ref(currentTask.value.mental_energy_required)
 const editPhysicalEnergyRequired = ref(currentTask.value.physical_energy_required)
 
-const listsRepo = useRepo(ListRepo)
-const tr = useRepo(TaskRepo)
 tr.withAll().load([props.task])
 
 const lists = computed(
   () => listsRepo.all()
 )
+
+const allPres = computed(() => {
+  console.debug('refreshing allPres value')
+  return currentTask.value.hard_prereqs
+})
+
+const allPosts = computed(() => {
+  console.debug('refreshing allPosts value')
+  return currentTask.value.hard_postreqs
+})
 
 const allLists = listsRepo.all()
 const listOptions = ref(allLists)
@@ -294,7 +308,7 @@ function setCurrentTask(newTask: Task) {
   selectedList.value = getSelectedList(currentTask.value as Task)
 }
 
-function deleteTask(title: string, id: number | null) {
+function deleteTask(title: string, id: number) {
   if(id === null) {
     console.warn('deleteTask: id was null')
     return
@@ -310,8 +324,11 @@ function deleteTask(title: string, id: number | null) {
       color: 'grey'
     }
   }).onOk(
-    async () => {
-      await tr.delete(id)
+    () => {
+      tr.delete(id).then(
+        Utils.handleSuccess('Deleted task', 'fa-solid fa-tasks'),
+        Utils.handleError('Failed to delete task.')
+      )
     }
   )
 }
@@ -328,7 +345,7 @@ function openPrerequisiteDialog() {
       dialogTitle: 'Add Prerequisite',
       task: currentTask.value,
       onSelect: async (payload: { task: Task }) => { 
-        console.debug({payload})
+        console.debug('task was selected. ', {payload})
         await addPrereq(payload.task) 
       },
     }
@@ -348,6 +365,27 @@ const addPrereq = async (payload: Task) => {
     // the tasks page(s) do not update to show the new structure either.    
     Utils.handleError('Failed to add prereq')
   )
+  refreshCurrentTask()
+}
+
+const removePrerequisite = (prereq: Task) => {
+  Utils.notifySuccess(`removing pre ${prereq.title}`, 'fa-solid fa-unlink')
+  const t = currentTask.value
+  // const t_id = Utils.hardCheck(t.id, 'removePrerequisite: id of current task is null or undefined!')
+  const prereq_id = Utils.hardCheck(prereq.id, 'removePrerequisite: id of prereq is null or undefined!')
+  type temptask = { id: number, val?: Task | Item<Task> }
+  const temp_prereqs_list = t.hard_prereq_ids.map((x) => ({id: x, val: undefined} as temptask))
+  const new_prereqs_list = temp_prereqs_list.splice(t.hard_prereq_ids.indexOf(prereq.id!), 1)
+  new_prereqs_list.forEach((x) => x.val = tr.find(x.id))
+  Utils.notifySuccess(`removed pre from prereqs list, see console.`)
+  console.debug(new_prereqs_list)
+  // let updates: UpdateTaskOptions = { id: t_id, payload: { task: { hard_prereq_ids: t.hard_prereq_ids.splice(t.hard_prereq_ids.indexOf(prereq_id), 1) } } }
+  // await tr.update(updates)
+  // .then(
+  //   Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'),
+  //   Utils.handleError('Failed to remove prereq')
+  // )
+  // refreshCurrentTask()
 }
 
 // other methods that we used in our vue html template;

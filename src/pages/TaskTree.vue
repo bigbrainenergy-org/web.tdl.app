@@ -5,6 +5,7 @@
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-btn @click="expandedNodes = []">COLLAPSE ALL</q-btn>
           <q-btn @click="console.debug({expandedNodes, 'expandedState': esr.all()})">DEBUG</q-btn>
+          <q-toggle v-model="toggleRGB">Enable RGB</q-toggle>
           <q-tree
           :nodes="layerZero"
           node-key="key"
@@ -16,7 +17,7 @@
           class="text-primary"
           >
             <template v-slot:default-header="prop">
-              <q-item class="text-primary">
+              <q-item class="text-primary" :style="{ backgroundColor: toggleRGB ? prop.node.obj.hashColor() : '#1d1d1df6' }">
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
@@ -49,8 +50,11 @@ const layerZeroTasks = (): SimpleTreeNode<Task>[] => {
 }
 
 const layerZero = ref(layerZeroTasks())
+const toggleRGB = ref(false)
 
 let allTaskNodes = Array.from(layerZero.value)
+
+console.debug({ colors: allTaskNodes.map((x) => x.obj.hashColor() )})
 
 const theTree = ref<QTreeComponent<Task>>()
 

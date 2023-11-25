@@ -11,6 +11,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'reverse-tasks-tree', name: 'ReverseTree', component: () => import('src/pages/ReverseTaskTree.vue') },
       { path: 'lists', name: 'Lists', component: () => import('src/pages/Lists.vue') },
       { path: 'settings', name: 'Settings', component: () => import('src/pages/Settings.vue') },
+      { path: 'graph', name: 'Graph', component: () => import('src/pages/TaskGraph.vue') }
     ]
   },
   {

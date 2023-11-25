@@ -35,7 +35,7 @@ export const useAuthenticationStore = defineStore('authentication', {
           this.userId = response.data.user_id
           resolve(response);
         }),
-          Utils.handleError('Issues logging in');
+          Utils.handleError('aaaaa')
       });
     },
   },

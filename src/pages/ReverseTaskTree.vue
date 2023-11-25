@@ -72,9 +72,9 @@ const toggleExpanded = (key: string, value: boolean) => {
 }
 
 const loadPrereqs = (d: details<Task>) => {
-  d.node.obj.expanded = true
+  d.node.obj.expandedState = true
   setTimeout(() => {
-    const prereqs = tr.with('hard_prereqs').where((x) => d.node.obj.hard_prereq_ids.includes(x.id)).get().map((x): SimpleTreeNode<Task> => {
+    const prereqs = tr.with('hard_prereqs').where((x: Task) => d.node.obj.hard_prereq_ids.includes(x.id ?? -1)).get().map((x): SimpleTreeNode<Task> => {
       return {
         id: x.id ?? -1,
         obj: x,

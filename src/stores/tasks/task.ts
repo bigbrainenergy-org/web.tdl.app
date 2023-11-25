@@ -1,12 +1,10 @@
 import { Model, useRepo } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Attr, BelongsTo, HasOne, HasManyBy, Num } from 'pinia-orm/dist/decorators'
+import { Attr, BelongsTo, HasManyBy, Num } from 'pinia-orm/dist/decorators'
 import { List } from '../lists/list'
 import CustomRepo from '../generics/generic-repo'
-import ExpandedState from '../expanded-state/expanded-state'
 import { SimpleTreeNode } from 'src/quasar-interfaces'
-import { X } from 'pinia-orm/dist/shared/pinia-orm.ed84a779'
-import { Utils } from 'src/util'
+import { d3Node } from 'src/models/d3-interfaces'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -79,6 +77,45 @@ export class Task extends Model implements iRecord {
       lazy: this.hasPostreqs,
       key: this.id + '.' + Math.round(Math.random()*10000)
     }
+  }
+
+  /// d3Node<Task>
+  //  id: the task id
+  //  obj: pass through the task object
+  //  index: the 0-based node index for the chart
+  //  x: the current x coordinate on the plane (origin is top left corner)
+  //  y: the current y coordinate on the plane
+  //  vx:
+  //  vy:
+  //  radius: calculated radius value of each node (to be drawn as a circle)
+  //  color: if you want to color-code the nodes based on its properties.
+  d3forceNode(index: number): d3Node<Task> {
+    return {
+      id: this.id ?? -1,
+      obj: this,
+      index: index, //node indices start at 0, sequential.
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      radius: Math.max(this.hard_postreq_ids.length**2.3, 8),
+      color: this.hard_prereq_ids.length === 0 ? 'red' : 'gray',
+      repel: -500/this.hard_prereq_ids.length
+    }
+  }
+
+  hashColor(): string {
+    const exampleHash = (s: string) => {
+      let hashification = 1337
+      for(let i = 0; i < s.length; i++) {
+        hashification = (hashification * 27) ^ s.charCodeAt(i)
+      }
+      return hashification >>> 0
+    }
+    const input: string = (this.id ?? '-1') + this.title
+    const hash = exampleHash(input)
+    const hexColor = '#' + (hash % 0xFFFFFF).toString(16).padStart(6, '0') + '66'
+    return hexColor
   }
 
   hardPostreqTreeNodes(): SimpleTreeNode<Task>[] {

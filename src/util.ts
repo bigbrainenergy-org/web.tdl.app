@@ -1,11 +1,12 @@
 import { AxiosError } from 'axios';
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
+import { λ } from './types'
 
 export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
 
-  static handleError(memo: string) {
+  static handleError(memo: string): λ<Error | AxiosError, void> {
     return (error: Error | AxiosError) => errorNotification(error, memo)
   }
   static notifySuccess(memo?: string, icon?: string) {
@@ -16,7 +17,7 @@ export class Utils {
       icon: icon ?? 'fa-solid fa-link'
     })
   }
-  static handleSuccess(memo?: string, icon?: string) {
+  static handleSuccess(memo?: string, icon?: string): λ {
     return () => this.notifySuccess(memo, icon)
   }
   static todo(s?: string) {
