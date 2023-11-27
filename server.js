@@ -1,10 +1,12 @@
-import express from 'express'
-import serveStatic from 'serve-static'
-import history from 'connect-history-api-fallback'
-const port = process.env.PORT || 5000
+// NOTE: ExpressJS wants the require syntax, idk why
+const
+  express = require('express'),
+  serveStatic = require('serve-static'),
+  history = require('connect-history-api-fallback'),
+  port = process.env.PORT || 5000
 
 const app = express()
 
 app.use(history())
-app.use(serveStatic(__dirname + '/dist/pwa'))
+app.use(serveStatic(__dirname + '/dist/spa'))
 app.listen(port)

@@ -1,0 +1,8 @@
+version: "3.8"
+
+services:
+  web-tdl-app:
+    image: joshbuker/web-tdl-app:latest
+    build: .
+    ports:
+      - 5000:5000

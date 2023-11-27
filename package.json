@@ -10,10 +10,11 @@
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"See package.json => scripts for available tests.\" && exit 0",
     "dev": "yarn exec quasar dev",
-    "build": "yarn exec quasar build",
+    "build": "yarn exec quasar build -m spa",
     "test:unit:ui": "vitest --ui",
     "test:unit": "vitest",
-    "test:unit:ci": "vitest run"
+    "test:unit:ci": "vitest run",
+    "start": "node server.js"
   },
   "dependencies": {
     "@capacitor/local-notifications": "^5.0.6",
