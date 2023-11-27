@@ -6,6 +6,7 @@ import GenericRepo from '../generics/generic-repo'
 import ExpandedState from '../expanded-state/expanded-state'
 import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
+import { Utils } from 'src/util'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -139,5 +140,29 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if(taskWithKey.length === 0) console.warn('getTaskWithKey did not find any match')
     properties.forEach((p) => this.with(p).load(taskWithKey))
     return taskWithKey[0]
+  }
+
+  removePre = async (task: Task, id_of_prereq: number) => {
+    const position = task.hard_prereq_ids.indexOf(id_of_prereq)
+    if(position < 0) throw new Error('removePre: id provided was not found in prereqs list')
+    const taskID = Utils.hardCheck(task.id, "removePre: task's id was null or undefined")
+    const options: UpdateTaskOptions = {
+      id: taskID,
+      payload: { task }
+    }
+    task.hard_prereq_ids.splice(position, 1)
+    await this.update(options)
+  }
+
+  removePost = async (task: Task, id_of_postreq: number) => {
+    const position = task.hard_postreq_ids.indexOf(id_of_postreq)
+    if(position < 0) throw new Error('removePost: id provided was not found in postreqs list')
+    const taskID = Utils.hardCheck(task.id, "removePost: task's id was null or undefined")
+    const options: UpdateTaskOptions = {
+      id: taskID,
+      payload: { task }
+    }
+    task.hard_postreq_ids.splice(position, 1)
+    await this.update(options)
   }
 }

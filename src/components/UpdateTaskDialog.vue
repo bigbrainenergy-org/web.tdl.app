@@ -173,7 +173,7 @@
                 </q-item-section>
 
                 <q-item-section avatar>
-                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="true" />
+                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="removePostrequisite(post as Task)" />
                 </q-item-section>
               </q-item>
             </q-list>
@@ -369,24 +369,20 @@ const addPrereq = async (payload: Task) => {
   refreshCurrentTask()
 }
 
-const removePrerequisite = (prereq: Task) => {
-  Utils.notifySuccess(`removing pre ${prereq.title}`, 'fa-solid fa-unlink')
-  const t = currentTask.value
-  // const t_id = Utils.hardCheck(t.id, 'removePrerequisite: id of current task is null or undefined!')
+const removePrerequisite = async (prereq: Task) => {
+  const t = currentTask.value as Task
   const prereq_id = Utils.hardCheck(prereq.id, 'removePrerequisite: id of prereq is null or undefined!')
-  type temptask = { id: number, val?: Task | Item<Task> }
-  const temp_prereqs_list = t.hard_prereq_ids.map((x) => ({id: x, val: undefined} as temptask))
-  const new_prereqs_list = temp_prereqs_list.splice(t.hard_prereq_ids.indexOf(prereq.id!), 1)
-  new_prereqs_list.forEach((x) => x.val = tr.find(x.id))
-  Utils.notifySuccess(`removed pre from prereqs list, see console.`)
-  console.debug(new_prereqs_list)
-  // let updates: UpdateTaskOptions = { id: t_id, payload: { task: { hard_prereq_ids: t.hard_prereq_ids.splice(t.hard_prereq_ids.indexOf(prereq_id), 1) } } }
-  // await tr.update(updates)
-  // .then(
-  //   Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'),
-  //   Utils.handleError('Failed to remove prereq')
-  // )
-  // refreshCurrentTask()
+  await tr.removePre(t, prereq_id)
+  .then(Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'))
+  refreshCurrentTask()
+}
+
+const removePostrequisite = async (postreq: Task) => {
+  const t = currentTask.value as Task
+  const postreq_id = Utils.hardCheck(postreq.id, 'removePostrequisite: id of postreq is null or undefined!')
+  await tr.removePost(t, postreq_id)
+  .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
+  refreshCurrentTask()
 }
 
 // other methods that we used in our vue html template;
