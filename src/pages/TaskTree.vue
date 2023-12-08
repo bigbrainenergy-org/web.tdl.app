@@ -18,6 +18,7 @@
           >
             <template v-slot:default-header="prop">
               <q-item class="text-primary" :style="{ backgroundColor: toggleRGB ? prop.node.obj.hashColor() : '#1d1d1df6' }">
+                <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
@@ -104,6 +105,10 @@ const openTask = (currentTask: Task) => {
       task: currentTask
     }
   })
+}
+
+const updateTaskCompletedStatus = (task: Task) => {
+  tr.value.update({ id: Utils.hardCheck(task.id), payload: { task }})
 }
 
 const loadPostreqs = (d: details<Task>) => {
