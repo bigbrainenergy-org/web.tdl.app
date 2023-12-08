@@ -1,6 +1,6 @@
 import { Model, useRepo } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Attr, BelongsTo, HasManyBy, Num } from 'pinia-orm/dist/decorators'
+import { Attr, BelongsTo, Bool, HasManyBy, Num } from 'pinia-orm/dist/decorators'
 import { List } from '../lists/list'
 import GenericRepo from '../generics/generic-repo'
 import ExpandedState from '../expanded-state/expanded-state'
@@ -52,7 +52,7 @@ export class Task extends Model implements iRecord {
   @Attr('') declare title: string
   @Attr(0) declare order: number
   @Attr('') declare notes: string
-  @Attr('') declare completed_at: string
+  @Bool(false) declare completed: boolean
   @Attr('') declare deadline_at: string
   @Attr('') declare prioritize_at: string
   @Attr('') declare remind_me_at: string
@@ -91,17 +91,17 @@ export class Task extends Model implements iRecord {
   //  vy:
   //  radius: calculated radius value of each node (to be drawn as a circle)
   //  color: if you want to color-code the nodes based on its properties.
-  d3forceNode(index: number): d3Node<Task> {
+  d3forceNode(index: number, width = 0, height = 0): d3Node<Task> {
     return {
       id: this.id ?? -1,
       obj: this,
       index: index, //node indices start at 0, sequential.
-      x: 0,
-      y: 0,
+      x: width / 2,
+      y: height / 2,
       vx: 0,
       vy: 0,
       radius: Math.max(this.hard_postreq_ids.length**2.3, 8),
-      color: this.hard_prereq_ids.length === 0 ? 'red' : 'gray',
+      color: this.completed ? '#003905' : (this.hard_prereq_ids.length === 0 ? 'red' : 'gray'),
       repel: -500/this.hard_prereq_ids.length
     }
   }
@@ -164,5 +164,13 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     task.hard_postreq_ids.splice(position, 1)
     await this.update(options)
+  }
+
+  toggleCompleted = async (task: Task) => {
+    task.completed = !task.completed
+    await this.update({ 
+      id: Utils.hardCheck(task.id, 'task id was null or undefined'),
+      payload: { task }
+    })
   }
 }

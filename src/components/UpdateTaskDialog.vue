@@ -5,10 +5,10 @@
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Task Details</div>
         <template v-if="currentTask.completed !== true">
-          <q-btn class="q-ma-sm" size="md" color="positive" label="Mark Complete" />
+          <q-btn class="q-ma-sm" size="md" color="positive" label="Mark Complete" @click.stop="toggleComplete(currentTask as Task)"/>
         </template>
         <template v-else>
-          <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" />
+          <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)"/>
         </template>
         <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask.id!)" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
@@ -154,7 +154,7 @@
                 <div class="text-h5">Postrequisites</div>
               </div>
               <div class="col text-right">
-                <q-btn color="primary" icon="fas fa-link" label="Add Postrequisite" />
+                <q-btn color="primary" icon="fas fa-link" label="Add Postrequisite" @click="openPostrequisiteDialog"/>
               </div>
             </div>
             <q-list class="q-my-md">
@@ -333,8 +333,10 @@ function deleteTask(title: string, id: number) {
   )
 }
 
-async function updateTask(options: AllOptionalTaskProperties) {
-  await tr.update({id: currentTask.value.id ?? -1, payload: { task: options } })
+function updateTask(options: AllOptionalTaskProperties) {
+  tr.update({id: currentTask.value.id ?? -1, payload: { task: options } })
+  .then(Utils.handleSuccess('Task Was Updated'))
+  refreshCurrentTask()
 }
 
 function openPrerequisiteDialog() {
@@ -348,6 +350,22 @@ function openPrerequisiteDialog() {
       onSelect: async (payload: { task: Task }) => {
         console.debug({payload})
         await addPrereq(payload.task)
+      },
+    }
+  })
+}
+
+function openPostrequisiteDialog() {
+  $q.dialog({
+    component: TaskSearchDialog,
+
+    componentProps: {
+      dialogTitle: 'Add Postrequisite',
+      task: currentTask.value,
+
+      onSelect: async (payload: { task: Task }) => {
+        console.debug({payload})
+        await addPostreq(payload.task)
       },
     }
   })
@@ -369,6 +387,19 @@ const addPrereq = async (payload: Task) => {
   refreshCurrentTask()
 }
 
+const addPostreq = async (payload: Task) => {
+  const t = currentTask.value
+  const t_id = Utils.hardCheck(t.id, 'addPostreq: id of current task is null or undefined!')
+  const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of postreq is null or undefined!')
+  let updates: UpdateTaskOptions = { id: t_id, payload: { task: { hard_postreq_ids: [...t.hard_postreq_ids, payload_id] } } }
+  await tr.update(updates).
+  then(
+    Utils.handleSuccess('Added Postrequisite', 'fa-solid fa-link'),
+    Utils.handleError('Failed to add postreq')
+  )
+  refreshCurrentTask()
+}
+
 const removePrerequisite = async (prereq: Task) => {
   const t = currentTask.value as Task
   const prereq_id = Utils.hardCheck(prereq.id, 'removePrerequisite: id of prereq is null or undefined!')
@@ -383,6 +414,12 @@ const removePostrequisite = async (postreq: Task) => {
   await tr.removePost(t, postreq_id)
   .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
   refreshCurrentTask()
+}
+
+const toggleComplete = async (task: Task) => {
+  await tr.toggleCompleted(task)
+  refreshCurrentTask()
+  //Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check')
 }
 
 // other methods that we used in our vue html template;
