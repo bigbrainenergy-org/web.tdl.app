@@ -53,7 +53,7 @@
               </q-item>
               <q-separator />
               <q-item clickable @click="logout">
-                <q-item-section>Logout</q-item-section>
+                <q-item-section>Logout/Change Server</q-item-section>
                 <q-item-section avatar>
                   <q-icon name="fas fa-sign-out-alt" />
                 </q-item-section>

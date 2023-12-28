@@ -11,6 +11,7 @@ interface IAuthenticationState {
 interface ILoginOptions {
   username: string
   password: string
+  server: string
 }
 
 export const useAuthenticationStore = defineStore('authentication', {
@@ -30,6 +31,8 @@ export const useAuthenticationStore = defineStore('authentication', {
   },
   actions: {
     async login(options: ILoginOptions) {
+      //fixme
+      api.defaults.baseURL = options.server
       return new Promise(
         (resolve, reject) => {
           api.post('/login', {

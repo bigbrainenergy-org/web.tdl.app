@@ -15,6 +15,16 @@
       <q-card-section>
         <q-form class="q-gutter-md" autofocus>
           <q-input
+            v-model="server"
+            filled
+            :label="$t('server')"
+          >
+            <template v-slot:prepend>
+              <q-icon name="fas fa-network-wired" />
+            </template>
+          </q-input>
+
+          <q-input
             v-model="username"
             filled
             :label="$t('username')"
@@ -45,51 +55,39 @@
   </q-page>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useQuasar } from 'quasar'
 
 import { useRouter } from 'vue-router'
-import { defineComponent, ref } from 'vue'
+import { ref } from 'vue'
 
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import { Utils } from 'src/util'
+import { api } from 'src/boot/axios'
+const authenticationStore = useAuthenticationStore()
+const $q = useQuasar()
+const $router = useRouter()
 
-export default defineComponent({
-  name: 'PageLogin',
+const username = ref('')
+const password = ref('')
+const server = ref(api.defaults.baseURL ?? '')
 
-  setup() {
-    const $q = useQuasar()
-    const authenticationStore = useAuthenticationStore()
-
-    const $router = useRouter()
-
-    const username = ref('')
-    const password = ref('')
-
-    function login() {
-      authenticationStore.login({
-        username: username.value,
-        password: password.value
-      }).
-      then(
-        // This is the (response) => {} handler
-        () => {
-          username.value = ''
-          password.value = ''
-          $q.notify({
-            color: 'positive',
-            position: 'top',
-            message: 'Logged in successfully',
-            icon: 'fas fa-sign-out-alt'
-          })
-          $router.push({ path: '/' })
-        },
-        // This is the (error) => {} handler lambda
-        Utils.handleError('Failed to log in')
-      )
-    }
-
-    return { username, password, login };
-  }
-});
+const login = () => {
+  authenticationStore.login({
+    username: username.value,
+    password: password.value,
+    server: server.value
+  }).then(() => {
+    username.value = ''
+    password.value = ''
+    $q.notify({
+      color: 'positive',
+      position: 'top',
+      message: 'Logged in successfully',
+      icon: 'fas fa-sign-out-alt'
+    })
+    $router.push({ path: '/' })
+  },
+  Utils.handleError('Failed to log in'))
+}
 </script>
