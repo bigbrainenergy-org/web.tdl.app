@@ -16,17 +16,30 @@ export const useAxiosStore = defineStore('axios', {
   persist: true,
   actions: {
     URL(url?: string) {
-      if(typeof url !== 'undefined') this.url = url
-      if(typeof this.url === 'undefined') {
-        if(!process.env.DEV) this.url = 'https://api.tdl.app'
-        if(process.env.MODE === 'capacitor') this.url = 'https://api.tdl.app'
-        else this.url = 'http://localhost:3000'
+      if(typeof url !== 'undefined') {
+      	this.url = url
+      	console.debug(`url changed to ${url}`)
+      }
+      else if(typeof this.url === 'undefined') {
+      	console.warn('url was undefined, revert to default options')
+        if(!process.env.DEV) {
+          this.url = 'https://api.tdl.app'
+          console.debug(`url is now ${this.url}`)
+		}
+        if(process.env.MODE === 'capacitor') {
+          this.url = 'https://api.tdl.app'
+          console.debug(`url is now ${this.url}`)
+        }
+        else {
+          this.url = 'http://localhost:3000'
+          console.debug(`url is now ${this.url}`)
+        }
       }
       return this.url
     },
     axios(baseURL?: string): AxiosInstance {
-      if(typeof baseURL !== 'undefined') this.api = axios.create({ baseURL })
-      if(typeof this.api === 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
+      if(typeof baseURL !== 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
+      else if(typeof this.api === 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
       return this.api
     }
   }
