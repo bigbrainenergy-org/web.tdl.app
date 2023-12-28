@@ -98,7 +98,6 @@ import { computed, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
-import { api } from 'src/boot/axios';
 import errorNotification from 'src/hackerman/ErrorNotification';
 import CreateTaskDialog from 'src/components/CreateTaskDialog.vue';
 import { UserRepo } from 'src/stores/users/user'
@@ -107,6 +106,7 @@ import { CreateTaskOptions, TaskRepo } from 'src/stores/tasks/task'
 import { Utils } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
 import { AxiosError } from 'axios'
+import { useAxiosStore } from 'src/stores/axios-store'
 
 console.debug('In Main Layout')
 
@@ -144,7 +144,7 @@ const logout = () => {
     })
     return
   }
-  api.delete('/logout', {
+  useAxiosStore().axios().delete('/logout', {
     headers: {
       Authorization: `Bearer ${sessionTokenComputed.value}`,
       'Content-Type': 'application/json',

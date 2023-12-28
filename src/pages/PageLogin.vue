@@ -63,20 +63,20 @@ import { ref } from 'vue'
 
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import { Utils } from 'src/util'
-import { api } from 'src/boot/axios'
+import { useAxiosStore } from 'src/stores/axios-store'
 const authenticationStore = useAuthenticationStore()
 const $q = useQuasar()
 const $router = useRouter()
 
 const username = ref('')
 const password = ref('')
-const server = ref(api.defaults.baseURL ?? '')
+const server = ref(useAxiosStore().URL())
 
 const login = () => {
+  useAxiosStore().axios(server.value)
   authenticationStore.login({
     username: username.value,
-    password: password.value,
-    server: server.value
+    password: password.value
   }).then(() => {
     username.value = ''
     password.value = ''

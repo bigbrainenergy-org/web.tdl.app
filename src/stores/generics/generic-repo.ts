@@ -1,9 +1,9 @@
 import { Repository } from 'pinia-orm'
-import { api } from 'src/boot/axios'
 import iRecord, { iOptions } from './i-record'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { Utils } from 'src/util'
 import { AxiosResponse } from 'axios'
+import { useAxiosStore } from '../axios-store'
 
 interface SimpleApiBackedRepo {
   // TODO: access T.entity somehow. In the meantime just have a string property.
@@ -37,6 +37,7 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   fetch = async () => {
+    const api = useAxiosStore().axios()
     await api.get(
       `/${this.apidir}`,
       this.commonHeader()
@@ -51,6 +52,7 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   getId = async (id: number) => {
+    const api = useAxiosStore().axios()
     await api.get(`/${this.apidir}/${id}`, this.commonHeader()).then((response: AxiosResponse) => {
       console.log(response.data as T[])
       this.save(response.data as T[])
@@ -58,6 +60,7 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   add = async (newItem: iCreateT) => {
+    const api = useAxiosStore().axios()
     console.debug('add item: ', { newItem })
     const response = await api.post(`/${this.apidir}`, newItem, this.commonHeader())
     console.debug('response: ', response)
@@ -65,12 +68,14 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   delete = async (id: number) => {
+    const api = useAxiosStore().axios()
     // todo: debug, info, and error handling
     await api.delete(`/${this.apidir}/${id}`, this.commonHeader())
     this.destroy(id)
   }
 
   update = async (itemOptions: iUpdateT) => {
+    const api = useAxiosStore().axios()
     console.debug(`${this.apidir} UPDATE`)
     const newValue = await (await api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())).data
     console.debug(`${this.apidir} patch return value: `, newValue)
