@@ -64,6 +64,7 @@ import { ref } from 'vue'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import { Utils } from 'src/util'
 import { useAxiosStore } from 'src/stores/axios-store'
+import { syncWithBackend } from 'src/hackerman/sync'
 const authenticationStore = useAuthenticationStore()
 const $q = useQuasar()
 const $router = useRouter()
@@ -86,7 +87,7 @@ const login = () => {
       message: 'Logged in successfully',
       icon: 'fas fa-sign-out-alt'
     })
-    $router.push({ path: '/' })
+    syncWithBackend().then(() => $router.push({ path: '/' }), Utils.handleError('Failed to fetch data'))
   },
   Utils.handleError('Failed to log in'))
 }

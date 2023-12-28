@@ -125,8 +125,6 @@ const pagesWithNewTaskButton = [
 const authenticationStore = useAuthenticationStore()
 const ur = useRepo(UserRepo)
 
-await syncWithBackend()
-
 const sessionTokenComputed = computed({
   get: () => authenticationStore.sessionToken,
   set: value => {
