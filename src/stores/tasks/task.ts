@@ -100,9 +100,9 @@ export class Task extends Model implements iRecord {
       y: height / 2,
       vx: 0,
       vy: 0,
-      radius: Math.max(this.hard_postreq_ids.length**2.3, 8),
-      color: this.completed ? '#003905' : (this.hard_prereq_ids.length === 0 ? 'red' : 'gray'),
-      repel: -500/this.hard_prereq_ids.length
+      radius: Math.max(this.hard_postreq_ids.length**2.1, 8),
+      color: this.completed ? '#003905' : (this.hard_prereqs.filter(x => !x.completed).length === 0 ? 'red' : 'gray'),
+      repel: -1000/(this.hard_prereq_ids.length**2)
     }
   }
 
@@ -166,11 +166,67 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     await this.update(options)
   }
 
+  addPre = async (task: Task, id_of_prereq: number) => {
+    const position = task.hard_prereq_ids.indexOf(id_of_prereq)
+    if(position >= 0) throw new Error('addPre: id provided is already in prereqs list')
+    const taskID = Utils.hardCheck(task.id, "addPre: task's id was null or undefined")
+    const pre = this.find(id_of_prereq)
+    if(pre === null) throw new Error('prerequisite was not found in list')
+    const options: UpdateTaskOptions = {
+      id: taskID,
+      payload: { task }
+    }
+    task.hard_prereq_ids.push(id_of_prereq)
+    await this.update(options)
+    const pre_options: UpdateTaskOptions = {
+      id: Utils.hardCheck(pre.id),
+      payload: { task: pre }
+    }
+    pre.hard_postreq_ids.push(taskID)
+    await this.update(pre_options)
+  }
+
+  addPost = async (task: Task, id_of_postreq: number) => {
+    const position = task.hard_prereq_ids.indexOf(id_of_postreq)
+    if(position >= 0) throw new Error('addPost: id provided is already in postreqs list')
+    const taskID = Utils.hardCheck(task.id, "addPost: task's id was null or undefined")
+    const post = this.find(id_of_postreq)
+    if(post === null) throw new Error('postrequisite was not found in list')
+    const options: UpdateTaskOptions = {
+      id: taskID,
+      payload: { task }
+    }
+    task.hard_postreq_ids.push(id_of_postreq)
+    await this.update(options)
+    const post_options: UpdateTaskOptions = {
+      id: Utils.hardCheck(post.id),
+      payload: { task: post }
+    }
+    post.hard_prereq_ids.push(taskID)
+    await this.update(post_options)
+  }
+
   toggleCompleted = async (task: Task) => {
     task.completed = !task.completed
     await this.update({ 
       id: Utils.hardCheck(task.id, 'task id was null or undefined'),
       payload: { task }
     })
+  }
+
+  deleteTask = async (task: Task) => {
+    const task_id = Utils.hardCheck(task.id)
+    const currentTask = this.with('hard_prereqs').with('hard_postreqs').find(task_id)
+    if(currentTask === null) throw new Error('task to delete was given but then it was not found in the list')
+    const pres = currentTask.hard_prereqs
+    const posts = currentTask.hard_postreqs
+    console.debug({currentTask, pres, posts})
+    for(let i = 0; i < pres.length; i++) {
+      await this.removePost(pres[i], task_id).catch((x) => console.debug(x))
+    }
+    for(let i = 0; i < posts.length; i++) {
+      await this.removePre(posts[i], task_id).catch((x) => console.debug(x))
+    }
+    return this.delete(task_id)
   }
 }

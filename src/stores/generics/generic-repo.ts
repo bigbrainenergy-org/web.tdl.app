@@ -59,12 +59,20 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
     }, Utils.handleError(`Could not get ${this.apidir} id ${id}`))
   }
 
-  add = async (newItem: iCreateT) => {
-    const api = useAxiosStore().axios()
-    console.debug('add item: ', { newItem })
-    const response = await api.post(`/${this.apidir}`, newItem, this.commonHeader())
-    console.debug('response: ', response)
-    this.save(response.data as T[])
+  add = (newItem: iCreateT): Promise<T> => {
+    const api = useAxiosStore().axios();
+    console.debug('add item: ', { newItem });
+  
+    return api.post(`/${this.apidir}`, newItem, this.commonHeader())
+      .then(response => {
+        console.debug('response: ', response);
+        this.save(response.data as T);
+        return response.data as T;
+      })
+      .catch(error => {
+        console.error('Error adding item:', error);
+        throw error; // Re-throw the error to propagate it to the caller
+      });
   }
 
   delete = async (id: number) => {
@@ -77,9 +85,9 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   update = async (itemOptions: iUpdateT) => {
     const api = useAxiosStore().axios()
     console.debug(`${this.apidir} UPDATE`)
-    const newValue = await (await api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())).data
-    console.debug(`${this.apidir} patch return value: `, newValue)
-    this.save(newValue as T)
+    const response = await api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
+    console.debug(`${this.apidir} patch return value: `, response.data)
+    this.save(response.data as T)
   }
 
   // includeEntity: name of entity to include. * invokes withAll. ** invokes withAllRecursive.

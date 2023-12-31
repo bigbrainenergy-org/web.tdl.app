@@ -1,5 +1,6 @@
+import { defineStore } from 'pinia'
 import { Model } from 'pinia-orm'
-import { Attr, Str, Uid } from 'pinia-orm/dist/decorators';
+import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
 
 export default class LocalSettings extends Model {
   static entity = 'local-settings'
@@ -9,4 +10,29 @@ export default class LocalSettings extends Model {
   @Str('') declare selectedList: string
   @Attr([]) declare selectedTags: Array<string>
   @Str('') declare tagsFilter: string
+  @Bool(false) declare hideCompleted: boolean
+
+  static piniaOptions = {
+    persist: true
+  }
 }
+
+export const useLocalSettingsStore = defineStore('local-settings', {
+  state: () => {
+    return {
+      id: null,
+      taskSearch: '',
+      selectedList: '',
+      selectedTags: [],
+      tagsFilter: '',
+      hideCompleted: false
+    }
+  },
+  persist: true,
+  actions: {
+    toggleHideCompleted() {
+      this.hideCompleted = !this.hideCompleted
+      return this.hideCompleted
+    }
+  }
+})

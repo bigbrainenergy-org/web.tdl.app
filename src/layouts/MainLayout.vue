@@ -78,11 +78,12 @@
         <q-route-tab icon="fa-solid fa-project-diagram" to="/lists" label="Lists" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
         <q-route-tab icon="fa-solid fa-project-diagram" to="/tasks-tree" label="Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
         <q-route-tab icon="fa-solid fa-project-diagram" to="/reverse-tasks-tree" label="Reverse Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/graph" label="Graph" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
       </q-tabs>
     </q-footer>
 
     <q-page-container>
-      <router-view keep-alive></router-view>
+      <router-view keep-alive ref="routedComponent" :key="routedKey"></router-view>
       <!-- <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />
@@ -107,19 +108,28 @@ import { Utils } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
 import { AxiosError } from 'axios'
 import { useAxiosStore } from 'src/stores/axios-store'
+import { ComponentPublicInstance } from 'vue'
 
 console.debug('In Main Layout')
 
 const $q = useQuasar()
 const $route = useRoute()
 const $router = useRouter()
+const routedComponent = ref<ComponentPublicInstance | null>(null)
+const routedKey = ref(0)
+
+const refreshRoutedComponent = () => {
+  console.warn('refreshing routed component')
+  routedKey.value++
+}
 
 const currentPath = computed(() => $route.path)
 
 const pagesWithNewTaskButton = [
   '/tasks',
   '/tasks-tree',
-  '/reverse-tasks-tree'
+  '/reverse-tasks-tree',
+  '/graph'
 ]
 
 const authenticationStore = useAuthenticationStore()
@@ -167,7 +177,10 @@ const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
   tr.add(payload)
   .then(
-    Utils.handleSuccess('Created task', 'fa-solid fa-tasks'),
+    () => {
+      Utils.notifySuccess('Successfully created a task')
+      refreshRoutedComponent()
+    },
     Utils.handleError('Failed to create task.')
   )
 }
@@ -180,7 +193,7 @@ const openCreateTaskDialog = () => {
         const newTask = payload.options
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
-        createTask(newTask) 
+        createTask(newTask)
       }
     }
   })
