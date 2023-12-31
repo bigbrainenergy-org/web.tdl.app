@@ -46,6 +46,14 @@
                 <q-item clickable v-ripple v-if="!results.length">
                   <q-item-section>No results found</q-item-section>
                 </q-item>
+                <q-item>
+                  <q-btn
+                  icon="fas fa-plus"
+                  label="Create A New Task"
+                  color="primary"
+                  @click="createTask"
+                />
+                </q-item>
                 <q-item
                   clickable
                   v-ripple
@@ -74,7 +82,7 @@ import {
 } from 'vue';
 import Fuse from 'fuse.js'
 
-import { Task, TaskRepo } from 'src/stores/tasks/task';
+import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
 import { useRepo } from 'pinia-orm'
 
@@ -159,5 +167,13 @@ import { useRepo } from 'pinia-orm'
       emit('select', { task: task, callback: searchForTasks })
     }
     const onCancelClick = onDialogCancel
+
+const createTask = async () => {
+  const toCreate: CreateTaskOptions = {
+    title: search.value
+  }
+  const newTask = await tr.add(toCreate)
+  selectTask(newTask)
+}
 
 </script>
