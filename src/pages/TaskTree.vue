@@ -18,7 +18,7 @@
           >
             <template v-slot:default-header="prop">
               <q-item class="text-primary" :style="{ backgroundColor: toggleRGB ? prop.node.obj.hashColor() : '#1d1d1df6' }">
-                <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
+                <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)" color="primary" keep-color></q-checkbox>
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
