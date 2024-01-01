@@ -130,7 +130,7 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple v-if="!allPres.length">
+              <q-item v-ripple v-if="!allPres.length">
                 <q-item-section>No prerequisites</q-item-section>
               </q-item>
               <q-item
@@ -161,7 +161,7 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple v-if="!allPosts.length">
+              <q-item v-ripple v-if="!allPosts.length">
                 <q-item-section>No postrequisites</q-item-section>
               </q-item>
               <q-item
@@ -192,7 +192,7 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple>
+              <q-item v-ripple>
                 <q-item-section>No subtasks</q-item-section>
               </q-item>
             </q-list>
