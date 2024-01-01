@@ -32,7 +32,6 @@ import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
-import { Utils } from 'src/util'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()

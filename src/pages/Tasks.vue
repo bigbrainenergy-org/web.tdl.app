@@ -47,7 +47,9 @@
                     </q-icon>
                   </q-item-section>
 
-                  
+                  <q-space></q-space>
+
+                  <q-btn rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)"/>
                 </q-item>
               </q-intersection>
               <template v-if="tasks.length === 0">
@@ -74,6 +76,7 @@ import { useRepo } from 'pinia-orm';
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
+import TaskSearchDialog from 'src/components/TaskSearchDialog.vue'
 
 const pageTasks = defineComponent({
   name: 'PageTasks',
@@ -140,4 +143,34 @@ const openTask = (currentTask: Task) => {
     }
   })
 }
+
+const addPrereq = async (task: Task, pre: Task) => {
+  const payload_id = Utils.hardCheck(pre.id, 'addPrereq: id of prereq is null or undefined!')
+  await tasksRepo.addPre(task, payload_id)
+  .then(
+    Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
+    // now comes the fun part though... the updateTaskDialog does
+    // not show the prerequisites updated with the new value, and
+    // the tasks page(s) do not update to show the new structure either.
+    Utils.handleError('Failed to add prereq')
+  )
+}
+
+const addTaskPre = (currentTask: Task) => {
+  console.debug(`opening TaskSearchDialog with task of ${currentTask.title}`)
+  $q.dialog({
+    component: TaskSearchDialog,
+    componentProps: {
+      dialogTitle: 'Add Prerequisite',
+      task: currentTask,
+      onSelect: async (payload: { task: Task }) => {
+        console.debug({payload})
+        await addPrereq(currentTask, payload.task)
+      }
+    }
+  })
+}
+
+const hoveredID = ref<number | null>(null)
+const setHoveredTo = (x: number | null) => hoveredID.value = x
 </script>
