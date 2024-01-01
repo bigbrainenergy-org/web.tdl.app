@@ -29,7 +29,7 @@
                   v-ripple
                   @click="openTask(currentTask)"
                 >
-                  <q-checkbox v-model:model-value="currentTask.completed" @update:model-value="updateTaskCompletedStatus(currentTask)"></q-checkbox>
+                  <q-checkbox v-model:model-value="currentTask.completed" @update:model-value="updateTaskCompletedStatus(currentTask)" color="primary" keep-color></q-checkbox>
                 
                   <q-item-section>
                     {{ currentTask.title }}
