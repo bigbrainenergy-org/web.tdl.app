@@ -11,6 +11,7 @@ export default class LocalSettings extends Model {
   @Attr([]) declare selectedTags: Array<string>
   @Str('') declare tagsFilter: string
   @Bool(false) declare hideCompleted: boolean
+  @Bool(false) declare layerZeroOnly: boolean
 
   static piniaOptions = {
     persist: true
@@ -25,7 +26,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       selectedList: '',
       selectedTags: [],
       tagsFilter: '',
-      hideCompleted: false
+      hideCompleted: false,
+      layerZeroOnly: false
     }
   },
   persist: true,
