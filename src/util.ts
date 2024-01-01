@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
 import { λ } from './types'
@@ -33,7 +33,7 @@ export class Utils {
   }
   static arrayDelete<T>(arr: Array<T>, element: T) {
     const i = arr.indexOf(element)
-    if(i === -1) console.warn('element to delete was not found in array')
-    arr.splice(i, 1)
+    if(i < 0) arr.splice(i, 1)
+    return arr
   }
 }

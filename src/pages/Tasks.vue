@@ -3,6 +3,10 @@
     <div class="row items-stretch justify-evenly">
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
+          <q-card-actions>
+            <q-toggle v-model="layerZeroOnly" @click="updateLocalSettings" label="Next Up Only" class="text-primary"/>
+            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary"/>
+          </q-card-actions>
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
               <div class="col">
@@ -25,6 +29,8 @@
                   v-ripple
                   @click="openTask(currentTask)"
                 >
+                  <q-checkbox v-model:model-value="currentTask.completed" @update:model-value="updateTaskCompletedStatus(currentTask)"></q-checkbox>
+                
                   <q-item-section>
                     {{ currentTask.title }}
                   </q-item-section>
@@ -61,11 +67,13 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar'
-import { computed, defineComponent } from 'vue'
+import { computed, defineComponent, ref } from 'vue'
 
 import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
 import { useRepo } from 'pinia-orm';
 import { Task, TaskRepo } from 'src/stores/tasks/task'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { Utils } from 'src/util'
 
 const pageTasks = defineComponent({
   name: 'PageTasks',
@@ -73,8 +81,28 @@ const pageTasks = defineComponent({
 
 const $q = useQuasar()
 const tasksRepo = useRepo(TaskRepo)
+const usr = useLocalSettingsStore()
 
-const tasks = computed( () => tasksRepo.withAll().get() )
+const layerZeroOnly = ref(usr.layerZeroOnly)
+const incompleteOnly = ref(usr.hideCompleted)
+const updateLocalSettings = () => {
+  usr.layerZeroOnly = layerZeroOnly.value
+  usr.hideCompleted = incompleteOnly.value
+}
+
+const notCompleted = (x: Task) => x.completed === false
+const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
+
+const tasks = computed(() => {
+  let baseQuery = tasksRepo.withAll().get()
+  if(layerZeroOnly.value) baseQuery = baseQuery.filter(notBlocked)
+  if(incompleteOnly.value) baseQuery = baseQuery.filter(notCompleted)
+  return baseQuery
+})
+
+const updateTaskCompletedStatus = async (task: Task) => {
+  await tasksRepo.update({ id: Utils.hardCheck(task.id), payload: { task }})
+}
 
 // todo: restore this feature
 //const taskMenus = ref([])

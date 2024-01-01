@@ -188,9 +188,9 @@ import { defineComponent, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import { useRouter } from 'vue-router'
-import { api } from 'boot/axios'
 import { useAuthenticationStore}  from '../stores/authentication/pinia-authentication'
 import { Utils } from 'src/util'
+import { useAxiosStore } from 'src/stores/axios-store'
 
 export default defineComponent({
   name: 'PageRegister',
@@ -243,6 +243,7 @@ export default defineComponent({
     async function onSubmit() {
       await recaptchaLoaded()
       const recaptcha = await executeRecaptcha('accessRequest')
+      const api = useAxiosStore().axios()
 
       api.post('/access-request', {
         name: name.value,

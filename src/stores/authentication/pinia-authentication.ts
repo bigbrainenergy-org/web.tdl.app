@@ -1,7 +1,6 @@
 import { AxiosError } from 'axios';
 import { defineStore } from 'pinia';
-import { api } from 'src/boot/axios';
-import { Utils } from 'src/util';
+import { useAxiosStore } from '../axios-store'
 
 interface IAuthenticationState {
   sessionToken: string
@@ -30,6 +29,7 @@ export const useAuthenticationStore = defineStore('authentication', {
   },
   actions: {
     async login(options: ILoginOptions) {
+      const api = useAxiosStore().axios()
       return new Promise(
         (resolve, reject) => {
           api.post('/login', {

@@ -4,8 +4,8 @@ import { Attr, BelongsTo, Str } from 'pinia-orm/dist/decorators';
 import GenericRepo from '../generics/generic-repo';
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { TimeZone } from '../time-zones/time-zone'
-import { api } from 'src/boot/axios'
 import { Utils } from 'src/util'
+import { useAxiosStore } from '../axios-store'
 
 export interface CreateUserOptions {
   timeZone: string;
@@ -48,6 +48,7 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
   changePassword = async (options: passOptions) => {
     const aust = useAuthenticationStore()
     const userId = aust.userId
+    const api = useAxiosStore().axios()
     await api.patch(`/${this.apidir}/${userId}/change-password`,
       {
         user: options,

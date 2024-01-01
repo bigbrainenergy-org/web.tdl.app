@@ -10,7 +10,7 @@
         <template v-else>
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)"/>
         </template>
-        <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask.id!)" />
+        <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask as Task)" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
 
@@ -130,7 +130,7 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple v-if="!allPres.length">
+              <q-item v-ripple v-if="!allPres.length">
                 <q-item-section>No prerequisites</q-item-section>
               </q-item>
               <q-item
@@ -140,6 +140,9 @@
                 :key="index"
                 @click="setCurrentTask(pre as Task)"
               >
+                <q-item-section>
+                  <q-checkbox v-model:model-value="pre.completed" @update:model-value="updateTaskCompletedStatus(pre as Task)"/>
+                </q-item-section>
                 <q-item-section>
                   {{ pre.title }}
                 </q-item-section>
@@ -158,7 +161,7 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple v-if="!allPosts.length">
+              <q-item v-ripple v-if="!allPosts.length">
                 <q-item-section>No postrequisites</q-item-section>
               </q-item>
               <q-item
@@ -168,6 +171,9 @@
                 :key="index"
                 @click="setCurrentTask(post as Task)"
               >
+                <q-item-section>
+                  <q-checkbox v-model:model-value="post.completed" @update:model-value="updateTaskCompletedStatus(post as Task)"/>
+                </q-item-section>
                 <q-item-section>
                   {{ post.title }}
                 </q-item-section>
@@ -186,7 +192,7 @@
               </div>
             </div>
             <q-list class="q-my-md">
-              <q-item clickable v-ripple>
+              <q-item v-ripple>
                 <q-item-section>No subtasks</q-item-section>
               </q-item>
             </q-list>
@@ -235,7 +241,7 @@ console.debug('UpdateTaskDialog: task prop value: ', props.task)
 const taskID = ref(Utils.hardCheck(props.task.id))
 const updatedFlag = ref(false)
 const currentTask = ref<Task>(props.task)
-const refreshCurrentTask = () => currentTask.value = Utils.hardCheck(tr.withAll().find(props.task.id!))
+const refreshCurrentTask = () => currentTask.value = Utils.hardCheck(tr.withAll().find(Utils.hardCheck(props.task.id)))
 refreshCurrentTask()
 const editTitle = ref(currentTask.value.title)
 const editNotes = ref(currentTask.value.notes)
@@ -258,6 +264,10 @@ const allPosts = computed(() => {
   console.debug('refreshing allPosts value')
   return currentTask.value.hard_postreqs
 })
+
+const updateTaskCompletedStatus = (task: Task) => {
+  tr.update({ id: Utils.hardCheck(task.id), payload: { task }})
+}
 
 const allLists = listsRepo.all()
 const listOptions = ref(allLists)
@@ -308,11 +318,7 @@ function setCurrentTask(newTask: Task) {
   selectedList.value = getSelectedList(currentTask.value as Task)
 }
 
-function deleteTask(title: string, id: number) {
-  if(id === null) {
-    console.warn('deleteTask: id was null')
-    return
-  }
+function deleteTask(title: string, task: Task) {
   $q.dialog({
     title: `Delete task: "${title}"`,
     message: 'This cannot be undone! Are you sure?',
@@ -325,7 +331,8 @@ function deleteTask(title: string, id: number) {
     }
   }).onOk(
     () => {
-      tr.delete(id).then(
+      console.debug('deleting task')
+      tr.deleteTask(task).then(
         Utils.handleSuccess('Deleted task', 'fa-solid fa-tasks'),
         Utils.handleError('Failed to delete task.')
       )
@@ -373,11 +380,9 @@ function openPostrequisiteDialog() {
 
 const addPrereq = async (payload: Task) => {
   const t = currentTask.value
-  const t_id = Utils.hardCheck(t.id, 'addPrereq: id of current task is null or undefined!')
   const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of prereq is null or undefined!')
-  let updates: UpdateTaskOptions = { id: t_id, payload: { task: { hard_prereq_ids: [...t.hard_prereq_ids, payload_id] } } }
-  await tr.update(updates).
-  then(
+  await tr.addPre(t as Task, payload_id)
+  .then(
     Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
     // now comes the fun part though... the updateTaskDialog does
     // not show the prerequisites updated with the new value, and
@@ -389,10 +394,8 @@ const addPrereq = async (payload: Task) => {
 
 const addPostreq = async (payload: Task) => {
   const t = currentTask.value
-  const t_id = Utils.hardCheck(t.id, 'addPostreq: id of current task is null or undefined!')
   const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of postreq is null or undefined!')
-  let updates: UpdateTaskOptions = { id: t_id, payload: { task: { hard_postreq_ids: [...t.hard_postreq_ids, payload_id] } } }
-  await tr.update(updates).
+  await tr.addPost(t as Task, payload_id).
   then(
     Utils.handleSuccess('Added Postrequisite', 'fa-solid fa-link'),
     Utils.handleError('Failed to add postreq')

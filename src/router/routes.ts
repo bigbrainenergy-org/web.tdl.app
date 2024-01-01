@@ -11,14 +11,14 @@ const routes: RouteRecordRaw[] = [
       { path: 'reverse-tasks-tree', name: 'ReverseTree', component: () => import('src/pages/ReverseTaskTree.vue') },
       { path: 'lists', name: 'Lists', component: () => import('src/pages/Lists.vue') },
       { path: 'settings', name: 'Settings', component: () => import('src/pages/Settings.vue') },
-      { path: 'graph', name: 'Graph', component: () => import('src/pages/TaskGraph.vue') }
+      { path: 'graph', name: 'Graph', component: () => import('src/pages/GraphAll.vue') }
     ]
   },
   {
     path: '/', 
     component: () => import('src/layouts/GuestLayout.vue'),
     children: [
-      { path: 'login', name: 'Login', component: () => import('src/pages/Login.vue') },
+      { path: 'login', name: 'Login', component: () => import('src/pages/PageLogin.vue') },
       { path: 'request-access', name: 'Request Access', component: () => import('src/pages/RequestAccess.vue') }
     ]
   },

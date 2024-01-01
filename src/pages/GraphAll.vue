@@ -3,6 +3,9 @@
     <div class="row items-stretch justify-evenly">
       <div class="full-height">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
+          <q-card-actions>
+            <q-toggle @click="reInitializeGraph" v-model="incompleteOnly" label="Hide Completed Tasks" />
+          </q-card-actions>
           <svg ref="graphRef" id="graphElement"></svg>  
         </q-card>
       </div>
@@ -23,12 +26,16 @@ svg text{
 import { useRepo } from 'pinia-orm'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import * as d3 from 'd3'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
 import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { λ } from 'src/types'
+import { Utils } from 'src/util'
 
-const tr = useRepo(TaskRepo)
+const tr = computed(() => useRepo(TaskRepo))
+const usr = useLocalSettingsStore()
 let allTasks
 let allTaskNodes: d3Node<Task>[]
 
@@ -39,8 +46,10 @@ let height = 1000
 type d3Link<T> = d3.SimulationLinkDatum<d3Node<T>> & { slopeX: number, slopeY: number, angle: number, normalXoffset: number, normalYoffset: number }
 let links: d3Link<Task>[]
 
+const incompleteOnly = ref(usr.hideCompleted)
+
 const populateGraphDataStructures = () => {
-  allTasks = tr.all()
+  allTasks = tr.value.withAll().get()
   allTaskNodes = []
   links = []
   for(let i = 0; i < allTasks.length; i++) {
@@ -48,16 +57,47 @@ const populateGraphDataStructures = () => {
   }
   const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
   allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
-  links = links.concat(...allTaskNodes.map((x: d3Node<Task>) => 
+  links = links.concat(allTaskNodes.flatMap((x: d3Node<Task>) => 
     x.obj.hard_postreq_ids.map((y: number) => ({ 
-      source: x, target: taskNodeMap.get(y), slopeX: 1, slopeY: 1, normalXoffset: 1, normalYoffset: 1
+      source: x, 
+      target: taskNodeMap.get(y), 
+      slopeX: 1, 
+      slopeY: 1, 
+      normalXoffset: 1, 
+      normalYoffset: 1
     } as d3Link<Task>))
   ))
+  console.log({links})
 }
 
-populateGraphDataStructures()
+const populateGraphDataStructuresIncompleteOnly = () => {
+  const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
+  allTasks = tr.value.withAll().get().filter(incomplete)
+  const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
+  allTasks.forEach((x, i) => taskNodeMap.set(x.id!, x.d3forceNode(i)))
 
-console.debug({links})
+  const generateD3LinkToPostreq: λ<d3Node<Task>, λ<Task, d3Link<Task>>> = (currentTaskNode: d3Node<Task>) => (currentPost: Task) => ({
+    source: currentTaskNode,
+    target: taskNodeMap.get(currentPost.id!),
+    slopeX: 1,
+    slopeY: 1,
+    normalXoffset: 1,
+    normalYoffset: 1
+  } as d3Link<Task>)
+
+  const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (currentTaskNode: d3Node<Task>) => currentTaskNode.obj.hard_postreqs.filter(incomplete).map(generateD3LinkToPostreq(currentTaskNode))
+
+  allTaskNodes = Array.from(taskNodeMap).map(x => x[1])
+  links = allTaskNodes.flatMap(generateD3LinksToAllPostreqs)
+  console.log({links})
+}
+
+const populate = () => {
+  if(incompleteOnly.value) populateGraphDataStructuresIncompleteOnly()
+  else populateGraphDataStructures()
+}
+
+populate()
 
 const graphRef = ref<SVGSVGElement | null>(null)
 
@@ -153,9 +193,10 @@ const initializeGraph = () => {
     .attr('r', (d: d3Node<Task>) => d.radius)
     .attr('fill', (d: d3Node<Task>) => d.color)
   
-  label = gnodes.filter((x: d3Node<Task>) => x.radius >= 12 || x.obj.hard_prereq_ids.length == 0)
+  label = gnodes.filter((x: d3Node<Task>) => !x.obj.completed && (x.radius >= 12 || x.obj.hard_prereqs.filter(x => !x.completed).length === 0))
     .append('text')
     .text((d: d3Node<Task>) => d.obj.title)
+    .style('font', '1.2em')
     .attr('stroke', 'black')
     .attr('stroke-width', '0.3em')
     .attr('class', 'text-primary')
@@ -188,9 +229,17 @@ const reInitializeGraph = () => {
   svg.selectAll('line').remove()
   svg.selectAll('.gnode').remove()
   svg.selectAll('defs').remove()
-  populateGraphDataStructures()
+  populate()
   initializeGraph()
+  usr.hideCompleted = incompleteOnly.value
 }
+
+const toggleIncompleteOnly = () => {
+  incompleteOnly.value = !incompleteOnly.value
+  reInitializeGraph()
+}
+
+const refresh = reInitializeGraph
 
 onMounted(initializeGraph)
 </script>
