@@ -25,7 +25,7 @@ export const useAxiosStore = defineStore('axios', {
       return this.url
     },
     axios(baseURL?: string): AxiosInstance {
-      if(typeof baseURL !== 'undefined') this.api = axios.create({ baseURL })
+      if(typeof baseURL !== 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
       if(typeof this.api === 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
       return this.api
     }
