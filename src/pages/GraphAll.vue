@@ -3,10 +3,9 @@
     <div class="row items-stretch justify-evenly">
       <div class="full-height">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
-        <q-card-actions>
-          <q-toggle @click="reInitializeGraph" v-model="incompleteOnly" label="Hide Completed Tasks" />
-        </q-card-actions>
-          
+          <q-card-actions>
+            <q-toggle @click="reInitializeGraph" v-model="incompleteOnly" label="Hide Completed Tasks" />
+          </q-card-actions>
           <svg ref="graphRef" id="graphElement"></svg>  
         </q-card>
       </div>
@@ -32,6 +31,8 @@ import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
 import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { λ } from 'src/types'
+import { Utils } from 'src/util'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -45,13 +46,10 @@ let height = 1000
 type d3Link<T> = d3.SimulationLinkDatum<d3Node<T>> & { slopeX: number, slopeY: number, angle: number, normalXoffset: number, normalYoffset: number }
 let links: d3Link<Task>[]
 
-let completed_tasks = []
-
 const incompleteOnly = ref(usr.hideCompleted)
 
 const populateGraphDataStructures = () => {
   allTasks = tr.value.withAll().get()
-  completed_tasks = tr.value.where('completed', true).all()
   allTaskNodes = []
   links = []
   for(let i = 0; i < allTasks.length; i++) {
@@ -73,25 +71,24 @@ const populateGraphDataStructures = () => {
 }
 
 const populateGraphDataStructuresIncompleteOnly = () => {
-  allTasks = tr.value.withAll().get().filter(x => !x.completed)
-  completed_tasks = tr.value.where('completed', true).all()
-  allTaskNodes = []
-  links = []
-  for(let i = 0; i < allTasks.length; i++) {
-    allTaskNodes.push(allTasks[i].d3forceNode(i))
-  }
+  const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
+  allTasks = tr.value.withAll().get().filter(incomplete)
   const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
-  allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
-  links = links.concat(allTaskNodes.flatMap((x: d3Node<Task>) => 
-    x.obj.hard_postreq_ids.filter(z => !taskNodeMap.get(z)?.obj.completed).map((y: number) => ({ 
-      source: x, 
-      target: taskNodeMap.get(y), 
-      slopeX: 1, 
-      slopeY: 1, 
-      normalXoffset: 1, 
-      normalYoffset: 1
-    } as d3Link<Task>))
-  ))
+  allTasks.forEach((x, i) => taskNodeMap.set(x.id!, x.d3forceNode(i)))
+
+  const generateD3LinkToPostreq: λ<d3Node<Task>, λ<Task, d3Link<Task>>> = (currentTaskNode: d3Node<Task>) => (currentPost: Task) => ({
+    source: currentTaskNode,
+    target: taskNodeMap.get(currentPost.id!),
+    slopeX: 1,
+    slopeY: 1,
+    normalXoffset: 1,
+    normalYoffset: 1
+  } as d3Link<Task>)
+
+  const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (currentTaskNode: d3Node<Task>) => currentTaskNode.obj.hard_postreqs.filter(incomplete).map(generateD3LinkToPostreq(currentTaskNode))
+
+  allTaskNodes = Array.from(taskNodeMap).map(x => x[1])
+  links = allTaskNodes.flatMap(generateD3LinksToAllPostreqs)
   console.log({links})
 }
 
