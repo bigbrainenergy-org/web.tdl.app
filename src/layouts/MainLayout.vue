@@ -58,6 +58,13 @@
                   <q-icon name="fas fa-sign-out-alt" />
                 </q-item-section>
               </q-item>
+              <q-separator />
+              <q-item clickable @click="pullFresh">
+                <q-item-section>Pull Latest From Server</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="fas fa-sign-out-alt" />
+                </q-item-section>
+              </q-item>
             </q-list>
           </q-menu>
 
@@ -201,6 +208,13 @@ const openCreateTaskDialog = () => {
 
 const openCreateListDialog = () => {
   Utils.notifySuccess('Coming soon')
+}
+
+const pullFresh = () => {
+  syncWithBackend().then(() => {
+    Utils.notifySuccess('Updated local storage')
+    refreshRoutedComponent()
+  }, Utils.handleError('Failed to fetch data'))
 }
 
 </script>

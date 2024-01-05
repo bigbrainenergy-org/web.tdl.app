@@ -85,6 +85,7 @@ import Fuse from 'fuse.js'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
 import { useRepo } from 'pinia-orm'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
   interface Props {
     dialogTitle: string
@@ -130,11 +131,18 @@ import { useRepo } from 'pinia-orm'
     }
 
     const tr = useRepo(TaskRepo)
+    const usr = useLocalSettingsStore()
 
     function searchForTasks() {
       if(!search.value) { return } // Guard clause if search is empty
 
-      const tasks = tr.withAll().get()
+      const tasks = tr.withAll().get().filter(x => {
+        if(x.completed) return false
+        if(x.title === props.task?.title) return false
+        if(props.task?.hard_prereq_ids.includes(x.id!)) return false
+        if(props.task?.hard_postreq_ids.includes(x.id!)) return false
+        return true
+      })
 
       const fuse = new Fuse(tasks, searchOptions)
 

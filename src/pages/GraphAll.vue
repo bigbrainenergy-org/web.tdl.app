@@ -32,7 +32,6 @@ import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
-import { Utils } from 'src/util'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -185,7 +184,7 @@ const initializeGraph = () => {
       .join('line')
       //.attr('stroke-width', (d: d3Link<Task>) => (d.source as d3Node<Task>).obj.hard_postreq_ids.length**2)
       .attr('stroke', '#FFF')
-      .attr('stroke-opacity', '0.3')
+      .attr('stroke-opacity', '0.5')
       .attr('marker-end', 'url(#arrowhead)')
   
   node = gnodes
