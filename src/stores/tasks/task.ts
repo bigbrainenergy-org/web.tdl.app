@@ -100,7 +100,7 @@ export class Task extends Model implements iRecord {
       y: height / 2,
       vx: 0,
       vy: 0,
-      radius: Math.max(this.hard_postreq_ids.length**2.1, 8),
+      radius: Math.min(300, Math.max(this.hard_postreq_ids.length**2.1, this.hard_prereqs.filter(x => !x.completed).length === 0 ? 16 : 8)),
       color: this.completed ? '#003905' : (this.hard_prereqs.filter(x => !x.completed).length === 0 ? 'red' : 'gray'),
       repel: -1000/(this.hard_prereq_ids.length**2)
     }

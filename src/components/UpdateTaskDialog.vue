@@ -11,6 +11,7 @@
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)"/>
         </template>
         <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask as Task)" />
+        <q-btn class="q-ma-sm" size="md" color="negative" label="DO ASAP" @click="ASAPify(currentTask as Task)" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
 
@@ -146,7 +147,6 @@
                 <q-item-section>
                   {{ pre.title }}
                 </q-item-section>
-
                 <q-item-section avatar>
                   <q-btn round color="negative" icon="fas fa-unlink" @click.stop="removePrerequisite(pre as Task)" />
                 </q-item-section>
@@ -176,6 +176,11 @@
                 </q-item-section>
                 <q-item-section>
                   {{ post.title }}
+                </q-item-section>
+
+                <q-item-section avatar>
+
+                  <q-btn round color="warning" icon="fas fa-triangle-exclamation" @click.stop="mvpPostrequisite(post as Task)" />
                 </q-item-section>
 
                 <q-item-section avatar>
@@ -216,6 +221,7 @@ import { ListRepo } from 'src/stores/lists/list';
 import { AllOptionalTaskProperties, Task, TaskRepo, UpdateTaskOptions } from 'src/stores/tasks/task';
 import { Item, useRepo } from 'pinia-orm';
 import { Utils } from 'src/util'
+import { syncWithBackend } from 'src/hackerman/sync'
 
 const props = defineProps<{ task: Task }>()
 
@@ -432,6 +438,36 @@ const onOKClick = onDialogOK
 // we can passthrough onDialogCancel directly
 const onCancelClick = onDialogCancel
 
+const ASAPify = (task: Task) => {
+  const allTasks = tr.withAll().get()
+  const layerZero = allTasks.filter(x => !x.completed && x.id !== task.id && x.hard_prereqs.filter((y: Task) => !y.completed).length === 0)
+  const taskID = Utils.hardCheck(task.id)
+  for(let i = 0; i < layerZero.length; i++) {
+    tr.addPre(layerZero[i], taskID).then(Utils.handleSuccess('Added a Next-Up as Post to This'), Utils.handleError('Error adding Rule for ASAPify'))
+  }
+  syncWithBackend().then(() => {
+    Utils.notifySuccess('Refreshed All')
+    refreshCurrentTask()
+  }, Utils.handleError('Error Refreshing All'))
+}
 
+const mvpPostrequisite = (post: Task) => {
+  console.debug(post)
+  const allOtherPosts = (allPosts.value as Task[]).filter(x => !x.completed && x.id !== post.id)
+  const currentTaskID = Utils.hardCheck(currentTask.value.id)
+  const postID = Utils.hardCheck(post.id)
+  allOtherPosts.forEach(x => {
+    tr.removePre(x, currentTaskID).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
+  })
+  allOtherPosts.forEach(x => {
+    tr.addPre(x, postID).then(() => {
+      Utils.notifySuccess('added new post to MVP!')
+    }, Utils.handleError('error adding new post to MVP!'))
+  })
+  syncWithBackend().then(() => {
+    Utils.notifySuccess('Refreshed All')
+    refreshCurrentTask()
+  }, Utils.handleError('Error Refreshing All'))
+}
 
 </script>
