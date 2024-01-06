@@ -84,10 +84,11 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
 
   update = async (itemOptions: iUpdateT) => {
     const api = useAxiosStore().axios()
-    console.debug(`${this.apidir} UPDATE`)
-    const response = await api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
-    console.debug(`${this.apidir} patch return value: `, response.data)
-    this.save(response.data as T)
+    // console.debug(`${this.apidir} UPDATE`)
+    return api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
+    .then((response) => {
+      this.save(response.data as T)
+    }, Utils.handleError('Error updating record'))
   }
 
   // includeEntity: name of entity to include. * invokes withAll. ** invokes withAllRecursive.

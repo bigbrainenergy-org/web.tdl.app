@@ -20,7 +20,7 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
-            <div class="text-h4 text-primary">{{ currentTask.title }}</div>
+            <div class="text-h4 text-primary">{{ taskTitle }}</div>
             <q-input
               v-model="editTitle"
               filled
@@ -224,8 +224,7 @@ import { Item, useRepo } from 'pinia-orm';
 import { Utils } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-
-const props = defineProps<{ task: Task }>()
+import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -245,13 +244,15 @@ const $q = useQuasar()
 const listsRepo = useRepo(ListRepo)
 const tr = useRepo(TaskRepo)
 const usr = useLocalSettingsStore()
+const ctr = useCurrentTaskStore()
 
-console.debug('UpdateTaskDialog: task prop value: ', props.task)
-const taskID = ref(Utils.hardCheck(props.task.id))
+const currentTaskID = computed((): number => Utils.hardCheck(ctr.id))
+const currentTask = computed((): Task => Utils.hardCheck(tr.withAll().find(currentTaskID.value)))
+console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
+const taskID = computed(() => currentTask.value.id)
+const taskTitle = computed(() => currentTask.value.title)
 const updatedFlag = ref(false)
-const currentTask = ref<Task>(props.task)
-const refreshCurrentTask = () => currentTask.value = Utils.hardCheck(tr.withAll().find(Utils.hardCheck(props.task.id)))
-refreshCurrentTask()
+
 const editTitle = ref(currentTask.value.title)
 const editNotes = ref(currentTask.value.notes)
 const editRemindMeAt = ref(currentTask.value.remind_me_at)
@@ -263,8 +264,6 @@ const incompleteOnly = ref(usr.hideCompleted)
 const updateLocalSettings = () => {
   usr.hideCompleted = incompleteOnly.value
 }
-
-tr.withAll().load([props.task])
 
 const lists = computed(
   () => listsRepo.all()
@@ -314,25 +313,17 @@ function getSelectedList(task: Task) {
   )
 }
 
-const selectedList = ref(getSelectedList(currentTask.value as Task))
+const selectedList = ref(getSelectedList(currentTask.value))
 
 function setCurrentTask(newTask: Task) {
   console.debug('setCurrentTask')
-  if(newTask.id === null) {
-    console.warn('setCurrentTask: new Task id was null')
-    return
-  }
-  const repoTask = tr
-      .with('hard_prereqs')
-      .with('hard_postreqs')
-      .find(newTask.id)
-  currentTask.value = repoTask as Task
+  ctr.id = newTask.id
   editTitle.value = currentTask.value.title
   editNotes.value = currentTask.value.notes
   editRemindMeAt.value = currentTask.value.remind_me_at
   editMentalEnergyRequired.value = currentTask.value.mental_energy_required
   editPhysicalEnergyRequired.value = currentTask.value.physical_energy_required
-  selectedList.value = getSelectedList(currentTask.value as Task)
+  selectedList.value = getSelectedList(currentTask.value)
 }
 
 function deleteTask(title: string, task: Task) {
@@ -359,8 +350,9 @@ function deleteTask(title: string, task: Task) {
 
 function updateTask(options: AllOptionalTaskProperties) {
   tr.update({id: currentTask.value.id ?? -1, payload: { task: options } })
-  .then(Utils.handleSuccess('Task Was Updated'))
-  refreshCurrentTask()
+  .then(() => {
+    Utils.notifySuccess('Task Was Updated')
+  }, Utils.handleError('Error updating task'))
 }
 
 function openPrerequisiteDialog() {
@@ -374,7 +366,7 @@ function openPrerequisiteDialog() {
       onSelect: async (payload: { task: Task }) => {
         console.debug({payload})
         await addPrereq(payload.task)
-      },
+      }
     }
   })
 }
@@ -396,49 +388,42 @@ function openPostrequisiteDialog() {
 }
 
 const addPrereq = async (payload: Task) => {
-  const t = currentTask.value
   const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of prereq is null or undefined!')
-  await tr.addPre(t as Task, payload_id)
+  await tr.addPre(currentTask.value, payload_id)
   .then(
-    Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
-    // now comes the fun part though... the updateTaskDialog does
-    // not show the prerequisites updated with the new value, and
-    // the tasks page(s) do not update to show the new structure either.
+    () => {
+      Utils.notifySuccess('Added Prerequisiste', 'fa-solid fa-link')
+    },
     Utils.handleError('Failed to add prereq')
   )
-  refreshCurrentTask()
 }
 
 const addPostreq = async (payload: Task) => {
-  const t = currentTask.value
   const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of postreq is null or undefined!')
-  await tr.addPost(t as Task, payload_id).
+  await tr.addPost(currentTask.value, payload_id).
   then(
-    Utils.handleSuccess('Added Postrequisite', 'fa-solid fa-link'),
+    () => {
+      Utils.notifySuccess('Added Postrequisite', 'fa-solid fa-link')
+      tr.withAll().load([currentTask.value])
+    },
     Utils.handleError('Failed to add postreq')
   )
-  refreshCurrentTask()
 }
 
 const removePrerequisite = async (prereq: Task) => {
-  const t = currentTask.value as Task
   const prereq_id = Utils.hardCheck(prereq.id, 'removePrerequisite: id of prereq is null or undefined!')
-  await tr.removePre(t, prereq_id)
+  await tr.removePre(currentTask.value, prereq_id)
   .then(Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'))
-  refreshCurrentTask()
 }
 
 const removePostrequisite = async (postreq: Task) => {
-  const t = currentTask.value as Task
   const postreq_id = Utils.hardCheck(postreq.id, 'removePostrequisite: id of postreq is null or undefined!')
-  await tr.removePost(t, postreq_id)
+  await tr.removePost(currentTask.value, postreq_id)
   .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
-  refreshCurrentTask()
 }
 
 const toggleComplete = async (task: Task) => {
   await tr.toggleCompleted(task)
-  refreshCurrentTask()
   //Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check')
 }
 
@@ -458,13 +443,12 @@ const ASAPify = (task: Task) => {
   }
   syncWithBackend().then(() => {
     Utils.notifySuccess('Refreshed All')
-    refreshCurrentTask()
   }, Utils.handleError('Error Refreshing All'))
 }
 
 const mvpPostrequisite = (post: Task) => {
   console.debug(post)
-  const allOtherPosts = (allPosts.value as Task[]).filter(x => !x.completed && x.id !== post.id)
+  const allOtherPosts = allPosts.value.filter(x => !x.completed && x.id !== post.id)
   const currentTaskID = Utils.hardCheck(currentTask.value.id)
   const postID = Utils.hardCheck(post.id)
   allOtherPosts.forEach(x => {
@@ -477,7 +461,6 @@ const mvpPostrequisite = (post: Task) => {
   })
   syncWithBackend().then(() => {
     Utils.notifySuccess('Refreshed All')
-    refreshCurrentTask()
   }, Utils.handleError('Error Refreshing All'))
 }
 

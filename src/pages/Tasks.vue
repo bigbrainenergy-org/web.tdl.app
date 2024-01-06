@@ -36,7 +36,7 @@
                   </q-item-section>
 
                   <q-item-section side v-if="currentTask.notes">
-                    <q-icon name="description">
+                    <q-icon name="description" class="q-ma-sm">
                       <q-tooltip
                         anchor="center right"
                         self="center left"
@@ -45,6 +45,10 @@
                         Has additional notes! Click to view.
                       </q-tooltip>
                     </q-icon>
+                  </q-item-section>
+
+                  <q-item-section avatar v-if="currentTask.hard_postreq_ids.length">
+                    <q-chip class="q-ma-md" :style="currentTask.hard_postreq_ids.length > 5 ? 'background-color: red;' : 'background-color: gray;'">{{ currentTask.hard_postreq_ids.length }}</q-chip>
                   </q-item-section>
 
                   <q-space></q-space>
@@ -77,6 +81,7 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
 import TaskSearchDialog from 'src/components/TaskSearchDialog.vue'
+import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 
 const pageTasks = defineComponent({
   name: 'PageTasks',
@@ -134,13 +139,11 @@ This was between a "More Notes" tooltip and a template v-if="tasks.length === 0"
 */
 
 const openTask = (currentTask: Task) => {
+  const cts = useCurrentTaskStore()
+  cts.id = currentTask.id
   console.debug(`opening UpdateTaskDialog with task of ${currentTask.title}`)
   $q.dialog({
-    component: UpdateTaskDialog,
-
-    componentProps: {
-      task: currentTask
-    }
+    component: UpdateTaskDialog
   })
 }
 
