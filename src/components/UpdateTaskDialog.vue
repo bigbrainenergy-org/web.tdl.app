@@ -136,21 +136,28 @@
                 <q-item-section>No prerequisites</q-item-section>
               </q-item>
               <q-item
-                clickable
                 v-ripple
                 v-for="pre, index in allPres"
-                :key="index"
-                @click="setCurrentTask(pre as Task)"
-              >
-                <q-item-section avatar>
-                  <q-checkbox v-model:model-value="pre.completed" @update:model-value="updateTaskCompletedStatus(pre as Task)"/>
-                </q-item-section>
-                <q-item-section>
-                  {{ pre.title }}
-                </q-item-section>
-                <q-item-section avatar>
-                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="removePrerequisite(pre as Task)" />
-                </q-item-section>
+                :key="index">
+                <q-btn-dropdown style="width: 100%" 
+                  split 
+                  dropdown-icon="more_vert" 
+                  @click.stop="setCurrentTask(pre as Task)">
+                  <template v-slot:label>
+                    <q-item-section avatar>
+                      <q-checkbox v-model:model-value="pre.completed" @update:model-value="updateTaskCompletedStatus(pre as Task)"/>
+                    </q-item-section>
+                    <q-item-section>
+                      {{ pre.title }}
+                    </q-item-section>
+                  </template>
+                  <q-list>
+                    <q-item clickable @click.stop="removePrerequisite(pre as Task)">
+                      <q-item-label>Remove This Prerequisite</q-item-label>
+                      <q-icon name="fas fa-unlink" />
+                    </q-item>
+                  </q-list>
+                </q-btn-dropdown>
               </q-item>
             </q-list>
             <div class="row">
@@ -166,27 +173,32 @@
                 <q-item-section>No postrequisites</q-item-section>
               </q-item>
               <q-item
-                clickable
                 v-ripple
                 v-for="post, index in allPosts"
-                :key="index"
-                @click="setCurrentTask(post as Task)"
-              >
-                <q-item-section avatar>
-                  <q-checkbox v-model:model-value="post.completed" @update:model-value="updateTaskCompletedStatus(post as Task)"/>
-                </q-item-section>
-                <q-item-section>
-                  {{ post.title }}
-                </q-item-section>
-
-                <q-item-section avatar>
-
-                  <q-btn round color="warning" icon="fas fa-triangle-exclamation" @click.stop="mvpPostrequisite(post as Task)" />
-                </q-item-section>
-
-                <q-item-section avatar>
-                  <q-btn round color="negative" icon="fas fa-unlink" @click.stop="removePostrequisite(post as Task)" />
-                </q-item-section>
+                :key="index">
+                  <q-btn-dropdown style="width: 100%"
+                    split
+                    dropdown-icon="more_vert"
+                    @click.stop="setCurrentTask(post as Task)">
+                    <template v-slot:label>
+                      <q-item-section avatar>
+                        <q-checkbox v-model:model-value="post.completed" @update:model-value="updateTaskCompletedStatus(post as Task)"/>
+                      </q-item-section>
+                      <q-item-section class="vertical-top">
+                        {{ post.title }}
+                      </q-item-section>
+                    </template>
+                    <q-list>
+                      <q-item clickable @click.stop="mvpPostrequisite(post as Task)">
+                        <q-item-label>Move All Other Postrequisites To This Task</q-item-label>
+                        <q-icon name="fas fa-triangle-exclamation" />
+                      </q-item>
+                      <q-item clickable @click.stop="removePostrequisite(post as Task)">
+                        <q-item-label>Remove This Postrequisite</q-item-label>
+                        <q-icon name="fas fa-unlink"/>
+                      </q-item>
+                    </q-list>
+                  </q-btn-dropdown>
               </q-item>
             </q-list>
             <div class="row">
