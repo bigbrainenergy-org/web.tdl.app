@@ -49,7 +49,7 @@
 
                   <q-space></q-space>
 
-                  <q-btn rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed"/>
+                  <q-btn outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed"/>
                 </q-item>
               </q-intersection>
               <template v-if="tasks.length === 0">
