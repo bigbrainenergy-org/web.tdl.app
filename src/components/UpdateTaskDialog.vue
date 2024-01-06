@@ -122,6 +122,7 @@
           </div>
 
           <div class="col-12 col-md">
+            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Pres and Posts" class="text-primary" />
             <div class="row">
               <div class="col">
                 <div class="text-h5">Prerequisites</div>
@@ -141,7 +142,7 @@
                 :key="index"
                 @click="setCurrentTask(pre as Task)"
               >
-                <q-item-section>
+                <q-item-section avatar>
                   <q-checkbox v-model:model-value="pre.completed" @update:model-value="updateTaskCompletedStatus(pre as Task)"/>
                 </q-item-section>
                 <q-item-section>
@@ -171,7 +172,7 @@
                 :key="index"
                 @click="setCurrentTask(post as Task)"
               >
-                <q-item-section>
+                <q-item-section avatar>
                   <q-checkbox v-model:model-value="post.completed" @update:model-value="updateTaskCompletedStatus(post as Task)"/>
                 </q-item-section>
                 <q-item-section>
@@ -222,6 +223,7 @@ import { AllOptionalTaskProperties, Task, TaskRepo, UpdateTaskOptions } from 'sr
 import { Item, useRepo } from 'pinia-orm';
 import { Utils } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
 const props = defineProps<{ task: Task }>()
 
@@ -242,6 +244,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginC
 const $q = useQuasar()
 const listsRepo = useRepo(ListRepo)
 const tr = useRepo(TaskRepo)
+const usr = useLocalSettingsStore()
 
 console.debug('UpdateTaskDialog: task prop value: ', props.task)
 const taskID = ref(Utils.hardCheck(props.task.id))
@@ -255,6 +258,12 @@ const editRemindMeAt = ref(currentTask.value.remind_me_at)
 const editMentalEnergyRequired = ref(currentTask.value.mental_energy_required)
 const editPhysicalEnergyRequired = ref(currentTask.value.physical_energy_required)
 
+
+const incompleteOnly = ref(usr.hideCompleted)
+const updateLocalSettings = () => {
+  usr.hideCompleted = incompleteOnly.value
+}
+
 tr.withAll().load([props.task])
 
 const lists = computed(
@@ -263,11 +272,13 @@ const lists = computed(
 
 const allPres = computed(() => {
   console.debug('refreshing allPres value')
+  if(incompleteOnly.value) return currentTask.value.hard_prereqs.filter(x => !x.completed)
   return currentTask.value.hard_prereqs
 })
 
 const allPosts = computed(() => {
   console.debug('refreshing allPosts value')
+  if(incompleteOnly.value) return currentTask.value.hard_postreqs.filter(x => !x.completed)
   return currentTask.value.hard_postreqs
 })
 

@@ -21,6 +21,12 @@
           icon="fa-solid fa-plus"
           v-if="currentPath === '/lists'"
         />
+        <q-btn 
+          class="q-ma-md"
+          color="yellow"
+          @click="pullFresh"
+          icon="fa-solid fa-refresh"
+        />
 
         <q-space />
 
