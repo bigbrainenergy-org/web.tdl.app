@@ -53,63 +53,73 @@
               label="Remind me at"
               class="q-my-md"
             />
-            <q-list>
-              <q-item class="q-my-sm">
-                <q-item-section side>
-                  <q-icon name="far fa-tired" />
-                </q-item-section>
+            <q-expansion-item 
+              expand-separator 
+              switch-toggle-side
+              icon="fas fa-lightbulb"
+              caption="Metadata"
+              v-model="expandEnergyStats"
+              @update:model-value="updateLocalSettings">
+              <br>
+              <q-list>
+                <q-item class="q-my-sm">
+                  <q-item-section side>
+                    <q-icon name="far fa-tired" />
+                  </q-item-section>
 
-                <q-item-section>
-                  <div>
-                    <!-- <q-badge>Mental Energy Required</q-badge> -->
+                  <q-item-section>
+                    <div>
+                      <!-- <q-badge>Mental Energy Required</q-badge> -->
 
-                    <q-slider
-                      v-model="editMentalEnergyRequired"
-                      @change="updateTask({ mental_energy_required: editMentalEnergyRequired })"
-                      :min="0"
-                      :max="100"
-                      :step="1"
-                      label
-                      label-always
-                      :label-value="`Mental ${editMentalEnergyRequired}%`"
-                      color="blue"
-                    />
-                  </div>
-                </q-item-section>
+                      <q-slider
+                        v-model="editMentalEnergyRequired"
+                        @change="updateTask({ mental_energy_required: editMentalEnergyRequired })"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        label
+                        label-always
+                        :label-value="`Mental ${editMentalEnergyRequired}%`"
+                        color="blue"
+                      />
+                    </div>
+                  </q-item-section>
 
-                <q-item-section side>
-                  <q-icon name="fas fa-lightbulb" />
-                </q-item-section>
-              </q-item>
+                  <q-item-section side>
+                    <q-icon name="fas fa-lightbulb" />
+                  </q-item-section>
+                </q-item>
 
-              <q-item class="q-my-sm">
-                <q-item-section side>
-                  <q-icon name="far fa-tired" />
-                </q-item-section>
+                <q-item class="q-my-sm">
+                  <q-item-section side>
+                    <q-icon name="far fa-tired" />
+                  </q-item-section>
 
-                <q-item-section>
-                  <div>
-                    <!-- <q-badge color="red">Physical Energy Required</q-badge> -->
+                  <q-item-section>
+                    <div>
+                      <!-- <q-badge color="red">Physical Energy Required</q-badge> -->
 
-                    <q-slider
-                      v-model="editPhysicalEnergyRequired"
-                      @change="updateTask({ physical_energy_required: editPhysicalEnergyRequired })"
-                      :min="0"
-                      :max="100"
-                      :step="1"
-                      label
-                      label-always
-                      :label-value="`Physical ${editPhysicalEnergyRequired}%`"
-                      color="red"
-                    />
-                  </div>
-                </q-item-section>
+                      <q-slider
+                        v-model="editPhysicalEnergyRequired"
+                        @change="updateTask({ physical_energy_required: editPhysicalEnergyRequired })"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        label
+                        label-always
+                        :label-value="`Physical ${editPhysicalEnergyRequired}%`"
+                        color="red"
+                      />
+                    </div>
+                  </q-item-section>
 
-                <q-item-section side>
-                  <q-icon name="fas fa-dumbbell" />
-                </q-item-section>
-              </q-item>
-            </q-list>
+                  <q-item-section side>
+                    <q-icon name="fas fa-dumbbell" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-expansion-item>
+            
             <br>
             <q-input
               v-model="editNotes"
@@ -276,10 +286,12 @@ const editRemindMeAt = ref(currentTask.value.remind_me_at)
 const editMentalEnergyRequired = ref(currentTask.value.mental_energy_required)
 const editPhysicalEnergyRequired = ref(currentTask.value.physical_energy_required)
 
+const expandEnergyStats = ref(usr.expandEnergyStats)
 
 const incompleteOnly = ref(usr.hideCompleted)
 const updateLocalSettings = () => {
   usr.hideCompleted = incompleteOnly.value
+  usr.expandEnergyStats = expandEnergyStats.value
 }
 
 const lists = computed(
