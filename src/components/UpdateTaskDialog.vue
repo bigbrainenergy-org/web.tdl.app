@@ -139,7 +139,7 @@
                 v-ripple
                 v-for="pre, index in allPres"
                 :key="index">
-                <q-btn-dropdown style="width: 100%" 
+                <q-btn-dropdown style="width: 100%; text-wrap: wrap;" 
                   split 
                   dropdown-icon="more_vert" 
                   @click.stop="setCurrentTask(pre as Task)">
@@ -148,7 +148,9 @@
                       <q-checkbox v-model:model-value="pre.completed" @update:model-value="updateTaskCompletedStatus(pre as Task)"/>
                     </q-item-section>
                     <q-item-section>
-                      {{ pre.title }}
+                      <div class="ellipsis">
+                        {{ pre.title }}
+                      </div>
                     </q-item-section>
                   </template>
                   <q-list>
@@ -176,16 +178,19 @@
                 v-ripple
                 v-for="post, index in allPosts"
                 :key="index">
-                  <q-btn-dropdown style="width: 100%"
+                  <q-btn-dropdown style="width: 100%; text-wrap: wrap;"
                     split
                     dropdown-icon="more_vert"
-                    @click.stop="setCurrentTask(post as Task)">
+                    @click.stop="setCurrentTask(post as Task)"
+                    class="ellipsis">
                     <template v-slot:label>
-                      <q-item-section avatar>
+                      <q-item-section avatar style="width: 10%;">
                         <q-checkbox v-model:model-value="post.completed" @update:model-value="updateTaskCompletedStatus(post as Task)"/>
                       </q-item-section>
-                      <q-item-section class="vertical-top">
-                        {{ post.title }}
+                      <q-item-section class="vertical-top" style="width: 90%; text-wrap: wrap;">
+                        <q-item-label>
+                          {{ post.title }}
+                        </q-item-label>
                       </q-item-section>
                     </template>
                     <q-list>
