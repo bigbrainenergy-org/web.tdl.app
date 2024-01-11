@@ -1,22 +1,22 @@
 import { defineStore } from 'pinia'
-import { Model } from 'pinia-orm'
-import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
+// import { Model } from 'pinia-orm'
+// import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
 
-export default class LocalSettings extends Model {
-  static entity = 'local-settings'
+// export default class LocalSettings extends Model {
+//   static entity = 'local-settings'
 
-  @Uid() declare id: number | null
-  @Str('') declare taskSearch: string
-  @Str('') declare selectedList: string
-  @Attr([]) declare selectedTags: Array<string>
-  @Str('') declare tagsFilter: string
-  @Bool(false) declare hideCompleted: boolean
-  @Bool(false) declare layerZeroOnly: boolean
+//   @Uid() declare id: number | null
+//   @Str('') declare taskSearch: string
+//   @Str('') declare selectedList: string
+//   @Attr([]) declare selectedTags: Array<string>
+//   @Str('') declare tagsFilter: string
+//   @Bool(false) declare hideCompleted: boolean
+//   @Bool(false) declare layerZeroOnly: boolean
 
-  static piniaOptions = {
-    persist: true
-  }
-}
+//   static piniaOptions = {
+//     persist: true
+//   }
+// }
 
 export const useLocalSettingsStore = defineStore('local-settings', {
   state: () => {
@@ -29,6 +29,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       hideCompleted: false,
       layerZeroOnly: false,
       expandEnergyStats: false,
+      expandAllWithSameID: false
     }
   },
   persist: true,

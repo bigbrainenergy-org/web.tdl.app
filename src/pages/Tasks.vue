@@ -105,7 +105,7 @@ const tasks = computed(() => {
   let baseQuery = tasksRepo.withAll().get()
   if(layerZeroOnly.value) baseQuery = baseQuery.filter(notBlocked)
   if(incompleteOnly.value) baseQuery = baseQuery.filter(notCompleted)
-  return baseQuery
+  return baseQuery.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 })
 
 const updateTaskCompletedStatus = async (task: Task) => {

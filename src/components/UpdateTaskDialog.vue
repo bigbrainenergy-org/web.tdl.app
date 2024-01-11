@@ -133,89 +133,23 @@
 
           <div class="col-12 col-md">
             <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Pres and Posts" class="text-primary" />
-            <div class="row">
-              <div class="col">
-                <div class="text-h5">Prerequisites</div>
-              </div>
-              <div class="col text-right">
-                <q-btn color="primary" icon="fas fa-link" label="Add Prerequisite" @click="openPrerequisiteDialog" />
-              </div>
-            </div>
-            <q-list class="q-my-md">
-              <q-item v-ripple v-if="!allPres.length">
-                <q-item-section>No prerequisites</q-item-section>
-              </q-item>
-              <q-item
-                v-ripple
-                v-for="pre, index in allPres"
-                :key="index">
-                <q-btn-dropdown style="width: 100%; text-wrap: wrap;" 
-                  split 
-                  dropdown-icon="more_vert" 
-                  @click.stop="setCurrentTask(pre as Task)">
-                  <template v-slot:label>
-                    <q-item-section avatar>
-                      <q-checkbox v-model:model-value="pre.completed" @update:model-value="updateTaskCompletedStatus(pre as Task)"/>
-                    </q-item-section>
-                    <q-item-section>
-                      <div class="ellipsis">
-                        {{ pre.title }}
-                      </div>
-                    </q-item-section>
-                  </template>
-                  <q-list>
-                    <q-item clickable @click.stop="removePrerequisite(pre as Task)">
-                      <q-item-label>Remove This Prerequisite</q-item-label>
-                      <q-icon name="fas fa-unlink" />
-                    </q-item>
-                  </q-list>
-                </q-btn-dropdown>
-              </q-item>
-            </q-list>
-            <div class="row">
-              <div class="col">
-                <div class="text-h5">Postrequisites</div>
-              </div>
-              <div class="col text-right">
-                <q-btn color="primary" icon="fas fa-link" label="Add Postrequisite" @click="openPostrequisiteDialog"/>
-              </div>
-            </div>
-            <q-list class="q-my-md">
-              <q-item v-ripple v-if="!allPosts.length">
-                <q-item-section>No postrequisites</q-item-section>
-              </q-item>
-              <q-item
-                v-ripple
-                v-for="post, index in allPosts"
-                :key="index">
-                  <q-btn-dropdown style="width: 100%; text-wrap: wrap;"
-                    split
-                    dropdown-icon="more_vert"
-                    @click.stop="setCurrentTask(post as Task)"
-                    class="ellipsis">
-                    <template v-slot:label>
-                      <q-item-section avatar style="width: 10%;">
-                        <q-checkbox v-model:model-value="post.completed" @update:model-value="updateTaskCompletedStatus(post as Task)"/>
-                      </q-item-section>
-                      <q-item-section class="vertical-top" style="width: 90%; text-wrap: wrap;">
-                        <q-item-label>
-                          {{ post.title }}
-                        </q-item-label>
-                      </q-item-section>
-                    </template>
-                    <q-list>
-                      <q-item clickable @click.stop="mvpPostrequisite(post as Task)">
-                        <q-item-label>Move All Other Postrequisites To This Task</q-item-label>
-                        <q-icon name="fas fa-triangle-exclamation" />
-                      </q-item>
-                      <q-item clickable @click.stop="removePostrequisite(post as Task)">
-                        <q-item-label>Remove This Postrequisite</q-item-label>
-                        <q-icon name="fas fa-unlink"/>
-                      </q-item>
-                    </q-list>
-                  </q-btn-dropdown>
-              </q-item>
-            </q-list>
+            <DependencyList 
+            :items="allPres" 
+            :dependency-type="preDepType" 
+            :menu-items="prereqMenuItems" 
+            @add-item="openPrerequisiteDialog"
+            @remove-item="pre => removePrerequisite(pre)"
+            @select-item="t => setCurrentTask(t)"
+            @toggle-completed-item="t => updateTaskCompletedStatus(t)" />
+            <DependencyList
+            :items="allPosts"
+            :dependency-type="postDepType"
+            :menu-items="postreqMenuItems"
+            @add-item="openPostrequisiteDialog"
+            @remove-item="post => removePostrequisite(post)"
+            @select-item="t => setCurrentTask(t)"
+            @toggle-completed-item="t => updateTaskCompletedStatus(t)" />
+            
             <div class="row">
               <div class="col">
                 <div class="text-h5">Subtasks</div>
@@ -240,6 +174,7 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { computed, ref } from 'vue';
 
+import DependencyList from './DependencyList.vue';
 
 
 import QDatetimeInput from 'components/QDatetimeInput.vue';
@@ -275,6 +210,8 @@ const ctr = useCurrentTaskStore()
 
 const currentTaskID = computed((): number => Utils.hardCheck(ctr.id))
 const currentTask = computed((): Task => Utils.hardCheck(tr.withAll().find(currentTaskID.value)))
+currentTask.value.hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+currentTask.value.hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 const taskID = computed(() => currentTask.value.id)
 const taskTitle = computed(() => currentTask.value.title)
@@ -492,5 +429,29 @@ const mvpPostrequisite = (post: Task) => {
     Utils.notifySuccess('Refreshed All')
   }, Utils.handleError('Error Refreshing All'))
 }
+
+const preDepType = { plural: 'Prerequisites', singular: 'Prerequisite' } as const
+const postDepType = { plural: 'Postrequisites', singular: 'Postrequisite' } as const
+
+const prereqMenuItems = [
+  {
+    label: 'Unlink this Prerequisite',
+    icon: 'fas fa-unlink',
+    action: removePrerequisite
+  }
+]
+
+const postreqMenuItems = [
+  {
+    label: 'Unlink this Postrequisite',
+    icon: 'fas fa-unlink',
+    action: removePostrequisite
+  },
+  {
+    label: 'Move all Postreqs from Current Task to This Task',
+    icon: 'fas fa-triangle-exclamation',
+    action: mvpPostrequisite
+  }
+]
 
 </script>

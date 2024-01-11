@@ -32,6 +32,7 @@ import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
+import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -73,11 +74,11 @@ const populateGraphDataStructuresIncompleteOnly = () => {
   const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
   allTasks = tr.value.withAll().get().filter(incomplete)
   const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
-  allTasks.forEach((x, i) => taskNodeMap.set(x.id!, x.d3forceNode(i)))
+  allTasks.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
 
   const generateD3LinkToPostreq: λ<d3Node<Task>, λ<Task, d3Link<Task>>> = (currentTaskNode: d3Node<Task>) => (currentPost: Task) => ({
     source: currentTaskNode,
-    target: taskNodeMap.get(currentPost.id!),
+    target: taskNodeMap.get(currentPost.id),
     slopeX: 1,
     slopeY: 1,
     normalXoffset: 1,
@@ -141,6 +142,10 @@ let gg: any
 
 let svg: d3.Selection<SVGSVGElement | null, unknown, null, undefined>
 
+function raise(this: any) {
+  d3.select(this.parentNode).raise()
+}
+
 const initializeGraph = () => {
   // updateSize()
   console.debug({width, height})
@@ -191,6 +196,7 @@ const initializeGraph = () => {
     .append('circle')
     .attr('r', (d: d3Node<Task>) => d.radius)
     .attr('fill', (d: d3Node<Task>) => d.color)
+    .on('mouseover', raise)
   
   label = gnodes.filter((x: d3Node<Task>) => !x.obj.completed && (x.radius >= 12 || x.obj.hard_prereqs.filter(x => !x.completed).length === 0))
     .append('text')
@@ -207,15 +213,11 @@ const initializeGraph = () => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   node.call(CustomForceGraph.d3DragDefaults(simulation))
 
-  node.on('click', (currentTask) => {
-    console.debug({currentTask})
-    console.debug(`opening UpdateTaskDialog with task of ${currentTask.target.__data__.obj.title}`)
+  node.on('click', (event) => {
+    const cts = useCurrentTaskStore()
+    cts.id = event.target.__data__.obj.id // ?!
     $q.dialog({
-      component: UpdateTaskDialog,
-
-      componentProps: {
-        task: currentTask.target.__data__.obj
-      }
+      component: UpdateTaskDialog
     })
     .onOk(reInitializeGraph)
     .onCancel(reInitializeGraph)

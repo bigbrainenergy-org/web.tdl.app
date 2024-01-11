@@ -4,19 +4,19 @@
       <div class="col-grow">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary"/>
-          <q-toggle v-model="toggleRGB">Enable RGB</q-toggle>
+            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary" />
+            <q-toggle v-model="toggleRGB" label="Enable RGB" />
+            <q-toggle v-model="expandAllWithSameID" @click="updateLocalSettings" label="Expand Same Task Everywhere It's Found" class="text-primary" />
           </q-card-actions>
           <q-tree
-          :nodes="layerZero"
+          :nodes="layerZeroTasks"
           node-key="key"
           dense
           @lazy-load="loadPostreqs"
           ref="theTree"
           @update:expanded="onExpanded"
           v-model:expanded="expandedNodes"
-          class="text-primary"
-          >
+          class="text-primary">
             <template v-slot:default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
                 <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)" color="primary" keep-color></q-checkbox>
@@ -48,8 +48,10 @@ const esr = computed(() => useRepo(ExpandedStateRepo))
 const usr = useLocalSettingsStore()
 
 const incompleteOnly = ref(usr.hideCompleted)
+const expandAllWithSameID = ref(usr.expandAllWithSameID)
 const updateLocalSettings = () => {
   usr.hideCompleted = incompleteOnly.value
+  usr.expandAllWithSameID = expandAllWithSameID.value
 }
 
 const style = (task: Task) => {
@@ -59,18 +61,17 @@ const style = (task: Task) => {
   }
 }
 
-const layerZeroTasks = (): SimpleTreeNode<Task>[] => {
+const layerZeroTasks = computed((): SimpleTreeNode<Task>[] => {
   const allTasks = tr.value.withAll().get()
   const layerZero = allTasks.filter(x => (incompleteOnly.value ? !x.completed : true) && x.hard_prereqs.filter(y => !y.completed).length === 0)
   const nodes = layerZero.map((x) => (x.treeNode()))
   console.debug({'layer zero tasks': nodes})
   return nodes
-}
+})
 
-const layerZero = ref(layerZeroTasks())
 const toggleRGB = ref(false)
 
-let allTaskNodes = Array.from(layerZero.value)
+let allTaskNodes = Array.from(layerZeroTasks.value)
 
 console.debug({ colors: allTaskNodes.map((x) => x.obj.hashColor() )})
 
@@ -145,6 +146,7 @@ const expandedNodes = ref<string[]>([])
 let previousExpanded: string[] = []
 
 const onExpanded = (list: readonly any[]) => {
+  if(!expandAllWithSameID.value) return
   const delta = previousExpanded.length - list.length
   if(delta > 0) {
     const diff: string[] = previousExpanded.filter((x) => !list.includes(x)) // anything no longer in the list of expanded tasks
@@ -172,18 +174,15 @@ const onExpanded = (list: readonly any[]) => {
 
 const esrc = esr.value
 const handleExpandAndCollapse = () => {
+  if(!expandAllWithSameID.value) return
   // console.debug('handleExpandAndCollapse')
   let shouldBeExpanded
   allTaskNodes.forEach((x) => {
     shouldBeExpanded = esrc.isExpanded(x.id)
     if(t.isExpanded(x.key) !== shouldBeExpanded) {
       // console.log(x.key, ' needs to be ', shouldBeExpanded ? 'expanded' : 'collapsed')
-      if(shouldBeExpanded) {
-        queueExpand.push({ id: x.id, key: x.key })
-      }
-      else {
-        queueCollapse.push({ id: x.id, key: x.key })
-      }
+      if(shouldBeExpanded) queueExpand.push({ id: x.id, key: x.key })
+      else queueCollapse.push({ id: x.id, key: x.key })
     }
   })
   if(queueExpand.length !== 0) {
