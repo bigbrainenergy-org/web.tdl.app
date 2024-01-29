@@ -5,10 +5,11 @@
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Task Details</div>
         <template v-if="currentTask.completed !== true">
-          <q-btn class="q-ma-sm" size="md" color="positive" label="Mark Complete" @click.stop="toggleComplete(currentTask as Task)"/>
+          <q-btn class="q-ma-sm" size="md" color="positive" label="Mark Complete" @click.stop="toggleComplete(currentTask as Task)" />
+          <q-btn class="q-ma-sm" size="md" color="positive" label="Prioritize" @click.stop="prioritize()" />
         </template>
         <template v-else>
-          <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)"/>
+          <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)" />
         </template>
         <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask as Task)" />
         <q-btn class="q-ma-sm" size="md" color="negative" label="DO ASAP" @click="ASAPify(currentTask as Task)" />
@@ -138,17 +139,17 @@
             :dependency-type="preDepType" 
             :menu-items="prereqMenuItems" 
             @add-item="openPrerequisiteDialog"
-            @remove-item="pre => removePrerequisite(pre)"
-            @select-item="t => setCurrentTask(t)"
-            @toggle-completed-item="t => updateTaskCompletedStatus(t)" />
+            @remove-item="(pre: Task) => removePrerequisite(pre)"
+            @select-item="(t: Task) => setCurrentTask(t)"
+            @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
             <DependencyList
             :items="allPosts"
             :dependency-type="postDepType"
             :menu-items="postreqMenuItems"
             @add-item="openPostrequisiteDialog"
-            @remove-item="post => removePostrequisite(post)"
-            @select-item="t => setCurrentTask(t)"
-            @toggle-completed-item="t => updateTaskCompletedStatus(t)" />
+            @remove-item="(post: Task) => removePostrequisite(post)"
+            @select-item="(t: Task) => setCurrentTask(t)"
+            @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
             
             <div class="row">
               <div class="col">
@@ -174,19 +175,22 @@
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { computed, ref } from 'vue';
 
-import DependencyList from './DependencyList.vue';
+import DependencyList from '../DependencyList.vue';
 
 
 import QDatetimeInput from 'components/QDatetimeInput.vue';
-import TaskSearchDialog from 'components/TaskSearchDialog.vue';
+// import TaskSearchDialog from 'components/dialog/TaskSearchDialog.vue';
 
 import { ListRepo } from 'src/stores/lists/list';
 import { AllOptionalTaskProperties, Task, TaskRepo, UpdateTaskOptions } from 'src/stores/tasks/task';
-import { Item, useRepo } from 'pinia-orm';
+import { useRepo } from 'pinia-orm';
 import { Utils } from 'src/util'
+import { TDLAPP } from 'src/TDLAPP';
 import { syncWithBackend } from 'src/hackerman/sync'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
+import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
+import errorNotification from 'src/hackerman/ErrorNotification'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -213,9 +217,9 @@ const currentTask = computed((): Task => Utils.hardCheck(tr.withAll().find(curre
 currentTask.value.hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 currentTask.value.hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
-const taskID = computed(() => currentTask.value.id)
+// const taskID = computed(() => currentTask.value.id)
 const taskTitle = computed(() => currentTask.value.title)
-const updatedFlag = ref(false)
+// const updatedFlag = ref(false)
 
 const editTitle = ref(currentTask.value.title)
 const editNotes = ref(currentTask.value.notes)
@@ -321,59 +325,17 @@ function updateTask(options: AllOptionalTaskProperties) {
   }, Utils.handleError('Error updating task'))
 }
 
-function openPrerequisiteDialog() {
+const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value, $q)
+
+const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value, $q)
+
+const prioritize = () => {
   $q.dialog({
-    component: TaskSearchDialog,
-
+    component: QuickPrioritizeDialog,
     componentProps: {
-      dialogTitle: 'Add Prerequisite',
-      task: currentTask.value,
-
-      onSelect: async (payload: { task: Task }) => {
-        console.debug({payload})
-        await addPrereq(payload.task)
-      }
-    }
+      task: currentTask.value
+    } 
   })
-}
-
-function openPostrequisiteDialog() {
-  $q.dialog({
-    component: TaskSearchDialog,
-
-    componentProps: {
-      dialogTitle: 'Add Postrequisite',
-      task: currentTask.value,
-
-      onSelect: async (payload: { task: Task }) => {
-        console.debug({payload})
-        await addPostreq(payload.task)
-      },
-    }
-  })
-}
-
-const addPrereq = async (payload: Task) => {
-  const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of prereq is null or undefined!')
-  await tr.addPre(currentTask.value, payload_id)
-  .then(
-    () => {
-      Utils.notifySuccess('Added Prerequisiste', 'fa-solid fa-link')
-    },
-    Utils.handleError('Failed to add prereq')
-  )
-}
-
-const addPostreq = async (payload: Task) => {
-  const payload_id = Utils.hardCheck(payload.id, 'addPrereq: id of postreq is null or undefined!')
-  await tr.addPost(currentTask.value, payload_id).
-  then(
-    () => {
-      Utils.notifySuccess('Added Postrequisite', 'fa-solid fa-link')
-      tr.withAll().load([currentTask.value])
-    },
-    Utils.handleError('Failed to add postreq')
-  )
 }
 
 const removePrerequisite = async (prereq: Task) => {
@@ -400,19 +362,19 @@ const onOKClick = onDialogOK
 // we can passthrough onDialogCancel directly
 const onCancelClick = onDialogCancel
 
-const ASAPify = (task: Task) => {
+const ASAPify = async (task: Task) => {
   const allTasks = tr.withAll().get()
   const layerZero = allTasks.filter(x => !x.completed && x.id !== task.id && x.hard_prereqs.filter((y: Task) => !y.completed).length === 0)
   const taskID = Utils.hardCheck(task.id)
   for(let i = 0; i < layerZero.length; i++) {
     tr.addPre(layerZero[i], taskID).then(Utils.handleSuccess('Added a Next-Up as Post to This'), Utils.handleError('Error adding Rule for ASAPify'))
   }
-  syncWithBackend().then(() => {
-    Utils.notifySuccess('Refreshed All')
-  }, Utils.handleError('Error Refreshing All'))
+  const syncResult = await syncWithBackend()
+  if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+  else Utils.notifySuccess('Refreshed All')
 }
 
-const mvpPostrequisite = (post: Task) => {
+const mvpPostrequisite = async (post: Task) => {
   console.debug(post)
   const allOtherPosts = allPosts.value.filter(x => !x.completed && x.id !== post.id)
   const currentTaskID = Utils.hardCheck(currentTask.value.id)
@@ -425,9 +387,9 @@ const mvpPostrequisite = (post: Task) => {
       Utils.notifySuccess('added new post to MVP!')
     }, Utils.handleError('error adding new post to MVP!'))
   })
-  syncWithBackend().then(() => {
-    Utils.notifySuccess('Refreshed All')
-  }, Utils.handleError('Error Refreshing All'))
+  const syncResult = await syncWithBackend()
+  if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+  else Utils.notifySuccess('Refreshed All')
 }
 
 const preDepType = { plural: 'Prerequisites', singular: 'Prerequisite' } as const
