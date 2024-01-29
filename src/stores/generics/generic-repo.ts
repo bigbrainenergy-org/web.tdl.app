@@ -14,7 +14,7 @@ interface SimpleApiBackedRepo {
 // T can implement iCreateT but what really matters is iCreateT should be what that API expects
 // iUpdateT is meant to be all optional a subset of properties can be updated
 // todo: support optional UUID client-side id generation
-export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends iRecord>
+export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends iRecord>
   extends Repository<T>
   implements SimpleApiBackedRepo
 {
@@ -24,9 +24,21 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   // todo: handle null/undefined commonHeader in case of none required
   // todo: place common header in all calls
   commonHeader = () => {
-    const auth = useAuthenticationStore()
-    return { headers: {
-      Authorization: auth.bearerToken }}
+    try {
+      const auth = useAuthenticationStore()
+      return { headers: { Authorization: auth.bearerToken }}
+    } catch(error) {
+      console.error(`error in commonHeader: ${error}`)
+    }
+  }
+
+  api = () => {
+    try {
+      return useAxiosStore().axios()
+    } catch(error) {
+      console.error(`error in api dynamic assembly: ${error}`)
+      throw new Error(`error in api dynamic assembly: ${error}`)
+    }
   }
 
   highestID = () => {
@@ -37,8 +49,7 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   fetch = async () => {
-    const api = useAxiosStore().axios()
-    await api.get(
+    await this.api().get(
       `/${this.apidir}`,
       this.commonHeader()
     ).
@@ -52,18 +63,16 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   getId = async (id: number) => {
-    const api = useAxiosStore().axios()
-    await api.get(`/${this.apidir}/${id}`, this.commonHeader()).then((response: AxiosResponse) => {
+    await this.api().get(`/${this.apidir}/${id}`, this.commonHeader()).then((response: AxiosResponse) => {
       console.log(response.data as T[])
       this.save(response.data as T[])
     }, Utils.handleError(`Could not get ${this.apidir} id ${id}`))
   }
 
   add = (newItem: iCreateT): Promise<T> => {
-    const api = useAxiosStore().axios();
     console.debug('add item: ', { newItem });
   
-    return api.post(`/${this.apidir}`, newItem, this.commonHeader())
+    return this.api().post(`/${this.apidir}`, newItem, this.commonHeader())
       .then(response => {
         console.debug('response: ', response);
         this.save(response.data as T);
@@ -76,16 +85,14 @@ export default class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends 
   }
 
   delete = async (id: number) => {
-    const api = useAxiosStore().axios()
     // todo: debug, info, and error handling
-    await api.delete(`/${this.apidir}/${id}`, this.commonHeader())
+    await this.api().delete(`/${this.apidir}/${id}`, this.commonHeader())
     this.destroy(id)
   }
 
   update = async (itemOptions: iUpdateT) => {
-    const api = useAxiosStore().axios()
     // console.debug(`${this.apidir} UPDATE`)
-    return api.patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
+    return this.api().patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
     .then((response) => {
       this.save(response.data as T)
     }, Utils.handleError('Error updating record'))

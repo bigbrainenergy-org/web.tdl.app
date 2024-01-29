@@ -36,10 +36,12 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
   use = User
   apidir = User.entity;
 
-  fetchUser = async (): Promise<void> => {
+  override fetch = async (): Promise<void> => {
     const userId = useAuthenticationStore().userId
     await this.getId(userId)
   }
+
+  fetchUser = this.fetch
 
   getUser = () => {
     return this.find(useAuthenticationStore().userId)

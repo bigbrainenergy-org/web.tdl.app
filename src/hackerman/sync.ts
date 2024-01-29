@@ -5,13 +5,41 @@ import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { Utils } from 'src/util'
 
-export async function syncWithBackend() {
-  await useRepo(UserRepo).fetchUser().
-  catch(Utils.handleError('Failed to fetch user metadata'))
-  await useRepo(TaskRepo).fetch().
-  catch(Utils.handleError('Failed to fetch tasks'))
-  await useRepo(ListRepo).fetch().
-  catch(Utils.handleError('Failed to fetch lists'))
-  await useRepo(TimeZoneRepo).fetch().
-  catch(Utils.handleError('Failed to fetch time zones'))
+interface verySpecial {
+  modelname: string
+  repo: any
+}
+
+export async function syncWithBackend(): Promise<number> {
+  let tries = 3
+  const queue: verySpecial[] = [ 
+    {
+      modelname: 'User',
+      repo: UserRepo
+    },
+    {
+      modelname: 'Task',
+      repo: TaskRepo
+    },
+    {
+      modelname: 'List',
+      repo: ListRepo
+    },
+    {
+      modelname: 'Time Zone',
+      repo: TimeZoneRepo
+    }]
+  
+    while(queue.length && tries > 0) {
+      await useRepo(queue[queue.length - 1].repo).fetch()
+      .then(queue.pop())
+      .catch(() => {
+        Utils.handleError(`Failed to fetch from repo ${queue[0].repo.apidir}; MAKING ${tries} MORE ATTEMPTS`)
+        tries--
+      })
+    }
+    if(queue.length === 0) {
+      return 0
+    }
+  return 1
 }

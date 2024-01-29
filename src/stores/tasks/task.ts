@@ -8,6 +8,7 @@ import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { Utils } from 'src/util'
 import Priority from '../task-meta/priority'
+import { useLocalSettingsStore } from '../local-settings/local-setting'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -102,7 +103,7 @@ export class Task extends Model implements iRecord {
       y: height / 2,
       vx: 0,
       vy: 0,
-      radius: Math.min(450, Math.max(this.hard_postreq_ids.length**2.1, this.hard_prereqs.filter(x => !x.completed).length === 0 ? 16 : 8)),
+      radius: Math.min(450, Math.max((useLocalSettingsStore().hideCompleted ? this.hard_postreqs.filter(x => !x.completed).length : this.hard_postreq_ids.length)**2.1, this.hard_prereqs.filter(x => !x.completed).length === 0 ? 16 : 8)),
       color: this.completed ? '#003905' : (this.hard_prereqs.filter(x => !x.completed).length === 0 ? 'red' : 'gray'),
       repel: -1000/(this.hard_prereq_ids.length**2)
     }
@@ -231,4 +232,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     return this.delete(task_id)
   }
+
+  incompleteOnly = (): Task[] => this.withAll().get().filter(x => !x.completed)
+  layerZero = (): Task[] => this.incompleteOnly().filter(x => x.hard_prereq_ids.length === 0 || !x.hard_prereqs.some(y => !y.completed))
 }

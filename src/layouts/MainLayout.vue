@@ -113,7 +113,7 @@ import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import errorNotification from 'src/hackerman/ErrorNotification';
-import CreateTaskDialog from 'src/components/CreateTaskDialog.vue';
+import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
 import { UserRepo } from 'src/stores/users/user'
 import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, TaskRepo } from 'src/stores/tasks/task'
@@ -216,11 +216,14 @@ const openCreateListDialog = () => {
   Utils.notifySuccess('Coming soon')
 }
 
-const pullFresh = () => {
-  syncWithBackend().then(() => {
-    Utils.notifySuccess('Updated local storage')
+const pullFresh = async () => {
+
+  const syncResult = await syncWithBackend()
+  if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+  else {
+    Utils.notifySuccess('Refreshed All')
     refreshRoutedComponent()
-  }, Utils.handleError('Failed to fetch data'))
+  }
 }
 
 </script>
