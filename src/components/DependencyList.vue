@@ -26,7 +26,7 @@
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
             <q-item-section class="vertical-top" style="width: 90%;">
-              <q-item-label lines="2">
+              <q-item-label lines="2" style="text-wrap: wrap;">
                 {{ item.title }}
               </q-item-label>
             </q-item-section>
