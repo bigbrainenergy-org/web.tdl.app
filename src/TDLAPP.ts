@@ -19,7 +19,7 @@ export class TDLAPP {
       cts.id = currentTask
       msg = `opening UpdateTaskDialog with task ID ${currentTask}`
     }
-    q.dialog({
+    return q.dialog({
       component: UpdateTaskDialog
     })
   }
