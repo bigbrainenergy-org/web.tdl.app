@@ -35,8 +35,7 @@ import UpdateTaskDialog from 'src/components/dialog/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
 import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
-import TaskSearchDialog from 'src/components/dialog/TaskSearchDialog.vue'
-import { TDLAPP } from 'src/util'
+import { TDLAPP } from 'src/TDLAPP'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -218,11 +217,7 @@ const initializeGraph = () => {
   node.call(CustomForceGraph.d3DragDefaults(simulation))
 
   node.on('click', (event) => {
-    const cts = useCurrentTaskStore()
-    cts.id = event.target.__data__.obj.id // ?!
-    $q.dialog({
-      component: UpdateTaskDialog
-    })
+    TDLAPP.openTask(event.target.__data__.obj as Task, $q)
     .onOk(reInitializeGraph)
     .onCancel(reInitializeGraph)
     .onDismiss(reInitializeGraph)
