@@ -6,6 +6,8 @@
           <q-card-actions>
             <q-toggle v-model="layerZeroOnly" @click="updateLocalSettings" label="Next Up Only" class="text-primary"/>
             <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary"/>
+            <q-space />
+            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
@@ -27,9 +29,13 @@
                 <q-item
                   clickable
                   v-ripple
-                  @click="openTask(currentTask)"
+                  @click="open(currentTask)"
                 >
-                  <q-checkbox v-model:model-value="currentTask.completed" @update:model-value="updateTaskCompletedStatus(currentTask)" color="primary" keep-color></q-checkbox>
+                  <q-checkbox 
+                    v-model:model-value="currentTask.completed" 
+                    @update:model-value="updateTaskCompletedStatus(currentTask)" 
+                    color="primary" 
+                    keep-color />
                 
                   <q-item-section>
                     {{ currentTask.title }}
@@ -47,11 +53,14 @@
                     </q-icon>
                   </q-item-section>
 
-                  <q-item-section avatar v-if="currentTask.hard_postreq_ids.length">
-                    <q-chip class="q-ma-md" :style="currentTask.hard_postreq_ids.length > 5 ? 'background-color: red;' : 'background-color: gray;'">{{ currentTask.hard_postreq_ids.length }}</q-chip>
-                  </q-item-section>
+                  <q-chip 
+                    v-if="currentTask.hard_postreq_ids.length" 
+                    :style="currentTask.hard_postreq_ids.length > 5 ? 'background-color: red;' : 'background-color: gray;'">
+                      {{ currentTask.hard_postreq_ids.length }}
+                    </q-chip>
+                  
 
-                  <q-space></q-space>
+                  <q-space class="q-ma-sm" />
 
                   <q-btn outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed"/>
                 </q-item>
@@ -75,19 +84,20 @@
 import { useQuasar } from 'quasar'
 import { computed, defineComponent, ref } from 'vue'
 
-import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
 import { useRepo } from 'pinia-orm';
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
-import TaskSearchDialog from 'src/components/TaskSearchDialog.vue'
-import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
+import { TDLAPP } from 'src/TDLAPP'
+// import TaskSearchDialog from 'src/components/dialog/TaskSearchDialog.vue'
+
+const $q = useQuasar()
+
+const open = (task: Task) => TDLAPP.openTask(task, $q)
 
 const pageTasks = defineComponent({
   name: 'PageTasks',
 })
-
-const $q = useQuasar()
 const tasksRepo = useRepo(TaskRepo)
 const usr = useLocalSettingsStore()
 
@@ -138,42 +148,21 @@ This was the template info that took in taskMenus (it is unclear where taskMenus
 This was between a "More Notes" tooltip and a template v-if="tasks.length === 0"
 */
 
-const openTask = (currentTask: Task) => {
-  const cts = useCurrentTaskStore()
-  cts.id = currentTask.id
-  console.debug(`opening UpdateTaskDialog with task of ${currentTask.title}`)
-  $q.dialog({
-    component: UpdateTaskDialog
-  })
-}
+// const addPrereq = async (task: Task, pre: Task) => {
+//   const payload_id = Utils.hardCheck(pre.id, 'addPrereq: id of prereq is null or undefined!')
+//   await tasksRepo.addPre(task, payload_id)
+//   .then(
+//     Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
+//     // now comes the fun part though... the updateTaskDialog does
+//     // not show the prerequisites updated with the new value, and
+//     // the tasks page(s) do not update to show the new structure either.
+//     Utils.handleError('Failed to add prereq')
+//   )
+// }
 
-const addPrereq = async (task: Task, pre: Task) => {
-  const payload_id = Utils.hardCheck(pre.id, 'addPrereq: id of prereq is null or undefined!')
-  await tasksRepo.addPre(task, payload_id)
-  .then(
-    Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
-    // now comes the fun part though... the updateTaskDialog does
-    // not show the prerequisites updated with the new value, and
-    // the tasks page(s) do not update to show the new structure either.
-    Utils.handleError('Failed to add prereq')
-  )
-}
+const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
+const openSearchDialog = () => TDLAPP.searchDialog($q)
 
-const addTaskPre = (currentTask: Task) => {
-  console.debug(`opening TaskSearchDialog with task of ${currentTask.title}`)
-  $q.dialog({
-    component: TaskSearchDialog,
-    componentProps: {
-      dialogTitle: 'Add Prerequisite',
-      task: currentTask,
-      onSelect: async (payload: { task: Task }) => {
-        console.debug({payload})
-        await addPrereq(currentTask, payload.task)
-      }
-    }
-  })
-}
-
-const hoveredID = ref<number | null>(null)
-const setHoveredTo = (x: number | null) => hoveredID.value = x
+// const hoveredID = ref<number | null>(null)
+// const setHoveredTo = (x: number | null) => hoveredID.value = x
 </script>

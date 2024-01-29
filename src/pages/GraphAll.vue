@@ -5,6 +5,8 @@
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-card-actions>
             <q-toggle @click="reInitializeGraph" v-model="incompleteOnly" label="Hide Completed Tasks" />
+            <q-space />
+            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <svg ref="graphRef" id="graphElement"></svg>  
         </q-card>
@@ -29,10 +31,12 @@ import * as d3 from 'd3'
 import { computed, onMounted, ref } from 'vue'
 import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
 import { useQuasar } from 'quasar'
-import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
+import UpdateTaskDialog from 'src/components/dialog/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
 import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
+import TaskSearchDialog from 'src/components/dialog/TaskSearchDialog.vue'
+import { TDLAPP } from 'src/util'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -58,9 +62,9 @@ const populateGraphDataStructures = () => {
   const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
   allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
   links = links.concat(allTaskNodes.flatMap((x: d3Node<Task>) => 
-    x.obj.hard_postreq_ids.map((y: number) => ({ 
+    x.obj.hard_postreqs.filter(y => y.completed ? !usr.hideCompleted : true).map(y => ({ 
       source: x, 
-      target: taskNodeMap.get(y), 
+      target: taskNodeMap.get(y.id), 
       slopeX: 1, 
       slopeY: 1, 
       normalXoffset: 1, 
@@ -243,4 +247,6 @@ const toggleIncompleteOnly = () => {
 const refresh = reInitializeGraph
 
 onMounted(initializeGraph)
+
+const openSearchDialog = () => TDLAPP.searchDialog($q)
 </script>

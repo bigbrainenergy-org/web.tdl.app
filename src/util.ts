@@ -1,4 +1,4 @@
-import { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError } from 'axios';
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
 import { λ } from './types'
