@@ -3,21 +3,22 @@
     <div class="row items-stretch justify-evenly">
       <div class="col-grow">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
-          <q-btn @click="expandedNodes = []">COLLAPSE ALL</q-btn>
-          <q-btn @click="console.debug({expandedNodes, 'expandedState': esr.all()})">DEBUG</q-btn>
-          <q-toggle v-model="toggleRGB">Enable RGB</q-toggle>
+          <q-card-actions>
+            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary" />
+            <q-toggle v-model="toggleRGB" label="Enable RGB" />
+            <q-toggle v-model="expandAllWithSameID" @click="updateLocalSettings" label="Expand Same Task Everywhere It's Found" class="text-primary" />
+          </q-card-actions>
           <q-tree
-          :nodes="layerZero"
+          :nodes="layerZeroTasks"
           node-key="key"
           dense
-          @lazy-load="loadPostreqs2"
+          @lazy-load="loadPostreqs"
           ref="theTree"
           @update:expanded="onExpanded"
           v-model:expanded="expandedNodes"
-          class="text-primary"
-          >
+          class="text-primary">
             <template v-slot:default-header="prop">
-              <q-item class="text-primary" :style="{ backgroundColor: toggleRGB ? prop.node.obj.hashColor() : '#1d1d1df6' }">
+              <q-item class="text-primary" :style="style(prop.node.obj)">
                 <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)" color="primary" keep-color></q-checkbox>
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
@@ -39,21 +40,38 @@ import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
 import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
 import { Utils } from 'src/util'
-import { ExpandedStateRepo } from 'src/stores/expanded-state/expanded-state'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
 
 const tr = computed(() => useRepo(TaskRepo))
 const esr = computed(() => useRepo(ExpandedStateRepo))
+const usr = useLocalSettingsStore()
 
-const layerZeroTasks = (): SimpleTreeNode<Task>[] => {
-  const nodes = tr.value.where((x) => !x.hasPrereqs).get().map((x) => (x.treeNode()))
-  console.debug({'layer zero tasks': nodes})
-  return nodes
+const incompleteOnly = ref(usr.hideCompleted)
+const expandAllWithSameID = ref(usr.expandAllWithSameID)
+const updateLocalSettings = () => {
+  usr.hideCompleted = incompleteOnly.value
+  usr.expandAllWithSameID = expandAllWithSameID.value
 }
 
-const layerZero = ref(layerZeroTasks())
+const style = (task: Task) => {
+  return {
+    backgroundColor: toggleRGB.value ? task.hashColor() : undefined,
+    innerWidth: '100%'
+  }
+}
+
+const layerZeroTasks = computed((): SimpleTreeNode<Task>[] => {
+  const allTasks = tr.value.withAll().get()
+  const layerZero = allTasks.filter(x => (incompleteOnly.value ? !x.completed : true) && x.hard_prereqs.filter(y => !y.completed).length === 0)
+  const nodes = layerZero.map((x) => (x.treeNode()))
+  console.debug({'layer zero tasks': nodes})
+  return nodes
+})
+
 const toggleRGB = ref(false)
 
-let allTaskNodes = Array.from(layerZero.value)
+let allTaskNodes = Array.from(layerZeroTasks.value)
 
 console.debug({ colors: allTaskNodes.map((x) => x.obj.hashColor() )})
 
@@ -112,18 +130,6 @@ const updateTaskCompletedStatus = (task: Task) => {
 }
 
 const loadPostreqs = (d: details<Task>) => {
-  console.debug('loadPostreqs of ', d.node.key)
-  esr.value.setKeyExpanded(d.node.key, true)
-  tr.value.with('hard_postreqs').load([d.node.obj])
-  const postreqTreeNodes = d.node.obj.hard_postreqs.map((x) => x.treeNode())
-  console.debug({ postreqTreeNodes })
-  postreqTreeNodes.filter((x) => esr.value.isExpanded(x.id ?? -1) === true).forEach((x) => queueExpand.push({ id: x.id, key: x.key }))
-  d.done(postreqTreeNodes)
-  allTaskNodes.push(...postreqTreeNodes)
-  handleExpandAndCollapse()
-}
-
-const loadPostreqs2 = (d: details<Task>) => {
   //console.debug('loadPostreqs of ', d.node.key)
   esrc.setExpanded(d.node.id, true)
   const postreqTreeNodes = d.node.obj.hardPostreqTreeNodes()
@@ -140,6 +146,7 @@ const expandedNodes = ref<string[]>([])
 let previousExpanded: string[] = []
 
 const onExpanded = (list: readonly any[]) => {
+  if(!expandAllWithSameID.value) return
   const delta = previousExpanded.length - list.length
   if(delta > 0) {
     const diff: string[] = previousExpanded.filter((x) => !list.includes(x)) // anything no longer in the list of expanded tasks
@@ -167,18 +174,15 @@ const onExpanded = (list: readonly any[]) => {
 
 const esrc = esr.value
 const handleExpandAndCollapse = () => {
+  if(!expandAllWithSameID.value) return
   // console.debug('handleExpandAndCollapse')
   let shouldBeExpanded
   allTaskNodes.forEach((x) => {
     shouldBeExpanded = esrc.isExpanded(x.id)
     if(t.isExpanded(x.key) !== shouldBeExpanded) {
       // console.log(x.key, ' needs to be ', shouldBeExpanded ? 'expanded' : 'collapsed')
-      if(shouldBeExpanded) {
-        queueExpand.push({ id: x.id, key: x.key })
-      }
-      else {
-        queueCollapse.push({ id: x.id, key: x.key })
-      }
+      if(shouldBeExpanded) queueExpand.push({ id: x.id, key: x.key })
+      else queueCollapse.push({ id: x.id, key: x.key })
     }
   })
   if(queueExpand.length !== 0) {

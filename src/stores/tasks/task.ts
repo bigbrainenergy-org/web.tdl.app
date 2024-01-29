@@ -1,12 +1,14 @@
 import { Model, useRepo } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Attr, BelongsTo, Bool, HasManyBy, Num } from 'pinia-orm/dist/decorators'
+import { Attr, BelongsTo, Bool, HasManyBy, HasOne, Num } from 'pinia-orm/dist/decorators'
 import { List } from '../lists/list'
 import GenericRepo from '../generics/generic-repo'
-import ExpandedState from '../expanded-state/expanded-state'
+import ExpandedState from '../task-meta/expanded-state'
 import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { Utils } from 'src/util'
+import Priority from '../task-meta/priority'
+import { useLocalSettingsStore } from '../local-settings/local-setting'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -47,7 +49,7 @@ export class Task extends Model implements iRecord {
   static entity = 'tasks'
 
   // todo: switch to correct decorators
-  @Attr(null) declare id: number | null
+  @Num(-1) declare id: number
   @Attr(null) declare list_id: number | null
   @Attr('') declare title: string
   @Attr(0) declare order: number
@@ -66,6 +68,7 @@ export class Task extends Model implements iRecord {
   @BelongsTo(() => List, 'list_id') declare list: List | null
   @HasManyBy(() => Task, 'hard_prereq_ids') declare hard_prereqs: Task[]
   @HasManyBy(() => Task, 'hard_postreq_ids') declare hard_postreqs: Task[]
+  @HasOne(() => ExpandedState, 'id') declare expanded_state: ExpandedState
 
   get hasPostreqs() { return this.hard_postreq_ids.length > 0 }
   get hasPrereqs() { return this.hard_prereq_ids.length > 0 }
@@ -100,7 +103,7 @@ export class Task extends Model implements iRecord {
       y: height / 2,
       vx: 0,
       vy: 0,
-      radius: Math.max(this.hard_postreq_ids.length**2.1, 8),
+      radius: Math.min(450, Math.max((useLocalSettingsStore().hideCompleted ? this.hard_postreqs.filter(x => !x.completed).length : this.hard_postreq_ids.length)**2.1, this.hard_prereqs.filter(x => !x.completed).length === 0 ? 16 : 8)),
       color: this.completed ? '#003905' : (this.hard_prereqs.filter(x => !x.completed).length === 0 ? 'red' : 'gray'),
       repel: -1000/(this.hard_prereq_ids.length**2)
     }
@@ -229,4 +232,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     return this.delete(task_id)
   }
+
+  incompleteOnly = (): Task[] => this.withAll().get().filter(x => !x.completed)
+  layerZero = (): Task[] => this.incompleteOnly().filter(x => x.hard_prereq_ids.length === 0 || !x.hard_prereqs.some(y => !y.completed))
 }
