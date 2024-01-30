@@ -3,32 +3,6 @@
     <q-card-section>
       <div class="row q-gutter-md q-pa-sm">
         <div class="col-12">
-          <template v-if="currentTask">
-            <div class="text-h5 text-primary">{{ currentTask.title }}</div>
-            <q-separator class="q-my-md" />
-          </template>
-
-          <q-input
-            v-model="search"
-            filled
-            clearable
-            @update:model-value="searchForTasks"
-            @keyup.enter="searchForTasks"
-            debounce="300"
-            :label="searchLabel"
-          >
-            <template v-slot:append>
-              <q-btn
-                round
-                flat
-                dense
-                icon="search"
-                @click="searchForTasks"
-              />
-            </template>
-          </q-input>
-
-          <br>
 
           <template v-if="search">
             <q-separator class="q-my-md" />
@@ -69,10 +43,10 @@ import Fuse from 'fuse.js'
 import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
-import type { λ } from '../types'
-import { Utils } from 'src/util'
+import type { λ } from '../../types'
 
 interface Prop {
+  search?: string
   dialogTitle: string
   taskID?: number // if the search will be related to a specific task, set this prop value.
   searchLabel?: string
@@ -86,15 +60,18 @@ const emit = defineEmits([
   'create'
 ])
 
-const tr = useRepo(TaskRepo)
-
-const props = withDefaults(defineProps<Prop>(), {
-  showCreateButton: true,
-  resultsTitle: 'Search Results',
-  searchLabel: 'Search',
-  initialFilter: (currentTaskID: number | undefined) => {
-    if(typeof currentTaskID === 'undefined') return (x: Task) => !x.completed
-    const ct = Utils.hardCheck(useRepo(TaskRepo).withAll().find(currentTaskID))
+// can't set this in withDefaults... don't even try
+// DON'T
+const defaultFilter = (currentTaskID: number | undefined) => {
+  console.debug({ function: 'initialFilter', taskID: currentTaskID })
+  const simplestFilter = (x: Task) => !x.completed
+  if(typeof currentTaskID === 'undefined') return simplestFilter
+  const ct = useRepo(TaskRepo).find(currentTaskID)
+  if(ct === null) {
+    console.warn(`current Task ID ${currentTaskID} did not yield a Task record from local store. Falling back to generic filter.`)
+    return simplestFilter
+  }
+  else {
     return (x: Task) => {
       if(x.completed) return false
       if(ct.hard_prereq_ids.includes(x.id)) return false
@@ -102,11 +79,22 @@ const props = withDefaults(defineProps<Prop>(), {
       return true
     }
   }
+}
+
+const filterish = computed(() => props.initialFilter ?? defaultFilter)
+
+const tr = useRepo(TaskRepo)
+
+const props = withDefaults(defineProps<Prop>(), {
+  showCreateButton: true,
+  resultsTitle: 'Search Results',
+  searchLabel: 'Search'
 })
+
+console.debug({ component: 'taskSearchResults', taskID: props.taskID })
 
 const currentTask = ref(typeof props.taskID !== 'undefined' ? tr.withAll().find(props.taskID) : null)
 
-const search = ref('')
 const results = ref<Task[]>([])
 
 const searchOptions = {
@@ -115,10 +103,13 @@ const searchOptions = {
   keys: ['title']
 }
 
-const tasks = computed(() => tr.withAll().where(props.initialFilter(props.taskID)).get())
+const tasks = computed(() => {
+  console.debug({ function: 'computed(tasks)', taskID: props.taskID })
+  return tr.withAll().where(filterish.value(props.taskID)).get()
+})
 
 const searchForTasks = () => {
-  if(!search.value) { return } // Guard clause if search is empty
+  if(!props.search) { return } // Guard clause if search is empty
 
   console.log(tasks.value)
 
@@ -130,7 +121,7 @@ const searchForTasks = () => {
 
   // unsanitized user input being fed into a library? what could go wrong.
   // FIXME: AKA this is a vuln waiting to happen, fix it.
-  const run = fuse.search(search.value)
+  const run = fuse.search(props.search)
 
   results.value = tasks.value.filter(
     (task) => {
@@ -154,8 +145,9 @@ const searchForTasks = () => {
 }
 
 const createTask = async () => {
+  if(typeof props.search === 'undefined') return
   const toCreate: CreateTaskOptions = {
-    title: search.value
+    title: props.search
   }
   const newTask = await tr.add(toCreate)
   selectTask(newTask)
@@ -164,4 +156,6 @@ const createTask = async () => {
 const selectTask = (task: Task) => {
   emit('select', { task, callback: searchForTasks })
 }
+
+searchForTasks()
 </script>

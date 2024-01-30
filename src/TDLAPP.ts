@@ -8,7 +8,7 @@ import { useRepo } from 'pinia-orm'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number, q: QVueGlobals) => {
-    Utils.hardCheck(q)
+    Utils.hardCheck(q, 'quasar was not defined')
     const cts = useCurrentTaskStore()
     let msg: string
     if(currentTask instanceof Task) {
@@ -24,11 +24,12 @@ export class TDLAPP {
     })
   }
   static searchDialog = (q: QVueGlobals) => {
-    Utils.hardCheck(q)
+    Utils.hardCheck(q, 'quasar was not defined')
     q.dialog({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Search For A Task',
+        taskID: undefined,
         showCreateButton: true,
         onSelect: (payload: { task: Task }) => this.openTask(payload.task, q),
         closeOnSelect: true
@@ -49,7 +50,7 @@ export class TDLAPP {
     )
   }
   static addPrerequisitesDialog = (currentTask: Task, q: QVueGlobals) => {
-    Utils.hardCheck(q)
+    Utils.hardCheck(q, 'quasar was not defined')
     q.dialog({
       component: TaskSearchDialog,
       componentProps: {
@@ -64,7 +65,7 @@ export class TDLAPP {
     })
   }
   static addPostrequisiteDialog = (currentTask: Task, q: QVueGlobals) => {
-    Utils.hardCheck(q)
+    Utils.hardCheck(q, 'quasar was not defined')
     q.dialog({
       component: TaskSearchDialog,
       componentProps: {

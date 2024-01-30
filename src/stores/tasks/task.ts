@@ -182,7 +182,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     task.hard_prereq_ids.push(id_of_prereq)
     await this.update(options)
     const pre_options: UpdateTaskOptions = {
-      id: Utils.hardCheck(pre.id),
+      id: Utils.hardCheck(pre.id, 'task id was null or undefined'),
       payload: { task: pre }
     }
     pre.hard_postreq_ids.push(taskID)
@@ -202,7 +202,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     task.hard_postreq_ids.push(id_of_postreq)
     await this.update(options)
     const post_options: UpdateTaskOptions = {
-      id: Utils.hardCheck(post.id),
+      id: Utils.hardCheck(post.id, 'task id was null or undefined'),
       payload: { task: post }
     }
     post.hard_prereq_ids.push(taskID)
@@ -218,7 +218,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   }
 
   deleteTask = async (task: Task) => {
-    const task_id = Utils.hardCheck(task.id)
+    const task_id = Utils.hardCheck(task.id, 'task id was null or undefined')
     const currentTask = this.with('hard_prereqs').with('hard_postreqs').find(task_id)
     if(currentTask === null) throw new Error('task to delete was given but then it was not found in the list')
     const pres = currentTask.hard_prereqs

@@ -179,10 +179,9 @@ import DependencyList from '../DependencyList.vue';
 
 
 import QDatetimeInput from 'components/QDatetimeInput.vue';
-// import TaskSearchDialog from 'components/dialog/TaskSearchDialog.vue';
 
 import { ListRepo } from 'src/stores/lists/list';
-import { AllOptionalTaskProperties, Task, TaskRepo, UpdateTaskOptions } from 'src/stores/tasks/task';
+import { AllOptionalTaskProperties, Task, TaskRepo } from 'src/stores/tasks/task';
 import { useRepo } from 'pinia-orm';
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP';

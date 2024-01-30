@@ -8,7 +8,15 @@
       </q-card-section>
 
       <q-separator />
-      <TaskSearchComponent
+
+      <TaskSearchInput
+      v-model:model-value="searchString"
+      :search-label="searchLabel"
+      :dialog-title="dialogTitle"
+      @do-a-search="key++" />
+
+      <TaskSearchResults
+      :search="searchString"
       :dialog-title="dialogTitle" 
       :taskID="taskID" 
       :search-label="searchLabel" 
@@ -16,6 +24,7 @@
       showCreateButton
       @select="(e) => selectTask(e.task)"
       :key="key" />
+
     </q-card>
   </q-dialog>
 </template>
@@ -27,9 +36,10 @@ import { ref } from 'vue';
 
 import { Task, TaskRepo } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
-import { useRepo } from 'pinia-orm'
+// import { useRepo } from 'pinia-orm'
 // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import TaskSearchComponent from '../TaskSearchComponent.vue';
+import TaskSearchResults from '../search/TaskSearchResults.vue';
+import TaskSearchInput from '../search/TaskSearchInput.vue'
 
 interface Props {
   dialogTitle: string
@@ -48,6 +58,10 @@ const props = withDefaults(defineProps<Props>(),
   }
 )
 
+console.debug({ component: 'taskSearchDialog', taskID: props.taskID })
+
+const searchString = ref<string | undefined>(undefined)
+
 const key = ref(0)
 
 // const taskRef = ref(Utils.hardCheck(props.taskID, 'Task prop must be given a value'))
@@ -61,7 +75,7 @@ const emit = defineEmits([
 ])
 
 // REQUIRED; must be called inside of setup()
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
+const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 // dialogRef      - Vue ref to be applied to QDialog
 // onDialogHide   - Function to be used as handler for @hide on QDialog
 // onDialogOK     - Function to call to settle dialog with "ok" outcome
@@ -78,7 +92,7 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginC
 //   keys: ['title']
 // }
 
-const tr = useRepo(TaskRepo)
+// const tr = useRepo(TaskRepo)
 // const usr = useLocalSettingsStore()
 
 const selectTask = (task: Task) => {

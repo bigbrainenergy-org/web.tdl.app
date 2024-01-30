@@ -8,6 +8,7 @@
         <q-btn class="q-ma-sm" size="md" color="grey" label="Cancel" @click="onDialogCancel" />
       </q-card-section>
       <q-card-section>
+        <q-btn class="q-ma-sm" size="md" color="negative" :label="layerZero.some(x => !x.selected) ? 'SELECT ALL' : 'UNSELECT ALL'" @click="selectAll" />
         <q-list class="text-primary">
           <q-intersection v-for="currentTask, index in layerZero" :key="index" once style="min-height: 48px;">
             <q-item>
@@ -51,5 +52,9 @@ const saveNewRules = () => {
     TDLAPP.addPost(prop.task, x.obj.id)
   })
   onDialogCancel()
+}
+const selectAll = () => {
+  if(layerZero.value.some(x => !x.selected)) layerZero.value.forEach(x => x.selected = true)
+  else layerZero.value.forEach(x => x.selected = false)
 }
 </script>

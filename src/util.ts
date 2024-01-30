@@ -25,7 +25,7 @@ export class Utils {
   }
   static hardCheck<T>(t: T | undefined | null, memo = 'ERROR'): T {
     if (typeof t === 'undefined' || t === null) {
-      const e = new Error('variable was undefined.')
+      const e = new Error(`variable was undefined: ${memo}`)
       errorNotification(e, memo)
       throw e
     }

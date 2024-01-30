@@ -89,7 +89,6 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
-// import TaskSearchDialog from 'src/components/dialog/TaskSearchDialog.vue'
 
 const $q = useQuasar()
 
@@ -119,7 +118,7 @@ const tasks = computed(() => {
 })
 
 const updateTaskCompletedStatus = async (task: Task) => {
-  await tasksRepo.update({ id: Utils.hardCheck(task.id), payload: { task }})
+  await tasksRepo.update({ id: Utils.hardCheck(task.id, 'task id was null or undefined'), payload: { task }})
 }
 
 // todo: restore this feature
