@@ -31,7 +31,7 @@ import { useRepo } from 'pinia-orm'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import UpdateTaskDialog from 'src/components/UpdateTaskDialog.vue'
+import UpdateTaskDialog from 'src/components/dialog/UpdateTaskDialog.vue'
 import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
 import { Utils } from 'src/util'
 
