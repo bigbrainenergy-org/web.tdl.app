@@ -5,7 +5,6 @@ import { useCurrentTaskStore } from './stores/task-meta/current-task'
 import UpdateTaskDialog from './components/dialog/UpdateTaskDialog.vue'
 import TaskSearchDialog from './components/dialog/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
-import LazyVueSettingsDialogVue from './components/dialog/LazyVueSettingsDialog.vue'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number, q: QVueGlobals) => {
@@ -59,7 +58,6 @@ export class TDLAPP {
         taskID: currentTask.id,
         showCreateButton: true,
         onSelect: async (payload: { task: Task }) => {
-          console.debug({ payload })
           await this.addPre(currentTask, payload.task.id)
         }
       }
@@ -74,7 +72,6 @@ export class TDLAPP {
         taskID: currentTask.id,
         showCreateButton: true,
         onSelect: (payload: { task: Task }) => {
-          console.debug({ payload })
           this.addPost(currentTask, payload.task.id)
         }
       }

@@ -63,12 +63,10 @@ const emit = defineEmits([
 // can't set this in withDefaults... don't even try
 // DON'T
 const defaultFilter = (currentTaskID: number | undefined) => {
-  console.debug({ function: 'initialFilter', taskID: currentTaskID })
   const simplestFilter = (x: Task) => !x.completed
   if(typeof currentTaskID === 'undefined') return simplestFilter
   const ct = useRepo(TaskRepo).find(currentTaskID)
   if(ct === null) {
-    console.warn(`current Task ID ${currentTaskID} did not yield a Task record from local store. Falling back to generic filter.`)
     return simplestFilter
   }
   else {
@@ -91,8 +89,6 @@ const props = withDefaults(defineProps<Prop>(), {
   searchLabel: 'Search'
 })
 
-console.debug({ component: 'taskSearchResults', taskID: props.taskID })
-
 const currentTask = ref(typeof props.taskID !== 'undefined' ? tr.withAll().find(props.taskID) : null)
 
 const results = ref<Task[]>([])
@@ -104,18 +100,11 @@ const searchOptions = {
 }
 
 const tasks = computed(() => {
-  console.debug({ function: 'computed(tasks)', taskID: props.taskID })
   return tr.withAll().where(filterish.value(props.taskID)).get()
 })
 
 const searchForTasks = () => {
   if(!props.search) { return } // Guard clause if search is empty
-
-  console.log(tasks.value)
-
-  const isDefined = typeof currentTask.value !== null
-
-  console.log({tasks: tasks.value, isDefined})
 
   const fuse = new Fuse(tasks.value, searchOptions)
 
