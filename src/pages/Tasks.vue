@@ -4,8 +4,7 @@
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <q-toggle v-model="layerZeroOnly" @click="updateLocalSettings" label="Next Up Only" class="text-primary"/>
-            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary"/>
+            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
             <q-space />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
@@ -89,6 +88,8 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
+import LazyVueComponent from 'src/components/lazy-vue/LazyVueComponent.vue'
+import SettingsButton from 'src/components/SettingsButton.vue'
 
 const $q = useQuasar()
 
@@ -102,10 +103,8 @@ const usr = useLocalSettingsStore()
 
 const layerZeroOnly = ref(usr.layerZeroOnly)
 const incompleteOnly = ref(usr.hideCompleted)
-const updateLocalSettings = () => {
-  usr.layerZeroOnly = layerZeroOnly.value
-  usr.hideCompleted = incompleteOnly.value
-}
+
+const tasksPageSettings = ref({'Unblocked Only': layerZeroOnly, 'Incomplete Only': incompleteOnly})
 
 const notCompleted = (x: Task) => x.completed === false
 const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0

@@ -4,7 +4,7 @@
       <div class="full-height">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <q-toggle @click="reInitializeGraph" v-model="incompleteOnly" label="Hide Completed Tasks" />
+            <SettingsButton v-model:settings="graphSettings" name="Graph Settings" />
             <q-space />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
@@ -28,14 +28,13 @@ svg text{
 import { useRepo } from 'pinia-orm'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import * as d3 from 'd3'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
 import { useQuasar } from 'quasar'
-import UpdateTaskDialog from 'src/components/dialog/UpdateTaskDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
-import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 import { TDLAPP } from 'src/TDLAPP'
+import SettingsButton from 'src/components/SettingsButton.vue'
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -50,6 +49,19 @@ type d3Link<T> = d3.SimulationLinkDatum<d3Node<T>> & { slopeX: number, slopeY: n
 let links: d3Link<Task>[]
 
 const incompleteOnly = ref(usr.hideCompleted)
+const taskNodeMaxSize = ref(usr.maxGraphNodeRadius)
+
+const graphSettings = ref({ 'Hide Completed Tasks': incompleteOnly, 'Max Task Node Size': taskNodeMaxSize })
+
+watch(incompleteOnly, () => {
+  reInitializeGraph()
+});
+
+watch(taskNodeMaxSize, () => {
+  reInitializeGraph()
+})
+
+console.log(graphSettings.value)
 
 const populateGraphDataStructures = () => {
   allTasks = tr.value.withAll().get()
@@ -92,7 +104,6 @@ const populateGraphDataStructuresIncompleteOnly = () => {
 
   allTaskNodes = Array.from(taskNodeMap).map(x => x[1])
   links = allTaskNodes.flatMap(generateD3LinksToAllPostreqs)
-  console.log({links})
 }
 
 const populate = () => {
@@ -151,7 +162,6 @@ function raise(this: any) {
 
 const initializeGraph = () => {
   // updateSize()
-  console.debug({width, height})
   simulation = d3.forceSimulation(allTaskNodes)
     .force('charge', d3.forceManyBody().strength(-128))
     .force('link', d3.forceLink(links))

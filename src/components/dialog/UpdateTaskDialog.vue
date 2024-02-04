@@ -12,7 +12,6 @@
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)" />
         </template>
         <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask as Task)" />
-        <q-btn class="q-ma-sm" size="md" color="negative" label="DO ASAP" @click="ASAPify(currentTask as Task)" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
 
@@ -197,7 +196,7 @@ const emit = defineEmits([
   ...useDialogPluginComponent.emits
 ])
 
-const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
+const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 // dialogRef      - Vue ref to be applied to QDialog
 // onDialogHide   - Function to be used as handler for @hide on QDialog
 // onDialogOK     - Function to call to settle dialog with "ok" outcome
@@ -354,24 +353,8 @@ const toggleComplete = async (task: Task) => {
   //Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check')
 }
 
-// other methods that we used in our vue html template;
-// these are part of our example (so not required)
-const onOKClick = onDialogOK
-
 // we can passthrough onDialogCancel directly
 const onCancelClick = onDialogCancel
-
-const ASAPify = async (task: Task) => {
-  const allTasks = tr.withAll().get()
-  const layerZero = allTasks.filter(x => !x.completed && x.id !== task.id && x.hard_prereqs.filter((y: Task) => !y.completed).length === 0)
-  const taskID = Utils.hardCheck(task.id)
-  for(let i = 0; i < layerZero.length; i++) {
-    tr.addPre(layerZero[i], taskID).then(Utils.handleSuccess('Added a Next-Up as Post to This'), Utils.handleError('Error adding Rule for ASAPify'))
-  }
-  const syncResult = await syncWithBackend()
-  if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
-  else Utils.notifySuccess('Refreshed All')
-}
 
 const mvpPostrequisite = async (post: Task) => {
   console.debug(post)

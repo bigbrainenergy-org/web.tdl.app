@@ -4,9 +4,7 @@
       <div class="col-grow">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Tasks" class="text-primary" />
-            <q-toggle v-model="toggleRGB" label="Enable RGB" />
-            <q-toggle v-model="expandAllWithSameID" @click="updateLocalSettings" label="Expand Same Task Everywhere It's Found" class="text-primary" />
+            <SettingsButton v-model:settings="taskTreeSettings" name="Task Tree Settings" />
           </q-card-actions>
           <q-tree
           :nodes="layerZeroTasks"
@@ -42,13 +40,19 @@ import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
 import { Utils } from 'src/util'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
+import SettingsButton from 'src/components/SettingsButton.vue'
 
 const tr = computed(() => useRepo(TaskRepo))
 const esr = computed(() => useRepo(ExpandedStateRepo))
 const usr = useLocalSettingsStore()
 
+const toggleRGB = ref(false)
+
 const incompleteOnly = ref(usr.hideCompleted)
 const expandAllWithSameID = ref(usr.expandAllWithSameID)
+
+const taskTreeSettings = ref({ 'Incomplete Only': incompleteOnly, 'Expand Task Everywhere It\'s Found': expandAllWithSameID, 'Enable RGB': toggleRGB})
+
 const updateLocalSettings = () => {
   usr.hideCompleted = incompleteOnly.value
   usr.expandAllWithSameID = expandAllWithSameID.value
@@ -68,8 +72,6 @@ const layerZeroTasks = computed((): SimpleTreeNode<Task>[] => {
   console.debug({'layer zero tasks': nodes})
   return nodes
 })
-
-const toggleRGB = ref(false)
 
 let allTaskNodes = Array.from(layerZeroTasks.value)
 

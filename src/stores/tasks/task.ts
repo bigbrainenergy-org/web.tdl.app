@@ -7,7 +7,6 @@ import ExpandedState from '../task-meta/expanded-state'
 import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { Utils } from 'src/util'
-import Priority from '../task-meta/priority'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 
 export interface CreateTaskOptions {
@@ -103,7 +102,7 @@ export class Task extends Model implements iRecord {
       y: height / 2,
       vx: 0,
       vy: 0,
-      radius: Math.min(450, Math.max((useLocalSettingsStore().hideCompleted ? this.hard_postreqs.filter(x => !x.completed).length : this.hard_postreq_ids.length)**2.1, this.hard_prereqs.filter(x => !x.completed).length === 0 ? 16 : 8)),
+      radius: Math.min(useLocalSettingsStore().maxGraphNodeRadius, Math.max((useLocalSettingsStore().hideCompleted ? this.hard_postreqs.filter(x => !x.completed).length : this.hard_postreq_ids.length)**2.1, this.hard_prereqs.filter(x => !x.completed).length === 0 ? 16 : 8)),
       color: this.completed ? '#003905' : (this.hard_prereqs.filter(x => !x.completed).length === 0 ? 'red' : 'gray'),
       repel: -1000/(this.hard_prereq_ids.length**2)
     }
@@ -151,9 +150,9 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     const taskID = Utils.hardCheck(task.id, "removePre: task's id was null or undefined")
     const options: UpdateTaskOptions = {
       id: taskID,
-      payload: { task }
+      payload: { task: Object.assign({}, task) }
     }
-    task.hard_prereq_ids.splice(position, 1)
+    options.payload.task.hard_prereq_ids!.splice(position, 1)
     await this.update(options)
   }
 
@@ -163,9 +162,9 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     const taskID = Utils.hardCheck(task.id, "removePost: task's id was null or undefined")
     const options: UpdateTaskOptions = {
       id: taskID,
-      payload: { task }
+      payload: { task: Object.assign({}, task) }
     }
-    task.hard_postreq_ids.splice(position, 1)
+    options.payload.task.hard_postreq_ids!.splice(position, 1)
     await this.update(options)
   }
 
@@ -177,15 +176,15 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if(pre === null) throw new Error('prerequisite was not found in list')
     const options: UpdateTaskOptions = {
       id: taskID,
-      payload: { task }
+      payload: { task: Object.assign({}, task) }
     }
-    task.hard_prereq_ids.push(id_of_prereq)
+    options.payload.task.hard_prereq_ids!.push(id_of_prereq)
     await this.update(options)
     const pre_options: UpdateTaskOptions = {
       id: Utils.hardCheck(pre.id, 'task id was null or undefined'),
-      payload: { task: pre }
+      payload: { task: Object.assign({}, pre) }
     }
-    pre.hard_postreq_ids.push(taskID)
+    pre_options.payload.task.hard_postreq_ids!.push(taskID)
     await this.update(pre_options)
   }
 
@@ -197,23 +196,24 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if(post === null) throw new Error('postrequisite was not found in list')
     const options: UpdateTaskOptions = {
       id: taskID,
-      payload: { task }
+      payload: { task: Object.assign({}, task) }
     }
-    task.hard_postreq_ids.push(id_of_postreq)
+    options.payload.task.hard_postreq_ids!.push(id_of_postreq)
     await this.update(options)
     const post_options: UpdateTaskOptions = {
       id: Utils.hardCheck(post.id, 'task id was null or undefined'),
-      payload: { task: post }
+      payload: { task: Object.assign({}, post) }
     }
-    post.hard_prereq_ids.push(taskID)
+    post_options.payload.task.hard_prereq_ids!.push(taskID)
     await this.update(post_options)
   }
 
   toggleCompleted = async (task: Task) => {
-    task.completed = !task.completed
+    const t = Object.assign({}, task)
+    t.completed = !task.completed
     await this.update({ 
       id: Utils.hardCheck(task.id, 'task id was null or undefined'),
-      payload: { task }
+      payload: { task: t }
     })
   }
 

@@ -5,6 +5,7 @@ import { useCurrentTaskStore } from './stores/task-meta/current-task'
 import UpdateTaskDialog from './components/dialog/UpdateTaskDialog.vue'
 import TaskSearchDialog from './components/dialog/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
+import LazyVueSettingsDialogVue from './components/dialog/LazyVueSettingsDialog.vue'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number, q: QVueGlobals) => {
