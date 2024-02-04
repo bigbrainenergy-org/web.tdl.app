@@ -58,8 +58,6 @@ const props = withDefaults(defineProps<Props>(),
   }
 )
 
-console.debug({ component: 'taskSearchDialog', taskID: props.taskID })
-
 const searchString = ref<string | undefined>(undefined)
 
 const key = ref(0)
