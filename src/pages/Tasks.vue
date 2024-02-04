@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, ref, watch } from 'vue'
 
 import { useRepo } from 'pinia-orm';
 import { Task, TaskRepo } from 'src/stores/tasks/task'
@@ -105,6 +105,14 @@ const layerZeroOnly = ref(usr.layerZeroOnly)
 const incompleteOnly = ref(usr.hideCompleted)
 
 const tasksPageSettings = ref({'Unblocked Only': layerZeroOnly, 'Incomplete Only': incompleteOnly})
+
+watch(layerZeroOnly, () => {
+  usr.layerZeroOnly = layerZeroOnly.value
+})
+
+watch(incompleteOnly, () => {
+  usr.hideCompleted = incompleteOnly.value
+})
 
 const notCompleted = (x: Task) => x.completed === false
 const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0

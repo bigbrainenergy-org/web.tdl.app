@@ -26,7 +26,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       selectedList: '',
       selectedTags: [],
       tagsFilter: '',
-      hideCompleted: false,
+      hideCompleted: true,
       layerZeroOnly: false,
       expandEnergyStats: false,
       expandAllWithSameID: false,

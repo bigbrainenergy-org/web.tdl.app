@@ -55,8 +55,14 @@ const graphSettings = ref({ 'Hide Completed Tasks': incompleteOnly, 'Max Task No
 
 const reinit = () => reInitializeGraph()
 
-watch(incompleteOnly,  reinit);
-watch(taskNodeMaxSize, reinit)
+watch(incompleteOnly,  () => {
+  usr.hideCompleted = incompleteOnly.value
+  reInitializeGraph()
+})
+watch(taskNodeMaxSize, () => {
+  usr.maxGraphNodeRadius = taskNodeMaxSize.value
+  reInitializeGraph()
+})
 
 console.log(graphSettings.value)
 

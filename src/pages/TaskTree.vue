@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import UpdateTaskDialog from 'src/components/dialog/UpdateTaskDialog.vue'
 import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
@@ -52,6 +52,14 @@ const incompleteOnly = ref(usr.hideCompleted)
 const expandAllWithSameID = ref(usr.expandAllWithSameID)
 
 const taskTreeSettings = ref({ 'Incomplete Only': incompleteOnly, 'Expand Task Everywhere It\'s Found': expandAllWithSameID, 'Enable RGB': toggleRGB})
+
+watch(incompleteOnly, () => {
+  usr.hideCompleted = incompleteOnly.value
+})
+
+watch(expandAllWithSameID, () => {
+  usr.expandAllWithSameID = expandAllWithSameID.value
+})
 
 const updateLocalSettings = () => {
   usr.hideCompleted = incompleteOnly.value
