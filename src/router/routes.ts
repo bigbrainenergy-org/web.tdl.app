@@ -8,7 +8,6 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'Empty', redirect: 'tasks' },
       { path: 'tasks', name: 'Tasks', component: () => import('src/pages/Tasks.vue') },
       { path: 'tasks-tree', name: 'Tree', component: () => import('src/pages/TaskTree.vue') },
-      { path: 'reverse-tasks-tree', name: 'ReverseTree', component: () => import('src/pages/ReverseTaskTree.vue') },
       { path: 'lists', name: 'Lists', component: () => import('src/pages/Lists.vue') },
       { path: 'settings', name: 'Settings', component: () => import('src/pages/Settings.vue') },
       { path: 'graph', name: 'Graph', component: () => import('src/pages/GraphAll.vue') }
