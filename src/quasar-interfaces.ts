@@ -18,6 +18,7 @@ export interface QTreeComponent<T> {
   getExpandedNodes(): SimpleTreeNode<T>[]
   setExpanded(key: string, state: boolean): void
   isExpanded(key: string): boolean
+  getNodeByKey(key: string): SimpleTreeNode<T> | undefined
 }
 
 // example lazy loader

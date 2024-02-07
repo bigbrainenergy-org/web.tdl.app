@@ -1,7 +1,7 @@
 import { AxiosError } from 'axios';
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
-import { λ } from './types'
+import { NodeKey, λ } from './types'
 
 export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
@@ -33,7 +33,17 @@ export class Utils {
   }
   static arrayDelete<T>(arr: Array<T>, element: T) {
     const i = arr.indexOf(element)
-    if(i < 0) arr.splice(i, 1)
+    if(i >= 0) arr.splice(i, 1)
     return arr
+  }
+  static onlyInLeftArray(leftArr: NodeKey[], rightArr: NodeKey[]) {
+    return leftArr.filter(x => !rightArr.some(y => y.key === x.key))
+  }
+  static innerJoin<T>(a: T[], b: T[]) {
+    const setB = new Set(b)
+    return a.filter(x => setB.has(x))
+  }
+  static combineArrays(a: NodeKey[], b: NodeKey[]) {
+    return [...a, ...this.onlyInLeftArray(b, a)]
   }
 }

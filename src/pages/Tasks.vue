@@ -52,16 +52,17 @@
                     </q-icon>
                   </q-item-section>
 
-                  <q-chip 
-                    v-if="currentTask.hard_postreq_ids.length" 
-                    :style="currentTask.hard_postreq_ids.length > 5 ? 'background-color: red;' : 'background-color: gray;'">
-                      {{ currentTask.hard_postreq_ids.length }}
+                  <q-item-section side>
+                    <q-chip 
+                    v-if="currentTask.grabPostreqs(incompleteOnly).length" 
+                    :style="currentTask.grabPostreqs(incompleteOnly).length > 5 ? 'background-color: red;' : 'background-color: gray;'">
+                      {{ currentTask.grabPostreqs(incompleteOnly).length }}
                     </q-chip>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-btn outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed" />
+                  </q-item-section>
                   
-
-                  <q-space class="q-ma-sm" />
-
-                  <q-btn outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed"/>
                 </q-item>
               </q-intersection>
               <template v-if="tasks.length === 0">
@@ -120,7 +121,7 @@ const tasks = computed(() => {
   let baseQuery = tasksRepo.withAll().get()
   if(layerZeroOnly.value) baseQuery = baseQuery.filter(notBlocked)
   if(incompleteOnly.value) baseQuery = baseQuery.filter(notCompleted)
-  return baseQuery.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+  return baseQuery.sort((a, b) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length)
 })
 
 const updateTaskCompletedStatus = async (task: Task) => {

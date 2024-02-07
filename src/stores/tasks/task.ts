@@ -6,8 +6,8 @@ import GenericRepo from '../generics/generic-repo'
 import ExpandedState from '../task-meta/expanded-state'
 import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
-import { Utils } from 'src/util'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
+import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -82,31 +82,31 @@ export class Task extends Model implements iRecord {
       : false
   }
 
-  treeNode(reverse = false, hideCompleted = false): SimpleTreeNode<Task> {
-    const obj: any = {
+  treeNode(reverse = false, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task> {
+    const node: any = {
       id: this.id,
       obj: this,
       label: this.title,
-      key: this.id + '.' + Math.round(Math.random()*10000)
+      key: this.id + '.' + parentKey
     }
     if(reverse && hideCompleted) {
-      obj.expandable = this.hasIncompletePrereqs
-      obj.lazy = this.hasIncompletePrereqs
-      return obj
+      node.expandable = this.hasIncompletePrereqs
+      node.lazy = this.hasIncompletePrereqs
+      return node
     }
     if(reverse) {
-      obj.expandable = this.hasPrereqs,
-      obj.lazy = this.hasPrereqs
-      return obj
+      node.expandable = this.hasPrereqs,
+      node.lazy = this.hasPrereqs
+      return node
     }
     if(hideCompleted) {
-      obj.expandable = this.hasIncompletePostreqs,
-      obj.lazy = this.hasIncompletePostreqs
-      return obj
+      node.expandable = this.hasIncompletePostreqs,
+      node.lazy = this.hasIncompletePostreqs
+      return node
     }
-    obj.expandable = this.hasPostreqs
-    obj.lazy = this.hasPostreqs
-    return obj
+    node.expandable = this.hasPostreqs
+    node.lazy = this.hasPostreqs
+    return node
   }
 
   /// d3Node<Task>
@@ -121,7 +121,7 @@ export class Task extends Model implements iRecord {
   //  color: if you want to color-code the nodes based on its properties.
   d3forceNode(index: number, width = 0, height = 0): d3Node<Task> {
     return {
-      id: this.id ?? -1,
+      id: this.id,
       obj: this,
       index: index, //node indices start at 0, sequential.
       x: width / 2,
@@ -159,16 +159,17 @@ export class Task extends Model implements iRecord {
 
   grabPostreqs(incompleteOnly = false): Task[] {
     const repo = useRepo(TaskRepo)
+    // if(typeof this.hard_postreqs === 'undefined') console.log('have to call repo to fetch postreqs')
     const posts = this.hard_postreqs ?? repo.where(x => x.hard_prereq_ids.includes(this.id)).get()
     return incompleteOnly ? posts.filter(x => !x.completed) : posts
   }
 
-  hardPostreqTreeNodes(reverse = true, hideCompleted = false): SimpleTreeNode<Task>[] {
-    return this.grabPostreqs(hideCompleted).map(x => x.treeNode(reverse, hideCompleted))
+  hardPostreqTreeNodes(reverse = false, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task>[] {
+    return this.grabPostreqs(hideCompleted).map(x => x.treeNode(reverse, hideCompleted, parentKey))
   }
 
-  hardPrereqTreeNodes(reverse = false, hideCompleted = false): SimpleTreeNode<Task>[] {
-    return this.grabPrereqs(hideCompleted).map(x => x.treeNode(reverse = false, hideCompleted = false))
+  hardPrereqTreeNodes(reverse = true, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task>[] {
+    return this.grabPrereqs(hideCompleted).map(x => x.treeNode(reverse, hideCompleted, parentKey))
   }
 
   static piniaOptions = {
@@ -269,6 +270,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     for(let i = 0; i < posts.length; i++) {
       await this.removePre(posts[i], task.id).catch((x) => console.debug(x))
     }
+    useRawExpandedStateStore().forgetTask(task.id)
     return this.delete(task.id)
   }
 

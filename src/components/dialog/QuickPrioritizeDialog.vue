@@ -20,12 +20,6 @@
       </q-card-section>
     </q-card>
   </q-dialog>
-  <q-separator />
-  <q-card-section>
-    <div class="row q-gutter-md q-pa-sm">
-      
-    </div>
-  </q-card-section>
 </template>
 
 <script setup lang="ts">
@@ -39,7 +33,7 @@ interface Props {
   task: Task
 }
 const prop = defineProps<Props>()
-const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
+const { dialogRef, onDialogOK, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 const layerZero = ref(useRepo(TaskRepo).layerZero()
   .filter(x => {
     if(x.id === prop.task.id) return false

@@ -30,7 +30,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       layerZeroOnly: false,
       expandEnergyStats: false,
       expandAllWithSameID: false,
-      maxGraphNodeRadius: 100
+      maxGraphNodeRadius: 100,
+      reverseTreeView: false
     }
   },
   persist: true,
