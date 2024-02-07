@@ -88,7 +88,6 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
-import LazyVueComponent from 'src/components/lazy-vue/LazyVueComponent.vue'
 import SettingsButton from 'src/components/SettingsButton.vue'
 
 const $q = useQuasar()
@@ -128,47 +127,6 @@ const updateTaskCompletedStatus = async (task: Task) => {
   await tasksRepo.update({ id: Utils.hardCheck(task.id, 'task id was null or undefined'), payload: { task }})
 }
 
-// todo: restore this feature
-//const taskMenus = ref([])
-/*
-This was the template info that took in taskMenus (it is unclear where taskMenus is getting its data, and Typescript is scared)
-<q-menu context-menu auto-close :ref="el => { if(el) taskMenus[index] = el }">
-  <q-list style="min-width: 100px">
-    <q-item clickable @click="openTask(currentTask)">
-      <q-item-section>Open</q-item-section>
-      <q-item-section avatar>
-        <q-icon name="fas fa-external-link-alt" />
-      </q-item-section>
-    </q-item>
-
-    <q-separator />
-
-    <q-item clickable>
-      <q-item-section>Delete</q-item-section>
-      <q-item-section avatar>
-        <q-icon color="negative" name="fas fa-trash" />
-      </q-item-section>
-    </q-item>
-  </q-list>
-</q-menu>
-This was between a "More Notes" tooltip and a template v-if="tasks.length === 0"
-*/
-
-// const addPrereq = async (task: Task, pre: Task) => {
-//   const payload_id = Utils.hardCheck(pre.id, 'addPrereq: id of prereq is null or undefined!')
-//   await tasksRepo.addPre(task, payload_id)
-//   .then(
-//     Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
-//     // now comes the fun part though... the updateTaskDialog does
-//     // not show the prerequisites updated with the new value, and
-//     // the tasks page(s) do not update to show the new structure either.
-//     Utils.handleError('Failed to add prereq')
-//   )
-// }
-
 const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
 const openSearchDialog = () => TDLAPP.searchDialog($q)
-
-// const hoveredID = ref<number | null>(null)
-// const setHoveredTo = (x: number | null) => hoveredID.value = x
 </script>
