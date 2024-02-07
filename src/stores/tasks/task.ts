@@ -70,17 +70,43 @@ export class Task extends Model implements iRecord {
   @HasOne(() => ExpandedState, 'id') declare expanded_state: ExpandedState
 
   get hasPostreqs() { return this.hard_postreq_ids.length > 0 }
-  get hasPrereqs() { return this.hard_prereq_ids.length > 0 }
+  get hasIncompletePostreqs() {
+    return this.hard_postreq_ids.length > 0 ? 
+      this.grabPostreqs().some(x => !x.completed)
+      : false
+  }
+  get hasPrereqs()  { return this.hard_prereq_ids.length  > 0 }
+  get hasIncompletePrereqs() {
+    return this.hard_prereq_ids.length > 0 ?
+      this.grabPrereqs().some(x => !x.completed)
+      : false
+  }
 
-  treeNode(): SimpleTreeNode<Task> {
-    return {
-      id: this.id ?? -1,
+  treeNode(reverse = false, hideCompleted = false): SimpleTreeNode<Task> {
+    const obj: any = {
+      id: this.id,
       obj: this,
       label: this.title,
-      expandable: this.hasPostreqs,
-      lazy: this.hasPostreqs,
       key: this.id + '.' + Math.round(Math.random()*10000)
     }
+    if(reverse && hideCompleted) {
+      obj.expandable = this.hasIncompletePrereqs
+      obj.lazy = this.hasIncompletePrereqs
+      return obj
+    }
+    if(reverse) {
+      obj.expandable = this.hasPrereqs,
+      obj.lazy = this.hasPrereqs
+      return obj
+    }
+    if(hideCompleted) {
+      obj.expandable = this.hasIncompletePostreqs,
+      obj.lazy = this.hasIncompletePostreqs
+      return obj
+    }
+    obj.expandable = this.hasPostreqs
+    obj.lazy = this.hasPostreqs
+    return obj
   }
 
   /// d3Node<Task>
@@ -122,9 +148,27 @@ export class Task extends Model implements iRecord {
     return hexColor
   }
 
-  hardPostreqTreeNodes(): SimpleTreeNode<Task>[] {
+  hasPostreq = (id: number) => this.hard_postreq_ids.includes(id)
+  hasPrereq  = (id: number) => this.hard_prereq_ids.includes(id)
+
+  grabPrereqs(incompleteOnly = false): Task[] {
     const repo = useRepo(TaskRepo)
-    return repo.where((x: Task) => this.hard_postreq_ids.includes(x.id ?? -1)).get().map((x) => x.treeNode())
+    const pres = this.hard_prereqs ?? repo.where(x => x.hard_postreq_ids.includes(this.id)).get()
+    return incompleteOnly ? pres.filter(x => !x.completed) : pres
+  }
+
+  grabPostreqs(incompleteOnly = false): Task[] {
+    const repo = useRepo(TaskRepo)
+    const posts = this.hard_postreqs ?? repo.where(x => x.hard_prereq_ids.includes(this.id)).get()
+    return incompleteOnly ? posts.filter(x => !x.completed) : posts
+  }
+
+  hardPostreqTreeNodes(reverse = true, hideCompleted = false): SimpleTreeNode<Task>[] {
+    return this.grabPostreqs(hideCompleted).map(x => x.treeNode(reverse, hideCompleted))
+  }
+
+  hardPrereqTreeNodes(reverse = false, hideCompleted = false): SimpleTreeNode<Task>[] {
+    return this.grabPrereqs(hideCompleted).map(x => x.treeNode(reverse = false, hideCompleted = false))
   }
 
   static piniaOptions = {
@@ -147,9 +191,8 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   removePre = async (task: Task, id_of_prereq: number) => {
     const position = task.hard_prereq_ids.indexOf(id_of_prereq)
     if(position < 0) throw new Error('removePre: id provided was not found in prereqs list')
-    const taskID = Utils.hardCheck(task.id, "removePre: task's id was null or undefined")
     const options: UpdateTaskOptions = {
-      id: taskID,
+      id: task.id,
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_prereq_ids!.splice(position, 1)
@@ -159,9 +202,8 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   removePost = async (task: Task, id_of_postreq: number) => {
     const position = task.hard_postreq_ids.indexOf(id_of_postreq)
     if(position < 0) throw new Error('removePost: id provided was not found in postreqs list')
-    const taskID = Utils.hardCheck(task.id, "removePost: task's id was null or undefined")
     const options: UpdateTaskOptions = {
-      id: taskID,
+      id: task.id,
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_postreq_ids!.splice(position, 1)
@@ -171,40 +213,38 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   addPre = async (task: Task, id_of_prereq: number) => {
     const position = task.hard_prereq_ids.indexOf(id_of_prereq)
     if(position >= 0) throw new Error('addPre: id provided is already in prereqs list')
-    const taskID = Utils.hardCheck(task.id, "addPre: task's id was null or undefined")
     const pre = this.find(id_of_prereq)
     if(pre === null) throw new Error('prerequisite was not found in list')
     const options: UpdateTaskOptions = {
-      id: taskID,
+      id: task.id,
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_prereq_ids!.push(id_of_prereq)
     await this.update(options)
     const pre_options: UpdateTaskOptions = {
-      id: Utils.hardCheck(pre.id, 'task id was null or undefined'),
+      id: pre.id,
       payload: { task: Object.assign({}, pre) }
     }
-    pre_options.payload.task.hard_postreq_ids!.push(taskID)
+    pre_options.payload.task.hard_postreq_ids!.push(task.id)
     await this.update(pre_options)
   }
 
   addPost = async (task: Task, id_of_postreq: number) => {
     const position = task.hard_prereq_ids.indexOf(id_of_postreq)
     if(position >= 0) throw new Error('addPost: id provided is already in postreqs list')
-    const taskID = Utils.hardCheck(task.id, "addPost: task's id was null or undefined")
     const post = this.find(id_of_postreq)
     if(post === null) throw new Error('postrequisite was not found in list')
     const options: UpdateTaskOptions = {
-      id: taskID,
+      id: task.id,
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_postreq_ids!.push(id_of_postreq)
     await this.update(options)
     const post_options: UpdateTaskOptions = {
-      id: Utils.hardCheck(post.id, 'task id was null or undefined'),
+      id: post.id,
       payload: { task: Object.assign({}, post) }
     }
-    post_options.payload.task.hard_prereq_ids!.push(taskID)
+    post_options.payload.task.hard_prereq_ids!.push(task.id)
     await this.update(post_options)
   }
 
@@ -212,25 +252,24 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     const t = Object.assign({}, task)
     t.completed = !task.completed
     await this.update({ 
-      id: Utils.hardCheck(task.id, 'task id was null or undefined'),
+      id: task.id,
       payload: { task: t }
     })
   }
 
   deleteTask = async (task: Task) => {
-    const task_id = Utils.hardCheck(task.id, 'task id was null or undefined')
-    const currentTask = this.with('hard_prereqs').with('hard_postreqs').find(task_id)
+    const currentTask = this.with('hard_prereqs').with('hard_postreqs').find(task.id)
     if(currentTask === null) throw new Error('task to delete was given but then it was not found in the list')
     const pres = currentTask.hard_prereqs
     const posts = currentTask.hard_postreqs
     console.debug({currentTask, pres, posts})
     for(let i = 0; i < pres.length; i++) {
-      await this.removePost(pres[i], task_id).catch((x) => console.debug(x))
+      await this.removePost(pres[i], task.id).catch((x) => console.debug(x))
     }
     for(let i = 0; i < posts.length; i++) {
-      await this.removePre(posts[i], task_id).catch((x) => console.debug(x))
+      await this.removePre(posts[i], task.id).catch((x) => console.debug(x))
     }
-    return this.delete(task_id)
+    return this.delete(task.id)
   }
 
   incompleteOnly = (): Task[] => this.withAll().get().filter(x => !x.completed)
