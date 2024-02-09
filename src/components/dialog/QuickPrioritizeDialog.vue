@@ -5,8 +5,9 @@
         <div class="text-h6">Quick Prioritize Task</div>
         <div class="text-h6">Which tasks should come after this task: {{ task.title }}</div>
         <q-btn class="q-ma-sm" size="md" color="positive" label="Save" @click="saveNewRules" />
-        <q-btn class="q-ma-sm" size="md" color="grey" label="Cancel" @click="onDialogCancel" />
+        <q-btn class="q-ma-sm" size="md" color="grey" label="Cancel" @click="onCancelClick" />
       </q-card-section>
+      <q-linear-progress v-if="typeof saveProgress !== 'undefined'" stripe size="10px" :value="saveProgress" />
       <q-card-section>
         <q-btn class="q-ma-sm" size="md" color="negative" :label="layerZero.some(x => !x.selected) ? 'SELECT ALL' : 'UNSELECT ALL'" @click="selectAll" />
         <q-list class="text-primary">
@@ -32,6 +33,8 @@ import { ref } from 'vue'
 interface Props {
   task: Task
 }
+
+const saveProgress = ref<number | undefined>(undefined)
 const prop = defineProps<Props>()
 const { dialogRef, onDialogOK, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 const layerZero = ref(useRepo(TaskRepo).layerZero()
@@ -41,14 +44,19 @@ const layerZero = ref(useRepo(TaskRepo).layerZero()
     return true
   })
   .map(x => ({ selected: false, obj: x })))
-const saveNewRules = () => {
-  layerZero.value.filter(x => x.selected).forEach(x => {
-    TDLAPP.addPost(prop.task, x.obj.id)
-  })
+const saveNewRules = async () => {
+  const selectedTasks = layerZero.value.filter(x => x.selected)
+  saveProgress.value = 0
+  // TODO: batch update this!
+  for(let i = 0; i < selectedTasks.length; i++) {
+    await TDLAPP.addPost(prop.task, selectedTasks[i].obj.id).then(() => saveProgress.value = (i+1) / selectedTasks.length)
+  }
   onDialogCancel()
 }
 const selectAll = () => {
   if(layerZero.value.some(x => !x.selected)) layerZero.value.forEach(x => x.selected = true)
   else layerZero.value.forEach(x => x.selected = false)
 }
+
+const onCancelClick = onDialogCancel
 </script>

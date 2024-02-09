@@ -46,4 +46,8 @@ export class Utils {
   static combineArrays(a: NodeKey[], b: NodeKey[]) {
     return [...a, ...this.onlyInLeftArray(b, a)]
   }
+
+  static getRandomInt(max: number) {
+    return Math.floor(Math.random() * max);
+  }
 }

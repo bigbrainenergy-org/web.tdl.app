@@ -6,13 +6,15 @@
           <q-card-actions>
             <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
             <q-space />
+            <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
+            <q-space />
+            <q-btn icon="fa-solid fa-signs-post" class="text-primary" @click="openQuickSortDialog" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
               <div class="col">
                 <div class="text-h6 text-pain">Tasks</div>
-                <div>{{ tasks.length }} Items</div>
               </div>
             </div>
           </q-card-section>
@@ -41,19 +43,18 @@
                   </q-item-section>
 
                   <q-item-section side v-if="currentTask.notes">
-                    <q-icon name="description" class="q-ma-sm">
+                    <q-avatar icon="description">
                       <q-tooltip
                         anchor="center right"
                         self="center left"
-                        :offset="[10, 10]"
-                      >
+                        :offset="[10, 10]">
                         Has additional notes! Click to view.
                       </q-tooltip>
-                    </q-icon>
+                    </q-avatar>
                   </q-item-section>
 
-                  <q-item-section side>
-                    <q-chip 
+                  <q-item-section side v-if="currentTask.grabPostreqs(incompleteOnly).length">
+                    <q-chip
                     v-if="currentTask.grabPostreqs(incompleteOnly).length" 
                     :style="currentTask.grabPostreqs(incompleteOnly).length > 5 ? 'background-color: red;' : 'background-color: gray;'">
                       {{ currentTask.grabPostreqs(incompleteOnly).length }}
@@ -90,6 +91,7 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
 import SettingsButton from 'src/components/SettingsButton.vue'
+import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 
 const $q = useQuasar()
 
@@ -130,4 +132,8 @@ const updateTaskCompletedStatus = async (task: Task) => {
 
 const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
 const openSearchDialog = () => TDLAPP.searchDialog($q)
+
+const openQuickSortDialog = () => $q.dialog({
+  component: QuickSortLayerZeroDialog
+})
 </script>

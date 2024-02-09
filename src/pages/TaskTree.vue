@@ -5,6 +5,10 @@
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-card-actions>
             <SettingsButton v-model:settings="taskTreeSettings" name="Task Tree Settings" />
+            <q-space />
+            <q-item-label>{{ layerZero.length }} tasks</q-item-label>
+            <q-space />
+            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-tree v-if="reverseOrder"
           :nodes="layerZero"
@@ -18,7 +22,7 @@
             <template v-slot:default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
                 <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)" color="primary" keep-color></q-checkbox>
-                <q-item-label @click="openTask(prop.node.obj)">
+                <q-item-label @click.stop="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
               </q-item>
@@ -328,5 +332,5 @@ onMounted(() => {
 //   clearTimeout(expanderTimer)
 //   queueExpand = []
 // })
-
+const openSearchDialog = () => TDLAPP.searchDialog($q)
 </script>
