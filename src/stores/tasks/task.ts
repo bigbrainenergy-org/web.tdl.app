@@ -8,6 +8,7 @@ import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
+import { Utils } from 'src/util'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -154,6 +155,7 @@ export class Task extends Model implements iRecord {
   grabPrereqs(incompleteOnly = false): Task[] {
     const repo = useRepo(TaskRepo)
     const pres = this.hard_prereqs ?? repo.where(x => x.hard_postreq_ids.includes(this.id)).get()
+    console.debug({ incompleteOnly, pres_before_filtering: pres })
     return incompleteOnly ? pres.filter(x => !x.completed) : pres
   }
 
@@ -197,7 +199,11 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_prereq_ids!.splice(position, 1)
-    await this.update(options)
+    await this.update(options).then(() => {
+      const pre = Utils.hardCheck(this.find(id_of_prereq))
+      Utils.arrayDelete(pre.hard_postreq_ids, task.id)
+    })
+    // TODO: remove post from prereq too.
   }
 
   removePost = async (task: Task, id_of_postreq: number) => {
@@ -208,7 +214,10 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_postreq_ids!.splice(position, 1)
-    await this.update(options)
+    await this.update(options).then(() => {
+      const post = Utils.hardCheck(this.find(id_of_postreq))
+      Utils.arrayDelete(post.hard_prereq_ids, task.id)
+    })
   }
 
   addPre = async (task: Task, id_of_prereq: number) => {

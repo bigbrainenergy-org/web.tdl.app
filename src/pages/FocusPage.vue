@@ -52,7 +52,34 @@ const $q = useQuasar()
 const open = (task: Task) => TDLAPP.openTask(task, $q)
 const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
 
-const layerZero = computed(() => useRepo(TaskRepo).withAll().get().filter(x => !x.completed && x.grabPrereqs(true).length === 0).sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length))
+const layerZero = computed(() => {
+  const incomplete = (x: Task) => !x.completed
+  const tr = useRepo(TaskRepo)
+  let lzero = tr.withAll().get()
+  lzero = lzero.filter(x => !x.completed)
+  lzero = lzero.filter(x => !x.hard_prereqs.some(y => !y.completed))
+  lzero.sort((a, b) => b.hard_postreqs.filter(incomplete).length - a.hard_postreqs.filter(incomplete).length)
+  return lzero
+})
+
 const currentTask = computed(() => layerZero.value.length ? layerZero.value[0] : null)
-const nextUp = computed(() => currentTask.value !== null ? [...layerZero.value, ...currentTask.value.grabPostreqs(true)].filter(x => x.id !== currentTask.value!.id).sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)[0] : null)
+const nextUp = computed(() => {
+  let arr: Array<Task> = Array.from(layerZero.value)
+  console.debug({ 'arr just layer zero': arr })
+  if(currentTask.value !== null) {
+    let posts = currentTask.value.grabPostreqs(true)
+    console.log({ 'posts of current task': posts })
+    console.log('pres of posts', posts.map(x => ({ post: x, pres: x.grabPrereqs(true)})))
+    posts = posts.filter(x => x.grabPrereqs(true).length === 1)
+    console.log({ 'posts that have 1 or 0 prereqs': posts })
+    arr.push(...posts)
+    console.debug({ 'arr with current task postreqs added': arr })
+    arr = arr.filter(x => x.id !== currentTask.value!.id)
+    console.debug({ 'arr after current task is filtered out': arr, currentTask: currentTask.value })
+  }
+  arr.sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)
+  
+  console.log(arr)
+  return arr.length > 0 ? arr[0] : null
+})
 </script>
