@@ -87,6 +87,7 @@
 
     <q-footer elevated class="bg-grey-8 text-white">
       <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
+        <q-route-tab icon="fa-solid fa-circle-dot" to="/focus" label="Focus" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
         <q-route-tab icon="fa-solid fa-inbox" to="/tasks" label="Tasks" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
         <q-route-tab icon="fa-solid fa-project-diagram" to="/lists" label="Lists" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
         <q-route-tab icon="fa-solid fa-project-diagram" to="/tasks-tree" label="Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
@@ -138,6 +139,7 @@ const refreshRoutedComponent = () => {
 const currentPath = computed(() => $route.path)
 
 const pagesWithNewTaskButton = [
+  '/focus',
   '/tasks',
   '/tasks-tree',
   '/reverse-tasks-tree',

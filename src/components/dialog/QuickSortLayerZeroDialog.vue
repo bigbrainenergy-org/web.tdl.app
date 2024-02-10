@@ -8,13 +8,13 @@
       </q-card-section>
       <q-linear-progress query v-if="loading" stripe size="10px" />
       <q-card-section>
-        <q-btn class="q-ma-lg" size="lg" color="positive" :label="currentPair.a.title" @click="addRule(currentPair.a as Task, currentPair.b as Task)" />
+        <q-btn :disable="loading" class="q-ma-lg" size="lg" color="positive" :label="currentPair.a.title" @click="addRule(currentPair.a as Task, currentPair.b as Task)" />
       </q-card-section>
       <q-card-section>
-        <q-btn class="q-ma-lg" size="lg" color="positive" :label="currentPair.b.title" @click="addRule(currentPair.b as Task, currentPair.a as Task)" />
+        <q-btn :disable="loading" class="q-ma-lg" size="lg" color="positive" :label="currentPair.b.title" @click="addRule(currentPair.b as Task, currentPair.a as Task)" />
       </q-card-section>
       <q-card-section>
-        <q-btn class="q-ma-lg" size="lg" color="grey" label="SKIP" @click="skip" />
+        <q-btn :disable="loading" class="q-ma-lg" size="lg" color="grey" label="SKIP" @click="skip" />
       </q-card-section>
     </q-card>
   </q-dialog>
@@ -45,11 +45,7 @@ const skippedPairs = ref<pair<Task>[]>([])
 
 const newPair = (): pair<Task> => {
   console.debug(`permutations remaining: ${unskippedPermutations.value}`)
-  if(layerZero.value.length < 2) {
-    const e = new Error('not enough tasks')
-    Utils.handleError('Not enough tasks left for quick sort function')(new Error('not enough tasks'))
-    throw e
-  }
+  if(layerZero.value.length < 2) throw new Error('Nothing more to sort')
   if(layerZero.value.length === 2) {
     Utils.notifySuccess('These are the last two tasks!')
     return {
@@ -114,7 +110,7 @@ const tryNewPair = () => {
   try {
     currentPair.value = newPair()
   } catch(e) {
-    Utils.handleError('No more task pairs to try')(e as Error)
+    Utils.notifySuccess('Nothing more to sort')
     onDialogOK()
   }
 }

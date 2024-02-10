@@ -84,6 +84,20 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
       });
   }
 
+  addMultiple = (newItems: iCreateT[]): Promise<T[]> => {
+    console.debug('add multiple')
+    return this.api().post(`/${this.apidir}`, newItems, this.commonHeader())
+    .then(response => {
+      console.debug({ response })
+      this.save(response.data as T[])
+      return response.data as T[]
+    })
+    .catch(error => {
+      console.error('Error adding item:', error)
+      throw error
+    })
+  }
+
   delete = async (id: number) => {
     // todo: debug, info, and error handling
     await this.api().delete(`/${this.apidir}/${id}`, this.commonHeader())

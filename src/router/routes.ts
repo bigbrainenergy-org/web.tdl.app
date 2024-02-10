@@ -6,6 +6,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('src/layouts/MainLayout.vue'),
     children: [
       { path: '', name: 'Empty', redirect: 'tasks' },
+      { path: 'focus', name: 'Focus', component: () => import('src/pages/FocusPage.vue') },
       { path: 'tasks', name: 'Tasks', component: () => import('src/pages/Tasks.vue') },
       { path: 'tasks-tree', name: 'Tree', component: () => import('src/pages/TaskTree.vue') },
       { path: 'lists', name: 'Lists', component: () => import('src/pages/Lists.vue') },
