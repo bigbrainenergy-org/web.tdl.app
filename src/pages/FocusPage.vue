@@ -12,14 +12,14 @@
           </q-btn>
           <q-btn dense flat icon="fa fa-check" @click="useRepo(TaskRepo).toggleCompleted(currentTask as Task)"/>
         </q-bar>
-        <q-card-section v-if="currentTask">
+        <q-card-section v-if="currentTask" class="text-h4">
           {{ currentTask.title }}
         </q-card-section>
         <q-card-section v-else>
           No tasks in this list!
         </q-card-section>
       </q-card>
-      <q-card style="background-color: #1d1d1df6; color: #5d5d5d;" class="q-ma-lg">
+      <q-card style="background-color: #1d1d1df6; color: #5d5d5d; margin-top: 8%" class="q-ma-lg">
         <q-bar style="background-color: #333333">
           <div>UP NEXT</div>
           <q-space />
@@ -31,7 +31,7 @@
           </q-btn>
           <q-btn dense flat icon="fa fa-check" @click="useRepo(TaskRepo).toggleCompleted(nextUp as Task)"/>
         </q-bar>
-        <q-card-section v-if="nextUp">
+        <q-card-section v-if="nextUp" class="text-h4">
           {{ nextUp.title }}
         </q-card-section>
         <q-card-section v-else>
