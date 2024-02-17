@@ -134,22 +134,21 @@
           <div class="col-12 col-md">
             <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Pres and Posts" class="text-primary" />
             <DependencyList 
-            :items="allPres" 
-            :dependency-type="preDepType" 
-            :menu-items="prereqMenuItems" 
-            @add-item="openPrerequisiteDialog"
-            @remove-item="(pre: Task) => removePrerequisite(pre)"
-            @select-item="(t: Task) => setCurrentTask(t)"
-            @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
+              :items="allPres" 
+              :dependency-type="preDepType" 
+              :menu-items="prereqMenuItems" 
+              @add-item="openPrerequisiteDialog"
+              @remove-item="(pre: Task) => removePrerequisite(pre)"
+              @select-item="(t: Task) => setCurrentTask(t)"
+              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
             <DependencyList
-            :items="allPosts"
-            :dependency-type="postDepType"
-            :menu-items="postreqMenuItems"
-            @add-item="openPostrequisiteDialog"
-            @remove-item="(post: Task) => removePostrequisite(post)"
-            @select-item="(t: Task) => setCurrentTask(t)"
-            @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
-            
+              :items="allPosts"
+              :dependency-type="postDepType"
+              :menu-items="postreqMenuItems"
+              @add-item="openPostrequisiteDialog"
+              @remove-item="(post: Task) => removePostrequisite(post)"
+              @select-item="(t: Task) => setCurrentTask(t)"
+              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
             <div class="row">
               <div class="col">
                 <div class="text-h5">Subtasks</div>
@@ -189,6 +188,8 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
 import errorNotification from 'src/hackerman/ErrorNotification'
+import TaskSearchDialog from './TaskSearchDialog.vue'
+import { λ } from 'src/types'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -214,6 +215,10 @@ const currentTaskID = computed((): number => Utils.hardCheck(ctr.id))
 const currentTask = computed((): Task => Utils.hardCheck(tr.withAll().find(currentTaskID.value)))
 currentTask.value.hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 currentTask.value.hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+
+let currentPre: Task | null = null
+let currentPost: Task | null = null
+
 console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 // const taskID = computed(() => currentTask.value.id)
 const taskTitle = computed(() => currentTask.value.title)
@@ -238,13 +243,11 @@ const lists = computed(
 )
 
 const allPres = computed(() => {
-  console.debug('refreshing allPres value')
   if(incompleteOnly.value) return currentTask.value.hard_prereqs.filter(x => !x.completed)
   return currentTask.value.hard_prereqs
 })
 
 const allPosts = computed(() => {
-  console.debug('refreshing allPosts value')
   if(incompleteOnly.value) return currentTask.value.hard_postreqs.filter(x => !x.completed)
   return currentTask.value.hard_postreqs
 })
@@ -361,17 +364,129 @@ const mvpPostrequisite = async (post: Task) => {
   const allOtherPosts = allPosts.value.filter(x => !x.completed && x.id !== post.id)
   const currentTaskID = Utils.hardCheck(currentTask.value.id)
   const postID = Utils.hardCheck(post.id)
-  allOtherPosts.forEach(x => {
-    tr.removePre(x, currentTaskID).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
-  })
-  allOtherPosts.forEach(x => {
-    tr.addPre(x, postID).then(() => {
-      Utils.notifySuccess('added new post to MVP!')
-    }, Utils.handleError('error adding new post to MVP!'))
-  })
+  for(let i = 0; i < allOtherPosts.length; i++) {
+    await tr.removePre(allOtherPosts[i], currentTaskID).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
+    await tr.addPre(allOtherPosts[i], postID).then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
+  }
   const syncResult = await syncWithBackend()
   if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
   else Utils.notifySuccess('Refreshed All')
+}
+
+const insertBetweenPost = async (payload: { task: Task }) => {
+  const oldPost = Utils.hardCheck(currentPost)
+  // start: A --> C
+  // desired end state: A --> B --> C
+  // 2. remove rule A --> C
+  console.debug('removing the old (now redundant) postrequisite from the current task')
+  await tr.removePost(currentTask.value, oldPost.id)
+    .then(
+      () => {
+        const ct = useRepo(TaskRepo).find(currentTaskID.value)
+        if(ct === null) throw new Error('current task was not found by id')
+        if(ct.hard_postreq_ids.includes(oldPost.id))
+          throw new Error('postreq was not removed!')
+        const op = useRepo(TaskRepo).find(oldPost.id)
+        if(op === null) throw new Error('old post was not found by id')
+        if(op.hard_prereq_ids.includes(currentTaskID.value))
+          throw new Error('prereq was not removed!')
+      }, 
+      Utils.handleError('error moving postrequisite!'))
+  // FIXME: if these steps are done in 1->2->3 order, currentTask somehow ends up with no postrequisite.
+  // FIXME: I'm sure there is the same error for insertbetweenPre.
+  // 3. add rule B --> C
+  console.debug('adding the old postrequisite to the new postrequisite of the current task')
+  await tr.addPost(payload.task, oldPost.id)
+    .then(
+      () => {
+        const pt = useRepo(TaskRepo).find(payload.task.id)
+        if(pt === null) throw new Error('new task was not found by id')
+        if(!pt.hard_postreq_ids.includes(oldPost.id)) {
+          throw new Error('postreq was not added to new postreq!')
+        }
+        const op = useRepo(TaskRepo).find(oldPost.id)
+        if(op === null) throw new Error('old post was not found by id')
+        if(!op.hard_prereq_ids.includes(payload.task.id))
+          throw new Error('prereq was not added to old postreq!')
+      },
+      Utils.handleError('error moving postrequisite!'))
+  // 1. add rule A --> B
+  console.debug('adding selected postrequisite to current task')
+  await tr.addPost(currentTask.value, payload.task.id)
+    .then(
+      () => {
+        const ct = useRepo(TaskRepo).find(currentTaskID.value)
+        if(ct === null) throw new Error('current task was not found by id')
+        if(!ct.hard_postreq_ids.includes(payload.task.id))
+          throw new Error('postreq was not added!')
+        const pt = useRepo(TaskRepo).find(payload.task.id)
+        if(pt === null) throw new Error('payload task was not found by id')
+        if(!pt.hard_prereq_ids.includes(currentTaskID.value))
+          throw new Error('prereq (current task) was not found related to new postreq')
+      }, 
+      Utils.handleError('error adding new post to current task'))
+
+  const newPost = await useRepo(TaskRepo).getId(payload.task.id)
+  console.log({ newPost })
+  if(newPost === null) throw new Error('newPost is null')
+  if(!newPost.hard_prereq_ids.includes(currentTaskID.value)) {
+    throw new Error('new post does not have current task as a pre!')
+  }
+}
+
+const insertBetweenPre = async (payload: { task: Task }) => {
+  const oldPre = Utils.hardCheck(currentPre)
+  await tr.removePre(currentTask.value, oldPre.id).then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
+  await tr.addPre(payload.task, oldPre.id).then(Utils.handleSuccess('successfully moved prerequisite!'), Utils.handleError('error moving prerequisite!'))
+  await tr.addPre(currentTask.value, payload.task.id).then(Utils.handleSuccess('added new pre to current task'), Utils.handleError('error adding new pre to current task'))
+}
+
+// when is a joke taken too far?
+const insertBetweenFilter: λ<Task, λ<number | undefined, λ<Task, boolean>>> = (dependency: Task) => {
+  return (taskID: number | undefined) => {
+    const simplestFilter = (x: Task) => !x.completed
+    if(typeof taskID === 'undefined') return simplestFilter
+    const currentTask = useRepo(TaskRepo).find(taskID)
+    if(currentTask === null) return simplestFilter
+    return (x: Task) => {
+      if(x.completed) return false
+      if(currentTask.hard_prereq_ids.includes(x.id)) return false
+      if(currentTask.hard_postreq_ids.includes(x.id)) return false
+      if(dependency.hard_prereq_ids.includes(x.id)) return false
+      if(dependency.hard_postreq_ids.includes(x.id)) return false
+      return true
+    }
+  }
+}
+
+const dialogInsertBetweenPost = (post: Task) => {
+  currentPost = post
+  $q.dialog({
+    component: TaskSearchDialog,
+    componentProps: {
+      dialogTitle: 'Insert Task Between Two Others',
+      searchLabel: 'Search',
+      resultsTitle: 'Search Results',
+      closeOnSelect: false,
+      onSelect: insertBetweenPost,
+      initialFilter: insertBetweenFilter(post)
+    }
+  })
+}
+
+const dialogInsertBetweenPre = (pre: Task) => {
+  currentPre = pre
+  $q.dialog({
+    component: TaskSearchDialog,
+    componentProps: {
+      dialogTitle: 'Insert Task Between Two Others',
+      searchLabel: 'Search',
+      resultsTitle: 'Search Results',
+      closeOnSelect: false,
+      onSelect: insertBetweenPre,
+      initialFilter: insertBetweenFilter(pre)
+    }
+  })
 }
 
 const preDepType = { plural: 'Prerequisites', singular: 'Prerequisite' } as const
@@ -382,6 +497,11 @@ const prereqMenuItems = [
     label: 'Unlink this Prerequisite',
     icon: 'fas fa-unlink',
     action: removePrerequisite
+  },
+  {
+    label: 'Add Task Between This Prereq and This Task',
+    icon: 'fas fa-flask',
+    action: dialogInsertBetweenPre
   }
 ]
 
@@ -395,6 +515,11 @@ const postreqMenuItems = [
     label: 'Move all Postreqs from Current Task to This Task',
     icon: 'fas fa-triangle-exclamation',
     action: mvpPostrequisite
+  },
+  {
+    label: 'Add Task Between This Postreq and This Task',
+    icon: 'fas fa-flask',
+    action: dialogInsertBetweenPost
   }
 ]
 

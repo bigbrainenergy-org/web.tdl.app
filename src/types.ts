@@ -1,3 +1,5 @@
+import { AxiosError } from 'axios'
+
 // hahaha.... started as a joke but I kindof like it.
 export type λ<inputType = void | unknown, returnType = void> = (inputArgument: inputType) => returnType
 
@@ -18,3 +20,11 @@ export class NodeKey {
     return keys.map(x => this.fromKey(x))
   }
 }
+
+export type SimpleMenuItem<T> = {
+  label: string
+  icon: string
+  action: λ<T, Promise<T | void> | void>
+}
+
+export type ApiError = Error | AxiosError<unknown, any>

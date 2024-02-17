@@ -7,13 +7,69 @@
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
       <q-linear-progress query v-if="loading" stripe size="10px" />
-      <q-card-section>
-        <q-btn :disable="loading" class="q-ma-lg" size="lg" color="positive" :label="currentPair.a.title" @click="addRule(currentPair.a as Task, currentPair.b as Task)" />
+      <q-card-section class="q-ma-lg vertical-top">
+        <q-btn-dropdown 
+          :disable="loading"
+          size="lg"
+          color="positive"
+          style="width: 100%;"
+          split
+          auto-close
+          dropdown-icon="more_vert"
+          @click.stop="addRule(currentPair.a as Task, currentPair.b as Task)">
+          <template v-slot:label>
+            <q-item-section class="vertical-top">
+              <q-item-label lines="2" style="text-wrap: wrap;">
+                {{ currentPair.a.title }}
+              </q-item-label>
+            </q-item-section>
+          </template>
+          <q-list>
+            <q-item
+              v-for="menuitem, index in menuItems"
+              :key="index"
+              v-close-popup
+              clickable
+              @click.stop="menuitem.action(currentPair.a as Task)">
+              <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
+              <q-space />
+              <q-icon :name="menuitem.icon" />
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </q-card-section>
-      <q-card-section>
-        <q-btn :disable="loading" class="q-ma-lg" size="lg" color="positive" :label="currentPair.b.title" @click="addRule(currentPair.b as Task, currentPair.a as Task)" />
+      <q-card-section class="q-ma-lg vertical-top">
+        <q-btn-dropdown 
+          :disable="loading"
+          size="lg"
+          color="positive"
+          style="width: 100%;"
+          split
+          auto-close
+          dropdown-icon="more_vert"
+          @click.stop="addRule(currentPair.b as Task, currentPair.a as Task)">
+          <template v-slot:label>
+            <q-item-section class="vertical-top">
+              <q-item-label lines="2" style="text-wrap: wrap;">
+                {{ currentPair.b.title }}
+              </q-item-label>
+            </q-item-section>
+          </template>
+          <q-list>
+            <q-item
+              v-for="menuitem, index in menuItems"
+              :key="index"
+              v-close-popup
+              clickable
+              @click.stop="menuitem.action(currentPair.b as Task)">
+              <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
+              <q-space />
+              <q-icon :name="menuitem.icon" />
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </q-card-section>
-      <q-card-section>
+      <q-card-section class="q-ma-lg vertical-top text-center">
         <q-btn :disable="loading" class="q-ma-lg" size="lg" color="grey" label="SKIP" @click="skip" />
       </q-card-section>
     </q-card>
@@ -22,9 +78,10 @@
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
-import { useDialogPluginComponent } from 'quasar'
+import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { TDLAPP } from 'src/TDLAPP'
+import { SimpleMenuItem } from 'src/types'
 import { Utils } from 'src/util'
 import { computed, ref } from 'vue'
 
@@ -42,6 +99,36 @@ const loading = ref(false)
 
 type pair<T> = { a: T, b: T }
 const skippedPairs = ref<pair<Task>[]>([])
+
+const $q = useQuasar()
+
+const addPres = (x: Task) => {
+  TDLAPP.addPrerequisitesDialog(x, $q)
+  .onOk(     () => tryNewPair())
+  .onCancel( () => tryNewPair())
+  .onDismiss(() => tryNewPair())
+}
+
+const complete = (x: Task) => {
+  tr.value.toggleCompleted(x)
+  .then(() => {
+    Utils.notifySuccess('Marked Complete!', 'fa-solid fa-clipboard-check')
+    tryNewPair()
+  })
+}
+
+const menuItems: SimpleMenuItem<Task>[] = [
+  {
+    label: 'Mark Complete',
+    icon: 'fa-solid fa-clipboard-check',
+    action: complete
+  },
+  {
+    label: 'Add Prerequisite',
+    icon: 'fa-solid fa-square-plus',
+    action: addPres
+  }
+]
 
 const newPair = (): pair<Task> => {
   console.debug(`permutations remaining: ${unskippedPermutations.value}`)

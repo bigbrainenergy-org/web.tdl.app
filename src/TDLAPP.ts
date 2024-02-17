@@ -51,7 +51,7 @@ export class TDLAPP {
   }
   static addPrerequisitesDialog = (currentTask: Task, q: QVueGlobals) => {
     Utils.hardCheck(q, 'quasar was not defined')
-    q.dialog({
+    return q.dialog({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Add Prerequisite',
@@ -65,7 +65,7 @@ export class TDLAPP {
   }
   static addPostrequisiteDialog = (currentTask: Task, q: QVueGlobals) => {
     Utils.hardCheck(q, 'quasar was not defined')
-    q.dialog({
+    return q.dialog({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Add Postrequisite',
@@ -77,4 +77,5 @@ export class TDLAPP {
       }
     })
   }
+  
 }

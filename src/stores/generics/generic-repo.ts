@@ -2,8 +2,9 @@ import { Repository } from 'pinia-orm'
 import iRecord, { iOptions } from './i-record'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { Utils } from 'src/util'
-import { AxiosResponse } from 'axios'
+import { AxiosError, AxiosResponse } from 'axios'
 import { useAxiosStore } from '../axios-store'
+import { ApiError } from 'src/types'
 
 interface SimpleApiBackedRepo {
   // TODO: access T.entity somehow. In the meantime just have a string property.
@@ -55,18 +56,22 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
     ).
     then(
       (response: AxiosResponse) => {
-        console.debug(`${this.apidir} fetched: `, { response })
+        //console.debug(`${this.apidir} fetched: `, { response })
         this.fresh(response.data as T[])
       },
       Utils.handleError(`Could not fetch all ${this.apidir}`)
     )
   }
 
-  getId = async (id: number) => {
-    await this.api().get(`/${this.apidir}/${id}`, this.commonHeader()).then((response: AxiosResponse) => {
-      console.log(response.data as T[])
-      this.save(response.data as T[])
-    }, Utils.handleError(`Could not get ${this.apidir} id ${id}`))
+  getId = async (id: number): Promise<T | null> => {
+    return await this.api().get(`/${this.apidir}/${id}`, this.commonHeader())
+    .then((response: AxiosResponse) => {
+      console.log(response.data as T)
+      return this.save(response.data as T)
+    }, (error: ApiError) => {
+      Utils.handleError(`Could not get ${this.apidir} id ${id}`)(error)
+      return null
+    })
   }
 
   add = (newItem: iCreateT): Promise<T> => {
@@ -109,15 +114,22 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
     return this.api().patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
     .then((response) => {
       this.save(response.data as T)
+      console.log({ id: itemOptions.id, newData: response.data })
     }, Utils.handleError('Error updating record'))
   }
 
-  // includeEntity: name of entity to include. * invokes withAll. ** invokes withAllRecursive.
-  // todo: test if this sorts the store in-place
+  /**
+   * gets a sorted array of all records of a store, plus optionally all of its related entities.
+   * @param sort - a sorting function (a, b) => number
+   * @param includeEntity - '**' invokes withAllRecursive; '*' invokes withAll.
+   * @returns all records in a store, sorted with the provided function.
+   * @example // sort by id, get all related records recursively.
+   * useRepo(TaskRepo).sorted((a, b) => a.id - b.id, '**')
+   */
   sorted = (sort: (a: T, b: T) => number, includeEntity?: string) => {
     if (typeof includeEntity === 'undefined') return this.all().sort(sort)
     if (includeEntity === '**') return this.withAllRecursive().get().sort(sort)
-    if (includeEntity === '*') return this.withAll().get().sort(sort)
+    if (includeEntity ===  '*') return this.withAll().get().sort(sort)
     return this.with(includeEntity).get().sort(sort)
   }
 }

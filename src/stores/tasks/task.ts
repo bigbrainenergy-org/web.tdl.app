@@ -206,6 +206,11 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     // TODO: remove post from prereq too.
   }
 
+  /**
+   * Remove a postrequisite from the specified task, and update the prerequisite ids of the old postrequisite.
+   * @param task - the Task that is getting one fewer postrequisite
+   * @param id_of_postreq - the id of the postrequisite to unlink
+   */
   removePost = async (task: Task, id_of_postreq: number) => {
     const position = task.hard_postreq_ids.indexOf(id_of_postreq)
     if(position < 0) throw new Error('removePost: id provided was not found in postreqs list')
@@ -220,11 +225,18 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     })
   }
 
+  /**
+   * Adds a prerequisite to the specified task, and updates the postrequisite ids list of the new prerequisite
+   * @param task - The task that is getting a new prerequisite
+   * @param id_of_prereq - The id of the prerequisite
+   * @example
+   * await useRepo(TaskRepo).addPre(task, pre.id)
+   */
   addPre = async (task: Task, id_of_prereq: number) => {
-    const position = task.hard_prereq_ids.indexOf(id_of_prereq)
-    if(position >= 0) throw new Error('addPre: id provided is already in prereqs list')
     const pre = this.find(id_of_prereq)
     if(pre === null) throw new Error('prerequisite was not found in list')
+    if(task.hard_prereq_ids.includes(id_of_prereq))
+      throw new Error('addPre: id provided is already in prereqs list')
     const options: UpdateTaskOptions = {
       id: task.id,
       payload: { task: Object.assign({}, task) }
@@ -239,22 +251,31 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     await this.update(pre_options)
   }
 
+  /**
+   * Adds a postrequisite to the specified task, and updates the prerequisite ids list of the new postrequisite
+   * @param task - The task that is getting the new postrequisite
+   * @param id_of_postreq - The id of the postrequisite
+   * @example
+   * await useRepo(TaskRepo).addPost(task, post.id)
+   */
   addPost = async (task: Task, id_of_postreq: number) => {
-    const position = task.hard_prereq_ids.indexOf(id_of_postreq)
-    if(position >= 0) throw new Error('addPost: id provided is already in postreqs list')
     const post = this.find(id_of_postreq)
     if(post === null) throw new Error('postrequisite was not found in list')
+    if(task.hard_prereq_ids.includes(id_of_postreq)) 
+      throw new Error('addPost: id provided is already in postreqs list')
     const options: UpdateTaskOptions = {
       id: task.id,
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_postreq_ids!.push(id_of_postreq)
+    console.debug({ msg: 'pushing postreq to task.', payload: options.payload.task })
     await this.update(options)
     const post_options: UpdateTaskOptions = {
       id: post.id,
       payload: { task: Object.assign({}, post) }
     }
     post_options.payload.task.hard_prereq_ids!.push(task.id)
+    console.debug({ msg: 'pushing prereq to new postreq of task', payload: post_options.payload.task })
     await this.update(post_options)
   }
 

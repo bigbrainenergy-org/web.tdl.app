@@ -39,6 +39,7 @@
             clickable
             @click.stop="menuitem.action(item)">
               <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
+              <q-space />
               <q-icon :name="menuitem.icon" />
             </q-item>
           </q-list>
@@ -49,13 +50,7 @@
 </template>
 
 <script setup lang="ts" generic="T extends { completed: boolean, title: string }">
-import { λ } from 'src/types'
-
-export type SimpleMenuItem<T> = {
-  label: string
-  icon: string
-  action: λ<T>
-}
+import { SimpleMenuItem, λ } from 'src/types'
 
 export interface EntityType {
   singular: string

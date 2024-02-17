@@ -120,7 +120,7 @@ const notCompleted = (x: Task) => x.completed === false
 const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
 
 const tasks = computed(() => {
-  let baseQuery = tasksRepo.withAll().get()
+  let baseQuery = useRepo(TaskRepo).withAll().get()
   if(layerZeroOnly.value) baseQuery = baseQuery.filter(notBlocked)
   if(incompleteOnly.value) baseQuery = baseQuery.filter(notCompleted)
   return baseQuery.sort((a, b) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length)

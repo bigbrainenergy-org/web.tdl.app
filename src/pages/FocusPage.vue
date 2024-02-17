@@ -24,7 +24,7 @@
           <div>UP NEXT</div>
           <q-space />
           <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(nextUp as Task)"/>
-          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm">
+          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(nextUp as Task)">
             <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
               Add Prerequisites
             </q-tooltip>

@@ -21,7 +21,8 @@
       :taskID="taskID" 
       :search-label="searchLabel" 
       :results-title="resultsTitle"
-      showCreateButton
+      :showCreateButton="showCreateButton"
+      :initial-filter="initialFilter"
       @select="(e) => selectTask(e.task)"
       :key="key" />
 
@@ -40,6 +41,7 @@ import { Utils } from 'src/util'
 // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import TaskSearchResults from '../search/TaskSearchResults.vue';
 import TaskSearchInput from '../search/TaskSearchInput.vue'
+import { λ } from 'src/types'
 
 interface Props {
   dialogTitle: string
@@ -47,6 +49,8 @@ interface Props {
   resultsTitle?: string
   taskID?: number
   closeOnSelect?: boolean
+  showCreateButton?: boolean
+  initialFilter?: λ<number | undefined, λ<Task, boolean>>
 }
 
 const props = withDefaults(defineProps<Props>(), 
@@ -54,7 +58,8 @@ const props = withDefaults(defineProps<Props>(),
     dialogTitle: 'DEFAULT TITLE',
     searchLabel: 'Search',
     resultsTitle: 'Possible Matches',
-    closeOnSelect: false
+    closeOnSelect: false,
+    showCreateButton: true
   }
 )
 

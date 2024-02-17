@@ -135,9 +135,7 @@ const searchForTasks = () => {
 
 const createTask = async () => {
   if(typeof props.search === 'undefined') return
-  const toCreate: CreateTaskOptions = {
-    title: props.search
-  }
+  const toCreate: CreateTaskOptions = { title: props.search }
   const newTask = await tr.add(toCreate)
   selectTask(newTask)
 }
