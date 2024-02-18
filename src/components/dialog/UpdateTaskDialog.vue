@@ -53,8 +53,8 @@
               label="Remind me at"
               class="q-my-md"
             />
-            <q-expansion-item 
-              expand-separator 
+            <q-expansion-item
+              expand-separator
               switch-toggle-side
               icon="fas fa-lightbulb"
               caption="Metadata"
@@ -119,7 +119,7 @@
                 </q-item>
               </q-list>
             </q-expansion-item>
-            
+
             <br>
             <q-input
               v-model="editNotes"
@@ -133,10 +133,10 @@
 
           <div class="col-12 col-md">
             <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Pres and Posts" class="text-primary" />
-            <DependencyList 
-              :items="allPres" 
-              :dependency-type="preDepType" 
-              :menu-items="prereqMenuItems" 
+            <DependencyList
+              :items="allPres"
+              :dependency-type="preDepType"
+              :menu-items="prereqMenuItems"
               @add-item="openPrerequisiteDialog"
               @remove-item="(pre: Task) => removePrerequisite(pre)"
               @select-item="(t: Task) => setCurrentTask(t)"
@@ -335,7 +335,7 @@ const prioritize = () => {
     component: QuickPrioritizeDialog,
     componentProps: {
       task: currentTask.value
-    } 
+    }
   })
 }
 
@@ -353,7 +353,7 @@ const removePostrequisite = async (postreq: Task) => {
 
 const toggleComplete = async (task: Task) => {
   await tr.toggleCompleted(task)
-  //Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check')
+  // .then(Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check'))
 }
 
 // we can passthrough onDialogCancel directly
@@ -390,7 +390,7 @@ const insertBetweenPost = async (payload: { task: Task }) => {
         if(op === null) throw new Error('old post was not found by id')
         if(op.hard_prereq_ids.includes(currentTaskID.value))
           throw new Error('prereq was not removed!')
-      }, 
+      },
       Utils.handleError('error moving postrequisite!'))
   // FIXME: if these steps are done in 1->2->3 order, currentTask somehow ends up with no postrequisite.
   // FIXME: I'm sure there is the same error for insertbetweenPre.
@@ -423,7 +423,7 @@ const insertBetweenPost = async (payload: { task: Task }) => {
         if(pt === null) throw new Error('payload task was not found by id')
         if(!pt.hard_prereq_ids.includes(currentTaskID.value))
           throw new Error('prereq (current task) was not found related to new postreq')
-      }, 
+      },
       Utils.handleError('error adding new post to current task'))
 
   const newPost = await useRepo(TaskRepo).getId(payload.task.id)

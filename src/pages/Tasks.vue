@@ -32,12 +32,12 @@
                   v-ripple
                   @click="open(currentTask)"
                 >
-                  <q-checkbox 
-                    v-model:model-value="currentTask.completed" 
-                    @update:model-value="updateTaskCompletedStatus(currentTask)" 
-                    color="primary" 
+                  <q-checkbox
+                    v-model:model-value="currentTask.completed"
+                    @update:model-value="updateTaskCompletedStatus(currentTask)"
+                    color="primary"
                     keep-color />
-                
+
                   <q-item-section>
                     {{ currentTask.title }}
                   </q-item-section>
@@ -55,7 +55,7 @@
 
                   <q-item-section side v-if="currentTask.grabPostreqs(incompleteOnly).length">
                     <q-chip
-                    v-if="currentTask.grabPostreqs(incompleteOnly).length" 
+                    v-if="currentTask.grabPostreqs(incompleteOnly).length"
                     :style="currentTask.grabPostreqs(incompleteOnly).length > 5 ? 'background-color: red;' : 'background-color: gray;'">
                       {{ currentTask.grabPostreqs(incompleteOnly).length }}
                     </q-chip>
@@ -63,7 +63,7 @@
                   <q-item-section side>
                     <q-btn outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed" />
                   </q-item-section>
-                  
+
                 </q-item>
               </q-intersection>
               <template v-if="tasks.length === 0">
@@ -126,8 +126,31 @@ const tasks = computed(() => {
   return baseQuery.sort((a, b) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length)
 })
 
+const toggleCompleted = async (task: Task) => {
+  await tasksRepo.toggleCompleted(task).then(
+    Utils.handleSuccess(`Unmarked Completion Status for "${ task.title }"`, 'fa-solid fa-check')
+  )
+}
+
+const notifyCompletionStatus = (task: Task) => {
+  $q.notify({
+    message: `Marked "${ task.title }" ${ task.completed ? 'Complete' : 'Incomplete'}`,
+    color: 'positive',
+    position: 'top',
+    icon: 'fa-solid fa-check',
+    actions: [
+      { label: 'Undo', color: 'white', handler: () => { toggleCompleted(task) } }
+    ]
+  })
+}
+
 const updateTaskCompletedStatus = async (task: Task) => {
   await tasksRepo.update({ id: Utils.hardCheck(task.id, 'task id was null or undefined'), payload: { task }})
+  .then(
+    () => {
+      notifyCompletionStatus(task)
+    }
+  )
 }
 
 const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
