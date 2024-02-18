@@ -19,7 +19,7 @@
           @click.stop="addRule(currentPair.a as Task, currentPair.b as Task)">
           <template v-slot:label>
             <q-item-section class="vertical-top">
-              <q-item-label lines="2" style="text-wrap: wrap;">
+              <q-item-label lines="2" class="wrapped">
                 {{ currentPair.a.title }}
               </q-item-label>
             </q-item-section>
@@ -50,7 +50,7 @@
           @click.stop="addRule(currentPair.b as Task, currentPair.a as Task)">
           <template v-slot:label>
             <q-item-section class="vertical-top">
-              <q-item-label lines="2" style="text-wrap: wrap;">
+              <q-item-label lines="2" class="wrapped">
                 {{ currentPair.b.title }}
               </q-item-label>
             </q-item-section>
@@ -75,6 +75,13 @@
     </q-card>
   </q-dialog>
 </template>
+
+<style>
+.wrapped {
+  word-break: break-spaces;
+  white-space: break-spaces !important;
+}
+</style>
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'

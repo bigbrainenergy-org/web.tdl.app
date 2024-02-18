@@ -8,6 +8,8 @@
         <q-btn color="primary" icon="fas fa-link" :label="addItemLabel" @click="emit('addItem')" />
       </div>
     </div>
+    <div class="col-grow">
+      
     <q-list class="q-my-md">
       <q-item v-ripple v-if="!items.length">
         <q-item-section>No {{ dependencyType.plural }}</q-item-section>
@@ -16,7 +18,7 @@
         v-ripple
         v-for="item, index in items"
         :key="index">
-        <q-btn-dropdown style="width: 100%;" 
+        <q-btn-dropdown style="width: 100%;"
           split 
           auto-close
           dropdown-icon="more_vert" 
@@ -25,8 +27,8 @@
             <q-item-section avatar style="width: 10%;">
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
-            <q-item-section class="vertical-top" style="width: 90%;">
-              <q-item-label lines="2" style="text-wrap: wrap;">
+            <q-item-section class="vertical-top wrapped" style="width: 90%;">
+              <q-item-label lines="2">
                 {{ item.title }}
               </q-item-label>
             </q-item-section>
@@ -46,8 +48,16 @@
         </q-btn-dropdown>
       </q-item>
     </q-list>
+    </div>
   </div>
 </template>
+
+<style>
+.wrapped {
+  word-break: break-spaces;
+  white-space: break-spaces !important;
+}
+</style>
 
 <script setup lang="ts" generic="T extends { completed: boolean, title: string }">
 import { SimpleMenuItem, λ } from 'src/types'
