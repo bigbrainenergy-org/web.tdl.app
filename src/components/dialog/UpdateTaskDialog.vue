@@ -412,25 +412,27 @@ const insertBetweenPost = async (payload: { task: Task }) => {
       Utils.handleError('error moving postrequisite!'))
   // 1. add rule A --> B
   console.debug('adding selected postrequisite to current task')
-  await tr.addPost(currentTask.value, payload.task.id)
-    .then(
-      () => {
-        const ct = useRepo(TaskRepo).find(currentTaskID.value)
-        if(ct === null) throw new Error('current task was not found by id')
-        if(!ct.hard_postreq_ids.includes(payload.task.id))
-          throw new Error('postreq was not added!')
-        const pt = useRepo(TaskRepo).find(payload.task.id)
-        if(pt === null) throw new Error('payload task was not found by id')
-        if(!pt.hard_prereq_ids.includes(currentTaskID.value))
-          throw new Error('prereq (current task) was not found related to new postreq')
-      }, 
-      Utils.handleError('error adding new post to current task'))
+  if(!currentTask.value.hard_postreq_ids.includes(payload.task.id)) {
+    await tr.addPost(currentTask.value, payload.task.id)
+      .then(
+        () => {
+          const ct = useRepo(TaskRepo).find(currentTaskID.value)
+          if(ct === null) throw new Error('current task was not found by id')
+          if(!ct.hard_postreq_ids.includes(payload.task.id))
+            throw new Error('postreq was not added!')
+          const pt = useRepo(TaskRepo).find(payload.task.id)
+          if(pt === null) throw new Error('payload task was not found by id')
+          if(!pt.hard_prereq_ids.includes(currentTaskID.value))
+            throw new Error('prereq (current task) was not found related to new postreq')
+        }, 
+        Utils.handleError('error adding new post to current task'))
 
-  const newPost = await useRepo(TaskRepo).getId(payload.task.id)
-  console.log({ newPost })
-  if(newPost === null) throw new Error('newPost is null')
-  if(!newPost.hard_prereq_ids.includes(currentTaskID.value)) {
-    throw new Error('new post does not have current task as a pre!')
+    const newPost = await useRepo(TaskRepo).getId(payload.task.id)
+    console.log({ newPost })
+    if(newPost === null) throw new Error('newPost is null')
+    if(!newPost.hard_prereq_ids.includes(currentTaskID.value)) {
+      throw new Error('new post does not have current task as a pre!')
+    }
   }
 }
 
@@ -438,7 +440,9 @@ const insertBetweenPre = async (payload: { task: Task }) => {
   const oldPre = Utils.hardCheck(currentPre)
   await tr.removePre(currentTask.value, oldPre.id).then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
   await tr.addPre(payload.task, oldPre.id).then(Utils.handleSuccess('successfully moved prerequisite!'), Utils.handleError('error moving prerequisite!'))
-  await tr.addPre(currentTask.value, payload.task.id).then(Utils.handleSuccess('added new pre to current task'), Utils.handleError('error adding new pre to current task'))
+  if(!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
+    await tr.addPre(currentTask.value, payload.task.id).then(Utils.handleSuccess('added new pre to current task'), Utils.handleError('error adding new pre to current task'))
+  }
 }
 
 // when is a joke taken too far?
