@@ -84,6 +84,7 @@
 </style>
 
 <script setup lang="ts">
+import { reverse } from 'dns'
 import { useRepo } from 'pinia-orm'
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
@@ -91,26 +92,34 @@ import { TDLAPP } from 'src/TDLAPP'
 import { SimpleMenuItem } from 'src/types'
 import { Utils } from 'src/util'
 import { computed, ref } from 'vue'
-
-const { dialogRef, onDialogOK, onDialogHide, onDialogCancel } = useDialogPluginComponent()
+const emit = defineEmits([ ...useDialogPluginComponent.emits ])
+const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
 
 const tr = computed(() => useRepo(TaskRepo))
-const layerZero = computed(() => tr.value.layerZero())
 
-const eq = (pairA: pair<Task>, pairB: pair<Task>): boolean => {
-  return (pairA.a.id === pairB.a.id || pairA.a.id === pairB.b.id)
-  && (pairA.b.id === pairB.b.id || pairA.b.id === pairB.a.id)
+class PostWeightedTask {
+  t: Task
+  constructor(t: Task) {
+    this.t = t
+  }
+  weight = () => 1/Math.min(Math.max(1, this.t.grabPostreqs(true).length), 10)
+  shouldReroll = () => Math.random() - this.weight() > 0
+}
+
+const layerZero = computed(() => tr.value.layerZero().map(x => new PostWeightedTask(x)))
+
+const eq = (pairA: pair<PostWeightedTask>, pairB: pair<PostWeightedTask>): boolean => {
+  return (pairA.a.t.id === pairB.a.t.id || pairA.a.t.id === pairB.b.t.id)
+  && (pairA.b.t.id === pairB.b.t.id || pairA.b.t.id === pairB.a.t.id)
 }
 
 const loading = ref(false)
 
 type pair<T> = { a: T, b: T }
-const skippedPairs = ref<pair<Task>[]>([])
-
-const $q = useQuasar()
+const skippedPairs = ref<pair<PostWeightedTask>[]>([])
 
 const addPres = (x: Task) => {
-  TDLAPP.addPrerequisitesDialog(x, $q)
+  TDLAPP.addPrerequisitesDialog(x)
   .onOk(     () => tryNewPair())
   .onCancel( () => tryNewPair())
   .onDismiss(() => tryNewPair())
@@ -143,52 +152,81 @@ const newPair = (): pair<Task> => {
   if(layerZero.value.length === 2) {
     Utils.notifySuccess('These are the last two tasks!')
     return {
-      a: layerZero.value[0],
-      b: layerZero.value[1]
+      a: layerZero.value[0].t,
+      b: layerZero.value[1].t
     }
   }
-  const debugpair = (pair: pair<Task>, msg: string, len = 30) => {
-    console.debug(msg, '\n', pair.a.id, ':', pair.a.title.slice(0, len), ' <--> ', pair.b.id, ':', pair.b.title.slice(0, len))
+  const debugpair = (pair: pair<PostWeightedTask>, msg: string, len = 30) => {
+    console.debug(msg, '\n', pair.a.t.id, ':', pair.a.t.title.slice(0, len), ' <--> ', pair.b.t.id, ':', pair.b.t.title.slice(0, len))
   }
-  const generatePairNotYetSkipped = () => {
+  const generatePairNotYetSkipped = (): pair<PostWeightedTask> => {
     let ints: pair<number> = {
       a: Utils.getRandomInt(layerZero.value.length),
       b: Utils.getRandomInt(layerZero.value.length)
     }
     let left = permutations.value
-    let tmp: pair<Task> = {
+    let tmp: pair<PostWeightedTask> = {
       a: layerZero.value[ints.a],
       b: layerZero.value[ints.b]
     }
-    debugpair(tmp, 'initial pair')
+    // debugpair(tmp, 'initial pair')
     const remakeTMP = () => {
       tmp = {
         a: layerZero.value[ints.a],
         b: layerZero.value[ints.b]
       }
     }
-    while(ints.a === ints.b || skippedPairs.value.some(x => eq(x as pair<Task>, tmp)) && left > 0) {
+    const rotate = (x: number, reverse = false) => {
+      reverse ? x-- : x++
+      if(x >= layerZero.value.length) x = 0
+      else if(x < 0) x = layerZero.value.length - 1
+      return x
+    }
+    let maxrolls = 10
+    while(maxrolls > 0 && tmp.a.shouldReroll()) {
+      console.debug('rerolling a')
+      ints.a = rotate(ints.a, true)
+      remakeTMP()
+      maxrolls--
+    }
+    while(maxrolls > 0 && tmp.b.shouldReroll()) {
+      console.debug('rerolling b')
+      ints.b = rotate(ints.b)
+      remakeTMP()
+      maxrolls--
+    }
+    while(ints.a === ints.b || skippedPairs.value.some(x => eq(x as pair<PostWeightedTask>, tmp)) && left > 0) {
       while(ints.a === ints.b && left > 0) {
         debugpair(tmp, 'a and b were equal')
-        ints.b++
-        if(ints.b >= layerZero.value.length) ints.b = 0
+        ints.b = rotate(ints.b)
         remakeTMP()
         left--
       }
-      while(skippedPairs.value.some(x => eq(x as pair<Task>, tmp)) && left > 0) {
+      while(skippedPairs.value.some(x => eq(x as pair<PostWeightedTask>, tmp)) && left > 0) {
         debugpair(tmp, 'this pair was already in the skipped list')
-        ints.a--
-        if(ints.a < 0) ints.a = layerZero.value.length - 1
+        ints.a = rotate(ints.a, true)
         remakeTMP()
         left--
+      }
+      while(maxrolls > 0 && tmp.a.shouldReroll()) {
+        debugpair(tmp, 'rerolling a')
+        ints.a = rotate(ints.a, true)
+        remakeTMP()
+        maxrolls--
+      }
+      while(maxrolls > 0 && tmp.b.shouldReroll()) {
+        debugpair(tmp, 'rerolling b')
+        ints.b = rotate(ints.b)
+        remakeTMP()
+        maxrolls--
       }
     }
     if(left <= 0) throw new Error('Could not find a pair')
     return tmp
   }
   let tasks = generatePairNotYetSkipped()
-  debugpair(tasks, 'this pair works')
-  return tasks
+  // debugpair(tasks, 'this pair works')
+  return { a: tasks.a.t, b: tasks.b.t }
 }
 
 const permutations = computed(() => 0.5 * layerZero.value.length * (layerZero.value.length - 1))
@@ -197,7 +235,7 @@ const unskippedPermutations = computed(() => permutations.value - skippedPairs.v
 const currentPair = ref<pair<Task>>(newPair())
 
 const forget = (id: number) => {
-  skippedPairs.value = skippedPairs.value.filter(x => x.a.id !== id && x.b.id !== id)
+  skippedPairs.value = skippedPairs.value.filter(x => x.a.t.id !== id && x.b.t.id !== id)
 }
 
 const tryNewPair = () => {
