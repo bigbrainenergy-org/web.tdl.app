@@ -1,14 +1,14 @@
-import { QVueGlobals } from 'quasar'
+import { Dialog, Notify } from 'quasar'
 import { Task, TaskRepo } from './stores/tasks/task'
 import { Utils } from './util'
 import { useCurrentTaskStore } from './stores/task-meta/current-task'
 import UpdateTaskDialog from './components/dialog/UpdateTaskDialog.vue'
 import TaskSearchDialog from './components/dialog/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
+import { λ } from './types'
 
 export class TDLAPP {
-  static openTask = (currentTask: Task | number, q: QVueGlobals) => {
-    Utils.hardCheck(q, 'quasar was not defined')
+  static openTask = (currentTask: Task | number) => {
     const cts = useCurrentTaskStore()
     let msg: string
     if(currentTask instanceof Task) {
@@ -19,19 +19,18 @@ export class TDLAPP {
       cts.id = currentTask
       msg = `opening UpdateTaskDialog with task ID ${currentTask}`
     }
-    return q.dialog({
+    return Dialog.create({
       component: UpdateTaskDialog
     })
   }
-  static searchDialog = (q: QVueGlobals) => {
-    Utils.hardCheck(q, 'quasar was not defined')
-    q.dialog({
+  static searchDialog = () => {
+    return Dialog.create({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Search For A Task',
         taskID: undefined,
         showCreateButton: true,
-        onSelect: (payload: { task: Task }) => this.openTask(payload.task, q),
+        onSelect: (payload: { task: Task }) => this.openTask(payload.task),
         closeOnSelect: true
       }
     })
@@ -49,9 +48,8 @@ export class TDLAPP {
       Utils.handleError('Failed to add postreq')
     )
   }
-  static addPrerequisitesDialog = (currentTask: Task, q: QVueGlobals) => {
-    Utils.hardCheck(q, 'quasar was not defined')
-    return q.dialog({
+  static addPrerequisitesDialog = (currentTask: Task) => {
+    return Dialog.create({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Add Prerequisite',
@@ -63,9 +61,8 @@ export class TDLAPP {
       }
     })
   }
-  static addPostrequisiteDialog = (currentTask: Task, q: QVueGlobals) => {
-    Utils.hardCheck(q, 'quasar was not defined')
-    return q.dialog({
+  static addPostrequisiteDialog = (currentTask: Task) => {
+    return Dialog.create({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Add Postrequisite',
@@ -77,5 +74,16 @@ export class TDLAPP {
       }
     })
   }
-  
+  static notifyUpdatedCompletionStatus: λ<Task, λ> = (task: Task) => () => {
+    console.log('notifyUpdatedCompletionStatus')
+    Notify.create({
+      message: `Marked "${ task.title }" ${ task.completed ? 'Complete' : 'Incomplete'}`,
+      color: 'positive',
+      position: 'top',
+      icon: 'fa-solid fa-check',
+      actions: [
+        { label: 'Undo', color: 'white', handler: () => { useRepo(TaskRepo).toggleCompleted(task) } }
+      ]
+    })
+  }
 }
