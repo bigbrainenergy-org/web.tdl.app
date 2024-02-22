@@ -36,7 +36,8 @@ interface Props {
 
 const saveProgress = ref<number | undefined>(undefined)
 const prop = defineProps<Props>()
-const { dialogRef, onDialogOK, onDialogHide, onDialogCancel } = useDialogPluginComponent()
+const emit = defineEmits([ ...useDialogPluginComponent.emits ])
+const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 const layerZero = ref(useRepo(TaskRepo).layerZero()
   .filter(x => {
     if(x.id === prop.task.id) return false

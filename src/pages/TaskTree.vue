@@ -216,14 +216,14 @@ const expandNodesInQueue = (newCall = false) => {
 const $q = useQuasar()
 
 const openTask = (currentTask: Task) => {
-  TDLAPP.openTask(currentTask, $q)
+  TDLAPP.openTask(currentTask)
   .onDismiss(() => initializeQueues())
   .onCancel(() => initializeQueues())
   .onOk(() => initializeQueues())
 }
 
 const updateTaskCompletedStatus = (task: Task) => {
-  tr.value.update({ id: Utils.hardCheck(task.id), payload: { task }})
+  tr.value.update({ id: task.id, payload: { task }})
   if(incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
 }
 
@@ -332,5 +332,5 @@ onMounted(() => {
 //   clearTimeout(expanderTimer)
 //   queueExpand = []
 // })
-const openSearchDialog = () => TDLAPP.searchDialog($q)
+const openSearchDialog = () => TDLAPP.searchDialog()
 </script>

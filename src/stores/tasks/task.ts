@@ -9,6 +9,8 @@ import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
 import { Utils } from 'src/util'
+import { Notify } from 'quasar'
+import { TDLAPP } from 'src/TDLAPP'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -286,6 +288,9 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       id: task.id,
       payload: { task: t }
     })
+    .then(
+      TDLAPP.notifyUpdatedCompletionStatus(task), 
+      Utils.handleError('Error updating status of task.'))
   }
 
   deleteTask = async (task: Task) => {

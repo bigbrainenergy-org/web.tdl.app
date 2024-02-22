@@ -48,10 +48,7 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
-
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your

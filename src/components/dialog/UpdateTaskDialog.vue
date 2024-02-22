@@ -253,7 +253,7 @@ const allPosts = computed(() => {
 })
 
 const updateTaskCompletedStatus = (task: Task) => {
-  tr.update({ id: Utils.hardCheck(task.id), payload: { task }})
+  tr.update({ id: task.id, payload: { task }})
 }
 
 const allLists = listsRepo.all()
@@ -326,9 +326,9 @@ function updateTask(options: AllOptionalTaskProperties) {
   }, Utils.handleError('Error updating task'))
 }
 
-const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value, $q)
+const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value)
 
-const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value, $q)
+const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value)
 
 const prioritize = () => {
   $q.dialog({
@@ -340,14 +340,12 @@ const prioritize = () => {
 }
 
 const removePrerequisite = async (prereq: Task) => {
-  const prereq_id = Utils.hardCheck(prereq.id, 'removePrerequisite: id of prereq is null or undefined!')
-  await tr.removePre(currentTask.value, prereq_id)
+  await tr.removePre(currentTask.value, prereq.id)
   .then(Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'))
 }
 
 const removePostrequisite = async (postreq: Task) => {
-  const postreq_id = Utils.hardCheck(postreq.id, 'removePostrequisite: id of postreq is null or undefined!')
-  await tr.removePost(currentTask.value, postreq_id)
+  await tr.removePost(currentTask.value, postreq.id)
   .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
 }
 
@@ -362,11 +360,9 @@ const onCancelClick = onDialogCancel
 const mvpPostrequisite = async (post: Task) => {
   console.debug(post)
   const allOtherPosts = allPosts.value.filter(x => !x.completed && x.id !== post.id)
-  const currentTaskID = Utils.hardCheck(currentTask.value.id)
-  const postID = Utils.hardCheck(post.id)
   for(let i = 0; i < allOtherPosts.length; i++) {
-    await tr.removePre(allOtherPosts[i], currentTaskID).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
-    await tr.addPre(allOtherPosts[i], postID).then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
+    await tr.removePre(allOtherPosts[i], currentTask.value.id).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
+    await tr.addPre(allOtherPosts[i], post.id).then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
   }
   const syncResult = await syncWithBackend()
   if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')

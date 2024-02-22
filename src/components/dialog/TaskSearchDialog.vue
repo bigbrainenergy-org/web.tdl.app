@@ -67,7 +67,6 @@ const searchString = ref<string | undefined>(undefined)
 
 const key = ref(0)
 
-// const taskRef = ref(Utils.hardCheck(props.taskID, 'Task prop must be given a value'))
 Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
 
 const emit = defineEmits([

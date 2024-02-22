@@ -95,7 +95,7 @@ import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDi
 
 const $q = useQuasar()
 
-const open = (task: Task) => TDLAPP.openTask(task, $q)
+const open = (task: Task) => TDLAPP.openTask(task)
 
 const pageTasks = defineComponent({
   name: 'PageTasks',
@@ -126,35 +126,16 @@ const tasks = computed(() => {
   return baseQuery.sort((a, b) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length)
 })
 
-const toggleCompleted = async (task: Task) => {
-  await tasksRepo.toggleCompleted(task).then(
-    Utils.handleSuccess(`Unmarked Completion Status for "${ task.title }"`, 'fa-solid fa-check')
-  )
-}
-
-const notifyCompletionStatus = (task: Task) => {
-  $q.notify({
-    message: `Marked "${ task.title }" ${ task.completed ? 'Complete' : 'Incomplete'}`,
-    color: 'positive',
-    position: 'top',
-    icon: 'fa-solid fa-check',
-    actions: [
-      { label: 'Undo', color: 'white', handler: () => { toggleCompleted(task) } }
-    ]
-  })
-}
-
 const updateTaskCompletedStatus = async (task: Task) => {
-  await tasksRepo.update({ id: Utils.hardCheck(task.id, 'task id was null or undefined'), payload: { task }})
+  await tasksRepo.update({ id: task.id, payload: { task }})
   .then(
-    () => {
-      notifyCompletionStatus(task)
-    }
+    TDLAPP.notifyUpdatedCompletionStatus(task),
+    Utils.handleError('Error updating completion status of a task.')
   )
 }
 
-const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
-const openSearchDialog = () => TDLAPP.searchDialog($q)
+const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+const openSearchDialog = () => TDLAPP.searchDialog()
 
 const openQuickSortDialog = () => $q.dialog({
   component: QuickSortLayerZeroDialog
