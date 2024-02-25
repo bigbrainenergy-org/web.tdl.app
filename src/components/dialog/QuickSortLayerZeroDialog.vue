@@ -84,7 +84,6 @@
 </style>
 
 <script setup lang="ts">
-import { reverse } from 'dns'
 import { useRepo } from 'pinia-orm'
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
@@ -108,15 +107,20 @@ class PostWeightedTask {
 
 const layerZero = computed(() => tr.value.layerZero().map(x => new PostWeightedTask(x)))
 
-const eq = (pairA: pair<PostWeightedTask>, pairB: pair<PostWeightedTask>): boolean => {
-  return (pairA.a.t.id === pairB.a.t.id || pairA.a.t.id === pairB.b.t.id)
-  && (pairA.b.t.id === pairB.b.t.id || pairA.b.t.id === pairB.a.t.id)
+const eq = (pairA: pair<Task>, pairB: pair<PostWeightedTask>): boolean => {
+  if(pairA.a.id === pairB.a.t.id) {
+    if(pairA.b.id === pairB.b.t.id) return true
+  }
+  if(pairA.a.id === pairB.b.t.id) {
+    if(pairA.b.id === pairB.a.t.id) return true
+  }
+  return false
 }
 
 const loading = ref(false)
 
 type pair<T> = { a: T, b: T }
-const skippedPairs = ref<pair<PostWeightedTask>[]>([])
+const skippedPairs = ref<pair<Task>[]>([])
 
 const addPres = (x: Task) => {
   TDLAPP.addPrerequisitesDialog(x)
@@ -182,43 +186,31 @@ const newPair = (): pair<Task> => {
       else if(x < 0) x = layerZero.value.length - 1
       return x
     }
-    let maxrolls = 10
-    while(maxrolls > 0 && tmp.a.shouldReroll()) {
-      console.debug('rerolling a')
-      ints.a = rotate(ints.a, true)
-      remakeTMP()
-      maxrolls--
-    }
-    while(maxrolls > 0 && tmp.b.shouldReroll()) {
-      console.debug('rerolling b')
-      ints.b = rotate(ints.b)
-      remakeTMP()
-      maxrolls--
-    }
-    while(ints.a === ints.b || skippedPairs.value.some(x => eq(x as pair<PostWeightedTask>, tmp)) && left > 0) {
+    let maxRolls = 10
+    while(ints.a === ints.b || skippedPairs.value.some(x => eq(x as pair<Task>, tmp)) && left > 0) {
       while(ints.a === ints.b && left > 0) {
         debugpair(tmp, 'a and b were equal')
         ints.b = rotate(ints.b)
         remakeTMP()
         left--
       }
-      while(skippedPairs.value.some(x => eq(x as pair<PostWeightedTask>, tmp)) && left > 0) {
+      while(skippedPairs.value.some(x => eq(x as pair<Task>, tmp)) && left > 0) {
         debugpair(tmp, 'this pair was already in the skipped list')
         ints.a = rotate(ints.a, true)
         remakeTMP()
         left--
       }
-      while(maxrolls > 0 && tmp.a.shouldReroll()) {
-        debugpair(tmp, 'rerolling a')
+      while(maxRolls > 0 && tmp.a.shouldReroll()) {
+        console.debug('rerolling a')
         ints.a = rotate(ints.a, true)
         remakeTMP()
-        maxrolls--
+        maxRolls--
       }
-      while(maxrolls > 0 && tmp.b.shouldReroll()) {
-        debugpair(tmp, 'rerolling b')
+      while(maxRolls > 0 && tmp.b.shouldReroll()) {
+        console.debug('rerolling b')
         ints.b = rotate(ints.b)
         remakeTMP()
-        maxrolls--
+        maxRolls--
       }
     }
     if(left <= 0) throw new Error('Could not find a pair')
