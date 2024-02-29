@@ -31,7 +31,9 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       expandEnergyStats: false,
       expandAllWithSameID: false,
       maxGraphNodeRadius: 100,
-      reverseTreeView: false
+      reverseTreeView: false,
+      enableQuickSortOnNewTask: false,
+      enableQuickSortOnLayerZeroQTY: 0
     }
   },
   persist: true,

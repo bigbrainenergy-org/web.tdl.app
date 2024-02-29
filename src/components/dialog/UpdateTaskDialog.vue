@@ -12,7 +12,7 @@
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)" />
         </template>
         <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask as Task)" />
-        <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
+        <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onDialogCancel" />
       </q-card-section>
 
       <q-separator />
@@ -353,9 +353,6 @@ const toggleComplete = async (task: Task) => {
   await tr.toggleCompleted(task)
   // .then(Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check'))
 }
-
-// we can passthrough onDialogCancel directly
-const onCancelClick = onDialogCancel
 
 const mvpPostrequisite = async (post: Task) => {
   console.debug(post)

@@ -230,7 +230,7 @@ const initializeGraph = () => {
   node.call(CustomForceGraph.d3DragDefaults(simulation))
 
   node.on('click', (event) => {
-    TDLAPP.openTask(event.target.__data__.obj as Task, $q)
+    TDLAPP.openTask(event.target.__data__.obj as Task)
     .onOk(reInitializeGraph)
     .onCancel(reInitializeGraph)
     .onDismiss(reInitializeGraph)
@@ -256,5 +256,5 @@ const refresh = reInitializeGraph
 
 onMounted(initializeGraph)
 
-const openSearchDialog = () => TDLAPP.searchDialog($q)
+const openSearchDialog = () => TDLAPP.searchDialog()
 </script>

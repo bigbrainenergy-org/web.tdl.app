@@ -43,14 +43,21 @@
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
-import { useQuasar } from 'quasar'
+import { DialogChainObject, useQuasar } from 'quasar'
 import { TDLAPP } from 'src/TDLAPP'
+import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { computed } from 'vue'
+import { Utils } from 'src/util'
+import { computed, ref, watch } from 'vue'
 
 const $q = useQuasar()
-const open = (task: Task) => TDLAPP.openTask(task, $q)
-const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask, $q)
+const open = (task: Task) => TDLAPP.openTask(task)
+
+const addTaskPre = (currentTask: Task) => {
+  // TODO: research and actually understand the events lifecycle of a dialog
+  TDLAPP.addPrerequisitesDialog(currentTask)
+}
 
 const layerZero = computed(() => {
   const incomplete = (x: Task) => !x.completed
@@ -62,24 +69,75 @@ const layerZero = computed(() => {
   return lzero
 })
 
+let d2: DialogChainObject | undefined
+const l0len = computed(() => layerZero.value.length)
+const handleTaskListTooLong = () => {
+  if(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY === 0) return
+  console.debug('l0len changed to ', l0len.value)
+  if(l0len.value >= useLocalSettingsStore().enableQuickSortOnLayerZeroQTY) {
+    if(typeof d2 !== 'undefined') return
+    console.debug('layer zero has gotten a bit large.')
+    Utils.notifySuccess('Time to Prioritize Tasks!')
+    d2 = $q.dialog({
+      component: QuickSortLayerZeroDialog
+    }).onOk(() => d2 = undefined)
+  }
+  else {
+    if(typeof d2 !== 'undefined') {
+      console.debug({d2})
+      console.warn('conditions for handle task list too long are no longer met')
+      console.warn('force closing dialog')
+      d2.hide()
+      d2 = undefined
+      Utils.notifySuccess('Great Work!')
+    }
+  }
+}
+watch(l0len, () => {
+  handleTaskListTooLong()
+})
+
+let d1: DialogChainObject | undefined
+const zeroPostsLen = computed(() => layerZero.value.filter(x => x.hard_postreqs.filter(y => !y.completed).length === 0).length)
+const handleZeroPostsOnTask = () => {
+  if(!useLocalSettingsStore().enableQuickSortOnNewTask) return
+  console.debug('zeroPostsLen changed to ', zeroPostsLen.value)
+  if(zeroPostsLen.value > 0) {
+    if(typeof d1 !== 'undefined') return
+    console.debug('you have a new task to prioritize.')
+    Utils.notifySuccess('You have a new task to prioritize!')
+    d1 = $q.dialog({
+      component: QuickSortLayerZeroDialog
+    }).onOk(() => d1 = undefined)
+  }
+  else{
+    if(typeof d1 !== 'undefined') {
+      console.debug({d1})
+      console.warn('conditions no longer met to quick sort new tasks')
+      console.warn('force closing dialog')
+      d1.hide()
+      d1 = undefined
+      Utils.notifySuccess('Great Work!')
+    }
+  }
+}
+watch(zeroPostsLen, () => {
+  handleZeroPostsOnTask()
+})
+
 const currentTask = computed(() => layerZero.value.length ? layerZero.value[0] : null)
 const nextUp = computed(() => {
   let arr: Array<Task> = Array.from(layerZero.value)
-  console.debug({ 'arr just layer zero': arr })
   if(currentTask.value !== null) {
     let posts = currentTask.value.grabPostreqs(true)
-    console.log({ 'posts of current task': posts })
-    console.log('pres of posts', posts.map(x => ({ post: x, pres: x.grabPrereqs(true)})))
     posts = posts.filter(x => x.grabPrereqs(true).length === 1)
-    console.log({ 'posts that have 1 or 0 prereqs': posts })
     arr.push(...posts)
-    console.debug({ 'arr with current task postreqs added': arr })
     arr = arr.filter(x => x.id !== currentTask.value!.id)
-    console.debug({ 'arr after current task is filtered out': arr, currentTask: currentTask.value })
   }
   arr.sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)
-  
-  console.log(arr)
   return arr.length > 0 ? arr[0] : null
 })
+
+handleZeroPostsOnTask()
+handleTaskListTooLong()
 </script>

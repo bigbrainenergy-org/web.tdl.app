@@ -30,6 +30,14 @@
           label="Test Notification"
         />
 
+        <q-btn
+          class="q-ma-md"
+          icon="settings"
+          color="indigo"
+          label="Focus Mode Settings"
+          @click="openFocusModeSettingsDialog"
+        />
+
         <q-separator class="q-my-md" />
 
         <q-input
@@ -94,7 +102,7 @@ import { useRepo } from 'pinia-orm'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
-import errorNotification from 'src/hackerman/ErrorNotification'
+import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
 import { useRouter } from 'vue-router'
 import { Utils } from 'src/util'
 
@@ -207,5 +215,11 @@ const r = useRouter()
     onBeforeUnmount(
       () => { clearTimer() }
     )
+
+    const openFocusModeSettingsDialog = () => {
+      $q.dialog({
+        component: FocusModeSettingsDialog
+      })
+    }
 
 </script>

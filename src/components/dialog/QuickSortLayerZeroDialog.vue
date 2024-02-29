@@ -4,6 +4,7 @@
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
         <div class="text-h6">Which task should come first?</div>
+        <div class="text-h6">{{ layerZero.length }} Tasks to Prioritize</div>
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
       <q-linear-progress query v-if="loading" stripe size="10px" />
@@ -90,6 +91,7 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { TDLAPP } from 'src/TDLAPP'
 import { SimpleMenuItem } from 'src/types'
 import { Utils } from 'src/util'
+import { watch } from 'vue'
 import { computed, ref } from 'vue'
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
@@ -106,6 +108,10 @@ class PostWeightedTask {
 }
 
 const layerZero = computed(() => tr.value.layerZero().map(x => new PostWeightedTask(x)))
+const l0len = computed(() => layerZero.value.length)
+watch(l0len, (value: number) => {
+  if(value < 2) onDialogOK()
+})
 
 const eq = (pairA: pair<Task>, pairB: pair<PostWeightedTask>): boolean => {
   if(pairA.a.id === pairB.a.t.id) {
@@ -150,9 +156,16 @@ const menuItems: SimpleMenuItem<Task>[] = [
   }
 ]
 
+const determineLayerZeroStatus = () => {
+  if(useRepo(TaskRepo).layerZero().length < 2) {
+    Utils.notifySuccess('Nothing more to sort')
+    onDialogHide()
+  }
+}
+
 const newPair = (): pair<Task> => {
   console.debug(`permutations remaining: ${unskippedPermutations.value}`)
-  if(layerZero.value.length < 2) throw new Error('Nothing more to sort')
+  determineLayerZeroStatus()
   if(layerZero.value.length === 2) {
     Utils.notifySuccess('These are the last two tasks!')
     return {
@@ -187,7 +200,8 @@ const newPair = (): pair<Task> => {
       return x
     }
     let maxRolls = 10
-    while(ints.a === ints.b || skippedPairs.value.some(x => eq(x as pair<Task>, tmp)) && left > 0) {
+    while((ints.a === ints.b || skippedPairs.value.some(x => eq(x as pair<Task>, tmp))) && left > 0) {
+      console.debug('in the loop')
       while(ints.a === ints.b && left > 0) {
         debugpair(tmp, 'a and b were equal')
         ints.b = rotate(ints.b)
@@ -227,7 +241,7 @@ const unskippedPermutations = computed(() => permutations.value - skippedPairs.v
 const currentPair = ref<pair<Task>>(newPair())
 
 const forget = (id: number) => {
-  skippedPairs.value = skippedPairs.value.filter(x => x.a.t.id !== id && x.b.t.id !== id)
+  skippedPairs.value = skippedPairs.value.filter(x => x.a.id !== id && x.b.id !== id)
 }
 
 const tryNewPair = () => {
@@ -241,9 +255,10 @@ const tryNewPair = () => {
 
 const addRule = async (first: Task, second: Task) => {
   loading.value = true
-  await TDLAPP.addPost(first, second.id)
+  await TDLAPP.addPre(second, first.id)
   .then(() => {
     forget(second.id)
+    determineLayerZeroStatus()
     tryNewPair()
     loading.value = false
   })
