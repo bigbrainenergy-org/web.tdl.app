@@ -29,6 +29,10 @@ export class User extends Model implements iRecord {
   @Str('') declare username: string
 
   @BelongsTo(() => TimeZone, 'timeZone') declare timeZoneObj: TimeZone | null
+
+  static piniaOptions = {
+    persist: true
+  }
 }
 
 type passOptions = { current_password: string; password: string }
@@ -44,7 +48,11 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
   fetchUser = this.fetch
 
   getUser = () => {
-    return this.find(useAuthenticationStore().userId)
+    const userId = useAuthenticationStore().userId
+    const user = this.find(userId)
+    console.debug({ userId, user })
+    console.debug({ 'all users': this.all() })
+    return user
   }
 
   changePassword = async (options: passOptions) => {

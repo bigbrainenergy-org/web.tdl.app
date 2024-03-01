@@ -75,7 +75,7 @@ export class TDLAPP {
     })
   }
   static notifyUpdatedCompletionStatus: λ<Task, λ> = (task: Task) => () => {
-    console.log('notifyUpdatedCompletionStatus')
+    console.log(`notifyUpdatedCompletionStatus: task is ${task.completed ? 'completed' : 'incomplete'}`)
     Notify.create({
       message: `Marked "${ task.title }" ${ task.completed ? 'Complete' : 'Incomplete'}`,
       color: 'positive',

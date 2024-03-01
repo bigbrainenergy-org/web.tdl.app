@@ -157,7 +157,7 @@ export class Task extends Model implements iRecord {
   grabPrereqs(incompleteOnly = false): Task[] {
     const repo = useRepo(TaskRepo)
     const pres = this.hard_prereqs ?? repo.where(x => x.hard_postreq_ids.includes(this.id)).get()
-    console.debug({ incompleteOnly, pres_before_filtering: pres })
+    // console.debug({ incompleteOnly, pres_before_filtering: pres })
     return incompleteOnly ? pres.filter(x => !x.completed) : pres
   }
 

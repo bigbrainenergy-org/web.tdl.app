@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
-import { useDialogPluginComponent, useQuasar } from 'quasar'
+import { useDialogPluginComponent } from 'quasar'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { TDLAPP } from 'src/TDLAPP'
 import { SimpleMenuItem } from 'src/types'
@@ -167,7 +167,6 @@ const newPair = (): pair<Task> => {
   console.debug(`permutations remaining: ${unskippedPermutations.value}`)
   determineLayerZeroStatus()
   if(layerZero.value.length === 2) {
-    Utils.notifySuccess('These are the last two tasks!')
     return {
       a: layerZero.value[0].t,
       b: layerZero.value[1].t

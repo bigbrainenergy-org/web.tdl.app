@@ -38,20 +38,18 @@
           No tasks in this list!
         </q-card-section>
       </q-card>
+      <QuickSortLayerZeroDialog v-if="shouldSort" v-model="shouldSort"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
-import { DialogChainObject, useQuasar } from 'quasar'
 import { TDLAPP } from 'src/TDLAPP'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { Utils } from 'src/util'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 
-const $q = useQuasar()
 const open = (task: Task) => TDLAPP.openTask(task)
 
 const addTaskPre = (currentTask: Task) => {
@@ -69,61 +67,9 @@ const layerZero = computed(() => {
   return lzero
 })
 
-let d2: DialogChainObject | undefined
-const l0len = computed(() => layerZero.value.length)
-const handleTaskListTooLong = () => {
-  if(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY === 0) return
-  console.debug('l0len changed to ', l0len.value)
-  if(l0len.value >= useLocalSettingsStore().enableQuickSortOnLayerZeroQTY) {
-    if(typeof d2 !== 'undefined') return
-    console.debug('layer zero has gotten a bit large.')
-    Utils.notifySuccess('Time to Prioritize Tasks!')
-    d2 = $q.dialog({
-      component: QuickSortLayerZeroDialog
-    }).onOk(() => d2 = undefined)
-  }
-  else {
-    if(typeof d2 !== 'undefined') {
-      console.debug({d2})
-      console.warn('conditions for handle task list too long are no longer met')
-      console.warn('force closing dialog')
-      d2.hide()
-      d2 = undefined
-      Utils.notifySuccess('Great Work!')
-    }
-  }
-}
-watch(l0len, () => {
-  handleTaskListTooLong()
-})
-
-let d1: DialogChainObject | undefined
-const zeroPostsLen = computed(() => layerZero.value.filter(x => x.hard_postreqs.filter(y => !y.completed).length === 0).length)
-const handleZeroPostsOnTask = () => {
-  if(!useLocalSettingsStore().enableQuickSortOnNewTask) return
-  console.debug('zeroPostsLen changed to ', zeroPostsLen.value)
-  if(zeroPostsLen.value > 0) {
-    if(typeof d1 !== 'undefined') return
-    console.debug('you have a new task to prioritize.')
-    Utils.notifySuccess('You have a new task to prioritize!')
-    d1 = $q.dialog({
-      component: QuickSortLayerZeroDialog
-    }).onOk(() => d1 = undefined)
-  }
-  else{
-    if(typeof d1 !== 'undefined') {
-      console.debug({d1})
-      console.warn('conditions no longer met to quick sort new tasks')
-      console.warn('force closing dialog')
-      d1.hide()
-      d1 = undefined
-      Utils.notifySuccess('Great Work!')
-    }
-  }
-}
-watch(zeroPostsLen, () => {
-  handleZeroPostsOnTask()
-})
+const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
+const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.hard_postreqs.filter(y => !y.completed).length === 0).length > 0 : false
+const shouldSort = computed(() => hasTooManyInLayerZero() || hasNewTasksInLayerZero())
 
 const currentTask = computed(() => layerZero.value.length ? layerZero.value[0] : null)
 const nextUp = computed(() => {
@@ -137,7 +83,4 @@ const nextUp = computed(() => {
   arr.sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)
   return arr.length > 0 ? arr[0] : null
 })
-
-handleZeroPostsOnTask()
-handleTaskListTooLong()
 </script>
