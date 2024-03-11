@@ -52,7 +52,7 @@
               </q-item>
               <q-separator />
               <q-item clickable @click="$router.push({ path: '/settings' })">
-                <q-item-section>Settings</q-item-section>
+                <q-item-section>{{ $t('settings') }}</q-item-section>
                 <q-item-section avatar>
                   <q-icon name="settings" />
                 </q-item-section>

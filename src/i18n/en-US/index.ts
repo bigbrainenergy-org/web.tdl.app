@@ -6,5 +6,8 @@ export default {
   reasonForInterest: 'Why are you interested in TDL App?',
   login: 'Login',
   logout: 'Logout',
-  requestAccess: 'Request Access'
+  requestAccess: 'Request Access',
+  hellofren: 'Hello UwU',
+  language: 'Language',
+  settings: 'Settings'
 };

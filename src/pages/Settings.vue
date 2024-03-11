@@ -7,12 +7,13 @@
             <q-icon name="settings" />
           </q-item-section>
           <q-item-section>
-            <div class="text-h5">Settings</div>
+            <div class="text-h5">{{ $t('settings') }}</div>
           </q-item-section>
         </q-item>
       </q-card-section>
 
       <q-card-section class="text-center q-pa-md">
+        <LanguageSwitcher />
         <p>Current Time: {{ currentTime }}</p>
         <q-select
           v-model="editTimeZone"
@@ -105,6 +106,7 @@ import { UserRepo } from 'src/stores/users/user'
 import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
 import { useRouter } from 'vue-router'
 import { Utils } from 'src/util'
+import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
 
 defineComponent({name: 'SettingsPage'})
 
