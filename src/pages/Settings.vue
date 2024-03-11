@@ -62,8 +62,7 @@
 import {
   computed,
   ref,
-  onActivated,
-  onDeactivated,
+  onMounted,
   onBeforeUnmount,
   defineComponent
 } from 'vue'
@@ -138,7 +137,9 @@ function clearTimer() {
   }
 }
 
-onActivated(
+// If using KeepAlive to cache in the MainLayout, switch to onActivated
+//onActivated(
+onMounted(
   () =>{
     // Immediately update so the user doesn't notice a huge time jump after 1 second
     updateCurrentTime()
@@ -152,9 +153,10 @@ onActivated(
   }
 )
 
-onDeactivated(
-  () => { clearTimer() }
-)
+// Uncomment if using KeepAlive in MainLayout to cache
+// onDeactivated(
+//   () => { clearTimer() }
+// )
 onBeforeUnmount(
   () => { clearTimer() }
 )
