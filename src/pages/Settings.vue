@@ -89,10 +89,9 @@
 import {
   computed,
   ref,
-  onActivated,
-  onDeactivated,
   onBeforeUnmount,
-defineComponent
+defineComponent,
+onMounted
 } from 'vue'
 import { useQuasar } from 'quasar'
 
@@ -100,7 +99,7 @@ import { DateTime } from 'luxon'
 
 import { useRepo } from 'pinia-orm'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
+import { TimeZone, TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
 import { useRouter } from 'vue-router'
@@ -146,9 +145,11 @@ const r = useRouter()
       }
     }
 
-    const editTimeZone = ref(Utils.hardCheck(ur.getUser(), 'user not found').timeZoneObj)
+    const editTimeZone = ref<TimeZone>(Utils.hardCheck(Utils.hardCheck(ur.getUser(), 'user not found').timeZoneObj))
 
-    const updateTimeZone = async () => await ur.update({ id: user.value.id ?? -1, payload: { user: { timeZone: Utils.hardCheck(editTimeZone.value).value } } })
+    const updateTimeZone = async () => {
+      await ur.changeTimezone(editTimeZone.value as TimeZone)
+    }
 
     function changePassword() {
       if(newPassword.value !== confirmPassword.value) {
@@ -195,7 +196,7 @@ const r = useRouter()
       }
     }
 
-    onActivated(
+    onMounted(
       () =>{
         // Immediately update so the user doesn't notice a huge time jump after 1 second
         updateCurrentTime()
@@ -207,10 +208,6 @@ const r = useRouter()
           1000
         )
       }
-    )
-
-    onDeactivated(
-      () => { clearTimer() }
     )
     onBeforeUnmount(
       () => { clearTimer() }
