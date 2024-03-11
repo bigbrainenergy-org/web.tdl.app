@@ -2,6 +2,7 @@
   <q-select
     v-model="locale"
     :options="localeOptions"
+    class="q-my-md"
     filled
     borderless
     emit-value

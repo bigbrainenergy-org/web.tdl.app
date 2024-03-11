@@ -13,17 +13,18 @@
       </q-card-section>
 
       <q-card-section class="text-center q-pa-md">
-        <LanguageSwitcher />
         <p>Current Time: {{ currentTime }}</p>
         <q-select
-          v-model="editTimeZone"
-          filled
-          @update:model-value="updateTimeZone"
-          :options="timeZones"
-          option-value="value"
-          option-label="name"
-          label="Time Zone"
+        v-model="editTimeZone"
+        class="q-my-md"
+        filled
+        @update:model-value="updateTimeZone"
+        :options="timeZones"
+        option-value="value"
+        option-label="name"
+        label="Time Zone"
         />
+        <LanguageSwitcher />
         <q-btn
           class="q-ma-md"
           icon="fas fa-bell"
@@ -41,36 +42,7 @@
 
         <q-separator class="q-my-md" />
 
-        <q-input
-          v-model="currentPassword"
-          class="q-my-md"
-          filled
-          type="password"
-          label="Current Password"
-        />
-        <q-input
-          v-model="newPassword"
-          class="q-my-md"
-          filled
-          type="password"
-          label="New Password"
-          name="password"
-        />
-        <q-input
-          v-model="confirmPassword"
-          class="q-my-md"
-          filled
-          type="password"
-          label="Confirm Password"
-          name="confirm_password"
-        />
-        <q-btn
-          class="full-width"
-          color="orange"
-          outline
-          label="Change Password"
-          @click="changePassword"
-        />
+        <PasswordChangeForm />
 
         <q-separator class="q-my-md" />
 
@@ -93,8 +65,9 @@ import {
   onActivated,
   onDeactivated,
   onBeforeUnmount,
-defineComponent
+  defineComponent
 } from 'vue'
+
 import { useQuasar } from 'quasar'
 
 import { DateTime } from 'luxon'
@@ -107,121 +80,88 @@ import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDial
 import { useRouter } from 'vue-router'
 import { Utils } from 'src/util'
 import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
+import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
 
 defineComponent({name: 'SettingsPage'})
 
 const r = useRouter()
 
-  const authenticationStore = useAuthenticationStore()
-  if(authenticationStore.isLoggedIn !== true) {
-    r.push('/login')
+const authenticationStore = useAuthenticationStore()
+if(authenticationStore.isLoggedIn !== true) {
+  r.push('/login')
+}
+
+const $q = useQuasar()
+const tzr = useRepo(TimeZoneRepo)
+const userRepo = computed(() => useRepo(UserRepo))
+
+const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
+
+
+const userTimeZone = computed(
+  () => Utils.hardCheck(userRepo.value.getUser(), 'no user found in authentication store or user repo').timeZoneObj
+)
+
+const timeZones = computed(
+  () => tzr.all()
+)
+
+const user = computed(() => Utils.hardCheck(userRepo.value.getUser(), 'user not found in authentication store or user repo'))
+
+function timeZoneName(tzToFind: any) {
+  if (timeZones.value.length > 0) {
+    return timeZones.value.find(
+      (tz) => {
+        return tz.value === tzToFind
+      }
+    )?.name
+  } else {
+    return undefined
   }
+}
 
-  const $q = useQuasar()
-    const tzr = useRepo(TimeZoneRepo)
-    const ur = useRepo(UserRepo)
+const editTimeZone = ref(Utils.hardCheck(userRepo.value.getUser(), 'user not found').timeZoneObj)
 
-    const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
-    const currentPassword = ref('')
-    const newPassword = ref('')
-    const confirmPassword = ref('')
+const updateTimeZone = async () => await userRepo.value.update({ id: user.value.id ?? -1, payload: { user: { timeZone: Utils.hardCheck(editTimeZone.value).value } } })
 
-    const userTimeZone = computed(
-      () => Utils.hardCheck(ur.getUser(), 'no user found in authentication store or user repo').timeZoneObj
-    )
+let timer: NodeJS.Timeout | null = null
 
-    const timeZones = computed(
-      () => tzr.all()
-    )
+function updateCurrentTime() {
+  currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
+}
 
-    const user = computed(() => Utils.hardCheck(ur.getUser(), 'user not found in authentication store or user repo'))
+// If timer is active, deactivate it to free up memory / CPU.
+function clearTimer() {
+  if(timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
 
-    function timeZoneName(tzToFind: any) {
-      if (timeZones.value.length > 0) {
-        return timeZones.value.find(
-          (tz) => {
-            return tz.value === tzToFind
-          }
-        )?.name
-      } else {
-        return undefined
-      }
-    }
-
-    const editTimeZone = ref(Utils.hardCheck(ur.getUser(), 'user not found').timeZoneObj)
-
-    const updateTimeZone = async () => await ur.update({ id: user.value.id ?? -1, payload: { user: { timeZone: Utils.hardCheck(editTimeZone.value).value } } })
-
-    function changePassword() {
-      if(newPassword.value !== confirmPassword.value) {
-        $q.notify({
-          color: 'negative',
-          position: 'top',
-          message: 'New password and confirm password didn\'t match, please try again',
-          icon: 'report_problem'
-        })
-        newPassword.value = ''
-        confirmPassword.value = ''
-        return
-      }
-      ur.changePassword({
-        current_password: currentPassword.value,
-        password: newPassword.value
-      }).
-      then(
-        () => {
-          currentPassword.value = ''
-          newPassword.value = ''
-          confirmPassword.value = ''
-          $q.notify({
-            color: 'positive',
-            position: 'top',
-            message: 'Password changed!'
-          })
-        },
-        Utils.handleError('Failed to change password.')
-      )
-    }
-
-    let timer: NodeJS.Timeout | null = null
-
-    function updateCurrentTime() {
-      currentTime.value = DateTime.local().toFormat('h:mm:ss a ZZZZ')
-    }
-
-    // If timer is active, deactivate it to free up memory / CPU.
-    function clearTimer() {
-      if(timer) {
-        clearInterval(timer)
-        timer = null
-      }
-    }
-
-    onActivated(
-      () =>{
-        // Immediately update so the user doesn't notice a huge time jump after 1 second
+onActivated(
+  () =>{
+    // Immediately update so the user doesn't notice a huge time jump after 1 second
+    updateCurrentTime()
+    // Restart timer
+    timer = setInterval(
+      () => {
         updateCurrentTime()
-        // Restart timer
-        timer = setInterval(
-          () => {
-            updateCurrentTime()
-          },
-          1000
-        )
-      }
+      },
+      1000
     )
+  }
+)
 
-    onDeactivated(
-      () => { clearTimer() }
-    )
-    onBeforeUnmount(
-      () => { clearTimer() }
-    )
+onDeactivated(
+  () => { clearTimer() }
+)
+onBeforeUnmount(
+  () => { clearTimer() }
+)
 
-    const openFocusModeSettingsDialog = () => {
-      $q.dialog({
-        component: FocusModeSettingsDialog
-      })
-    }
-
+const openFocusModeSettingsDialog = () => {
+  $q.dialog({
+    component: FocusModeSettingsDialog
+  })
+}
 </script>
