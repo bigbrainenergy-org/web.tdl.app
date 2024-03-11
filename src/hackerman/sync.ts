@@ -44,7 +44,7 @@ export async function syncWithBackend(): Promise<number> {
       const currentUser = useRepo(UserRepo).getUser()
       if(currentUser === null || typeof currentUser === 'undefined') return 2
       console.log({ user: currentUser })
-      Settings.defaultZone = currentUser.time_zone
+      Utils.updateLuxonTimeZone(currentUser.time_zone)
       console.log({ setting: Settings.defaultZone, currentUserSetting: currentUser.time_zone, obj: currentUser.timeZoneObj })
       return 0
     }

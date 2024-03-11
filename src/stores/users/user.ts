@@ -85,7 +85,7 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
       }
     }).then((response: any) => {
       console.log({ theResponseData: response })
-      Settings.defaultZone = response.time_zone
+      Utils.updateLuxonTimeZone(newTimeZone.value)
     }, Utils.handleError('failed to update timezone'))
   }
 }

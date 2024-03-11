@@ -2,6 +2,9 @@ import { AxiosError } from 'axios';
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
 import { NodeKey, λ } from './types'
+import { useRepo } from 'pinia-orm'
+import { UserRepo } from './stores/users/user'
+import { Settings } from 'luxon'
 
 export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
@@ -49,5 +52,9 @@ export class Utils {
 
   static getRandomInt(max: number) {
     return Math.floor(Math.random() * max);
+  }
+
+  static updateLuxonTimeZone(newTimeZone: string) {
+    Settings.defaultZone = newTimeZone
   }
 }
