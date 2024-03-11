@@ -12,24 +12,22 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"dbaeumer.vscode-eslint",
-				"octref.vetur"
+				"Vue.volar"
 			]
 		}
 	},
-	
+
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
 		8080
 	],
-	
+
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "yarn && quasar dev",
-	
+	"postCreateCommand": "yarn && yarn dev",
+
 	// Set `remoteUser` to `root` to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "node",
-	"features": {
-		"ghcr.io/devcontainers-contrib/features/quasar-cli:2": {
-			"version": "latest"
-		}
-	}
+	"remoteUser": "node"
+	// "features": {
+	// 	"ghcr.io/devcontainers-contrib/features/quasar-cli:2": {}
+	// }
 }
