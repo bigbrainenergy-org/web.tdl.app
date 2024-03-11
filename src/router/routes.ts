@@ -11,11 +11,12 @@ const routes: RouteRecordRaw[] = [
       { path: 'tasks-tree', name: 'Tree', component: () => import('src/pages/TaskTree.vue') },
       { path: 'lists', name: 'Lists', component: () => import('src/pages/Lists.vue') },
       { path: 'settings', name: 'Settings', component: () => import('src/pages/Settings.vue') },
-      { path: 'graph', name: 'Graph', component: () => import('src/pages/GraphAll.vue') }
+      { path: 'graph', name: 'Graph', component: () => import('src/pages/GraphAll.vue') },
+      { path: 'josh-page', name: 'JoshPage', component: () => import('src/pages/JoshPage.vue') }
     ]
   },
   {
-    path: '/', 
+    path: '/',
     component: () => import('src/layouts/GuestLayout.vue'),
     children: [
       { path: 'login', name: 'Login', component: () => import('src/pages/PageLogin.vue') },
