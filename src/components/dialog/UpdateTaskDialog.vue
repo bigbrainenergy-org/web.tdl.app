@@ -1,6 +1,6 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Task Details</div>
@@ -26,9 +26,9 @@
               filled
               label="Task Title"
               :placeholder="currentTask.title"
-              @keyup.enter="updateTask({ title: editTitle })"
               clearable
               class="q-my-md"
+              @keyup.enter="updateTask({ title: editTitle })"
             />
             <q-select
               v-model="selectedList"
@@ -42,23 +42,23 @@
               emit-value
               label="List"
               use-input
-              @filter="filterSelection"
-              @update:model-value="updateTask({ list_id: selectedList === null ? null : selectedList.id })"
               option-value="id"
               class="q-my-md text-primary"
+              @filter="filterSelection"
+              @update:model-value="updateTask({ list_id: selectedList === null ? null : selectedList.id })"
             />
             <q-datetime-input
               v-model="editRemindMeAt"
-              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })"
               label="Remind me at"
               class="q-my-md"
+              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })"
             />
             <q-expansion-item
+              v-model="expandEnergyStats"
               expand-separator
               switch-toggle-side
               icon="fas fa-lightbulb"
               caption="Metadata"
-              v-model="expandEnergyStats"
               @update:model-value="updateLocalSettings">
               <br>
               <q-list>
@@ -73,7 +73,6 @@
 
                       <q-slider
                         v-model="editMentalEnergyRequired"
-                        @change="updateTask({ mental_energy_required: editMentalEnergyRequired })"
                         :min="0"
                         :max="100"
                         :step="1"
@@ -81,6 +80,7 @@
                         label-always
                         :label-value="`Mental ${editMentalEnergyRequired}%`"
                         color="blue"
+                        @change="updateTask({ mental_energy_required: editMentalEnergyRequired })"
                       />
                     </div>
                   </q-item-section>
@@ -101,7 +101,6 @@
 
                       <q-slider
                         v-model="editPhysicalEnergyRequired"
-                        @change="updateTask({ physical_energy_required: editPhysicalEnergyRequired })"
                         :min="0"
                         :max="100"
                         :step="1"
@@ -109,6 +108,7 @@
                         label-always
                         :label-value="`Physical ${editPhysicalEnergyRequired}%`"
                         color="red"
+                        @change="updateTask({ physical_energy_required: editPhysicalEnergyRequired })"
                       />
                     </div>
                   </q-item-section>
@@ -125,14 +125,14 @@
               v-model="editNotes"
               filled
               autogrow
-              @update:model-value="updateTask({ notes: editNotes })"
               debounce="1000"
               label="Notes"
+              @update:model-value="updateTask({ notes: editNotes })"
             />
           </div>
 
           <div class="col-12 col-md">
-            <q-toggle v-model="incompleteOnly" @click="updateLocalSettings" label="Hide Completed Pres and Posts" class="text-primary" />
+            <q-toggle v-model="incompleteOnly" label="Hide Completed Pres and Posts" class="text-primary" @click="updateLocalSettings" />
             <DependencyList
               :items="allPres"
               :dependency-type="preDepType"

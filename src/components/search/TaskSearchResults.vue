@@ -8,7 +8,7 @@
             <q-separator class="q-my-md" />
             <div class="text-h4 q-mb-md">{{ resultsTitle }} - {{ results.length }}</div>
             <q-list>
-              <q-item clickable v-ripple v-if="!results.length">
+              <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <q-item v-if="showCreateButton">
@@ -20,10 +20,10 @@
               />
               </q-item>
               <q-item
-                clickable
-                v-ripple
                 v-for="task in results"
                 :key="task.id ?? -1"
+                v-ripple
+                clickable
                 @click="selectTask(task as Task)"
               >
                 <q-item-section>

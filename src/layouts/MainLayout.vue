@@ -3,29 +3,29 @@
     <q-header elevated>
       <q-toolbar>
         <q-btn
+          v-if="pagesWithNewTaskButton.includes(currentPath)"
           color='green'
           icon='fa-solid fa-plus'
           @click="openCreateTaskDialog"
-          v-if="pagesWithNewTaskButton.includes(currentPath)"
         />
         <q-btn
+          v-if="currentPath === '/settings'"
           color='green'
-          @click="$router.go(-1)"
           label="Go Back"
           icon="fa-solid fa-arrow-left"
-          v-if="currentPath === '/settings'"
+          @click="$router.go(-1)"
         />
         <q-btn
-          color='green'
-          @click="openCreateListDialog"
-          icon="fa-solid fa-plus"
           v-if="currentPath === '/lists'"
+          color='green'
+          icon="fa-solid fa-plus"
+          @click="openCreateListDialog"
         />
         <q-btn 
           class="q-ma-md"
           color="yellow"
-          @click="pullFresh"
           icon="fa-solid fa-refresh"
+          @click="pullFresh"
         />
 
         <q-space />
@@ -96,7 +96,7 @@
     </q-footer>
 
     <q-page-container>
-      <router-view keep-alive ref="routedComponent" :key="routedKey"></router-view>
+      <router-view ref="routedComponent" :key="routedKey" keep-alive></router-view>
       <!-- <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />

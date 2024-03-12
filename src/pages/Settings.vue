@@ -17,11 +17,11 @@
         <q-select
           v-model="editTimeZone"
           filled
-          @update:model-value="updateTimeZone"
           :options="timeZones"
           option-value="value"
           option-label="name"
           label="Time Zone"
+          @update:model-value="updateTimeZone"
         />
         <q-btn
           class="q-ma-md"
