@@ -1,3 +1,4 @@
+import { Settings } from 'luxon'
 import { useRepo } from 'pinia-orm'
 import { ListRepo } from 'src/stores/lists/list'
 import { TaskRepo } from 'src/stores/tasks/task'
@@ -39,6 +40,12 @@ export async function syncWithBackend(): Promise<number> {
       })
     }
     if(queue.length === 0) {
+      // this is the good
+      const currentUser = useRepo(UserRepo).getUser()
+      if(currentUser === null || typeof currentUser === 'undefined') return 2
+      console.log({ user: currentUser })
+      Utils.updateLuxonTimeZone(currentUser.time_zone)
+      console.log({ setting: Settings.defaultZone, currentUserSetting: currentUser.time_zone, obj: currentUser.timeZoneObj })
       return 0
     }
   return 1

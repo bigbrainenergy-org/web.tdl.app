@@ -24,6 +24,9 @@ export class TimeZone extends Model implements iRecord {
   @Uid() declare id: number
   @Str('') declare name: string;
   @Str('') declare value: string;
+  static piniaOptions = {
+    persist: true
+  }
 }
 
 export class TimeZoneRepo extends GenericRepo<CreateTimeZoneOptions, UpdateTimeZoneOptions, TimeZone> {

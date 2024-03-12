@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
@@ -123,6 +123,7 @@ import { syncWithBackend } from 'src/hackerman/sync'
 import { AxiosError } from 'axios'
 import { useAxiosStore } from 'src/stores/axios-store'
 import { ComponentPublicInstance } from 'vue'
+import { Settings } from 'luxon'
 
 console.debug('In Main Layout')
 
@@ -228,5 +229,11 @@ const pullFresh = async () => {
     refreshRoutedComponent()
   }
 }
+
+onMounted(() => {
+  const user = useRepo(UserRepo).getUser()
+  if(user === null || typeof user === 'undefined') return
+  Utils.updateLuxonTimeZone(user.time_zone)
+})
 
 </script>

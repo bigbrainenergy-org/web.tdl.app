@@ -73,7 +73,7 @@ import { DateTime } from 'luxon'
 
 import { useRepo } from 'pinia-orm'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
+import { TimeZone, TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
 import { useRouter } from 'vue-router'
@@ -119,9 +119,11 @@ function timeZoneName(tzToFind: any) {
   }
 }
 
-const editTimeZone = ref(Utils.hardCheck(userRepo.value.getUser(), 'user not found').timeZoneObj)
+const editTimeZone = ref<TimeZone>(Utils.hardCheck(Utils.hardCheck(userRepo.getUser(), 'user not found').timeZoneObj))
 
-const updateTimeZone = async () => await userRepo.value.update({ id: user.value.id ?? -1, payload: { user: { timeZone: Utils.hardCheck(editTimeZone.value).value } } })
+const updateTimeZone = async () => {
+  await userRepo.changeTimezone(editTimeZone.value as TimeZone)
+}
 
 let timer: NodeJS.Timeout | null = null
 

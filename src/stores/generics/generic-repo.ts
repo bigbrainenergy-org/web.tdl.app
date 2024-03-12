@@ -56,7 +56,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
     ).
     then(
       (response: AxiosResponse) => {
-        //console.debug(`${this.apidir} fetched: `, { response })
+        console.debug(`${this.apidir} fetched: `, { response })
         this.fresh(response.data as T[])
       },
       Utils.handleError(`Could not fetch all ${this.apidir}`)
@@ -110,11 +110,12 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   }
 
   update = async (itemOptions: iUpdateT) => {
-    // console.debug(`${this.apidir} UPDATE`)
+    console.debug(`${this.apidir} UPDATE`, { itemOptions })
     return this.api().patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
     .then((response) => {
       this.save(response.data as T)
       console.log({ id: itemOptions.id, newData: response.data })
+      return response.data as T
     }, Utils.handleError('Error updating record'))
   }
 
