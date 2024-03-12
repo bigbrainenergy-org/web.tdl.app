@@ -119,10 +119,10 @@ function timeZoneName(tzToFind: any) {
   }
 }
 
-const editTimeZone = ref<TimeZone>(Utils.hardCheck(Utils.hardCheck(userRepo.getUser(), 'user not found').timeZoneObj))
+const editTimeZone = ref<TimeZone>(Utils.hardCheck(Utils.hardCheck(userRepo.value.getUser(), 'user not found').timeZoneObj))
 
 const updateTimeZone = async () => {
-  await userRepo.changeTimezone(editTimeZone.value as TimeZone)
+  await userRepo.value.changeTimezone(editTimeZone.value as TimeZone)
 }
 
 let timer: NodeJS.Timeout | null = null
