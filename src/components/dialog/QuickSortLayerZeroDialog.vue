@@ -1,5 +1,5 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
@@ -7,7 +7,7 @@
         <div class="text-h6">{{ layerZero.length }} Tasks to Prioritize</div>
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
       </q-card-section>
-      <q-linear-progress query v-if="loading" stripe size="10px" />
+      <q-linear-progress v-if="loading" query stripe size="10px" />
       <q-card-section class="q-ma-lg vertical-top">
         <q-btn-dropdown 
           :disable="loading"
@@ -18,7 +18,7 @@
           auto-close
           dropdown-icon="more_vert"
           @click.stop="addRule(currentPair.a as Task, currentPair.b as Task)">
-          <template v-slot:label>
+          <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped">
                 {{ currentPair.a.title }}
@@ -49,7 +49,7 @@
           auto-close
           dropdown-icon="more_vert"
           @click.stop="addRule(currentPair.b as Task, currentPair.a as Task)">
-          <template v-slot:label>
+          <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped">
                 {{ currentPair.b.title }}
@@ -76,13 +76,6 @@
     </q-card>
   </q-dialog>
 </template>
-
-<style>
-.wrapped {
-  word-break: break-spaces;
-  white-space: break-spaces !important;
-}
-</style>
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
@@ -271,3 +264,10 @@ const skip = () => {
 const onCancelClick = onDialogOK
 
 </script>
+
+<style>
+.wrapped {
+  word-break: break-spaces;
+  white-space: break-spaces !important;
+}
+</style>
