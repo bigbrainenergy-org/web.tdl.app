@@ -9,7 +9,6 @@ import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
 import { Utils } from 'src/util'
-import { Notify } from 'quasar'
 import { TDLAPP } from 'src/TDLAPP'
 
 export interface CreateTaskOptions {
@@ -30,6 +29,7 @@ export interface AllOptionalTaskProperties {
   list_id?: number | null
   title?: string
   notes?: string
+  completed?: boolean
   deadline_at?: string
   prioritize_at?: string
   remind_me_at?: string
@@ -176,6 +176,15 @@ export class Task extends Model implements iRecord {
     return this.grabPrereqs(hideCompleted).map(x => x.treeNode(reverse, hideCompleted, parentKey))
   }
 
+  async toggleCompleted() {
+    const repo = useRepo(TaskRepo)
+    this.completed = !this.completed
+    await repo.update({ id: this.id, payload: { task: { completed: this.completed } } } )
+      .then(
+        TDLAPP.notifyUpdatedCompletionStatus(this), 
+        Utils.handleError('Error updating status of task.'))
+  }
+
   static piniaOptions = {
     persist: true
   }
@@ -279,18 +288,6 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     post_options.payload.task.hard_prereq_ids!.push(task.id)
     console.debug({ msg: 'pushing prereq to new postreq of task', payload: post_options.payload.task })
     await this.update(post_options)
-  }
-
-  toggleCompleted = async (task: Task) => {
-    const t = Object.assign({}, task)
-    t.completed = !task.completed
-    await this.update({ 
-      id: task.id,
-      payload: { task: t }
-    })
-    .then(
-      TDLAPP.notifyUpdatedCompletionStatus(task), 
-      Utils.handleError('Error updating status of task.'))
   }
 
   deleteTask = async (task: Task) => {

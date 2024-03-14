@@ -350,7 +350,7 @@ const removePostrequisite = async (postreq: Task) => {
 }
 
 const toggleComplete = async (task: Task) => {
-  await tr.toggleCompleted(task)
+  await task.toggleCompleted()
   // .then(Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check'))
 }
 

@@ -10,7 +10,7 @@
               Add Prerequisites
             </q-tooltip>
           </q-btn>
-          <q-btn dense flat icon="fa fa-check" @click="useRepo(TaskRepo).toggleCompleted(currentTask as Task)"/>
+          <q-btn dense flat icon="fa fa-check" @click="(currentTask as Task).toggleCompleted()"/>
         </q-bar>
         <q-card-section v-if="currentTask" class="text-h4">
           {{ currentTask.title }}
@@ -29,7 +29,7 @@
               Add Prerequisites
             </q-tooltip>
           </q-btn>
-          <q-btn dense flat icon="fa fa-check" @click="useRepo(TaskRepo).toggleCompleted(nextUp as Task)"/>
+          <q-btn dense flat icon="fa fa-check" @click="(nextUp as Task).toggleCompleted()"/>
         </q-bar>
         <q-card-section v-if="nextUp" class="text-h4">
           {{ nextUp.title }}
@@ -48,7 +48,8 @@ import { TDLAPP } from 'src/TDLAPP'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { computed } from 'vue'
+import { Utils } from 'src/util'
+import { computed, ref, watch } from 'vue'
 
 const open = (task: Task) => TDLAPP.openTask(task)
 
@@ -69,7 +70,11 @@ const layerZero = computed(() => {
 
 const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
 const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.hard_postreqs.filter(y => !y.completed).length === 0).length > 0 : false
-const shouldSort = computed(() => hasTooManyInLayerZero() || hasNewTasksInLayerZero())
+const shouldSort = computed<boolean>({
+  get: () => hasTooManyInLayerZero() || hasNewTasksInLayerZero(),
+  set: x => { if(!x && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
+})
+
 
 const currentTask = computed(() => layerZero.value.length ? layerZero.value[0] : null)
 const nextUp = computed(() => {
