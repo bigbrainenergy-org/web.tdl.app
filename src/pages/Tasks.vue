@@ -28,21 +28,21 @@
                 style="min-height: 48px;"
               >
                 <q-item
-                  clickable
                   v-ripple
+                  clickable
                   @click="open(currentTask)"
                 >
                   <q-checkbox
                     v-model:model-value="currentTask.completed"
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
                     color="primary"
-                    keep-color />
+                    keep-color
+                    @update:model-value="updateTaskCompletedStatus(currentTask)" />
 
                   <q-item-section>
                     {{ currentTask.title }}
                   </q-item-section>
 
-                  <q-item-section side v-if="currentTask.notes">
+                  <q-item-section v-if="currentTask.notes" side>
                     <q-avatar icon="description">
                       <q-tooltip
                         anchor="center right"
@@ -53,7 +53,7 @@
                     </q-avatar>
                   </q-item-section>
 
-                  <q-item-section side v-if="currentTask.grabPostreqs(incompleteOnly).length">
+                  <q-item-section v-if="currentTask.grabPostreqs(incompleteOnly).length" side>
                     <q-chip
                     v-if="currentTask.grabPostreqs(incompleteOnly).length"
                     :style="currentTask.grabPostreqs(incompleteOnly).length > 5 ? 'background-color: red;' : 'background-color: gray;'">
@@ -61,13 +61,13 @@
                     </q-chip>
                   </q-item-section>
                   <q-item-section side>
-                    <q-btn outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" v-if="!currentTask.completed" />
+                    <q-btn v-if="!currentTask.completed" outline rounded label="ADD PRE" @click.stop="addTaskPre(currentTask)" />
                   </q-item-section>
 
                 </q-item>
               </q-intersection>
               <template v-if="tasks.length === 0">
-                <q-item clickable v-ripple>
+                <q-item v-ripple clickable>
                   <q-item-section>
                     <strong>Nothing yet!</strong>
                   </q-item-section>
@@ -106,7 +106,7 @@ const usr = useLocalSettingsStore()
 const layerZeroOnly = ref(usr.layerZeroOnly)
 const incompleteOnly = ref(usr.hideCompleted)
 
-const tasksPageSettings = ref({'Unblocked Only': layerZeroOnly, 'Incomplete Only': incompleteOnly})
+const tasksPageSettings = ref({ 'Unblocked Only': layerZeroOnly, 'Incomplete Only': incompleteOnly })
 
 watch(layerZeroOnly, () => {
   usr.layerZeroOnly = layerZeroOnly.value

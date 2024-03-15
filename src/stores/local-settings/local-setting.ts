@@ -20,6 +20,7 @@ interface LocalSettingsState {
   enableQuickSortOnNewTask: boolean
   enableQuickSortOnLayerZeroQTY: number
   backgroundMode: BackgroundMode
+  enableDeeperQuickSort: boolean
 }
 
 export const useLocalSettingsStore = defineStore('local-settings', {
@@ -38,7 +39,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       reverseTreeView: false,
       enableQuickSortOnNewTask: false,
       enableQuickSortOnLayerZeroQTY: 0,
-      backgroundMode: 'image'
+      backgroundMode: 'image',
+      enableDeeperQuickSort: false
     }
   },
   persist: true,

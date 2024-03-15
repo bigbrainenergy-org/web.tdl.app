@@ -82,7 +82,7 @@ export class TDLAPP {
       position: 'top',
       icon: 'fa-solid fa-check',
       actions: [
-        { label: 'Undo', color: 'white', handler: () => { useRepo(TaskRepo).toggleCompleted(task) } }
+        { label: 'Undo', color: 'white', handler: () => { task.toggleCompleted() } }
       ]
     })
   }

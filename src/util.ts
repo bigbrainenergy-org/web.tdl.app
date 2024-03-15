@@ -42,6 +42,11 @@ export class Utils {
   static onlyInLeftArray(leftArr: NodeKey[], rightArr: NodeKey[]) {
     return leftArr.filter(x => !rightArr.some(y => y.key === x.key))
   }
+  /**
+   * @param a an array
+   * @param b an array of the same type
+   * @returns array of elements shared by both arrays, i.e. inner join.
+   */
   static innerJoin<T>(a: T[], b: T[]) {
     const setB = new Set(b)
     return a.filter(x => setB.has(x))
