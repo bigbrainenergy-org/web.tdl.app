@@ -1,6 +1,6 @@
 <template>
   <div class="fixed-center" style="width: max(min(100%, 500px), 40%); text-align: center">
-      <q-card style="background-color: #1d1d1df6" class="q-ma-lg text-primary">
+      <q-card style="background-color: #1d1d1df6" class="q-ma-lg text-primary" :dark="useLocalSettingsStore().backgroundMode !== 'image'" flat bordered>
         <q-bar style="background-color: #333333">
           <div>IN FOCUS</div>
           <q-space />
@@ -19,7 +19,7 @@
           No tasks in this list!
         </q-card-section>
       </q-card>
-      <q-card style="background-color: #1d1d1df6; color: #5d5d5d; margin-top: 8%" class="q-ma-lg">
+      <q-card style="background-color: #1d1d1df6; color: #5d5d5d; margin-top: 8%" class="q-ma-lg"  :dark="useLocalSettingsStore().backgroundMode !== 'image'" flat bordered>
         <q-bar style="background-color: #333333">
           <div>UP NEXT</div>
           <q-space />

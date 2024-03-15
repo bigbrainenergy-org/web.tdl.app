@@ -13,8 +13,11 @@
       </q-card-section>
 
       <q-card-section class="text-center q-pa-md">
-        <TimeZoneSwitcher />
-        <LanguageSwitcher />
+        <div>
+          <TimeZoneSwitcher />
+          <LanguageSwitcher />
+          <BackgroundSwitcher />
+        </div>
         <q-btn
           class="q-ma-md"
           icon="fas fa-bell"
@@ -56,6 +59,7 @@ import { useAuthenticationStore } from 'src/stores/authentication/pinia-authenti
 import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
 import TimeZoneSwitcher from 'src/components/TimeZoneSwitcher.vue'
 import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
+import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
 import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
 
 defineComponent({name: 'SettingsPage'})

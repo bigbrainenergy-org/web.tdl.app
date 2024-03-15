@@ -2,24 +2,28 @@ import { defineStore } from 'pinia'
 // import { Model } from 'pinia-orm'
 // import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
 
-// export default class LocalSettings extends Model {
-//   static entity = 'local-settings'
 
-//   @Uid() declare id: number | null
-//   @Str('') declare taskSearch: string
-//   @Str('') declare selectedList: string
-//   @Attr([]) declare selectedTags: Array<string>
-//   @Str('') declare tagsFilter: string
-//   @Bool(false) declare hideCompleted: boolean
-//   @Bool(false) declare layerZeroOnly: boolean
+export type BackgroundMode = 'image' | '#000000' | '#220000'
 
-//   static piniaOptions = {
-//     persist: true
-//   }
-// }
+interface LocalSettingsState {
+  id: number | null
+  taskSearch: string
+  selectedList: string
+  selectedTags: Array<string>
+  tagsFilter: string
+  hideCompleted: boolean
+  layerZeroOnly: boolean
+  expandEnergyStats: boolean
+  expandAllWithSameID: boolean
+  maxGraphNodeRadius: number
+  reverseTreeView: boolean
+  enableQuickSortOnNewTask: boolean
+  enableQuickSortOnLayerZeroQTY: number
+  backgroundMode: BackgroundMode
+}
 
 export const useLocalSettingsStore = defineStore('local-settings', {
-  state: () => {
+  state: (): LocalSettingsState => {
     return {
       id: null,
       taskSearch: '',
@@ -33,7 +37,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       maxGraphNodeRadius: 100,
       reverseTreeView: false,
       enableQuickSortOnNewTask: false,
-      enableQuickSortOnLayerZeroQTY: 0
+      enableQuickSortOnLayerZeroQTY: 0,
+      backgroundMode: 'image'
     }
   },
   persist: true,

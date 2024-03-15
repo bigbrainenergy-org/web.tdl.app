@@ -4,11 +4,11 @@
     v-model="editTimeZone"
     class="q-my-md"
     filled
-    @update:model-value="updateTimeZone"
     :options="timeZones"
     option-value="value"
     option-label="name"
     label="Time Zone"
+    @update:model-value="updateTimeZone"
   />
 </template>
 
