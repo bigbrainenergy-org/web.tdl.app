@@ -7,6 +7,7 @@
         <template v-if="currentTask.completed !== true">
           <q-btn class="q-ma-sm" size="md" color="positive" label="Mark Complete" @click.stop="toggleComplete(currentTask as Task)" />
           <q-btn class="q-ma-sm" size="md" color="positive" label="Prioritize" @click.stop="prioritize()" />
+          <q-btn class="q-ma-sm" size="md" color="positive" label="Slice Task" @click.stop="TDLAPP.sliceTask(currentTask as Task)" />
         </template>
         <template v-else>
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)" />

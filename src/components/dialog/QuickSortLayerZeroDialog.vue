@@ -170,6 +170,11 @@ const menuItems: SimpleMenuItem<Task>[] = [
     action: taskDetails
   },
   {
+    label: 'Slice Into Pieces',
+    icon: 'fa-solid fa-scissors',
+    action: TDLAPP.sliceTask
+  },
+  {
     label: 'Add Prerequisite',
     icon: 'fa-solid fa-square-plus',
     action: addPres
