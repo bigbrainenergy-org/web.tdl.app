@@ -4,6 +4,7 @@
         <q-bar style="background-color: #333333">
           <div>IN FOCUS</div>
           <q-space />
+          <q-btn dense flat icon="fa fa-scissors" class="q-pr-sm" @click="slice(currentTask as Task)"/>
           <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(currentTask as Task)"/>
           <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(currentTask as Task)">
             <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
@@ -48,15 +49,13 @@ import { TDLAPP } from 'src/TDLAPP'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { Utils } from 'src/util'
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 const open = (task: Task) => TDLAPP.openTask(task)
 
-const addTaskPre = (currentTask: Task) => {
-  // TODO: research and actually understand the events lifecycle of a dialog
-  TDLAPP.addPrerequisitesDialog(currentTask)
-}
+const addTaskPre = TDLAPP.addPrerequisitesDialog
+
+const slice = TDLAPP.sliceTask
 
 const layerZero = computed(() => {
   const incomplete = (x: Task) => !x.completed
@@ -74,7 +73,6 @@ const shouldSort = computed<boolean>({
   get: () => hasTooManyInLayerZero() || hasNewTasksInLayerZero(),
   set: x => { if(!x && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
 })
-
 
 const currentTask = computed(() => layerZero.value.length ? layerZero.value[0] : null)
 const nextUp = computed(() => {

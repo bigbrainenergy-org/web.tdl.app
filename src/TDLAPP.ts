@@ -6,6 +6,7 @@ import UpdateTaskDialog from './components/dialog/UpdateTaskDialog.vue'
 import TaskSearchDialog from './components/dialog/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
 import { λ } from './types'
+import TaskSlicerDialog from './components/dialog/TaskSlicerDialog.vue'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number) => {
@@ -72,6 +73,12 @@ export class TDLAPP {
           this.addPost(currentTask, payload.task.id)
         }
       }
+    })
+  }
+  static sliceTask = (task: Task) => {
+    return Dialog.create({
+      component: TaskSlicerDialog,
+      componentProps: { task }
     })
   }
   static notifyUpdatedCompletionStatus: λ<Task, λ> = (task: Task) => () => {

@@ -185,6 +185,51 @@ export class Task extends Model implements iRecord {
         Utils.handleError('Error updating status of task.'))
   }
 
+  /***
+   * terrible
+   */
+  async split(slices: number) {
+    const repo = useRepo(TaskRepo)
+    const title = (number: number) => `${this.title} (${number}/${slices})`
+    if(slices <= 1) throw new Error(`Cannot slice a task into ${slices} piece(s).`)
+    // copy the prereq and postreq id arrays
+    const prereq_ids = Array.from(this.hard_prereq_ids)
+    for(let i = 0; i < this.hard_prereq_ids.length; i++) {
+      await repo.removePre(this as Task, this.hard_prereq_ids[i])
+    }
+    // make a template object (strip away title, prereqs, and postreqs)
+    const templateTaskSliceObj = (number: number): CreateTaskOptions => ({
+      list_id: this.list_id,
+      title: title(number),
+      notes: this.notes,
+      deadline_at: this.deadline_at,
+      prioritize_at: this.prioritize_at,
+      remind_me_at: this.remind_me_at,
+      review_at: this.review_at,
+      hard_prereq_ids: prereq_ids,
+      hard_postreq_ids: [],
+      mental_energy_required: this.mental_energy_required,
+      physical_energy_required: this.physical_energy_required
+    })
+    // collect the generated slices
+    const newSlices: Array<CreateTaskOptions> = []
+    const resultTasks: Array<Task> = []
+    // the last slice is the original task record
+    for(let i = 0; i < slices - 1; i++) {
+      newSlices.push(templateTaskSliceObj(i+1))
+    }
+    for(let i = 0; i < newSlices.length; i++) {
+      resultTasks.push(await repo.add(newSlices[i]))
+    }
+    for(let i = 0; i < prereq_ids.length; i++) {
+      await repo.addPre(resultTasks[0], prereq_ids[i])
+    }
+    for(let i = 1; i < resultTasks.length; i++) {
+      await repo.addPre(resultTasks[i], resultTasks[i-1].id)
+    }
+    await repo.addPre(this, resultTasks[resultTasks.length-1].id)
+  }
+
   static piniaOptions = {
     persist: true
   }
