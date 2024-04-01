@@ -6,6 +6,7 @@
           <q-card-actions>
             <SettingsButton v-model:settings="graphSettings" name="Graph Settings" />
             <q-space />
+            <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <svg ref="graphRef" id="graphElement"></svg>  
@@ -14,15 +15,6 @@
     </div>
   </q-page>
 </template>
-
-<style>
-svg text{
-   -webkit-user-select: none;
-   -moz-user-select: none;
-   -ms-user-select: none;
-   user-select: none;
-}
-</style>
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
@@ -257,4 +249,15 @@ const refresh = reInitializeGraph
 onMounted(initializeGraph)
 
 const openSearchDialog = () => TDLAPP.searchDialog()
+const biggest = (prev: d3Node<Task>, curr: d3Node<Task>) => curr.radius > prev.radius ? curr : prev
+const openLargest = () => TDLAPP.openTask(allTaskNodes.reduce(biggest).obj)
 </script>
+
+<style>
+svg text{
+   -webkit-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+   user-select: none;
+}
+</style>

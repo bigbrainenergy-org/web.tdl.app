@@ -150,13 +150,24 @@ const addPres = (x: Task) => {
   .onDismiss(() => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
 }
 
-const complete = (x: Task) => x.toggleCompleted().then(() => { refreshLayerZero(); tryNewPair() })
+const reloadTasks = () => { refreshLayerZero(); tryNewPair() }
+
+const complete = (x: Task) => x.toggleCompleted().then(reloadTasks)
+const taskDetails = (x: Task) => TDLAPP.openTask(x)
+  .onCancel(reloadTasks)
+  .onDismiss(reloadTasks)
+  .onOk(reloadTasks)
 
 const menuItems: SimpleMenuItem<Task>[] = [
   {
     label: 'Mark Complete',
     icon: 'fa-solid fa-clipboard-check',
     action: complete
+  },
+  {
+    label: 'Details',
+    icon: 'fa-solid fa-circle-info',
+    action: taskDetails
   },
   {
     label: 'Add Prerequisite',
