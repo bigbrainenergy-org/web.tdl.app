@@ -9,7 +9,7 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <q-input v-model.number="slices" filled clearable label="Number of Slices" />
+            <q-input v-model.number="slices" filled clearable label="Number of Slices" @touchstart.stop @mousedown.stop/>
             <br>
             <div class="row">
               <div class="col-grow">
