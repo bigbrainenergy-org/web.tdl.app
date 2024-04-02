@@ -194,8 +194,8 @@ export class Task extends Model implements iRecord {
     if(slices <= 1) throw new Error(`Cannot slice a task into ${slices} piece(s).`)
     // copy the prereq and postreq id arrays
     const prereq_ids = Array.from(this.hard_prereq_ids)
-    for(let i = 0; i < this.hard_prereq_ids.length; i++) {
-      await repo.removePre(this as Task, this.hard_prereq_ids[i])
+    for(let i = 0; i < prereq_ids.length; i++) {
+      await repo.removePre(this, prereq_ids[i])
     }
     // make a template object (strip away title, prereqs, and postreqs)
     const templateTaskSliceObj = (number: number): CreateTaskOptions => ({

@@ -150,6 +150,13 @@ const addPres = (x: Task) => {
   .onDismiss(() => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
 }
 
+const sliceTask = (x: Task) => {
+  TDLAPP.sliceTask(x)
+  .onOk(     () => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
+  .onCancel( () => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
+  .onDismiss(() => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
+}
+
 const reloadTasks = () => { refreshLayerZero(); tryNewPair() }
 
 const complete = (x: Task) => x.toggleCompleted().then(reloadTasks)
@@ -172,7 +179,7 @@ const menuItems: SimpleMenuItem<Task>[] = [
   {
     label: 'Slice Into Pieces',
     icon: 'fa-solid fa-scissors',
-    action: TDLAPP.sliceTask
+    action: sliceTask
   },
   {
     label: 'Add Prerequisite',
