@@ -23,7 +23,7 @@
           @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)">
           <template #label>
             <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped">
+              <q-item-label lines="2" class="wrapped" :style="isRelated">
                 {{ currentPair.data.a.title }}
               </q-item-label>
             </q-item-section>
@@ -54,7 +54,7 @@
           @click.stop="addRule(currentPair.data.b as Task, currentPair.data.a as Task)">
           <template #label>
             <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped">
+              <q-item-label lines="2" class="wrapped" :style="isRelated">
                 {{ currentPair.data.b.title }}
               </q-item-label>
             </q-item-section>
@@ -230,10 +230,12 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
     a: arr.data[ints.a],
     b: arr.data[ints.b]
   }
-  const remakeTMP = () => { tmp = {
-    a: arr.data[ints.a],
-    b: arr.data[ints.b]
-  } }
+  const remakeTMP = () => { 
+    tmp = {
+      a: arr.data[ints.a],
+      b: arr.data[ints.b]
+    }
+  }
   const rotate = (x: number, reverse = false) => {
     reverse ? x-- : x++
     if(x >= arr.data.length) x = 0
@@ -320,6 +322,8 @@ try {
 }
 if(firstPair === null || typeof firstPair === 'undefined') throw new Error('Could not generate first pair')
 const currentPair = ref<withID<pair<Task>>>(firstPair)
+
+const isRelated = computed(() => currentPair.value.data.a.hasRelationTo(currentPair.value.data.b.id) ? 'color: red' : undefined)
 
 const forget = (id: number) => {
   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id

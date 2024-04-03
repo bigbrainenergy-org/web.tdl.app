@@ -1,4 +1,5 @@
 import { AxiosError } from 'axios'
+import { Model, PrimaryKey } from 'pinia-orm'
 
 // hahaha.... started as a joke but I kindof like it.
 export type λ<inputType = void | unknown, returnType = void> = (inputArgument: inputType) => returnType
@@ -28,3 +29,28 @@ export type SimpleMenuItem<T> = {
 }
 
 export type ApiError = Error | AxiosError<unknown, any>
+
+export class Queue<T> {
+  private set: Set<T>
+  constructor() {
+    this.set = new Set()
+  }
+  enqueue(value: T): void {
+    this.set.add(value)
+  }
+  enqueueAll(values: T[]): void {
+    values.forEach(x => this.enqueue(x))
+  }
+  dequeue(): T {
+    const values = this.set.values()
+    const value = values.next().value as T
+    this.set.delete(value)
+    return value
+  }
+  get size(): number {
+    return this.set.size
+  }
+  has(value: T): boolean {
+    return this.set.has(value)
+  }
+}

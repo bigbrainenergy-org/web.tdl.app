@@ -28,7 +28,7 @@
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
             <q-item-section class="vertical-top wrapped" style="width: 90%;">
-              <q-item-label lines="2">
+              <q-item-label lines="2" :style="colorize(item)">
                 {{ item.title }}
               </q-item-label>
             </q-item-section>
@@ -52,15 +52,10 @@
   </div>
 </template>
 
-<style>
-.wrapped {
-  word-break: break-spaces;
-  white-space: break-spaces !important;
-}
-</style>
-
-<script setup lang="ts" generic="T extends { completed: boolean, title: string }">
+<script setup lang="ts">
+import { Task } from 'src/stores/tasks/task'
 import { SimpleMenuItem, λ } from 'src/types'
+import { computed, ref } from 'vue'
 
 export interface EntityType {
   singular: string
@@ -68,9 +63,9 @@ export interface EntityType {
 }
 
 interface Props {
-  items: Array<T>
+  items: Array<Task>
   dependencyType: EntityType // eg. Prerequisites (capitalize)
-  menuItems: Array<SimpleMenuItem<T>>
+  menuItems: Array<SimpleMenuItem<Task>>
 }
 
 const prop = defineProps<Props>()
@@ -78,4 +73,27 @@ const prop = defineProps<Props>()
 const addItemLabel = `Add ${prop.dependencyType.plural}`
 
 const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem' ])
+
+const checkTaskAgainstOthersInArray = (arr: Task[]) => {
+  const redundantRules = new Set<number>()
+  for(let i = 0; i < arr.length-1; i++) {
+    for(let j = i; j < arr.length; j++) {
+      if(arr[i].hasRelationTo(arr[j].id)) {
+        redundantRules.add(arr[i].id)
+        redundantRules.add(arr[j].id)
+      }
+    }
+  }
+  return redundantRules
+}
+//const colorize = (task: Task) => redu
+const redundantRules = computed(() => checkTaskAgainstOthersInArray(prop.items))
+const colorize = (task: Task) => redundantRules.value.has(task.id) ? 'color: orange' : undefined
 </script>
+
+<style>
+.wrapped {
+  word-break: break-spaces;
+  white-space: break-spaces !important;
+}
+</style>

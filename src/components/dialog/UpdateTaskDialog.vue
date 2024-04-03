@@ -520,5 +520,4 @@ const postreqMenuItems = [
     action: dialogInsertBetweenPost
   }
 ]
-
 </script>

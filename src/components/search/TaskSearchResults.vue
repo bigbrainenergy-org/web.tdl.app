@@ -26,7 +26,7 @@
                 clickable
                 @click="selectTask(task as Task)"
               >
-                <q-item-section>
+                <q-item-section :style="colorize(task.id)">
                   {{ task.title }}
                 </q-item-section>
               </q-item>
@@ -44,6 +44,8 @@ import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
 import type { λ } from '../../types'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+import { onMounted } from 'vue'
 
 interface Prop {
   search?: string
@@ -59,6 +61,15 @@ const emit = defineEmits([
   'select',
   'create'
 ])
+
+const checkTaskRelation = (task: Task) => {
+  return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
+}
+
+const redundantTasks = ref<Map<number, boolean>>(new Map())
+const colorize = (id: number) => redundantTasks.value.get(id) ? 'color: orange' : 'color: black'
+
+onMounted(() => useAllTasksStore().regenerate())
 
 // can't set this in withDefaults... don't even try
 // DON'T
@@ -99,9 +110,7 @@ const searchOptions = {
   keys: ['title']
 }
 
-const tasks = computed(() => {
-  return tr.withAll().where(filterish.value(props.taskID)).get()
-})
+const tasks = computed(() => tr.withAll().where(filterish.value(props.taskID)).get())
 
 const searchForTasks = () => {
   if(!props.search) { return } // Guard clause if search is empty
@@ -131,6 +140,16 @@ const searchForTasks = () => {
       return firstIndex - secondIndex
     }
   )
+  kickOffRedundancyCheck()
+}
+
+const kickOffRedundancyCheck = () => {
+  // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
+  // note: I tried storing the traversed Set in pinia but it was running into lockups.
+  redundantTasks.value.clear()
+  results.value.map(x => {
+    redundantTasks.value.set(x.id, typeof props.taskID === 'undefined' ? false : x.hasRelationTo(props.taskID))
+  })
 }
 
 const createTask = async () => {

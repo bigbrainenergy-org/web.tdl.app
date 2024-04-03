@@ -1,6 +1,6 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
@@ -16,15 +16,15 @@
       @do-a-search="key++" />
 
       <TaskSearchResults
-      :search="searchString"
+      :key="key"
+      :search="searchString" 
       :dialog-title="dialogTitle" 
       :taskID="taskID" 
-      :search-label="searchLabel" 
+      :search-label="searchLabel"
       :results-title="resultsTitle"
       :showCreateButton="showCreateButton"
       :initial-filter="initialFilter"
-      @select="(e) => selectTask(e.task)"
-      :key="key" />
+      @select="(e) => selectTask(e.task)" />
 
     </q-card>
   </q-dialog>
@@ -35,7 +35,7 @@ import { useDialogPluginComponent } from 'quasar'
 
 import { ref } from 'vue';
 
-import { Task, TaskRepo } from 'src/stores/tasks/task';
+import { Task } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
 // import { useRepo } from 'pinia-orm'
 // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
