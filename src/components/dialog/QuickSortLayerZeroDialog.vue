@@ -91,6 +91,7 @@ import { Utils } from 'src/util'
 import { watch } from 'vue'
 import { computed, ref } from 'vue'
 import SettingsButton from '../SettingsButton.vue'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
@@ -207,9 +208,7 @@ const getSkippedPairsForID = (id: number | null): pair<Task>[] => {
   return tmp.data
 }
 
-const isSkipped = (item: withID<pair<PostWeightedTask>>) => {
-  return getSkippedPairsForID(item.id).some(x => eq(x, item.data))
-}
+const isSkipped = (item: withID<pair<PostWeightedTask>>) => getSkippedPairsForID(item.id).some(x => eq(x, item.data))
 
 const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
   
@@ -218,7 +217,14 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
   // todo: revamp the forget() function
   if(arr.data.length === 2) {
     const lastPair: pair<PostWeightedTask> = { a: arr.data[0], b: arr.data[1] }
-    if(isSkipped({ id: arr.id, data: lastPair })) return null
+    if(isSkipped({ id: arr.id, data: lastPair })) {
+      console.warn('the last available pair in the array was already skipped. bailing out.')
+      return null
+    }
+    if(lastPair.a.t.hasRelationTo(lastPair.b.t.id)) {
+      console.warn('the last available pair in the array is redundant. bailing out.')
+      return null
+    }
     return { id: arr.id, data: { a: lastPair.a.t, b: lastPair.b.t } }
   }
   let ints: pair<number> = {
@@ -266,6 +272,11 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
       ints.b = rotate(ints.b)
       wompwomp('rolls')
     }
+    while(tmp.a.t.hasRelationTo(tmp.b.t.id, { incompleteOnly: false, useStore: false })) {
+      console.log('found a redundant pair!', { tmp })
+      ints.a = rotate(ints.a, true)
+      wompwomp('permutations')
+    }
   }
   if(permutationDecrementor <= 0) return null
   return { id: arr.id, data: { a: tmp.a.t, b: tmp.b.t } }
@@ -304,7 +315,9 @@ const generateNewPair = (): withID<pair<Task>> => {
   if(layerOne.value !== null && Math.random() > 0.4 && layerOne.value.length > 0) {
     console.debug('generating layer one pair!')
     tmp = tryGetLayerOnePair()
-    if(tmp !== null) return tmp
+    if(tmp !== null) {
+      return tmp
+    }
     console.warn('falling back to selecting a layer zero task pair.')
   }
   console.debug('generating a layer zero pair!')
@@ -323,7 +336,7 @@ try {
 if(firstPair === null || typeof firstPair === 'undefined') throw new Error('Could not generate first pair')
 const currentPair = ref<withID<pair<Task>>>(firstPair)
 
-const isRelated = computed(() => currentPair.value.data.a.hasRelationTo(currentPair.value.data.b.id) ? 'color: red' : undefined)
+const isRelated = computed(() => currentPair.value.data.a.hasRelationTo(currentPair.value.data.b.id, { incompleteOnly: true, useStore: false }) ? 'color: red' : undefined)
 
 const forget = (id: number) => {
   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
