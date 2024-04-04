@@ -27,6 +27,11 @@
             icon="fa-solid fa-refresh"
             @click="pullFresh"
           />
+          <q-btn
+          class="q-ma-md"
+          color="red"
+          @click="profileTimer"
+          />
 
           <q-space />
 
@@ -117,13 +122,14 @@ import errorNotification from 'src/hackerman/ErrorNotification';
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
 import { UserRepo } from 'src/stores/users/user'
 import { useRepo } from 'pinia-orm'
-import { CreateTaskOptions, TaskRepo } from 'src/stores/tasks/task'
+import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { Utils } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
 import { AxiosError } from 'axios'
 import { useAxiosStore } from 'src/stores/axios-store'
 import { ComponentPublicInstance } from 'vue'
 import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 console.debug('In Main Layout')
 
@@ -285,4 +291,107 @@ watch(backgroundModeSetting, () => {
     else currentBackgroundMode.value = incrementHexColor(currentBackgroundMode.value, backgroundModeSetting.value)
   }, 10)
 })
+
+const profileTimer = () => {
+  const times = 5
+  // Time the repo.withAll() function
+  // console.time('withAll');
+  // for(let i = 0; i < times; i++) {
+  //   const result1 = useRepo(TaskRepo).withAll().get();
+  //   result1.map(x => x.grabPrereqs(true))
+  //   const restultSet = new Map(result1.map(x => [x.id, x]))
+  // }
+  // console.timeEnd('withAll');
+
+  // console.time('withAllPreDirect');
+  // for(let i = 0; i < times; i++) {
+  //   const result1 = useRepo(TaskRepo).withAll().get();
+  //   result1.map((x: Task) => x.hard_prereqs.filter(y => !y.completed))
+  //   const restultSet = new Map(result1.map(x => [x.id, x]))
+  // }
+  // console.timeEnd('withAllPreDirect');
+
+  // console.time('withwith');
+  // for(let i = 0; i < times; i++) {
+  //   const result1 = useRepo(TaskRepo).with('hard_prereqs').with('hard_postreqs').get();
+  //   result1.map(x => x.grabPrereqs(true))
+  //   const restultSet = new Map(result1.map(x => [x.id, x]))
+  // }
+  // console.timeEnd('withwith');
+
+  // console.time('withwithPreDirect');
+  // for(let i = 0; i < times; i++) {
+  //   const result1 = useRepo(TaskRepo).with('hard_prereqs').with('hard_postreqs').get();
+  //   result1.map((x: Task) => x.hard_prereqs.filter(y => !y.completed))
+  //   const restultSet = new Map(result1.map(x => [x.id, x]))
+  // }
+  // console.timeEnd('withwithPreDirect');
+
+  // console.time('withone');
+  // for(let i = 0; i < times; i++) {
+  //   const result1 = useRepo(TaskRepo).with('hard_prereqs').get();
+  //   result1.map(x => x.grabPrereqs(true))
+  //   const restultSet = new Map(result1.map(x => [x.id, x]))
+  // }
+  // console.timeEnd('withone');
+
+  // console.time('withonePreDirect');
+  // for(let i = 0; i < times; i++) {
+  //   const result1 = useRepo(TaskRepo).with('hard_prereqs').get();
+  //   result1.map((x: Task) => x.hard_prereqs.filter(y => !y.completed))
+  //   const restultSet = new Map(result1.map(x => [x.id, x]))
+  // }
+  // console.timeEnd('withonePreDirect');
+
+  // Time the repo.All().forEach(action) function
+  // console.time('iterate all');
+  // for(let i = 0; i < times; i++) {
+  //   const tasks = useRepo(TaskRepo).all()
+  //   const resultSet = new Map()
+  //   tasks.forEach(x => {
+  //     x.grabPrereqs(true)
+  //     resultSet.set(x.id, x)
+  //   })
+  // }
+  // console.timeEnd('iterate all');
+
+  console.time('simply all')
+  for(let i = 0; i < times; i++) {
+    const resultSet = new Map(useRepo(TaskRepo).withAll().get().map(x => [x.id, x]))
+  }
+  console.timeEnd('simply all')
+
+  console.time('simply access store')
+  useAllTasksStore().regenerate()
+  for(let i = 0; i < times; i++) {
+    const resultSet = useAllTasksStore().allTasks
+  }
+  console.timeEnd('simply access store')
+
+  // console.time('store instance')
+  // for(let i = 0; i < times; i++) {
+  //   useAllTasksStore().regenerate()
+  //   const resultSet = useAllTasksStore().allTasks
+  //   resultSet.forEach(x => [x.id, resultSet.has(x.id)])
+  // }
+  // console.timeEnd('store instance')
+
+  // console.time('store direct')
+  // for(let i = 0; i < times; i++) {
+  //   useAllTasksStore().regenerate()
+  //   useAllTasksStore().allTasks.forEach(x => [x.id, useAllTasksStore().allTasks.has(x.id)])
+  // }
+  // console.timeEnd('store direct')
+
+  // console.time('iterate tiny');
+  // for(let i = 0; i < times; i++) {
+  //   const tasks = useRepo(TaskRepo).all()
+  //   const resultSet = new Map()
+  //   for(let j = 0; j < tasks.length / 10; j++) {
+  //     tasks[j].grabPostreqs(true)
+  //     resultSet.set(tasks[j].id, tasks[j])
+  //   }
+  // }
+  // console.timeEnd('iterate tiny');
+}
 </script>

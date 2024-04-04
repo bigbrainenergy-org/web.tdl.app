@@ -13,7 +13,9 @@ export const useAllTasksStore = defineStore('all-tasks', {
   persist: false,
   actions: {
     regenerate() {
+      console.time('regen')
       this.allTasks = new Map<number, Task>(useRepo(TaskRepo).withAll().get().map(x => [x.id, x]))
+      console.timeEnd('regen')
     }
   }
 })

@@ -10,7 +10,7 @@ import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
-import { Queue } from 'src/types'
+import { Queue, λ } from 'src/types'
 import { useAllTasksStore } from '../performance/all-tasks'
 
 export interface CreateTaskOptions {
@@ -47,6 +47,21 @@ export interface UpdateTaskOptions extends iOptions {
   payload: {
     task: AllOptionalTaskProperties
   }
+}
+
+interface RecursiveGetterOptions {
+  /**
+   * exclude completed tasks from the query
+   */
+  incompleteOnly: boolean
+  /**
+   * any task ids at which traversal can stop - for performance
+   */
+  targets: Set<number>
+  /**
+   * use only if allTasksStore has been regenerated
+   */
+  useStore: boolean
 }
 
 export class Task extends Model implements iRecord {
@@ -232,103 +247,81 @@ export class Task extends Model implements iRecord {
     await repo.addPre(this, resultTasks[resultTasks.length-1].id)
   }
 
-  /**
-   * 
-   * @param id The task id to traverse and find
-   * @returns true if the id is found among the tasks listed before the current
-   * @description YOU MUST CALL useAllTasksStore().regenerate() SHORTLY BEFORE USING THIS
-   */
-  // isIDAbove(id: number): Promise<boolean> {
-  //   return new Promise((resolve, reject) => {
-  //     const allTasks = useAllTasksStore().allTasks
-  //     const alreadyScanned = new Set<number>()
-  //     const queue = new Queue<number>()
-  //     queue.enqueueAll(this.grabPrereqs(true).map(x => x.id))
-  //     while(queue.size > 0) {
-  //       const currentID = queue.dequeue()
-  //       alreadyScanned.add(currentID)
-  //       const prereqs = allTasks.get(currentID)?.grabPrereqs(true)
-  //         .map(x => x.id)
-  //         .filter(x => !queue.has(x) && !alreadyScanned.has(x))
-  //       if(typeof prereqs === 'undefined') continue
-  //       if(prereqs.length === 0) continue
-  //       if(prereqs.includes(id)) resolve(true)
-  //       queue.enqueueAll(prereqs)
-  //     }
-  //     resolve(false)
-  //   })
-  // }
-
-  isIDAbove(id: number): boolean {
-    const allTasks = useAllTasksStore().allTasks
-    const alreadyScanned = new Set<number>()
+/**
+ * @param {RecursiveGetterOptions} options - Options for the function
+ * @returns a Set of all the task ids that must occur prior to this task
+ */
+  preIDsRecursive(options: RecursiveGetterOptions): Set<number> {
+    const allTasks = options.useStore ? useAllTasksStore().allTasks : new Map(useRepo(TaskRepo).with('hard_prereqs').get().map(x => [x.id, x]))
+    const allPres = new Set<number>()
     const queue = new Queue<number>()
-    queue.enqueueAll(this.grabPrereqs(true).map(x => x.id))
+    const incFilter: λ<{ completed: boolean }, boolean> = options.incompleteOnly ? x => true : x => !x.completed
+    queue.enqueueAll(allTasks.get(this.id)!.hard_prereqs.filter(incFilter).map(x => x.id))
+    let tmpID = 0
     while(queue.size > 0) {
-      const currentID = queue.dequeue()
-      alreadyScanned.add(currentID)
-      const prereqs = allTasks.get(currentID)?.grabPrereqs(true)
-        .map(x => x.id)
-        .filter(x => !queue.has(x) && !alreadyScanned.has(x))
-      if(typeof prereqs === 'undefined') continue
-      if(prereqs.length === 0) continue
-      if(prereqs.includes(id)) return true
-      queue.enqueueAll(prereqs)
+      tmpID = queue.dequeue()
+      if(allPres.has(tmpID)) continue
+      allPres.add(tmpID)
+      if(options.targets.has(tmpID)) continue
+      queue.enqueueAll(allTasks.get(tmpID)!.hard_prereqs.filter(incFilter).map(x => x.id))
     }
-    return false
+    return allPres
   }
 
   /**
    * 
-   * @param id The task id to traverse and find
-   * @returns true if the id is found among the tasks listed after the current
-   * @description YOU MUST CALL useAllTasksStore().regenerate() SHORTLY BEFORE USING THIS
+   * @param options 
+   * @returns 
    */
-  // isIDBelow(id: number): Promise<boolean> {
-  //   return new Promise((resolve, reject) => {
-  //     const allTasks = useAllTasksStore().allTasks
-  //     const alreadyScanned = new Set<number>()
-  //     const queue = new Queue<number>()
-  //     queue.enqueueAll(this.grabPostreqs(true).map(x => x.id))
-  //     while(queue.size > 0) {
-  //       const currentID = queue.dequeue()
-  //       alreadyScanned.add(currentID)
-  //       const postreqs = allTasks.get(currentID)?.grabPostreqs(true)
-  //         .map(x => x.id).filter(x => !queue.has(x) && !alreadyScanned.has(x))
-  //       if(typeof postreqs === 'undefined') continue
-  //       if(postreqs.length === 0) continue
-  //       if(postreqs.includes(id)) resolve(true)
-  //       queue.enqueueAll(postreqs)
-  //     }
-  //     resolve(false)
-  //   })
-  // }
-
-  isIDBelow(id: number): boolean {
-    const allTasks = useAllTasksStore().allTasks
-    const alreadyScanned = new Set<number>()
+  allPostIDsRecursive(options: RecursiveGetterOptions): Set<number> {
+    const allTasks = options.useStore ? useAllTasksStore().allTasks : new Map(useRepo(TaskRepo).with('hard_postreqs').get().map(x => [x.id, x]))
+    const allPosts = new Set<number>()
     const queue = new Queue<number>()
-    queue.enqueueAll(this.grabPostreqs(true).map(x => x.id))
+    const incFilter: λ<{ completed: boolean }, boolean> = options.incompleteOnly ? x => true : x => !x.completed
+    queue.enqueueAll(allTasks.get(this.id)!.hard_postreqs.filter(incFilter).map(x => x.id))
+    let tmpID = 0
     while(queue.size > 0) {
-      const currentID = queue.dequeue()
-      alreadyScanned.add(currentID)
-      const postreqs = allTasks.get(currentID)?.grabPostreqs(true)
-        .map(x => x.id).filter(x => !queue.has(x) && !alreadyScanned.has(x))
-      if(typeof postreqs === 'undefined') continue
-      if(postreqs.length === 0) continue
-      if(postreqs.includes(id)) return true
-      queue.enqueueAll(postreqs)
+      tmpID = queue.dequeue()
+      if(allPosts.has(tmpID)) continue
+      allPosts.add(tmpID)
+      if(options.targets.has(tmpID)) continue
+      queue.enqueueAll(allTasks.get(tmpID)!.hard_postreqs.filter(incFilter).map(x => x.id))
     }
-    return false
+    return allPosts
   }
 
-  // hasRelationTo(id: number) {
-  //   try { return Promise.any([this.isIDAbove(id), this.isIDBelow(id)]) }
-  //   catch { return false }
-  // }
+  isIDAbove(id: number, options = { incompleteOnly: true, useStore: false }): boolean {
+    const opts = { incompleteOnly: options.incompleteOnly, targets: new Set([id]), useStore: options.useStore }
+    const allPreIDs = this.preIDsRecursive(opts)
+    return allPreIDs.has(id)
+  }
 
-  hasRelationTo(id: number) {
-    return this.isIDAbove(id) || this.isIDBelow(id)
+  isIDBelow(id: number, options = { incompleteOnly: true, useStore: false }): boolean {
+    const opts = { incompleteOnly: options.incompleteOnly, targets: new Set([id]), useStore: options.useStore }
+    const allPostIDs = this.allPostIDsRecursive(opts)
+    return allPostIDs.has(id)
+  }
+
+  anyIDsAbove(ids: number[], options = { incompleteOnly: true, targets: new Set<number>(), useStore: false }): Map<number, boolean> {
+    const allIDsAbove = this.preIDsRecursive(options)
+    return new Map(ids.map(x => [x, allIDsAbove.has(x)]))
+  }
+
+  anyIDsBelow(ids: number[], options = { incompleteOnly: true, targets: new Set<number>(), useStore: false }): Map<number, boolean> {
+    const allIDsBelow = this.allPostIDsRecursive(options)
+    return new Map(ids.map(x => [x, allIDsBelow.has(x)]))
+  }
+
+  hasRelationTo(id: number, options = { incompleteOnly: true, useStore: false }) {
+    const opts = { incompleteOnly: options.incompleteOnly, useStore: options.useStore }
+    return this.isIDAbove(id, opts) || this.isIDBelow(id, opts)
+  }
+
+  BulkHasRelationTo(ids: number[], options = { incompleteOnly: true, useStore: false }) {
+    const opts = { incompleteOnly: options.incompleteOnly, targets: new Set(ids), useStore: options.useStore }
+    const result = this.anyIDsAbove(ids, opts)
+    this.anyIDsBelow(ids, opts).forEach((val, key) => { if(val) result.set(key, val) })
+    return result
   }
 
   static piniaOptions = {

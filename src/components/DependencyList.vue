@@ -53,9 +53,13 @@
 </template>
 
 <script setup lang="ts">
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { Task } from 'src/stores/tasks/task'
 import { SimpleMenuItem, λ } from 'src/types'
-import { computed, ref } from 'vue'
+import { onMounted } from 'vue'
+import { onUpdated } from 'vue'
+import { ref } from 'vue'
 
 export interface EntityType {
   singular: string
@@ -74,20 +78,25 @@ const addItemLabel = `Add ${prop.dependencyType.plural}`
 
 const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem' ])
 
-const checkTaskAgainstOthersInArray = (arr: Task[]) => {
-  const redundantRules = new Set<number>()
-  for(let i = 0; i < arr.length-1; i++) {
-    for(let j = i; j < arr.length; j++) {
-      if(arr[i].hasRelationTo(arr[j].id)) {
-        redundantRules.add(arr[i].id)
-        redundantRules.add(arr[j].id)
-      }
-    }
-  }
-  return redundantRules
+const updateRedundants = () => {
+  console.time('updateRedundants')
+  redundantRules.value.clear()
+  if(prop.items.length === 0) return
+  console.warn(`updating redundant check for ${prop.items.length} dependents`)
+  const arr = prop.items.map(x => x.id)
+  useAllTasksStore().regenerate()
+  prop.items.forEach(x => {
+    const arrExcludingX = arr.filter(y => y !== x.id && !redundantRules.value.has(y))
+    const results = x.BulkHasRelationTo(arrExcludingX, { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: true })
+    results.forEach((val: boolean, key: number) => { if(val) redundantRules.value.add(key) })
+  })
+  console.timeEnd('updateRedundants')
 }
+
 //const colorize = (task: Task) => redu
-const redundantRules = computed(() => checkTaskAgainstOthersInArray(prop.items))
+const redundantRules = ref<Set<number>>(new Set<number>())
+onMounted(updateRedundants)
+onUpdated(updateRedundants)
 const colorize = (task: Task) => redundantRules.value.has(task.id) ? 'color: orange' : undefined
 </script>
 

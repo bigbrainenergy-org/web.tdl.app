@@ -54,3 +54,8 @@ export class Queue<T> {
     return this.set.has(value)
   }
 }
+
+export interface TaskGetterOptions {
+  incompleteOnly: boolean | undefined
+  useStore: boolean | undefined
+}

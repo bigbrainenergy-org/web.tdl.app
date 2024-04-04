@@ -44,8 +44,7 @@ import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
 import type { λ } from '../../types'
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
-import { onMounted } from 'vue'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
 interface Prop {
   search?: string
@@ -69,7 +68,8 @@ const checkTaskRelation = (task: Task) => {
 const redundantTasks = ref<Map<number, boolean>>(new Map())
 const colorize = (id: number) => redundantTasks.value.get(id) ? 'color: orange' : 'color: black'
 
-onMounted(() => useAllTasksStore().regenerate())
+type HasID = { id: number }
+const byRedundancy = (a: HasID, b: HasID) => redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
 
 // can't set this in withDefaults... don't even try
 // DON'T
@@ -141,15 +141,13 @@ const searchForTasks = () => {
     }
   )
   kickOffRedundancyCheck()
+  results.value.sort(byRedundancy)
 }
 
 const kickOffRedundancyCheck = () => {
   // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
   // note: I tried storing the traversed Set in pinia but it was running into lockups.
-  redundantTasks.value.clear()
-  results.value.map(x => {
-    redundantTasks.value.set(x.id, typeof props.taskID === 'undefined' ? false : x.hasRelationTo(props.taskID))
-  })
+  redundantTasks.value = currentTask.value?.BulkHasRelationTo(results.value.map(x => x.id), { incompleteOnly: useLocalSettingsStore().hideCompleted }) ?? new Map()
 }
 
 const createTask = async () => {
