@@ -277,7 +277,7 @@ export class Task extends Model implements iRecord {
     const allTasks = options.useStore ? useAllTasksStore().allTasks : new Map(useRepo(TaskRepo).with('hard_postreqs').get().map(x => [x.id, x]))
     const allPosts = new Set<number>()
     const queue = new Queue<number>()
-    const incFilter: λ<{ completed: boolean }, boolean> = options.incompleteOnly ? x => true : x => !x.completed
+    const incFilter: λ<{ completed: boolean }, boolean> = options.incompleteOnly ? x => !x.completed : x => true
     queue.enqueueAll(allTasks.get(this.id)!.hard_postreqs.filter(incFilter).map(x => x.id))
     let tmpID = 0
     while(queue.size > 0) {

@@ -24,14 +24,14 @@ export class TDLAPP {
       component: UpdateTaskDialog
     })
   }
-  static searchDialog = () => {
+  static searchDialog = (onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task)) => {
     return Dialog.create({
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Search For A Task',
         taskID: undefined,
         showCreateButton: true,
-        onSelect: (payload: { task: Task }) => this.openTask(payload.task),
+        onSelect,
         closeOnSelect: true
       }
     })

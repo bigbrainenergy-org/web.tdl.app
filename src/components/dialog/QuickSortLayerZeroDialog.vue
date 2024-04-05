@@ -255,35 +255,60 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
     if(mode === 'rolls') maxRolls--
     else permutationDecrementor--
   }
-  while((ints.a === ints.b || isSkipped({ id: arr.id, data: tmp }) && permutationDecrementor > 0)) {
-    while(ints.a === ints.b && permutationDecrementor > 0) {
+  const sameElements = (p: pair<number>) => p.a === p.b
+  const redundant = (p: pair<PostWeightedTask>) => tmp.a.t.hasRelationTo(tmp.b.t.id, { incompleteOnly: true, useStore: true })
+  const loopConditions = () => {
+    const se = sameElements(ints)
+    const sk = isSkipped({ id: arr.id, data: tmp })
+    const rd = redundant(tmp)
+    return se || sk || rd
+  }
+  
+  while(loopConditions() && permutationDecrementor > 0) {
+    console.debug('in main loop of selectPair')
+    while(sameElements(ints) && permutationDecrementor > 0) {
+      console.log('accidentally made a pair where a and b are the same!')
       ints.b = rotate(ints.b)
       wompwomp('permutations')
     }
     while(isSkipped({ id: arr.id, data: tmp}) && permutationDecrementor > 0) {
+      console.log('skipping skipped pair!')
       ints.a = rotate(ints.a, true)
       wompwomp('permutations')
     }
     while(maxRolls > 0 && tmp.a.shouldReroll()) {
+      console.log('rerolling a!')
       ints.a = rotate(ints.a, true)
       wompwomp('rolls')
     }
     while(maxRolls > 0 && tmp.b.shouldReroll()) {
+      console.log('rerolling b!')
       ints.b = rotate(ints.b)
       wompwomp('rolls')
     }
-    while(tmp.a.t.hasRelationTo(tmp.b.t.id, { incompleteOnly: false, useStore: false })) {
+    console.debug({ tmp })
+    while(redundant(tmp) && permutationDecrementor > 0) {
       console.log('found a redundant pair!', { tmp })
       ints.a = rotate(ints.a, true)
       wompwomp('permutations')
     }
   }
+
+  
+
   if(permutationDecrementor <= 0) return null
+  console.debug({
+    permutationDecrementor,
+    maxRolls,
+    tmp,
+    redundant: redundant(tmp)
+  })
   return { id: arr.id, data: { a: tmp.a.t, b: tmp.b.t } }
 }
 
 const generateNewPair = (): withID<pair<Task>> => {
   // todo: if selecting a layer one task, cannot currently fallback to layer zero when all are skipped, and vice versa.
+  useAllTasksStore().regenerate()
   let tmp: withID<pair<Task>> | null = null
   const tryGetLayerOnePair = () => {
     if(layerOne.value === null || layerOne.value.length === 0) return null
@@ -336,7 +361,7 @@ try {
 if(firstPair === null || typeof firstPair === 'undefined') throw new Error('Could not generate first pair')
 const currentPair = ref<withID<pair<Task>>>(firstPair)
 
-const isRelated = computed(() => currentPair.value.data.a.hasRelationTo(currentPair.value.data.b.id, { incompleteOnly: true, useStore: false }) ? 'color: red' : undefined)
+const isRelated = computed(() => currentPair.value.data.a.hasRelationTo(currentPair.value.data.b.id, { incompleteOnly: true, useStore: true }) ? 'color: red' : undefined)
 
 const forget = (id: number) => {
   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id

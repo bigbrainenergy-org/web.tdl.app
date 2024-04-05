@@ -47,10 +47,10 @@ interface Props {
   dialogTitle: string
   searchLabel?: string
   resultsTitle?: string
-  taskID?: number
+  taskID: number | undefined
   closeOnSelect?: boolean
   showCreateButton?: boolean
-  initialFilter?: λ<number | undefined, λ<Task, boolean>>
+  initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
 }
 
 const props = withDefaults(defineProps<Props>(), 
