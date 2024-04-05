@@ -194,7 +194,7 @@ import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
 import errorNotification from 'src/hackerman/ErrorNotification'
 import TaskSearchDialog from './TaskSearchDialog.vue'
-import { λ } from 'src/types'
+import { ID, λ } from 'src/types'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 const emit = defineEmits([
@@ -526,15 +526,15 @@ const postreqMenuItems = [
   }
 ]
 
-const prunePosts = async (payload: { above: Set<number>, below: Set<number> }) => {
-  const toRemove = allPosts.value.filter(x => payload.below.has(x.id) && !payload.above.has(x.id))
+const prunePosts = async (payload: { above: Map<ID, boolean>, below: Map<ID, boolean> }) => {
+  const toRemove = allPosts.value.filter(x => payload.below.get(x.id) === true && !payload.above.get(x.id) === true)
   for(let i = 0; i < toRemove.length; i++) {
     await removePostrequisite(toRemove[i])
   }
 }
 
-const prunePres = async (payload: { above: Set<number>, below: Set<number> }) => {
-  const toRemove = allPosts.value.filter(x => payload.above.has(x.id) && !payload.below.has(x.id))
+const prunePres = async (payload: { above: Map<ID, boolean>, below: Map<ID, boolean> }) => {
+  const toRemove = allPosts.value.filter(x => payload.above.get(x.id) === true && !payload.below.get(x.id) === true)
   for(let i = 0; i < toRemove.length; i++) {
     await removePrerequisite(toRemove[i])
   }

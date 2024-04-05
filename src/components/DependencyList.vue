@@ -30,8 +30,8 @@
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
             <q-item-section class="vertical-top wrapped" style="width: 90%;">
-              <q-icon v-if="isAbove.has(item.id)" name='fas fa-triangle-exclamation' color="green" />
-              <q-icon v-if="isBelow.has(item.id)" name='fas fa-triangle-exclamation' color="red" />
+              <q-icon v-if="aboves.get(item.id) === true" name='fas fa-triangle-exclamation' color="green" />
+              <q-icon v-if="belows.get(item.id) === true" name='fas fa-triangle-exclamation' color="red" />
               <q-item-label lines="2">
                 {{ item.title }}
               </q-item-label>
@@ -57,9 +57,10 @@
 </template>
 
 <script setup lang="ts">
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { Task } from 'src/stores/tasks/task'
-import { SimpleMenuItem, λ } from 'src/types'
+import { ID, SimpleMenuItem, λ } from 'src/types'
 import { onMounted, onUpdated, ref } from 'vue'
 
 export interface EntityType {
@@ -82,28 +83,37 @@ const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleComplet
 
 const updateRedundants = () => {
   console.time('updateRedundants')
-  isAbove.value.clear()
-  isBelow.value.clear()
   if(prop.items.length === 0) return
   console.warn(`updating redundant check for ${prop.items.length} dependents`)
   const arr = prop.items.map(x => x.id)
   useAllTasksStore().regenerate()
+  const options = { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: true }
   prop.items.forEach(x => {
-    const arrExcludingX = arr.filter(y => y !== x.id && !isBelow.value.has(y) && !isBelow.value.has(y))
-    const aboves = x.anyIDsAbove(arrExcludingX)
-    const belows = x.anyIDsBelow(arrExcludingX)
-    aboves.forEach((val: boolean, key: number) => { if(val) isAbove.value.add(key) })
-    belows.forEach((val: boolean, key: number) => { if(val) isBelow.value.add(key) })
+    const arrExcludingX = arr.filter(y => y !== x.id && aboves.value.get(y) !== true && belows.value.get(y) !== true)
+    const otherDepsAbove = x.anyIDsAbove(arrExcludingX, options)
+    const otherDepsBelow = x.anyIDsBelow(arrExcludingX, options)
+    otherDepsAbove.forEach((val, key) => {
+      if(val) {
+        belows.value.set(x.id, true)
+        aboves.value.set(key, val)
+      }
+    })
+    otherDepsBelow.forEach((val, key) => {
+      if(val) {
+        aboves.value.set(x.id, true)
+        belows.value.set(key, val)
+      }
+    })
   })
   console.timeEnd('updateRedundants')
 }
 
-const isAbove = ref<Set<number>>(new Set())
-const isBelow = ref<Set<number>>(new Set())
+const aboves = ref<Map<ID, boolean>>(new Map())
+const belows = ref<Map<ID, boolean>>(new Map())
 onMounted(updateRedundants)
 onUpdated(updateRedundants)
 
-const pruneDependencies = () => { emit('pruneDependencies', { above: isAbove.value, below: isBelow.value })}
+const pruneDependencies = () => { emit('pruneDependencies', { above: aboves.value, below: belows.value })}
 </script>
 
 <style>

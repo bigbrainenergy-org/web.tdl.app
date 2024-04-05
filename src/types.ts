@@ -41,9 +41,9 @@ export class Queue<T> {
   enqueueAll(values: T[]): void {
     values.forEach(x => this.enqueue(x))
   }
+  peek = (): T => this.set.values().next().value as T
   dequeue(): T {
-    const values = this.set.values()
-    const value = values.next().value as T
+    const value = this.peek()
     this.set.delete(value)
     return value
   }

@@ -294,29 +294,106 @@ export class Task extends Model implements iRecord {
 
   anyIDsBelow(ids: ID[], options: TraversalOptions): Map<ID, boolean> {
     const allTasks = options.useStore ? allFromStore() : new Map<ID, Task>(useRepo(TaskRepo).withAll().get().map(x => [x.id, x]))
-    const alreadyScanned = new Map<ID, boolean>()
-    const initialIDs = new Set<ID>(ids)
+    const data = new Map<ID, boolean>()
+    // to check which of the ids are connected to the current task, I am testing if it is generally more efficient to flip the question and test if the current task is a pre of any of the input ids.
     const queue = new Queue<ID>()
-    const results = new Map<ID, boolean>()
+    queue.enqueueAll(ids)
+    while(queue.size > 0) {
+      /**
+       * must peek instead of dequeue in order to preserve the
+       */
+      const currentID = queue.dequeue()
+      /**
+       * other queued tasks may modify the results of their direct dependents, so we can check if there is already a result filed for this task.
+       */
+      const savedResult = data.get(currentID)
+      const currentTask = allTasks.get(currentID)
+      if(typeof currentTask === 'undefined') continue
+      if(savedResult === true) {
+        /**
+         * set all precheck's posts to true as well
+         * some prereq of the currentID has made contact with this.id
+         */ 
+        let postreqs = currentTask.hard_postreqs
+        if(options.incompleteOnly) postreqs = postreqs.filter(x => !x.completed)
+        postreqs.forEach(x => data.set(x.id, true))
+        continue
+      }
+      /**
+       * now we run the cases where the queued task has not yet been tested
+       * - fetch the pres and filter out completed if options.incompleteOnly is true
+       * - if there are no pres, the result is FALSE (but not necessarily for posts because they can have other pres that do connect with this.id)
+       * - if any of them are this.id, yay you have won!!
+       * - else, queue them all up
+       * TODO: explore other traversal methods to maximize efficiency
+       */
+      let prereqs = currentTask.hard_prereqs
+      if(options.incompleteOnly) prereqs = prereqs.filter(x => !x.completed)
+      if(prereqs.length === 0) {
+        data.set(currentID, false)
+        continue
+      }
+      const prereq_ids = prereqs.map(x => x.id)
+      if(prereq_ids.includes(this.id)) {
+        data.set(currentID, true)
+        let postreqs = currentTask.hard_postreqs
+        if(options.incompleteOnly) postreqs = postreqs.filter(x => !x.completed)
+        postreqs.forEach(x => data.set(x.id, true))
+        continue
+      }
+      queue.enqueueAll([...prereq_ids, currentID])
+    }
+    return data
+  }
+
+  anyIDsAbove(ids: ID[], options: TraversalOptions): Map<ID, boolean> {
+    const allTasks = options.useStore ? allFromStore() : new Map<ID, Task>(useRepo(TaskRepo).withAll().get().map(x => [x.id, x]))
+    const data = new Map<ID, boolean>()
+    const queue = new Queue<ID>()
     queue.enqueueAll(ids)
     while(queue.size > 0) {
       const currentID = queue.dequeue()
-      const precheck = alreadyScanned.get(currentID)
-      if(typeof precheck !== 'undefined') {
-        if(initialIDs.has(currentID)) {
-          results.set(currentID, precheck)
-        }
-        continue
-      }
+      const savedResult = data.get(currentID)
       const currentTask = allTasks.get(currentID)
       if(typeof currentTask === 'undefined') continue
-
+      if(savedResult === true) {
+        let prereqs = currentTask.hard_prereqs
+        if(options.incompleteOnly) prereqs = prereqs.filter(x => !x.completed)
+        prereqs.forEach(x => data.set(x.id, true))
+        continue
+      }
+      let postreqs = currentTask.hard_postreqs
+      if(options.incompleteOnly) postreqs = postreqs.filter(x => !x.completed)
+      if(postreqs.length === 0) {
+        data.set(currentID, false)
+        continue
+      }
+      const postreq_ids = postreqs.map(x => x.id)
+      if(postreq_ids.includes(this.id)) {
+        data.set(currentID, true)
+        let prereqs = currentTask.hard_prereqs
+        if(options.incompleteOnly) prereqs = prereqs.filter(x => !x.completed)
+        prereqs.forEach(x => data.set(x.id, true))
+        continue
+      }
+      queue.enqueueAll([...postreq_ids, currentID])
     }
-    return results
+    return data
   }
 
   hasRelationTo(id: number, options: TraversalOptions) {
     return this.isIDAbove(id, options) || this.isIDBelow(id, options)
+  }
+
+  hasRelationToAny(ids: number[], incompleteOnly: boolean ) {
+    const options = { incompleteOnly, useStore: true }
+    useAllTasksStore().regenerate()
+    const map1 = this.anyIDsAbove(ids, options)
+    const map2 = this.anyIDsBelow(ids, options)
+    map2.forEach((val, key) => {
+      if(val) map1.set(key, true)
+    })
+    return map1
   }
 
   static piniaOptions = {
