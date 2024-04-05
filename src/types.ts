@@ -54,3 +54,5 @@ export class Queue<T> {
     return this.set.has(value)
   }
 }
+
+export type ID = number

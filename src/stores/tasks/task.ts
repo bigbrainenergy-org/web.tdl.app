@@ -10,8 +10,12 @@ import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
-import { Queue } from 'src/types'
+import { ID, Queue, λ } from 'src/types'
 import { useAllTasksStore } from '../performance/all-tasks'
+
+interface TaskLike {
+  completed: boolean
+}
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -48,6 +52,22 @@ export interface UpdateTaskOptions extends iOptions {
     task: AllOptionalTaskProperties
   }
 }
+
+interface TraversalOptions {
+  /**
+   * Set to true if you wish to filter out all completed tasks and their connections to other tasks.
+   * If there are tasks A --> B --> C and B is complete, with incompleteOnly == true, A would not relate to C
+   */
+  incompleteOnly: boolean
+  /**
+   * Set to true if you have populated allTasksStore and intend to use it for performance reasons.
+   */
+  useStore: boolean
+}
+
+const allWithPres = (): Map<ID, Task> => new Map(useRepo(TaskRepo).with('hard_prereqs').get().map(x => [x.id, x]))
+const allWithPosts = (): Map<ID, Task> => new Map(useRepo(TaskRepo).with('hard_postreqs').get().map(x => [x.id, x]))
+const allFromStore = (): Map<ID, Task> => useAllTasksStore().allTasks as Map<ID, Task>
 
 export class Task extends Model implements iRecord {
   static entity = 'tasks'
@@ -232,103 +252,71 @@ export class Task extends Model implements iRecord {
     await repo.addPre(this, resultTasks[resultTasks.length-1].id)
   }
 
-  /**
-   * 
-   * @param id The task id to traverse and find
-   * @returns true if the id is found among the tasks listed before the current
-   * @description YOU MUST CALL useAllTasksStore().regenerate() SHORTLY BEFORE USING THIS
-   */
-  // isIDAbove(id: number): Promise<boolean> {
-  //   return new Promise((resolve, reject) => {
-  //     const allTasks = useAllTasksStore().allTasks
-  //     const alreadyScanned = new Set<number>()
-  //     const queue = new Queue<number>()
-  //     queue.enqueueAll(this.grabPrereqs(true).map(x => x.id))
-  //     while(queue.size > 0) {
-  //       const currentID = queue.dequeue()
-  //       alreadyScanned.add(currentID)
-  //       const prereqs = allTasks.get(currentID)?.grabPrereqs(true)
-  //         .map(x => x.id)
-  //         .filter(x => !queue.has(x) && !alreadyScanned.has(x))
-  //       if(typeof prereqs === 'undefined') continue
-  //       if(prereqs.length === 0) continue
-  //       if(prereqs.includes(id)) resolve(true)
-  //       queue.enqueueAll(prereqs)
-  //     }
-  //     resolve(false)
-  //   })
-  // }
-
-  isIDAbove(id: number): boolean {
-    const allTasks = useAllTasksStore().allTasks
-    const alreadyScanned = new Set<number>()
-    const queue = new Queue<number>()
-    queue.enqueueAll(this.grabPrereqs(true).map(x => x.id))
+  isIDAbove(id: ID, options: TraversalOptions): boolean {
+    const allTasks = options.useStore ? allFromStore() : allWithPres()
+    const alreadyScanned = new Set<ID>()
+    const queue = new Queue<ID>()
+    let toQueue = allTasks.get(this.id)!.hard_prereqs
+    if(options.incompleteOnly) toQueue = toQueue.filter(x => !x.completed)
+    queue.enqueueAll(toQueue.map(x => x.id))
     while(queue.size > 0) {
       const currentID = queue.dequeue()
       alreadyScanned.add(currentID)
-      const prereqs = allTasks.get(currentID)?.grabPrereqs(true)
-        .map(x => x.id)
-        .filter(x => !queue.has(x) && !alreadyScanned.has(x))
-      if(typeof prereqs === 'undefined') continue
+      let prereqs = allTasks.get(currentID)?.hard_prereqs.filter(x => !queue.has(x.id) && !alreadyScanned.has(x.id)) ?? []
+      if(options.incompleteOnly) prereqs = prereqs.filter(x => !x.completed)
       if(prereqs.length === 0) continue
-      if(prereqs.includes(id)) return true
-      queue.enqueueAll(prereqs)
+      const prereq_ids = prereqs.map(x => x.id)
+      if(prereq_ids.includes(id)) return true
+      queue.enqueueAll(prereq_ids)
     }
     return false
   }
 
-  /**
-   * 
-   * @param id The task id to traverse and find
-   * @returns true if the id is found among the tasks listed after the current
-   * @description YOU MUST CALL useAllTasksStore().regenerate() SHORTLY BEFORE USING THIS
-   */
-  // isIDBelow(id: number): Promise<boolean> {
-  //   return new Promise((resolve, reject) => {
-  //     const allTasks = useAllTasksStore().allTasks
-  //     const alreadyScanned = new Set<number>()
-  //     const queue = new Queue<number>()
-  //     queue.enqueueAll(this.grabPostreqs(true).map(x => x.id))
-  //     while(queue.size > 0) {
-  //       const currentID = queue.dequeue()
-  //       alreadyScanned.add(currentID)
-  //       const postreqs = allTasks.get(currentID)?.grabPostreqs(true)
-  //         .map(x => x.id).filter(x => !queue.has(x) && !alreadyScanned.has(x))
-  //       if(typeof postreqs === 'undefined') continue
-  //       if(postreqs.length === 0) continue
-  //       if(postreqs.includes(id)) resolve(true)
-  //       queue.enqueueAll(postreqs)
-  //     }
-  //     resolve(false)
-  //   })
-  // }
-
-  isIDBelow(id: number): boolean {
-    const allTasks = useAllTasksStore().allTasks
-    const alreadyScanned = new Set<number>()
-    const queue = new Queue<number>()
-    queue.enqueueAll(this.grabPostreqs(true).map(x => x.id))
+  isIDBelow(id: ID, options: TraversalOptions): boolean {
+    const allTasks = options.useStore ? allFromStore() : allWithPosts()
+    const alreadyScanned = new Set<ID>()
+    const queue = new Queue<ID>()
+    let toQueue = allTasks.get(this.id)!.hard_postreqs
+    if(options.incompleteOnly) toQueue = toQueue.filter(x => !x.completed)
+    queue.enqueueAll(toQueue.map(x => x.id))
     while(queue.size > 0) {
       const currentID = queue.dequeue()
       alreadyScanned.add(currentID)
-      const postreqs = allTasks.get(currentID)?.grabPostreqs(true)
-        .map(x => x.id).filter(x => !queue.has(x) && !alreadyScanned.has(x))
-      if(typeof postreqs === 'undefined') continue
+      let postreqs = allTasks.get(currentID)?.hard_postreqs.filter(x => !queue.has(x.id) && !alreadyScanned.has(x.id)) ?? []
+      if(options.incompleteOnly) postreqs = postreqs.filter(x => !x.completed)
       if(postreqs.length === 0) continue
-      if(postreqs.includes(id)) return true
-      queue.enqueueAll(postreqs)
+      const postreq_ids = postreqs.map(x => x.id)
+      if(postreq_ids.includes(id)) return true
+      queue.enqueueAll(postreq_ids)
     }
     return false
   }
 
-  // hasRelationTo(id: number) {
-  //   try { return Promise.any([this.isIDAbove(id), this.isIDBelow(id)]) }
-  //   catch { return false }
-  // }
+  anyIDsBelow(ids: ID[], options: TraversalOptions): Map<ID, boolean> {
+    const allTasks = options.useStore ? allFromStore() : new Map<ID, Task>(useRepo(TaskRepo).withAll().get().map(x => [x.id, x]))
+    const alreadyScanned = new Map<ID, boolean>()
+    const initialIDs = new Set<ID>(ids)
+    const queue = new Queue<ID>()
+    const results = new Map<ID, boolean>()
+    queue.enqueueAll(ids)
+    while(queue.size > 0) {
+      const currentID = queue.dequeue()
+      const precheck = alreadyScanned.get(currentID)
+      if(typeof precheck !== 'undefined') {
+        if(initialIDs.has(currentID)) {
+          results.set(currentID, precheck)
+        }
+        continue
+      }
+      const currentTask = allTasks.get(currentID)
+      if(typeof currentTask === 'undefined') continue
 
-  hasRelationTo(id: number) {
-    return this.isIDAbove(id) || this.isIDBelow(id)
+    }
+    return results
+  }
+
+  hasRelationTo(id: number, options: TraversalOptions) {
+    return this.isIDAbove(id, options) || this.isIDBelow(id, options)
   }
 
   static piniaOptions = {

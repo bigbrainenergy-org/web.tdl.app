@@ -3,11 +3,11 @@
     v-model="search"
     filled
     clearable
+    debounce="400"
+    :label="searchLabel"
     @update:model-value="emit('doASearch')"
-    @keyup.enter="emit('doASearch')"
-    debounce="300"
-    :label="searchLabel" >
-    <template v-slot:append>
+    @keyup.enter="emit('doASearch')" >
+    <template #append>
       <q-btn
         round
         flat

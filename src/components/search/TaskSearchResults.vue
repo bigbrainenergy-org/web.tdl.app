@@ -44,17 +44,21 @@ import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
 import type { λ } from '../../types'
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { onMounted } from 'vue'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 interface Prop {
-  search?: string
+  search: string | undefined
   dialogTitle: string
-  taskID?: number // if the search will be related to a specific task, set this prop value.
+  /**
+   * If the search will be related to a specific task, set this taskID
+   */
+  taskID: number | undefined
   searchLabel?: string
   resultsTitle?: string
   showCreateButton: boolean
-  initialFilter?: λ<number | undefined, λ<Task, boolean>>
+  initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
 }
 
 const emit = defineEmits([
@@ -63,7 +67,7 @@ const emit = defineEmits([
 ])
 
 const checkTaskRelation = (task: Task) => {
-  return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
+  return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID, { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: false })
 }
 
 const redundantTasks = ref<Map<number, boolean>>(new Map())
@@ -131,12 +135,8 @@ const searchForTasks = () => {
     }
   ).sort(
     (first, second) => {
-      const firstIndex = run.findIndex(
-        (element) => { return element.item.title == first.title }
-      )
-      const secondIndex = run.findIndex(
-        (element) => { return element.item.title == second.title }
-      )
+      const firstIndex = run.findIndex(x => x.item.title == first.title)
+      const secondIndex = run.findIndex(x => x.item.title == second.title)
       return firstIndex - secondIndex
     }
   )
@@ -146,22 +146,24 @@ const searchForTasks = () => {
 const kickOffRedundancyCheck = () => {
   // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
   // note: I tried storing the traversed Set in pinia but it was running into lockups.
-  redundantTasks.value.clear()
-  results.value.map(x => {
-    redundantTasks.value.set(x.id, typeof props.taskID === 'undefined' ? false : x.hasRelationTo(props.taskID))
-  })
+  const t: Task | null = currentTask.value as Task
+  if(t === null) redundantTasks.value = new Map()
+  redundantTasks.value = t.BulkHasRelationTo(results.value.map(x => x.id), { incompleteOnly: true, useStore: false }) ?? new Map()
 }
 
 const createTask = async () => {
   if(typeof props.search === 'undefined') return
   const toCreate: CreateTaskOptions = { title: props.search }
   const newTask = await tr.add(toCreate)
-  selectTask(newTask)
+  if(typeof props.taskID !== 'undefined') selectTask(newTask)
 }
 
 const selectTask = (task: Task) => {
   emit('select', { task, callback: searchForTasks })
+  useAllTasksStore().regenerate()
 }
+
+onMounted(() => useAllTasksStore().regenerate())
 
 searchForTasks()
 </script>

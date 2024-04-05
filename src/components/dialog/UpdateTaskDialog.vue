@@ -138,6 +138,8 @@
               :items="allPres"
               :dependency-type="preDepType"
               :menu-items="prereqMenuItems"
+              show-prune
+              @prune-dependencies="prunePres"
               @add-item="openPrerequisiteDialog"
               @remove-item="(pre: Task) => removePrerequisite(pre)"
               @select-item="(t: Task) => setCurrentTask(t)"
@@ -146,6 +148,8 @@
               :items="allPosts"
               :dependency-type="postDepType"
               :menu-items="postreqMenuItems"
+              show-prune
+              @prune-dependencies="prunePosts"
               @add-item="openPostrequisiteDialog"
               @remove-item="(post: Task) => removePostrequisite(post)"
               @select-item="(t: Task) => setCurrentTask(t)"
@@ -191,6 +195,7 @@ import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
 import errorNotification from 'src/hackerman/ErrorNotification'
 import TaskSearchDialog from './TaskSearchDialog.vue'
 import { λ } from 'src/types'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -520,4 +525,18 @@ const postreqMenuItems = [
     action: dialogInsertBetweenPost
   }
 ]
+
+const prunePosts = async (payload: { above: Set<number>, below: Set<number> }) => {
+  const toRemove = allPosts.value.filter(x => payload.below.has(x.id) && !payload.above.has(x.id))
+  for(let i = 0; i < toRemove.length; i++) {
+    await removePostrequisite(toRemove[i])
+  }
+}
+
+const prunePres = async (payload: { above: Set<number>, below: Set<number> }) => {
+  const toRemove = allPosts.value.filter(x => payload.above.has(x.id) && !payload.below.has(x.id))
+  for(let i = 0; i < toRemove.length; i++) {
+    await removePrerequisite(toRemove[i])
+  }
+}
 </script>

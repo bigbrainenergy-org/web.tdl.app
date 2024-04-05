@@ -4,6 +4,7 @@
       <div class="col">
         <div class="text-h5">{{ dependencyType.plural }}</div>
       </div>
+      <q-btn v-if="showPrune" @click="pruneDependencies">Prune {{ dependencyType.plural }}</q-btn>
       <div class="col text-right">
         <q-btn color="primary" icon="fas fa-link" :label="addItemLabel" @click="emit('addItem')" />
       </div>
@@ -11,24 +12,27 @@
     <div class="col-grow">
       
     <q-list class="q-my-md">
-      <q-item v-ripple v-if="!items.length">
+      <q-item v-if="!items.length" v-ripple>
         <q-item-section>No {{ dependencyType.plural }}</q-item-section>
       </q-item>
       <q-item
-        v-ripple
-        v-for="item, index in items"
-        :key="index">
-        <q-btn-dropdown style="width: 100%;"
+        v-for="item, itemkey in items"
+        :key="itemkey"
+        v-ripple>
+        <q-btn-dropdown
+          style="width: 100%;"
           split 
           auto-close
           dropdown-icon="more_vert" 
           @click.stop="emit('selectItem', item)">
-          <template v-slot:label>
+          <template #label>
             <q-item-section avatar style="width: 10%;">
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
             <q-item-section class="vertical-top wrapped" style="width: 90%;">
-              <q-item-label lines="2" :style="colorize(item)">
+              <q-icon v-if="isAbove.has(item.id)" name='fas fa-triangle-exclamation' color="green" />
+              <q-icon v-if="isBelow.has(item.id)" name='fas fa-triangle-exclamation' color="red" />
+              <q-item-label lines="2">
                 {{ item.title }}
               </q-item-label>
             </q-item-section>
@@ -53,9 +57,10 @@
 </template>
 
 <script setup lang="ts">
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { Task } from 'src/stores/tasks/task'
 import { SimpleMenuItem, λ } from 'src/types'
-import { computed, ref } from 'vue'
+import { onMounted, onUpdated, ref } from 'vue'
 
 export interface EntityType {
   singular: string
@@ -66,29 +71,39 @@ interface Props {
   items: Array<Task>
   dependencyType: EntityType // eg. Prerequisites (capitalize)
   menuItems: Array<SimpleMenuItem<Task>>
+  showPrune: boolean
 }
 
 const prop = defineProps<Props>()
 
 const addItemLabel = `Add ${prop.dependencyType.plural}`
 
-const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem' ])
+const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem', 'pruneDependencies' ])
 
-const checkTaskAgainstOthersInArray = (arr: Task[]) => {
-  const redundantRules = new Set<number>()
-  for(let i = 0; i < arr.length-1; i++) {
-    for(let j = i; j < arr.length; j++) {
-      if(arr[i].hasRelationTo(arr[j].id)) {
-        redundantRules.add(arr[i].id)
-        redundantRules.add(arr[j].id)
-      }
-    }
-  }
-  return redundantRules
+const updateRedundants = () => {
+  console.time('updateRedundants')
+  isAbove.value.clear()
+  isBelow.value.clear()
+  if(prop.items.length === 0) return
+  console.warn(`updating redundant check for ${prop.items.length} dependents`)
+  const arr = prop.items.map(x => x.id)
+  useAllTasksStore().regenerate()
+  prop.items.forEach(x => {
+    const arrExcludingX = arr.filter(y => y !== x.id && !isBelow.value.has(y) && !isBelow.value.has(y))
+    const aboves = x.anyIDsAbove(arrExcludingX)
+    const belows = x.anyIDsBelow(arrExcludingX)
+    aboves.forEach((val: boolean, key: number) => { if(val) isAbove.value.add(key) })
+    belows.forEach((val: boolean, key: number) => { if(val) isBelow.value.add(key) })
+  })
+  console.timeEnd('updateRedundants')
 }
-//const colorize = (task: Task) => redu
-const redundantRules = computed(() => checkTaskAgainstOthersInArray(prop.items))
-const colorize = (task: Task) => redundantRules.value.has(task.id) ? 'color: orange' : undefined
+
+const isAbove = ref<Set<number>>(new Set())
+const isBelow = ref<Set<number>>(new Set())
+onMounted(updateRedundants)
+onUpdated(updateRedundants)
+
+const pruneDependencies = () => { emit('pruneDependencies', { above: isAbove.value, below: isBelow.value })}
 </script>
 
 <style>
