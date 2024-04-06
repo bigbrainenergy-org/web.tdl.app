@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Task } from 'src/stores/tasks/task'
 import { SimpleMenuItem, λ } from 'src/types'
 import { onMounted } from 'vue'
@@ -89,11 +89,11 @@ const updateRedundants = () => {
   if(prop.items.length === 0) return
   console.warn(`updating redundant check for ${prop.items.length} dependents`)
   const arr = prop.items.map(x => x.id)
-  useAllTasksStore().regenerate()
+  const options = { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: true }
   prop.items.forEach(x => {
     const arrExcludingX = arr.filter(y => y !== x.id && !isBelow.value.has(y) && !isBelow.value.has(y))
-    const aboves = x.anyIDsAbove(arrExcludingX)
-    const belows = x.anyIDsBelow(arrExcludingX)
+    const aboves = x.anyIDsAbove(arrExcludingX, options)
+    const belows = x.anyIDsBelow(arrExcludingX, options)
     aboves.forEach((val: boolean, key: number) => { if(val) isAbove.value.add(key) })
     belows.forEach((val: boolean, key: number) => { if(val) isBelow.value.add(key) })
   })

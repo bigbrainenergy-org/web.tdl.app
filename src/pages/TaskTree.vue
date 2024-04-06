@@ -223,7 +223,7 @@ const openTask = (currentTask: Task) => {
 }
 
 const updateTaskCompletedStatus = (task: Task) => {
-  tr.value.update({ id: task.id, payload: { task }})
+  tr.value.updateAndCache({ id: task.id, payload: { task }})
   if(incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
 }
 

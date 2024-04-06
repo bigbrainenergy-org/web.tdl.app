@@ -55,10 +55,6 @@ interface RecursiveGetterOptions {
    */
   incompleteOnly: boolean
   /**
-   * any task ids at which traversal can stop - for performance
-   */
-  targets: Set<number>
-  /**
    * use only if allTasksStore has been regenerated
    */
   useStore: boolean
@@ -196,7 +192,7 @@ export class Task extends Model implements iRecord {
   async toggleCompleted() {
     const repo = useRepo(TaskRepo)
     this.completed = !this.completed
-    await repo.update({ id: this.id, payload: { task: { completed: this.completed } } } )
+    await repo.updateAndCache({ id: this.id, payload: { task: { completed: this.completed } } } )
       .then(
         TDLAPP.notifyUpdatedCompletionStatus(this), 
         Utils.handleError('Error updating status of task.'))
@@ -262,7 +258,6 @@ export class Task extends Model implements iRecord {
       tmpID = queue.dequeue()
       if(allPres.has(tmpID)) continue
       allPres.add(tmpID)
-      if(options.targets.has(tmpID)) continue
       queue.enqueueAll(allTasks.get(tmpID)!.hard_prereqs.filter(incFilter).map(x => x.id))
     }
     return allPres
@@ -284,30 +279,29 @@ export class Task extends Model implements iRecord {
       tmpID = queue.dequeue()
       if(allPosts.has(tmpID)) continue
       allPosts.add(tmpID)
-      if(options.targets.has(tmpID)) continue
       queue.enqueueAll(allTasks.get(tmpID)!.hard_postreqs.filter(incFilter).map(x => x.id))
     }
     return allPosts
   }
 
   isIDAbove(id: number, options = { incompleteOnly: true, useStore: false }): boolean {
-    const opts = { incompleteOnly: options.incompleteOnly, targets: new Set([id]), useStore: options.useStore }
+    const opts = { incompleteOnly: options.incompleteOnly, useStore: options.useStore }
     const allPreIDs = this.preIDsRecursive(opts)
     return allPreIDs.has(id)
   }
 
   isIDBelow(id: number, options = { incompleteOnly: true, useStore: false }): boolean {
-    const opts = { incompleteOnly: options.incompleteOnly, targets: new Set([id]), useStore: options.useStore }
+    const opts = { incompleteOnly: options.incompleteOnly, useStore: options.useStore }
     const allPostIDs = this.allPostIDsRecursive(opts)
     return allPostIDs.has(id)
   }
 
-  anyIDsAbove(ids: number[], options = { incompleteOnly: true, targets: new Set<number>(), useStore: false }): Map<number, boolean> {
+  anyIDsAbove(ids: number[], options = { incompleteOnly: true, useStore: false }): Map<number, boolean> {
     const allIDsAbove = this.preIDsRecursive(options)
     return new Map(ids.map(x => [x, allIDsAbove.has(x)]))
   }
 
-  anyIDsBelow(ids: number[], options = { incompleteOnly: true, targets: new Set<number>(), useStore: false }): Map<number, boolean> {
+  anyIDsBelow(ids: number[], options = { incompleteOnly: true, useStore: false }): Map<number, boolean> {
     const allIDsBelow = this.allPostIDsRecursive(options)
     return new Map(ids.map(x => [x, allIDsBelow.has(x)]))
   }
@@ -318,7 +312,7 @@ export class Task extends Model implements iRecord {
   }
 
   BulkHasRelationTo(ids: number[], options = { incompleteOnly: true, useStore: false }) {
-    const opts = { incompleteOnly: options.incompleteOnly, targets: new Set(ids), useStore: options.useStore }
+    const opts = { incompleteOnly: options.incompleteOnly, useStore: options.useStore }
     const result = this.anyIDsAbove(ids, opts)
     this.anyIDsBelow(ids, opts).forEach((val, key) => { if(val) result.set(key, val) })
     return result
@@ -349,11 +343,11 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_prereq_ids!.splice(position, 1)
-    await this.update(options).then(() => {
+    await this.updateAndCache(options).then(() => {
       const pre = Utils.hardCheck(this.find(id_of_prereq))
       Utils.arrayDelete(pre.hard_postreq_ids, task.id)
+      this.setCache(pre)
     })
-    // TODO: remove post from prereq too.
   }
 
   /**
@@ -369,9 +363,10 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_postreq_ids!.splice(position, 1)
-    await this.update(options).then(() => {
+    await this.updateAndCache(options).then(() => {
       const post = Utils.hardCheck(this.find(id_of_postreq))
       Utils.arrayDelete(post.hard_prereq_ids, task.id)
+      this.setCache(post)
     })
   }
 
@@ -392,13 +387,15 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       payload: { task: Object.assign({}, task) }
     }
     options.payload.task.hard_prereq_ids!.push(id_of_prereq)
-    await this.update(options)
-    const pre_options: UpdateTaskOptions = {
-      id: pre.id,
-      payload: { task: Object.assign({}, pre) }
-    }
-    pre_options.payload.task.hard_postreq_ids!.push(task.id)
-    await this.update(pre_options)
+    await this.updateAndCache(options)
+    // const pre_options: UpdateTaskOptions = {
+    //   id: pre.id,
+    //   payload: { task: Object.assign({}, pre) }
+    // }
+    // pre_options.payload.task.hard_postreq_ids!.push(task.id)
+    pre.hard_postreq_ids.push(task.id)
+    //await this.update(pre_options)
+    this.setCache(pre)
   }
 
   /**
@@ -419,14 +416,16 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     options.payload.task.hard_postreq_ids!.push(id_of_postreq)
     console.debug({ msg: 'pushing postreq to task.', payload: options.payload.task })
-    await this.update(options)
-    const post_options: UpdateTaskOptions = {
-      id: post.id,
-      payload: { task: Object.assign({}, post) }
-    }
-    post_options.payload.task.hard_prereq_ids!.push(task.id)
-    console.debug({ msg: 'pushing prereq to new postreq of task', payload: post_options.payload.task })
-    await this.update(post_options)
+    await this.updateAndCache(options)
+    // const post_options: UpdateTaskOptions = {
+    //   id: post.id,
+    //   payload: { task: Object.assign({}, post) }
+    // }
+    // post_options.payload.task.hard_prereq_ids!.push(task.id)
+    // console.debug({ msg: 'pushing prereq to new postreq of task', payload: post_options.payload.task })
+    // await this.update(post_options)
+    post.hard_postreq_ids.push(task.id)
+    this.setCache(post)
   }
 
   deleteTask = async (task: Task) => {
@@ -442,7 +441,22 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       await this.removePre(posts[i], task.id).catch((x) => console.debug(x))
     }
     useRawExpandedStateStore().forgetTask(task.id)
+    useAllTasksStore().allTasks.delete(task.id)
     return this.delete(task.id)
+  }
+
+  updateAndCache = async (options: UpdateTaskOptions) => {
+    await this.update(options).then((data: void | Task) => { if(data instanceof Task) this.setCache(data) })
+  }
+
+  addAndCache = async (options: CreateTaskOptions) => {
+    return await this.add(options).then(data => this.setCache(data))
+  }
+
+  setCache = (task: Task) => {
+    this.withAll().load([task])
+    useAllTasksStore().allTasks.set(task.id, task)
+    return task
   }
 
   incompleteOnly = (): Task[] => this.withAll().get().filter(x => !x.completed)

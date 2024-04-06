@@ -151,16 +151,13 @@ const kickOffRedundancyCheck = () => {
 const createTask = async () => {
   if(typeof props.search === 'undefined') return
   const toCreate: CreateTaskOptions = { title: props.search }
-  const newTask = await tr.add(toCreate)
+  const newTask = await tr.addAndCache(toCreate)
   if(typeof props.taskID !== 'undefined') selectTask(newTask)
 }
 
 const selectTask = (task: Task) => {
   emit('select', { task, callback: searchForTasks })
-  useAllTasksStore().regenerate()
 }
-
-onMounted(() => useAllTasksStore().regenerate())
 
 searchForTasks()
 </script>

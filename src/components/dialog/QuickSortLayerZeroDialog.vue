@@ -308,7 +308,6 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
 
 const generateNewPair = (): withID<pair<Task>> => {
   // todo: if selecting a layer one task, cannot currently fallback to layer zero when all are skipped, and vice versa.
-  useAllTasksStore().regenerate()
   let tmp: withID<pair<Task>> | null = null
   const tryGetLayerOnePair = () => {
     if(layerOne.value === null || layerOne.value.length === 0) return null

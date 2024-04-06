@@ -259,7 +259,7 @@ const allPosts = computed(() => {
 })
 
 const updateTaskCompletedStatus = (task: Task) => {
-  tr.update({ id: task.id, payload: { task }})
+  tr.updateAndCache({ id: task.id, payload: { task }})
 }
 
 const allLists = listsRepo.all()
@@ -326,7 +326,7 @@ function deleteTask(title: string, task: Task) {
 }
 
 function updateTask(options: AllOptionalTaskProperties) {
-  tr.update({id: currentTask.value.id ?? -1, payload: { task: options } })
+  tr.updateAndCache({id: currentTask.value.id ?? -1, payload: { task: options } })
   .then(() => {
     Utils.notifySuccess('Task Was Updated')
   }, Utils.handleError('Error updating task'))
