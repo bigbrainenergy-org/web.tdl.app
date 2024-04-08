@@ -58,6 +58,24 @@ export class TDLAPP {
         showCreateButton: true,
         onSelect: async (payload: { task: Task }) => {
           await this.addPre(currentTask, payload.task.id)
+        },
+        initialFilter: (currentTaskID: number | undefined) => {
+          if(typeof currentTaskID === 'undefined') throw new Error('Add Prerequisite: Current Task ID is undefined')
+          const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
+          if(ct === null) throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
+          return (x: Task) => {
+            if(x.completed) return false
+            if(ct.hard_prereq_ids.includes(x.id)) return false
+            return true
+          }
+        },
+        // define batch filter here.
+        batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
+          if(typeof taskID === 'undefined') return undefined
+          const ct = useRepo(TaskRepo).find(taskID)
+          if(ct === null) return undefined
+          const relationInfo = ct.anyIDsBelow(tasks.map(x => x.id))
+          return tasks.filter(x => relationInfo.get(x.id) !== true)
         }
       }
     })
@@ -71,6 +89,13 @@ export class TDLAPP {
         showCreateButton: true,
         onSelect: (payload: { task: Task }) => {
           this.addPost(currentTask, payload.task.id)
+        },
+        batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
+          if(typeof taskID === 'undefined') return undefined
+          const ct = useRepo(TaskRepo).find(taskID)
+          if(ct === null) return undefined
+          const relationInfo = ct.anyIDsAbove(tasks.map(x => x.id))
+          return tasks.filter(x => relationInfo.get(x.id) !== true)
         }
       }
     })

@@ -44,9 +44,6 @@ import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
 import type { λ } from '../../types'
-import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { onMounted } from 'vue'
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 interface Prop {
   search: string | undefined
@@ -56,6 +53,7 @@ interface Prop {
   resultsTitle?: string
   showCreateButton: boolean
   initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
+  batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
 }
 
 const emit = defineEmits([
@@ -112,7 +110,11 @@ const searchOptions = {
   keys: ['title']
 }
 
-const tasks = computed(() => tr.withAll().where(filterish.value(props.taskID)).get())
+const tasks = computed(() => {
+  const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+  if(typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
+  return allTasks
+})
 
 const searchForTasks = () => {
   if(!props.search) { return } // Guard clause if search is empty
@@ -145,7 +147,7 @@ const searchForTasks = () => {
 const kickOffRedundancyCheck = () => {
   // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
   // note: I tried storing the traversed Set in pinia but it was running into lockups.
-  redundantTasks.value = currentTask.value?.BulkHasRelationTo(results.value.map(x => x.id), { incompleteOnly: true, useStore: false }) ?? new Map()
+  redundantTasks.value = currentTask.value?.BulkHasRelationTo(results.value.map(x => x.id), { incompleteOnly: true, useStore: true }) ?? new Map()
 }
 
 const createTask = async () => {

@@ -127,7 +127,7 @@ const tasks = computed(() => {
 })
 
 const updateTaskCompletedStatus = async (task: Task) => {
-  await tasksRepo.update({ id: task.id, payload: { task }})
+  await tasksRepo.updateAndCache({ id: task.id, payload: { task }})
   .then(
     TDLAPP.notifyUpdatedCompletionStatus(task),
     Utils.handleError('Error updating completion status of a task.')

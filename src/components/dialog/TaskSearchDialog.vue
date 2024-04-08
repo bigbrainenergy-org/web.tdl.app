@@ -24,6 +24,7 @@
       :results-title="resultsTitle"
       :showCreateButton="showCreateButton"
       :initial-filter="initialFilter"
+      :batch-filter="batchFilter"
       @select="(e) => selectTask(e.task)" />
 
     </q-card>
@@ -51,6 +52,7 @@ interface Props {
   closeOnSelect?: boolean
   showCreateButton?: boolean
   initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
+  batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
 }
 
 const props = withDefaults(defineProps<Props>(), 
@@ -59,7 +61,8 @@ const props = withDefaults(defineProps<Props>(),
     searchLabel: 'Search',
     resultsTitle: 'Possible Matches',
     closeOnSelect: false,
-    showCreateButton: true
+    showCreateButton: true,
+    batchFilter: () => () => []
   }
 )
 

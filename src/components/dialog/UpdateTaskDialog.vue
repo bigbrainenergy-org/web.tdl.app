@@ -4,7 +4,7 @@
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Task Details</div>
-        <template v-if="currentTask.completed !== true">
+        <template v-if="getTask().completed !== true">
           <q-btn class="q-ma-sm" size="md" color="positive" label="Mark Complete" @click.stop="toggleComplete(currentTask as Task)" />
           <q-btn class="q-ma-sm" size="md" color="positive" label="Prioritize" @click.stop="prioritize()" />
           <q-btn class="q-ma-sm" size="md" color="positive" label="Slice Task" @click.stop="TDLAPP.sliceTask(currentTask as Task)" />
@@ -12,7 +12,7 @@
         <template v-else>
           <q-btn class="q-ma-sm" size="md" color="primary" label="Mark Incomplete" @click.stop="toggleComplete(currentTask as Task)" />
         </template>
-        <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(currentTask.title, currentTask as Task)" />
+        <q-btn class="q-ma-sm" size="md" color="negative" label="Delete" @click="deleteTask(getTask().title, currentTask as Task)" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onDialogCancel" />
       </q-card-section>
 
@@ -26,7 +26,7 @@
               v-model="editTitle"
               filled
               label="Task Title"
-              :placeholder="currentTask.title"
+              :placeholder="getTask().title"
               clearable
               class="q-my-md"
               @keyup.enter="updateTask({ title: editTitle })"
@@ -218,23 +218,30 @@ const usr = useLocalSettingsStore()
 const ctr = useCurrentTaskStore()
 
 const currentTaskID = computed((): number => Utils.hardCheck(ctr.id))
-const currentTask = computed((): Task => Utils.hardCheck(tr.withAll().find(currentTaskID.value)))
-currentTask.value.hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
-currentTask.value.hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+const currentTask = computed((): Task | null => tr.withAll().find(currentTaskID.value))
+const getTask = (): Task => {
+  if(currentTask.value === null) {
+    onDialogCancel()
+    throw new Error('Task was deleted, so dialog has to close.')
+  }
+  return currentTask.value
+}
+getTask().hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+getTask().hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 
 let currentPre: Task | null = null
 let currentPost: Task | null = null
 
 console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 // const taskID = computed(() => currentTask.value.id)
-const taskTitle = computed(() => currentTask.value.title)
+const taskTitle = computed(() => getTask().title)
 // const updatedFlag = ref(false)
 
-const editTitle = ref(currentTask.value.title)
-const editNotes = ref(currentTask.value.notes)
-const editRemindMeAt = ref(currentTask.value.remind_me_at)
-const editMentalEnergyRequired = ref(currentTask.value.mental_energy_required)
-const editPhysicalEnergyRequired = ref(currentTask.value.physical_energy_required)
+const editTitle = ref(getTask().title)
+const editNotes = ref(getTask().notes)
+const editRemindMeAt = ref(getTask().remind_me_at)
+const editMentalEnergyRequired = ref(getTask().mental_energy_required)
+const editPhysicalEnergyRequired = ref(getTask().physical_energy_required)
 
 const expandEnergyStats = ref(usr.expandEnergyStats)
 
@@ -249,13 +256,13 @@ const lists = computed(
 )
 
 const allPres = computed(() => {
-  if(incompleteOnly.value) return currentTask.value.hard_prereqs.filter(x => !x.completed)
-  return currentTask.value.hard_prereqs
+  if(incompleteOnly.value) return getTask().hard_prereqs.filter(x => !x.completed)
+  return getTask().hard_prereqs
 })
 
 const allPosts = computed(() => {
-  if(incompleteOnly.value) return currentTask.value.hard_postreqs.filter(x => !x.completed)
-  return currentTask.value.hard_postreqs
+  if(incompleteOnly.value) return getTask().hard_postreqs.filter(x => !x.completed)
+  return getTask().hard_postreqs
 })
 
 const updateTaskCompletedStatus = (task: Task) => {
@@ -290,17 +297,17 @@ function getSelectedList(task: Task) {
   )
 }
 
-const selectedList = ref(getSelectedList(currentTask.value))
+const selectedList = ref(getSelectedList(getTask()))
 
 function setCurrentTask(newTask: Task) {
   console.debug('setCurrentTask')
   ctr.id = newTask.id
-  editTitle.value = currentTask.value.title
-  editNotes.value = currentTask.value.notes
-  editRemindMeAt.value = currentTask.value.remind_me_at
-  editMentalEnergyRequired.value = currentTask.value.mental_energy_required
-  editPhysicalEnergyRequired.value = currentTask.value.physical_energy_required
-  selectedList.value = getSelectedList(currentTask.value)
+  editTitle.value = getTask().title
+  editNotes.value = getTask().notes
+  editRemindMeAt.value = getTask().remind_me_at
+  editMentalEnergyRequired.value = getTask().mental_energy_required
+  editPhysicalEnergyRequired.value = getTask().physical_energy_required
+  selectedList.value = getSelectedList(getTask())
 }
 
 function deleteTask(title: string, task: Task) {
@@ -326,32 +333,32 @@ function deleteTask(title: string, task: Task) {
 }
 
 function updateTask(options: AllOptionalTaskProperties) {
-  tr.updateAndCache({id: currentTask.value.id ?? -1, payload: { task: options } })
+  tr.updateAndCache({id: getTask().id ?? -1, payload: { task: options } })
   .then(() => {
     Utils.notifySuccess('Task Was Updated')
   }, Utils.handleError('Error updating task'))
 }
 
-const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value)
+const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(getTask())
 
-const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value)
+const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(getTask())
 
 const prioritize = () => {
   $q.dialog({
     component: QuickPrioritizeDialog,
     componentProps: {
-      task: currentTask.value
+      task: getTask()
     }
   })
 }
 
 const removePrerequisite = async (prereq: Task) => {
-  await tr.removePre(currentTask.value, prereq.id)
+  await tr.removePre(getTask(), prereq.id)
   .then(Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'))
 }
 
 const removePostrequisite = async (postreq: Task) => {
-  await tr.removePost(currentTask.value, postreq.id)
+  await tr.removePost(getTask(), postreq.id)
   .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
 }
 
@@ -364,7 +371,7 @@ const mvpPostrequisite = async (post: Task) => {
   console.debug(post)
   const allOtherPosts = allPosts.value.filter(x => !x.completed && x.id !== post.id)
   for(let i = 0; i < allOtherPosts.length; i++) {
-    await tr.removePre(allOtherPosts[i], currentTask.value.id).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
+    await tr.removePre(allOtherPosts[i], getTask().id).then(Utils.handleSuccess('removed redundant prerequisite'), Utils.handleError('error removing redundant prerequisite'))
     await tr.addPre(allOtherPosts[i], post.id).then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
   }
   const syncResult = await syncWithBackend()
@@ -378,7 +385,7 @@ const insertBetweenPost = async (payload: { task: Task }) => {
   // desired end state: A --> B --> C
   // 2. remove rule A --> C
   console.debug('removing the old (now redundant) postrequisite from the current task')
-  await tr.removePost(currentTask.value, oldPost.id)
+  await tr.removePost(getTask(), oldPost.id)
     .then(
       () => {
         const ct = useRepo(TaskRepo).find(currentTaskID.value)
@@ -411,8 +418,8 @@ const insertBetweenPost = async (payload: { task: Task }) => {
       Utils.handleError('error moving postrequisite!'))
   // 1. add rule A --> B
   console.debug('adding selected postrequisite to current task')
-  if(!currentTask.value.hard_postreq_ids.includes(payload.task.id)) {
-    await tr.addPost(currentTask.value, payload.task.id)
+  if(!getTask().hard_postreq_ids.includes(payload.task.id)) {
+    await tr.addPost(getTask(), payload.task.id)
       .then(
         () => {
           const ct = useRepo(TaskRepo).find(currentTaskID.value)
@@ -437,10 +444,10 @@ const insertBetweenPost = async (payload: { task: Task }) => {
 
 const insertBetweenPre = async (payload: { task: Task }) => {
   const oldPre = Utils.hardCheck(currentPre)
-  await tr.removePre(currentTask.value, oldPre.id).then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
+  await tr.removePre(getTask(), oldPre.id).then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
   await tr.addPre(payload.task, oldPre.id).then(Utils.handleSuccess('successfully moved prerequisite!'), Utils.handleError('error moving prerequisite!'))
-  if(!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
-    await tr.addPre(currentTask.value, payload.task.id).then(Utils.handleSuccess('added new pre to current task'), Utils.handleError('error adding new pre to current task'))
+  if(!getTask().hard_prereq_ids.includes(payload.task.id)) {
+    await tr.addPre(getTask(), payload.task.id).then(Utils.handleSuccess('added new pre to current task'), Utils.handleError('error adding new pre to current task'))
   }
 }
 
@@ -534,7 +541,13 @@ const prunePosts = async (payload: { above: Set<number>, below: Set<number> }) =
 }
 
 const prunePres = async (payload: { above: Set<number>, below: Set<number> }) => {
-  const toRemove = allPosts.value.filter(x => payload.above.has(x.id) && !payload.below.has(x.id))
+  const toRemove = allPres.value.filter(x => {
+    const hasRelationsAbove = payload.above.has(x.id)
+    const hasRelationsBelow = payload.below.has(x.id)
+    console.log({ hasRelationsAbove, hasRelationsBelow, x})
+    return hasRelationsAbove && !hasRelationsBelow
+  })
+  console.log('pruning prerequisites', { payload, toRemove } )
   for(let i = 0; i < toRemove.length; i++) {
     await removePrerequisite(toRemove[i])
   }

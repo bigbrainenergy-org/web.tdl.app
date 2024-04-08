@@ -251,14 +251,23 @@ export class Task extends Model implements iRecord {
     const allTasks = options.useStore ? useAllTasksStore().allTasks : new Map(useRepo(TaskRepo).with('hard_prereqs').get().map(x => [x.id, x]))
     const allPres = new Set<number>()
     const queue = new Queue<number>()
-    const incFilter: λ<{ completed: boolean }, boolean> = options.incompleteOnly ? x => true : x => !x.completed
-    queue.enqueueAll(allTasks.get(this.id)!.hard_prereqs.filter(incFilter).map(x => x.id))
-    let tmpID = 0
+    // todo - allTasks.get(this.id) is resulting in undefined after adding a postrequisite from the updatetaskdialog.
+    if(typeof this.hard_prereqs === 'undefined') {
+      useRepo(TaskRepo).with('hard_prereqs').load([this])
+      allTasks.set(this.id, this)
+    }
+    const preIDs = (t: Task) => (options.incompleteOnly ? t.hard_prereqs.filter(x => !x.completed) : t.hard_prereqs).map(x => x.id)
+    const thisPres = preIDs(this)
+    queue.enqueueAll(thisPres)
     while(queue.size > 0) {
-      tmpID = queue.dequeue()
+      const tmpID = queue.dequeue()
       if(allPres.has(tmpID)) continue
       allPres.add(tmpID)
-      queue.enqueueAll(allTasks.get(tmpID)!.hard_prereqs.filter(incFilter).map(x => x.id))
+      let tmpTask = allTasks.get(tmpID) as Task | undefined
+      if(typeof tmpTask === 'undefined') tmpTask = useRepo(TaskRepo).withAll().find(tmpID) ?? undefined
+      if(typeof tmpTask === 'undefined') throw new Error(`Task ID ${tmpID} cannot be found in the Task Repository.`)
+      else allTasks.set(tmpID, tmpTask)
+      queue.enqueueAll(preIDs(tmpTask))
     }
     return allPres
   }
@@ -272,27 +281,35 @@ export class Task extends Model implements iRecord {
     const allTasks = options.useStore ? useAllTasksStore().allTasks : new Map(useRepo(TaskRepo).with('hard_postreqs').get().map(x => [x.id, x]))
     const allPosts = new Set<number>()
     const queue = new Queue<number>()
-    const incFilter: λ<{ completed: boolean }, boolean> = options.incompleteOnly ? x => !x.completed : x => true
-    queue.enqueueAll(allTasks.get(this.id)!.hard_postreqs.filter(incFilter).map(x => x.id))
-    let tmpID = 0
+    const postIDs = (t: Task) => {
+      if(typeof t.hard_postreqs === 'undefined') {
+        useRepo(TaskRepo).with('hard_postreqs').load([t])
+        allTasks.set(t.id, t)
+      }
+      return (options.incompleteOnly ? t.hard_postreqs.filter(x => !x.completed) : t.hard_postreqs).map(x => x.id)
+    }
+    const thisPosts = postIDs(this)
+    queue.enqueueAll(thisPosts)
     while(queue.size > 0) {
-      tmpID = queue.dequeue()
+      const tmpID = queue.dequeue()
       if(allPosts.has(tmpID)) continue
       allPosts.add(tmpID)
-      queue.enqueueAll(allTasks.get(tmpID)!.hard_postreqs.filter(incFilter).map(x => x.id))
+      let tmpTask = allTasks.get(tmpID) as Task | undefined
+      if(typeof tmpTask === 'undefined') tmpTask = useRepo(TaskRepo).withAll().find(tmpID) ?? undefined
+      if(typeof tmpTask === 'undefined') throw new Error(`Task ID ${tmpID} cannot be found in the Task Repository`)
+      else allTasks.set(tmpID, tmpTask)
+      queue.enqueueAll(postIDs(tmpTask))
     }
     return allPosts
   }
 
-  isIDAbove(id: number, options = { incompleteOnly: true, useStore: false }): boolean {
-    const opts = { incompleteOnly: options.incompleteOnly, useStore: options.useStore }
-    const allPreIDs = this.preIDsRecursive(opts)
+  isIDAbove(id: number, options: { incompleteOnly: boolean, useStore: boolean }): boolean {
+    const allPreIDs = this.preIDsRecursive(options)
     return allPreIDs.has(id)
   }
 
-  isIDBelow(id: number, options = { incompleteOnly: true, useStore: false }): boolean {
-    const opts = { incompleteOnly: options.incompleteOnly, useStore: options.useStore }
-    const allPostIDs = this.allPostIDsRecursive(opts)
+  isIDBelow(id: number, options: { incompleteOnly: boolean, useStore: boolean }): boolean {
+    const allPostIDs = this.allPostIDsRecursive(options)
     return allPostIDs.has(id)
   }
 
@@ -388,14 +405,13 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     options.payload.task.hard_prereq_ids!.push(id_of_prereq)
     await this.updateAndCache(options)
-    // const pre_options: UpdateTaskOptions = {
-    //   id: pre.id,
-    //   payload: { task: Object.assign({}, pre) }
-    // }
-    // pre_options.payload.task.hard_postreq_ids!.push(task.id)
-    pre.hard_postreq_ids.push(task.id)
-    //await this.update(pre_options)
-    this.setCache(pre)
+    const pre_options: UpdateTaskOptions = {
+      id: pre.id,
+      payload: { task: Object.assign({}, pre) }
+    }
+    pre_options.payload.task.hard_postreq_ids!.push(task.id)
+    await this.updateAndCache(pre_options)
+    //pre.hard_postreq_ids.push(task.id)
   }
 
   /**
@@ -417,15 +433,14 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     options.payload.task.hard_postreq_ids!.push(id_of_postreq)
     console.debug({ msg: 'pushing postreq to task.', payload: options.payload.task })
     await this.updateAndCache(options)
-    // const post_options: UpdateTaskOptions = {
-    //   id: post.id,
-    //   payload: { task: Object.assign({}, post) }
-    // }
-    // post_options.payload.task.hard_prereq_ids!.push(task.id)
-    // console.debug({ msg: 'pushing prereq to new postreq of task', payload: post_options.payload.task })
-    // await this.update(post_options)
-    post.hard_postreq_ids.push(task.id)
-    this.setCache(post)
+    const post_options: UpdateTaskOptions = {
+      id: post.id,
+      payload: { task: Object.assign({}, post) }
+    }
+    post_options.payload.task.hard_prereq_ids!.push(task.id)
+    console.debug({ msg: 'pushing prereq to new postreq of task', payload: post_options.payload.task })
+    await this.updateAndCache(post_options)
+    //post.hard_prereq_ids.push(task.id)
   }
 
   deleteTask = async (task: Task) => {
@@ -446,17 +461,21 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   }
 
   updateAndCache = async (options: UpdateTaskOptions) => {
-    await this.update(options).then((data: void | Task) => { if(data instanceof Task) this.setCache(data) })
+    await this.update(options).then((data: void | Task) => { if(data instanceof Task) return this.setCache(data) })
   }
 
   addAndCache = async (options: CreateTaskOptions) => {
-    return await this.add(options).then(data => this.setCache(data))
+    return await this.add(options).then(data => {
+      console.debug({ method: 'addAndCache', data })
+      return this.setCache(data)
+    })
   }
 
   setCache = (task: Task) => {
-    this.withAll().load([task])
-    useAllTasksStore().allTasks.set(task.id, task)
-    return task
+    const t = this.withAll().find(task.id)
+    if(t === null) throw new Error('Task not found in the repository, so it cannot be cached.')
+    useAllTasksStore().allTasks.set(t.id, t)
+    return t
   }
 
   incompleteOnly = (): Task[] => this.withAll().get().filter(x => !x.completed)

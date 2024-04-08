@@ -30,8 +30,8 @@
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
             <q-item-section class="vertical-top wrapped" style="width: 90%;">
-              <q-icon v-if="isAbove.has(item.id)" name='fas fa-triangle-exclamation' color="green" />
-              <q-icon v-if="isBelow.has(item.id)" name='fas fa-triangle-exclamation' color="red" />
+              <q-icon v-if="isNearRedundant(item.id)" name='fas fa-triangle-exclamation' color="green" />
+              <q-icon v-if="isFarRedundant(item.id)" name='fas fa-triangle-exclamation' color="red" />
               <q-item-label lines="2">
                 {{ item.title }}
               </q-item-label>
@@ -65,8 +65,8 @@ import { onUpdated } from 'vue'
 import { ref } from 'vue'
 
 export interface EntityType {
-  singular: string
-  plural: string
+  singular: 'Prerequisite' | 'Postrequisite'
+  plural: 'Prerequisites' | 'Postrequisites'
 }
 
 interface Props {
@@ -84,28 +84,35 @@ const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleComplet
 
 const updateRedundants = () => {
   console.time('updateRedundants')
-  isAbove.value.clear()
-  isBelow.value.clear()
+  aboves.value.clear()
+  belows.value.clear()
   if(prop.items.length === 0) return
   console.warn(`updating redundant check for ${prop.items.length} dependents`)
   const arr = prop.items.map(x => x.id)
   const options = { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: true }
   prop.items.forEach(x => {
-    const arrExcludingX = arr.filter(y => y !== x.id && !isBelow.value.has(y) && !isBelow.value.has(y))
-    const aboves = x.anyIDsAbove(arrExcludingX, options)
-    const belows = x.anyIDsBelow(arrExcludingX, options)
-    aboves.forEach((val: boolean, key: number) => { if(val) isAbove.value.add(key) })
-    belows.forEach((val: boolean, key: number) => { if(val) isBelow.value.add(key) })
+    const arrExcludingX = arr.filter(y => y !== x.id && !belows.value.has(y) && !aboves.value.has(y))
+    const aboveX = x.anyIDsAbove(arrExcludingX, options)
+    const belowX = x.anyIDsBelow(arrExcludingX, options)
+    aboveX.forEach((val, key) => { if(val) aboves.value.add(key) })
+    belowX.forEach((val, key) => { if(val) belows.value.add(key) })
+    console.debug({ x, arrExcludingX, aboveX, belowX })
   })
   console.timeEnd('updateRedundants')
 }
 
-const isAbove = ref<Set<number>>(new Set())
-const isBelow = ref<Set<number>>(new Set())
+const aboves = ref<Set<number>>(new Set())
+const belows = ref<Set<number>>(new Set())
 onMounted(updateRedundants)
 onUpdated(updateRedundants)
 
-const pruneDependencies = () => { emit('pruneDependencies', { above: isAbove.value, below: isBelow.value })}
+const isNearRedundant = (x: number) => prop.dependencyType.singular === 'Prerequisite' ? belows.value.has(x) : aboves.value.has(x)
+const isFarRedundant = (x: number) => prop.dependencyType.singular === 'Prerequisite' ? aboves.value.has(x) : belows.value.has(x)
+
+const pruneDependencies = () => { 
+  console.log(`pruning ${prop.dependencyType.plural}`)
+  emit('pruneDependencies', { above: aboves.value, below: belows.value })
+}
 </script>
 
 <style>
