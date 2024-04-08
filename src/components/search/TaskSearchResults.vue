@@ -141,7 +141,7 @@ const searchForTasks = () => {
     }
   )
   kickOffRedundancyCheck()
-  results.value.sort(byRedundancy)
+  //results.value.sort(byRedundancy)
 }
 
 const kickOffRedundancyCheck = () => {

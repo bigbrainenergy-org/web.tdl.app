@@ -69,7 +69,6 @@ export class TDLAPP {
             return true
           }
         },
-        // define batch filter here.
         batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
           if(typeof taskID === 'undefined') return undefined
           const ct = useRepo(TaskRepo).find(taskID)

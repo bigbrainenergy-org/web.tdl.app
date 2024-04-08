@@ -161,10 +161,13 @@ const sliceTask = (x: Task) => {
 const reloadTasks = () => { refreshLayerZero(); tryNewPair() }
 
 const complete = (x: Task) => x.toggleCompleted().then(reloadTasks)
-const taskDetails = (x: Task) => TDLAPP.openTask(x)
+const taskDetails = (x: Task) => {
+  console.debug(`opening details for task ID ${x.id}`)
+  TDLAPP.openTask(x)
   .onCancel(reloadTasks)
   .onDismiss(reloadTasks)
   .onOk(reloadTasks)
+}
 
 const menuItems: SimpleMenuItem<Task>[] = [
   {

@@ -196,6 +196,7 @@ import errorNotification from 'src/hackerman/ErrorNotification'
 import TaskSearchDialog from './TaskSearchDialog.vue'
 import { λ } from 'src/types'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+import { onMounted } from 'vue'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -217,7 +218,7 @@ const tr = useRepo(TaskRepo)
 const usr = useLocalSettingsStore()
 const ctr = useCurrentTaskStore()
 
-const currentTaskID = computed((): number => Utils.hardCheck(ctr.id))
+const currentTaskID = computed((): number => Utils.hardCheck(ctr.id, 'currentTaskID was null or undefined.'))
 const currentTask = computed((): Task | null => tr.withAll().find(currentTaskID.value))
 const getTask = (): Task => {
   if(currentTask.value === null) {
@@ -226,8 +227,11 @@ const getTask = (): Task => {
   }
   return currentTask.value
 }
-getTask().hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
-getTask().hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+onMounted(() => {
+  getTask().hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+  getTask().hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+})
+
 
 let currentPre: Task | null = null
 let currentPost: Task | null = null
@@ -452,22 +456,7 @@ const insertBetweenPre = async (payload: { task: Task }) => {
 }
 
 // when is a joke taken too far?
-const insertBetweenFilter: λ<Task, λ<number | undefined, λ<Task, boolean>>> = (dependency: Task) => {
-  return (taskID: number | undefined) => {
-    const simplestFilter = (x: Task) => !x.completed
-    if(typeof taskID === 'undefined') return simplestFilter
-    const currentTask = useRepo(TaskRepo).find(taskID)
-    if(currentTask === null) return simplestFilter
-    return (x: Task) => {
-      if(x.completed) return false
-      if(currentTask.hard_prereq_ids.includes(x.id)) return false
-      if(currentTask.hard_postreq_ids.includes(x.id)) return false
-      if(dependency.hard_prereq_ids.includes(x.id)) return false
-      if(dependency.hard_postreq_ids.includes(x.id)) return false
-      return true
-    }
-  }
-}
+const insertBetweenFilter: λ<number | undefined, λ<Task, boolean>> = (taskID: number | undefined) => (x: Task) => !x.completed
 
 const dialogInsertBetweenPost = (post: Task) => {
   currentPost = post
@@ -475,11 +464,31 @@ const dialogInsertBetweenPost = (post: Task) => {
     component: TaskSearchDialog,
     componentProps: {
       dialogTitle: 'Insert Task Between Two Others',
+      taskID: currentTaskID.value,
       searchLabel: 'Search',
       resultsTitle: 'Search Results',
       closeOnSelect: false,
       onSelect: insertBetweenPost,
-      initialFilter: insertBetweenFilter(post)
+      initialFilter: insertBetweenFilter,
+      batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
+        if(typeof taskID === 'undefined') {
+          console.warn('task id is undefined')
+          return []
+        }
+        const ct = useRepo(TaskRepo).withAll().find(taskID)
+        if(ct === null) {
+          console.warn('current task was not found (by id)')
+          return []
+        }
+        const relationInfo = ct.anyIDsAbove(tasks.map(x => x.id))
+        if(currentPost === null) {
+          console.warn('current postrequisite info was not passed in')
+          return []
+        }
+        const postRelationInfo = currentPost.anyIDsBelow(tasks.map(x => x.id))
+        return tasks.filter(x => relationInfo.get(x.id) !== true)
+          .filter(x => postRelationInfo.get(x.id) !== true)
+      }
     }
   })
 }
@@ -490,11 +499,31 @@ const dialogInsertBetweenPre = (pre: Task) => {
     component: TaskSearchDialog,
     componentProps: {
       dialogTitle: 'Insert Task Between Two Others',
+      taskID: currentTaskID.value,
       searchLabel: 'Search',
       resultsTitle: 'Search Results',
       closeOnSelect: false,
       onSelect: insertBetweenPre,
-      initialFilter: insertBetweenFilter(pre)
+      initialFilter: insertBetweenFilter,
+      batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
+        if(typeof taskID === 'undefined') {
+          console.warn('task id is undefined')
+          return []
+        }
+        const ct = useRepo(TaskRepo).withAll().find(taskID)
+        if(ct === null) {
+          console.warn('current task was not found (by id)')
+          return []
+        }
+        const relationInfo = ct.anyIDsBelow(tasks.map(x => x.id))
+        if(currentPre === null) {
+          console.warn('current prerequisite info was not passed in')
+          return []
+        }
+        const preRelationInfo = currentPre.anyIDsAbove(tasks.map(x => x.id))
+        return tasks.filter(x => relationInfo.get(x.id) !== true)
+          .filter(x => preRelationInfo.get(x.id) !== true)
+      }
     }
   })
 }

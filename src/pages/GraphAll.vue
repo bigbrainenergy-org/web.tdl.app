@@ -58,6 +58,9 @@ watch(taskNodeMaxSize, () => {
 
 console.log(graphSettings.value)
 
+// todo: merge with other populate function
+// todo: make less weird
+// todo: optimize
 const populateGraphDataStructures = () => {
   allTasks = tr.value.withAll().get()
   allTaskNodes = []
@@ -82,7 +85,7 @@ const populateGraphDataStructures = () => {
 
 const populateGraphDataStructuresIncompleteOnly = () => {
   const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
-  allTasks = tr.value.withAll().get().filter(incomplete)
+  allTasks = tr.value.where('completed', false).withAll().get()
   const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
   allTasks.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
 
@@ -97,7 +100,7 @@ const populateGraphDataStructuresIncompleteOnly = () => {
 
   const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (currentTaskNode: d3Node<Task>) => currentTaskNode.obj.hard_postreqs.filter(incomplete).map(generateD3LinkToPostreq(currentTaskNode))
 
-  allTaskNodes = Array.from(taskNodeMap).map(x => x[1])
+  allTaskNodes = Array.from(taskNodeMap.values())
   links = allTaskNodes.flatMap(generateD3LinksToAllPostreqs)
 }
 
@@ -251,6 +254,9 @@ onMounted(initializeGraph)
 const openSearchDialog = () => TDLAPP.searchDialog()
 const biggest = (prev: d3Node<Task>, curr: d3Node<Task>) => curr.radius > prev.radius ? curr : prev
 const openLargest = () => TDLAPP.openTask(allTaskNodes.reduce(biggest).obj)
+  .onOk(reInitializeGraph)
+  .onCancel(reInitializeGraph)
+  .onDismiss(reInitializeGraph)
 </script>
 
 <style>
