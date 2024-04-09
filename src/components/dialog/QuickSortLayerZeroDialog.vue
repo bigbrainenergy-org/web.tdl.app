@@ -91,7 +91,6 @@ import { Utils } from 'src/util'
 import { watch } from 'vue'
 import { computed, ref } from 'vue'
 import SettingsButton from '../SettingsButton.vue'
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
@@ -108,9 +107,13 @@ class PostWeightedTask {
 }
 
 const deepQuickSort = ref(useLocalSettingsStore().enableDeeperQuickSort)
-const quickSortSettings = ref({ 'Deeper Quick Sort': deepQuickSort })
+const maxLayerZero = ref(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
+const quickSortSettings = ref({ 'Deeper Quick Sort': deepQuickSort, 'Max Quantity of Next-Up Tasks': maxLayerZero })
 watch(deepQuickSort, () => {
   useLocalSettingsStore().enableDeeperQuickSort = deepQuickSort.value
+})
+watch(maxLayerZero, () => {
+  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value
 })
 
 const postWeightedTask = (x: Task) => new PostWeightedTask(x)
@@ -119,7 +122,9 @@ const layerZero = ref<PostWeightedTask[]>(tr.value.layerZero().map(postWeightedT
 const refreshLayerZero = () => layerZero.value = tr.value.layerZero().map(postWeightedTask)
 const l0len = computed(() => layerZero.value.length)
 watch(l0len, (value: number) => {
-  if(value < 2) onDialogOK()
+  if(value < 2) {
+    if(dialogRef !== null) onDialogOK()
+  }
 })
 
 const layerOne = computed(() => 
@@ -194,7 +199,7 @@ const menuItems: SimpleMenuItem<Task>[] = [
 
 const finishedSorting = (msg = 'Finished Sorting') => {
   Utils.notifySuccess(msg)
-  onDialogHide()
+  if(dialogRef !== null) onDialogHide()
 }
 
 type withID<T> = { id: number | null, data: T }
@@ -379,7 +384,7 @@ const tryNewPair = () => {
     currentPair.value = generateNewPair()
   } catch(e) {
     Utils.notifySuccess('Nothing more to sort')
-    onDialogOK()
+    if(dialogRef !== null) onDialogOK()
   }
 }
 

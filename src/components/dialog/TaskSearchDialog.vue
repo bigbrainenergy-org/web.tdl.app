@@ -4,6 +4,7 @@
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
+        <SettingsButton v-model:settings="taskSearchSettings" name="Task Search Settings" color="white" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onCancelClick" />
       </q-card-section>
 
@@ -24,7 +25,7 @@
       :results-title="resultsTitle"
       :showCreateButton="showCreateButton"
       :initial-filter="initialFilter"
-      :batch-filter="batchFilter"
+      :batch-filter="defaultBatchFilter"
       @select="(e) => selectTask(e.task)" />
 
     </q-card>
@@ -34,15 +35,18 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
 
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
-import { Task } from 'src/stores/tasks/task';
+import { Task, TaskRepo } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
 // import { useRepo } from 'pinia-orm'
 // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import TaskSearchResults from '../search/TaskSearchResults.vue';
 import TaskSearchInput from '../search/TaskSearchInput.vue'
 import { λ } from 'src/types'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useRepo } from 'pinia-orm'
+import SettingsButton from '../SettingsButton.vue';
 
 interface Props {
   dialogTitle: string
@@ -62,7 +66,8 @@ const props = withDefaults(defineProps<Props>(),
     resultsTitle: 'Possible Matches',
     closeOnSelect: false,
     showCreateButton: true,
-    batchFilter: () => () => []
+    initialFilter: undefined,
+    batchFilter: undefined
   }
 )
 
@@ -99,6 +104,33 @@ const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 
 // const tr = useRepo(TaskRepo)
 // const usr = useLocalSettingsStore()
+
+const usr = useLocalSettingsStore()
+const omitRedundant = ref(usr.omitRedundantSearchResults)
+const taskSearchSettings = ref({ 'Omit Redundant Tasks': omitRedundant })
+
+watch(omitRedundant, () => {
+  usr.omitRedundantSearchResults = omitRedundant.value
+})
+
+/**
+ * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
+ */
+const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
+  if(omitRedundant.value) {
+    if(typeof taskID !== 'undefined') {
+      const ct = useRepo(TaskRepo).find(taskID)
+      if(ct !== null) {
+        const relationInfo = ct.BulkHasRelationTo(tasks.map(x => x.id), { incompleteOnly: true, useStore: true })
+        tasks = tasks.filter(x => relationInfo.get(x.id) !== true)
+      }
+    }
+  }
+  if(typeof props.batchFilter !== 'undefined') {
+    return props.batchFilter(taskID)(tasks)
+  }
+  return tasks
+}
 
 const selectTask = (task: Task) => {
   emit('select', { task: task })

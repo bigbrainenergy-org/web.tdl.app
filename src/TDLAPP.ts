@@ -65,6 +65,7 @@ export class TDLAPP {
           if(ct === null) throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
           return (x: Task) => {
             if(x.completed) return false
+            if(x.id === ct.id) return false
             if(ct.hard_prereq_ids.includes(x.id)) return false
             return true
           }
@@ -88,6 +89,17 @@ export class TDLAPP {
         showCreateButton: true,
         onSelect: (payload: { task: Task }) => {
           this.addPost(currentTask, payload.task.id)
+        },
+        initialFilter: (currentTaskID: number | undefined) => {
+          if(typeof currentTaskID === 'undefined') throw new Error('Add Postrequisite: Current Task ID is undefined')
+          const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
+          if(ct === null) throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
+          return (x: Task) => {
+            if(x.completed) return false
+            if(x.id === ct.id) return false
+            if(ct.hard_postreq_ids.includes(x.id)) return false
+            return true
+          }
         },
         batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
           if(typeof taskID === 'undefined') return undefined
