@@ -106,14 +106,14 @@ class PostWeightedTask {
   shouldReroll = () => Math.random() - this.weight() > 0
 }
 
-const deepQuickSort = ref(useLocalSettingsStore().enableDeeperQuickSort)
-const maxLayerZero = ref(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
+const deepQuickSort = ref<boolean>(useLocalSettingsStore().enableDeeperQuickSort)
+const maxLayerZero = ref<number>(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
 const quickSortSettings = ref({ 'Deeper Quick Sort': deepQuickSort, 'Max Quantity of Next-Up Tasks': maxLayerZero })
 watch(deepQuickSort, () => {
   useLocalSettingsStore().enableDeeperQuickSort = deepQuickSort.value
 })
 watch(maxLayerZero, () => {
-  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value
+  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value + 0
 })
 
 const postWeightedTask = (x: Task) => new PostWeightedTask(x)
