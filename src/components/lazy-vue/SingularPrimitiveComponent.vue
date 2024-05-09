@@ -9,7 +9,7 @@ const data = defineModel<SingularPrimitive>('data')
 if (!isSingularPrimitive(data.value)) throw new Error('SingularPrimitiveComponent: provided data was not a singular primitive!')
 const edit = defineModel<boolean | undefined>('edit')
 const props = withDefaults(defineProps<GenericPropStructure>(), { showEdit: true })
-const nbool = (x: unknown): x is boolean => typeof x === 'boolean'
+const nbool = (x: unknown): x is boolean => x === true || x === false
 const nplaintext = (x: unknown): x is number | string => typeof x === 'number' || typeof x === 'string'
 edit.value = edit.value ?? false
 
