@@ -4,9 +4,9 @@
         <q-bar style="background-color: #333333">
           <div>IN FOCUS</div>
           <q-space />
-          <q-btn dense flat icon="fa fa-scissors" class="q-pr-sm" @click="slice(currentTask as Task)"/>
-          <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(currentTask as Task)"/>
-          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(currentTask as Task)">
+          <q-btn dense flat icon="fa fa-scissors" class="q-pr-sm" @click="slice(currentTask as Task)" @touchstart.stop @mousedown.stop/>
+          <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(currentTask as Task)" @touchstart.stop @mousedown.stop/>
+          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(currentTask as Task) @touchstart.stop @mousedown.stop">
             <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
               Add Prerequisites
             </q-tooltip>
@@ -24,13 +24,13 @@
         <q-bar style="background-color: #333333">
           <div>UP NEXT</div>
           <q-space />
-          <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(nextUp as Task)"/>
-          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(nextUp as Task)">
+          <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(nextUp as Task)" @touchstart.stop @mousedown.stop/>
+          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(nextUp as Task)" @touchstart.stop @mousedown.stop>
             <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
               Add Prerequisites
             </q-tooltip>
           </q-btn>
-          <q-btn dense flat icon="fa fa-check" @click="(nextUp as Task).toggleCompleted()"/>
+          <q-btn dense flat icon="fa fa-check" @click="(nextUp as Task).toggleCompleted()" @touchstart.stop @mousedown.stop/>
         </q-bar>
         <q-card-section v-if="nextUp" class="text-h4">
           {{ nextUp.title }}
