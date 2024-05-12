@@ -20,7 +20,7 @@
             </q-item-section>
           </q-item>
 
-          <q-item v-ripple clickable>
+          <q-item v-ripple clickable @click="openSearchDialog">
             <q-item-section avatar>
               <q-icon name="search" />
             </q-item-section>
@@ -37,6 +37,36 @@
 
             <q-item-section>
               Inbox
+            </q-item-section>
+          </q-item>
+
+          <q-item v-ripple clickable>
+            <q-item-section avatar>
+              <q-icon name="today" />
+            </q-item-section>
+
+            <q-item-section>
+              Today
+            </q-item-section>
+          </q-item>
+
+          <q-item v-ripple clickable>
+            <q-item-section avatar>
+              <q-icon name="calendar_month" />
+            </q-item-section>
+
+            <q-item-section>
+              Upcoming
+            </q-item-section>
+          </q-item>
+
+          <q-item v-ripple clickable>
+            <q-item-section avatar>
+              <q-icon name="checklist" />
+            </q-item-section>
+
+            <q-item-section>
+              All Tasks
             </q-item-section>
           </q-item>
         </q-list>
@@ -75,6 +105,7 @@ import { ListRepo } from 'src/stores/lists/list'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
 import { Utils } from 'src/util'
+import { TDLAPP } from 'src/TDLAPP'
 
 const $q = useQuasar()
 const model = defineModel(false)
@@ -85,6 +116,8 @@ await listsRepo.fetch()
 const lists = computed(
   () => listsRepo.withAll().get()
 )
+
+const openSearchDialog = () => TDLAPP.searchDialog()
 
 const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
