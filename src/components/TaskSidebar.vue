@@ -10,7 +10,7 @@
     >
       <q-scroll-area class="fit">
         <q-list padding>
-          <q-item v-ripple clickable>
+          <q-item v-ripple clickable @click="openCreateTaskDialog">
             <q-item-section avatar>
               <q-icon name="add" />
             </q-item-section>
@@ -70,13 +70,44 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRepo } from 'pinia-orm'
+import { useQuasar } from 'quasar';
 import { ListRepo } from 'src/stores/lists/list'
+import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
+import { Utils } from 'src/util'
 
+const $q = useQuasar()
 const model = defineModel(false)
-
 const listsRepo = useRepo(ListRepo)
+
+await listsRepo.fetch()
 
 const lists = computed(
   () => listsRepo.withAll().get()
 )
+
+const createTask = (payload: CreateTaskOptions) => {
+  const tr = useRepo(TaskRepo)
+  tr.add(payload)
+  .then(
+    () => {
+      Utils.notifySuccess('Successfully created a task')
+    },
+    Utils.handleError('Failed to create task.')
+  )
+}
+
+const openCreateTaskDialog = () => {
+  $q.dialog({
+    component: CreateTaskDialog,
+    componentProps: {
+      onCreate: (payload: {options: CreateTaskOptions, callback: () => void}) => {
+        const newTask = payload.options
+        newTask.hard_prereq_ids = []
+        newTask.hard_postreq_ids = []
+        createTask(newTask)
+      }
+    }
+  })
+}
 </script>
