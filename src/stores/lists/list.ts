@@ -25,6 +25,7 @@ export class List extends Model implements iRecord {
   // todo: don't just use attr
   @Attr(null) declare id: number | null;
   @Str('') declare title: string;
+  @Str('') declare color: string;
   @Num(0) declare order: number;
 
   @HasMany(() => Task, 'list_id') declare tasks: Task[];
