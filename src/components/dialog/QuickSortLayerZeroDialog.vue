@@ -20,7 +20,8 @@
           split
           auto-close
           dropdown-icon="more_vert"
-          @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)">
+          @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)"
+          @touchstart.stop @mousedown.stop>
           <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped" :style="isRelated">
@@ -51,7 +52,8 @@
           split
           auto-close
           dropdown-icon="more_vert"
-          @click.stop="addRule(currentPair.data.b as Task, currentPair.data.a as Task)">
+          @click.stop="addRule(currentPair.data.b as Task, currentPair.data.a as Task)"
+          @touchstart.stop @mousedown.stop>
           <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped" :style="isRelated">
