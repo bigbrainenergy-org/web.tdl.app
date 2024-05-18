@@ -1,9 +1,15 @@
 {
   "name": "web-tdl-app",
   "version": "0.0.1",
-  "description": "TDLAPP by Big Brain Energy",
-  "productName": "TDLAPP",
-  "author": "Kurt Apple",
+  "description": "TDL App by Big Brain Energy",
+  "productName": "TDL App",
+  "contributors": [
+    {
+      "name": "Josh Buker",
+      "url": "https://joshbuker.com"
+    },
+    { "name": "Kurt Apple" }
+  ],
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
