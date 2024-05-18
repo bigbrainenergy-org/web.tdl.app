@@ -22,13 +22,18 @@ export interface UpdateListOptions extends iOptions {
 export class List extends Model implements iRecord {
   static entity = 'lists';
 
-  // todo: don't just use attr
-  @Attr(null) declare id: number | null;
+  @Num(-1) declare id: number;
   @Str('') declare title: string;
   @Str('') declare color: string;
   @Num(0) declare order: number;
 
   @HasMany(() => Task, 'list_id') declare tasks: Task[];
+
+  get incompleteTaskCount() {
+    return this.tasks.filter(
+      task => task.completed === false
+    ).length
+  }
 }
 
 export class ListRepo extends GenericRepo<CreateListOptions, UpdateListOptions, List> {
