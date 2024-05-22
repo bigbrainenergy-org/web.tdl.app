@@ -6,7 +6,7 @@
           <q-space />
           <q-btn dense flat icon="fa fa-scissors" class="q-pr-sm" @click="slice(currentTask as Task)" @touchstart.stop @mousedown.stop/>
           <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(currentTask as Task)" @touchstart.stop @mousedown.stop/>
-          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(currentTask as Task) @touchstart.stop @mousedown.stop">
+          <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(currentTask as Task)" @touchstart.stop @mousedown.stop>
             <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
               Add Prerequisites
             </q-tooltip>
