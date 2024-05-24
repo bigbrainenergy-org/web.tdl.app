@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar'
+import { useQuasar, useMeta } from 'quasar'
 import { computed, defineComponent, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 
@@ -78,6 +78,14 @@ import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
 import SettingsButton from 'src/components/SettingsButton.vue'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+
+useMeta(
+  () => {
+    return {
+      title: 'Tasks | TDL App'
+    }
+  }
+)
 
 const $q = useQuasar()
 

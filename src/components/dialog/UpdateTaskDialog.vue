@@ -175,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent, useQuasar } from 'quasar'
+import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
 import { computed, ref } from 'vue';
 
 import DependencyList from '../DependencyList.vue';
@@ -240,6 +240,14 @@ console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 // const taskID = computed(() => currentTask.value.id)
 const taskTitle = computed(() => getTask().title)
 // const updatedFlag = ref(false)
+
+useMeta(
+  () => {
+    return {
+      title: taskTitle.value + ' | TDL App'
+    }
+  }
+)
 
 const editTitle = ref(getTask().title)
 const editNotes = ref(getTask().notes)
@@ -434,7 +442,7 @@ const insertBetweenPost = async (payload: { task: Task }) => {
           if(pt === null) throw new Error('payload task was not found by id')
           if(!pt.hard_prereq_ids.includes(currentTaskID.value))
             throw new Error('prereq (current task) was not found related to new postreq')
-        }, 
+        },
         Utils.handleError('error adding new post to current task'))
 
     const newPost = await useRepo(TaskRepo).getId(payload.task.id)
