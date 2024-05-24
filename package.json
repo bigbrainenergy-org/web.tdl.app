@@ -8,7 +8,9 @@
       "name": "Josh Buker",
       "url": "https://joshbuker.com"
     },
-    { "name": "Kurt Apple" }
+    {
+      "name": "Kurt Apple"
+    }
   ],
   "private": true,
   "scripts": {
