@@ -1,111 +1,122 @@
 <template>
   <q-layout view="hHh LpR fFf" :style="formattedBackgroundMode">
-      <q-header elevated>
-        <q-toolbar>
-          <q-btn
-            v-if="pagesWithNewTaskButton.includes(currentPath)"
-            color='green'
-            icon='fa-solid fa-plus'
-            @click="openCreateTaskDialog"
-          />
-          <q-btn
-            v-if="currentPath === '/settings'"
-            color='green'
-            label="Go Back"
-            icon="fa-solid fa-arrow-left"
-            @click="$router.go(-1)"
-          />
-          <q-btn
-            v-if="currentPath === '/lists'"
-            color='green'
-            icon="fa-solid fa-plus"
-            @click="openCreateListDialog"
-          />
-          <q-btn
-            class="q-ma-md"
-            color="yellow"
-            icon="fa-solid fa-refresh"
-            @click="pullFresh"
-          />
+    <q-header elevated>
+      <q-toolbar>
+        <q-btn
+          flat
+          round
+          dense
+          icon="menu"
+          size="lg"
+          class="q-mr-sm"
+          @click="drawer = !drawer"
+        />
+        <q-btn
+          v-if="pagesWithNewTaskButton.includes(currentPath)"
+          color='green'
+          icon='fa-solid fa-plus'
+          @click="openCreateTaskDialog"
+        />
+        <q-btn
+          v-if="currentPath === '/settings'"
+          color='green'
+          label="Go Back"
+          icon="fa-solid fa-arrow-left"
+          @click="$router.go(-1)"
+        />
+        <q-btn
+          v-if="currentPath === '/lists'"
+          color='green'
+          icon="fa-solid fa-plus"
+          @click="openCreateListDialog"
+        />
+        <q-btn
+          class="q-ma-md"
+          color="yellow"
+          icon="fa-solid fa-refresh"
+          @click="pullFresh"
+        />
 
-          <q-space />
+        <q-space />
 
-          <q-btn
-            dense
-            flat
-            no-wrap
-          >
-            <q-avatar rounded size="32px">
-              <q-icon name="fas fa-user-circle" />
-            </q-avatar>
-            <q-icon name="arrow_drop_down" size="24px" />
+        <q-btn
+          dense
+          flat
+          no-wrap
+        >
+          <q-avatar rounded size="32px">
+            <q-icon name="fas fa-user-circle" />
+          </q-avatar>
+          <q-icon name="arrow_drop_down" size="24px" />
 
-            <q-menu auto-close>
-              <q-list>
-                <q-item>
-                  <q-item-section class="text-center">
-                    <div class="text-pain">Logged in as:</div>
-                    <div class="text-glitch text-h4" :data-text="ur.username">
-                      {{ ur.username }}
-                    </div>
-                  </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable @click="$router.push({ path: '/settings' })">
-                  <q-item-section>{{ $t('settings') }}</q-item-section>
-                  <q-item-section avatar>
-                    <q-icon name="settings" />
-                  </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable @click="logout">
-                  <q-item-section>Logout/Change Server</q-item-section>
-                  <q-item-section avatar>
-                    <q-icon name="fas fa-sign-out-alt" />
-                  </q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable @click="pullFresh">
-                  <q-item-section>Pull Latest From Server</q-item-section>
-                  <q-item-section avatar>
-                    <q-icon name="fas fa-sign-out-alt" />
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
+          <q-menu auto-close>
+            <q-list>
+              <q-item>
+                <q-item-section class="text-center">
+                  <div class="text-pain">Logged in as:</div>
+                  <div class="text-glitch text-h4" :data-text="ur.username">
+                    {{ ur.username }}
+                  </div>
+                </q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable @click="$router.push({ path: '/settings' })">
+                <q-item-section>{{ $t('settings') }}</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="settings" />
+                </q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable @click="logout">
+                <q-item-section>Logout/Change Server</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="fas fa-sign-out-alt" />
+                </q-item-section>
+              </q-item>
+              <q-separator />
+              <q-item clickable @click="pullFresh">
+                <q-item-section>Pull Latest From Server</q-item-section>
+                <q-item-section avatar>
+                  <q-icon name="fas fa-sign-out-alt" />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
 
-            <q-menu context-menu auto-close>
-              <q-list>
-                <q-item clickable>
-                  <q-item-section>Testing</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
-        </q-toolbar>
-      </q-header>
+          <q-menu context-menu auto-close>
+            <q-list>
+              <q-item clickable>
+                <q-item-section>Testing</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
+      </q-toolbar>
+    </q-header>
 
-      <q-footer elevated class="bg-grey-8 text-white">
-        <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
-          <q-route-tab icon="fa-solid fa-circle-dot" to="/focus" label="Focus" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-          <q-route-tab icon="fa-solid fa-inbox" to="/tasks" label="Tasks" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-          <q-route-tab icon="fa-solid fa-inbox" to="/josh-page" label="Josh" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+    <task-sidebar v-model="drawer" />
+
+    <q-footer elevated class="bg-grey-8 text-white">
+      <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
+        <q-route-tab icon="fa-solid fa-circle-dot" to="/focus" label="Focus" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-inbox" to="/tasks" label="Tasks" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-inbox" to="/josh-page" label="Josh" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
           <q-route-tab icon="fa-solid fa-inbox" to="/agenda" label="Agenda" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-          <q-route-tab icon="fa-solid fa-project-diagram" to="/lists" label="Lists" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-          <q-route-tab icon="fa-solid fa-project-diagram" to="/tasks-tree" label="Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-          <q-route-tab icon="fa-solid fa-project-diagram" to="/graph" label="Graph" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        </q-tabs>
-      </q-footer>
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/lists" label="Lists" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/tasks-tree" label="Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab icon="fa-solid fa-project-diagram" to="/graph" label="Graph" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+      </q-tabs>
+    </q-footer>
 
-      <q-page-container>
-        <router-view ref="routedComponent" :key="routedKey" keep-alive></router-view>
-        <!-- <router-view v-slot="{ Component }">
-            <keep-alive>
-              <component :is="Component" />
-            </keep-alive>
+    <q-page-container>
+      <router-view ref="routedComponent" :key="routedKey" keep-alive></router-view>
+      <!-- <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
 
-        </router-view> -->
-      </q-page-container>
+      </router-view> -->
+    </q-page-container>
   </q-layout>
 </template>
 
@@ -116,6 +127,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import errorNotification from 'src/hackerman/ErrorNotification';
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
+import TaskSidebar from 'src/components/TaskSidebar.vue'
 import { UserRepo } from 'src/stores/users/user'
 import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
@@ -134,6 +146,7 @@ const $route = useRoute()
 const $router = useRouter()
 const routedComponent = ref<ComponentPublicInstance | null>(null)
 const routedKey = ref(0)
+const drawer = ref(false)
 
 const refreshRoutedComponent = () => {
   console.warn('refreshing routed component')

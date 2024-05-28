@@ -1,4 +1,4 @@
-FROM node:18 AS build
+FROM node:20 AS build
 
 WORKDIR /build
 
@@ -25,7 +25,7 @@ RUN yarn
 RUN yarn build
 
 # Starting the production / final image
-FROM node:18-slim AS final
+FROM node:20-slim AS final
 
 WORKDIR /app
 

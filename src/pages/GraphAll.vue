@@ -9,7 +9,7 @@
             <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
-          <svg ref="graphRef" id="graphElement"></svg>  
+          <svg ref="graphRef" id="graphElement"></svg>
         </q-card>
       </div>
     </div>
@@ -22,11 +22,19 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import * as d3 from 'd3'
 import { computed, onMounted, ref, watch } from 'vue'
 import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
-import { useQuasar } from 'quasar'
+import { useQuasar, useMeta } from 'quasar'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { λ } from 'src/types'
 import { TDLAPP } from 'src/TDLAPP'
 import SettingsButton from 'src/components/SettingsButton.vue'
+
+useMeta(
+  () => {
+    return {
+      title: 'Graph | TDL App'
+    }
+  }
+)
 
 const tr = computed(() => useRepo(TaskRepo))
 const usr = useLocalSettingsStore()
@@ -70,13 +78,13 @@ const populateGraphDataStructures = () => {
   }
   const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
   allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
-  links = links.concat(allTaskNodes.flatMap((x: d3Node<Task>) => 
-    x.obj.hard_postreqs.filter(y => y.completed ? !usr.hideCompleted : true).map(y => ({ 
-      source: x, 
-      target: taskNodeMap.get(y.id), 
-      slopeX: 1, 
-      slopeY: 1, 
-      normalXoffset: 1, 
+  links = links.concat(allTaskNodes.flatMap((x: d3Node<Task>) =>
+    x.obj.hard_postreqs.filter(y => y.completed ? !usr.hideCompleted : true).map(y => ({
+      source: x,
+      target: taskNodeMap.get(y.id),
+      slopeX: 1,
+      slopeY: 1,
+      normalXoffset: 1,
       normalYoffset: 1
     } as d3Link<Task>))
   ))
@@ -202,13 +210,13 @@ const initializeGraph = () => {
       .attr('stroke', '#FFF')
       .attr('stroke-opacity', '0.5')
       .attr('marker-end', 'url(#arrowhead)')
-  
+
   node = gnodes
     .append('circle')
     .attr('r', (d: d3Node<Task>) => d.radius)
     .attr('fill', (d: d3Node<Task>) => d.color)
     .on('mouseover', raise)
-  
+
   label = gnodes.filter((x: d3Node<Task>) => !x.obj.completed && (x.radius >= 12 || x.obj.hard_prereqs.filter(x => !x.completed).length === 0))
     .append('text')
     .text((d: d3Node<Task>) => d.obj.title)
@@ -218,8 +226,8 @@ const initializeGraph = () => {
     .attr('class', 'text-primary')
     .attr('fill', '#DDD')
     .attr('paint-order', 'stroke')
-  
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument  
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   svg.call(CustomForceGraph.d3PanAndGeometricZoom(gg))
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   node.call(CustomForceGraph.d3DragDefaults(simulation))
