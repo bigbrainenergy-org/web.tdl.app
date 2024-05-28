@@ -55,6 +55,17 @@ export class Utils {
     return [...a, ...this.onlyInLeftArray(b, a)]
   }
 
+  static filterMap<K, V>(map: Map<K, V>, predicate: (key: K, value: V) => boolean) {
+    const result = new Map();
+    // eslint-disable-next-line prefer-const
+    for (let [key, value] of map) {
+      if (predicate(key, value)) {
+        result.set(key, value);
+      }
+    }
+    return result;
+  }
+
   static getRandomInt(max: number) {
     return Math.floor(Math.random() * max);
   }

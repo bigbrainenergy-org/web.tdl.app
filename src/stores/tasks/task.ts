@@ -461,6 +461,24 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   }
 
   updateAndCache = async (options: UpdateTaskOptions) => {
+    // check if any hard prereq ids are in the recursive postreqs
+    // check if any hard postreq ids are in the recursive prereqs
+    const currentTask = this.withAll().find(options.id)
+    if(currentTask === null) throw new Error('Task sent for updating was not found on the local repository')
+    const anyPrereqsBelow = currentTask.anyIDsBelow(currentTask.hard_prereqs.filter(x => !x.completed).map(x => x.id), { incompleteOnly: true, useStore: false })
+    const anyPrereqsBelowResult: Task[] = []
+    anyPrereqsBelow.forEach((val, key) => { if(val) anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key))) })
+    if(anyPrereqsBelowResult.length > 0) {
+      anyPrereqsBelowResult.forEach(x => console.error(`This prereq is already a postreq: ${x.title}`))
+      throw new Error('There is a prereq that is already supposed to be AFTER the current task')
+    }
+    const anyPostreqsAbove = currentTask.anyIDsAbove(currentTask.hard_postreqs.filter(x => !x.completed).map(x => x.id), { incompleteOnly: true, useStore: false })
+    const anyPostreqsAboveResult: Task[] = []
+    anyPostreqsAbove.forEach((val, key) => { if(val) anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)))})
+    if(anyPostreqsAboveResult.length > 0) {
+      anyPostreqsAboveResult.forEach(x => console.error(`This postreq is already a prereq: ${x.title}`))
+      throw new Error('There is a postreq that is already supposed to be BEFORE the current task')
+    }
     await this.update(options).then((data: void | Task) => { if(data instanceof Task) return this.setCache(data) })
   }
 

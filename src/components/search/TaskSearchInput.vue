@@ -3,7 +3,7 @@
     v-model="search"
     filled
     clearable
-    debounce="250"
+    debounce="350"
     :label="searchLabel"
     @update:model-value="emit('doASearch')"
     @keyup.enter="emit('doASearch')" >

@@ -78,6 +78,12 @@ interface Props {
 
 const prop = defineProps<Props>()
 
+// can do something like this to limit recalculations, especially when setting a task as MVP
+// const act = (action: (inputArgument: Task) => void | Promise<void | Task>, inputArgument: Task) => {
+//   action(inputArgument)
+//   updateRedundants()
+// }
+
 const addItemLabel = `Add ${prop.dependencyType.plural}`
 
 const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem', 'pruneDependencies' ])

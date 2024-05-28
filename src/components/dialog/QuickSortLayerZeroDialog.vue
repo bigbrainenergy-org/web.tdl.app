@@ -113,7 +113,7 @@ watch(deepQuickSort, () => {
   useLocalSettingsStore().enableDeeperQuickSort = deepQuickSort.value
 })
 watch(maxLayerZero, () => {
-  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value + 0
+  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value + 0 // bug where this randomly gets cast as a boolean and can't be coerced back to number type on mobile. this might not work, idk. throwing stuff at the wall.
 })
 
 const postWeightedTask = (x: Task) => new PostWeightedTask(x)
