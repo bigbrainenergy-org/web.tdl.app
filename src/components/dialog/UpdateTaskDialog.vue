@@ -197,6 +197,7 @@ import TaskSearchDialog from './TaskSearchDialog.vue'
 import { λ } from 'src/types'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { onMounted } from 'vue'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -571,13 +572,16 @@ const postreqMenuItems = [
 ]
 
 const prunePosts = async (payload: { above: Set<number>, below: Set<number> }) => {
+  useLoadingStateStore().busy = true
   const toRemove = allPosts.value.filter(x => payload.below.has(x.id) && !payload.above.has(x.id))
   for(let i = 0; i < toRemove.length; i++) {
     await removePostrequisite(toRemove[i])
   }
+  useLoadingStateStore().busy = false
 }
 
 const prunePres = async (payload: { above: Set<number>, below: Set<number> }) => {
+  useLoadingStateStore().busy = true
   const toRemove = allPres.value.filter(x => {
     const hasRelationsAbove = payload.above.has(x.id)
     const hasRelationsBelow = payload.below.has(x.id)
@@ -588,5 +592,6 @@ const prunePres = async (payload: { above: Set<number>, below: Set<number> }) =>
   for(let i = 0; i < toRemove.length; i++) {
     await removePrerequisite(toRemove[i])
   }
+  useLoadingStateStore().busy = false
 }
 </script>

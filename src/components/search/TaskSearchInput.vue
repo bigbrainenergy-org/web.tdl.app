@@ -3,7 +3,7 @@
     v-model="search"
     filled
     clearable
-    debounce="350"
+    :debounce="debounce"
     :label="searchLabel"
     @update:model-value="emit('doASearch')"
     @keyup.enter="emit('doASearch')" >
@@ -21,5 +21,8 @@
 <script setup lang="ts">
 const search = defineModel<string | undefined>({ required: true })
 const emit = defineEmits([ 'doASearch' ])
-defineProps<{ searchLabel: string }>()
+defineProps<{ 
+  searchLabel: string
+  debounce: number
+}>()
 </script>

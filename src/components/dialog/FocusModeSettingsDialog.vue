@@ -4,12 +4,19 @@ import LazyVueComponent from '../lazy-vue/LazyVueComponent.vue'
 import { ref, watch } from 'vue'
 import { useDialogPluginComponent } from 'quasar'
 
+// todo: storeToRefs
+const disableQuickSort = ref<boolean>(useLocalSettingsStore().disableQuickSort)
 const enableQuickSortOnNewTask = ref<boolean>(useLocalSettingsStore().enableQuickSortOnNewTask)
 const enableQuickSortOnLayerZeroQTY = ref<number>(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
 const settings = {
+  'Disable Quick Sort': disableQuickSort,
   'Quick Sort On New Task': enableQuickSortOnNewTask,
   'Quick Sort When Length of Unblocked Tasks Reaches x': enableQuickSortOnLayerZeroQTY
 }
+
+watch(disableQuickSort, () => {
+  useLocalSettingsStore().disableQuickSort = disableQuickSort.value
+})
 
 watch(enableQuickSortOnNewTask, () => {
   useLocalSettingsStore().enableQuickSortOnNewTask = enableQuickSortOnNewTask.value
@@ -27,7 +34,7 @@ const name = 'Configure These Options'
 </script>
 
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Focus Mode Settings</div>

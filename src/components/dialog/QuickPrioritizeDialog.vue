@@ -1,5 +1,5 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Prioritize Task</div>
@@ -24,9 +24,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRepo } from 'pinia-orm'
 import { useDialogPluginComponent } from 'quasar'
-import { Task, TaskRepo } from 'src/stores/tasks/task'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { Task } from 'src/stores/tasks/task'
 import { TDLAPP } from 'src/TDLAPP'
 import { ref } from 'vue'
 
@@ -38,15 +38,15 @@ const saveProgress = ref<number | undefined>(undefined)
 const prop = defineProps<Props>()
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-const layerZero = ref(useRepo(TaskRepo).layerZero()
+const layerZero = useLayerZeroStore().get()
   .filter(x => {
     if(x.id === prop.task.id) return false
     if(prop.task.hard_postreq_ids.includes(x.id)) return false
     return true
   })
-  .map(x => ({ selected: false, obj: x })))
+  .map(x => ({ selected: false, obj: x }))
 const saveNewRules = async () => {
-  const selectedTasks = layerZero.value.filter(x => x.selected)
+  const selectedTasks = layerZero.filter(x => x.selected)
   saveProgress.value = 0
   // TODO: batch update this!
   for(let i = 0; i < selectedTasks.length; i++) {
@@ -55,8 +55,8 @@ const saveNewRules = async () => {
   onDialogCancel()
 }
 const selectAll = () => {
-  if(layerZero.value.some(x => !x.selected)) layerZero.value.forEach(x => x.selected = true)
-  else layerZero.value.forEach(x => x.selected = false)
+  if(layerZero.some(x => !x.selected)) layerZero.forEach(x => x.selected = true)
+  else layerZero.forEach(x => x.selected = false)
 }
 
 const onCancelClick = onDialogCancel

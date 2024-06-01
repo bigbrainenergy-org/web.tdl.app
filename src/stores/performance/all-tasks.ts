@@ -13,9 +13,10 @@ export const useAllTasksStore = defineStore('all-tasks', {
   persist: false,
   actions: {
     regenerate() {
-      console.time('regen')
+      const start = performance.now()
       this.allTasks = new Map<number, Task>(useRepo(TaskRepo).withAll().get().map(x => [x.id, x]))
-      console.timeEnd('regen')
+      const duration = performance.now() - start
+      if(duration > (this.allTasks.size / 2)) console.warn(`Regenerating allTasksStore took longer than target of ${Math.floor(this.allTasks.size / 2)}ms - it took ${Math.floor(duration)}ms`)
     }
   }
 })

@@ -56,7 +56,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
     ).
     then(
       (response: AxiosResponse) => {
-        console.debug(`${this.apidir} fetched: `, { response })
+        // console.debug(`${this.apidir} fetched: `, { response })
         this.fresh(response.data as T[])
       },
       Utils.handleError(`Could not fetch all ${this.apidir}`)
@@ -66,7 +66,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   getId = async (id: number): Promise<T | null> => {
     return await this.api().get(`/${this.apidir}/${id}`, this.commonHeader())
     .then((response: AxiosResponse) => {
-      console.log(response.data as T)
+      // console.log(response.data as T)
       return this.save(response.data as T)
     }, (error: ApiError) => {
       Utils.handleError(`Could not get ${this.apidir} id ${id}`)(error)
@@ -75,13 +75,12 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   }
 
   add = (newItem: iCreateT): Promise<T> => {
-    console.debug('add item: ', { newItem });
+    // console.debug('add item: ', { newItem });
   
     return this.api().post(`/${this.apidir}`, newItem, this.commonHeader())
       .then(response => {
-        console.debug('response: ', response);
-        this.save(response.data as T);
-        return response.data as T;
+        // console.debug('response: ', response);
+        return this.save(response.data as T);
       })
       .catch(error => {
         console.error('Error adding item:', error);
@@ -90,10 +89,10 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   }
 
   addMultiple = (newItems: iCreateT[]): Promise<T[]> => {
-    console.debug('add multiple')
+    // console.debug('add multiple')
     return this.api().post(`/${this.apidir}`, newItems, this.commonHeader())
     .then(response => {
-      console.debug({ response })
+      // console.debug({ response })
       this.save(response.data as T[])
       return response.data as T[]
     })
@@ -110,12 +109,11 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   }
 
   update = async (itemOptions: iUpdateT) => {
-    console.debug(`${this.apidir} UPDATE`, { itemOptions })
+    // console.debug(`${this.apidir} UPDATE`, { itemOptions })
     return this.api().patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
     .then((response) => {
-      this.save(response.data as T)
-      console.log({ id: itemOptions.id, newData: response.data })
-      return response.data as T
+      return this.save(response.data as T)
+      // console.log({ id: itemOptions.id, newData: response.data })
     }, Utils.handleError('Error updating record'))
   }
 

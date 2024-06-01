@@ -10,36 +10,38 @@
             <q-space />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
-          <q-tree v-if="reverseOrder"
-          :nodes="layerZero"
-          node-key="key"
-          dense
-          @lazy-load="loadChildren"
-          ref="theReverseTree"
-          @update:expanded="onExpanded"
-          v-model:expanded="useRawExpandedStateStore().expandedNodesReverse"
-          class="text-primary">
-            <template v-slot:default-header="prop">
+          <q-tree
+            v-if="reverseOrder"
+            ref="theReverseTree"
+            v-model:expanded="useRawExpandedStateStore().expandedNodesReverse"
+            :nodes="layerZero"
+            node-key="key"
+            dense
+            class="text-primary"
+            @lazy-load="loadChildren"
+            @update:expanded="onExpanded">
+            <template #default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
-                <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)" color="primary" keep-color></q-checkbox>
+                <q-checkbox v-model:model-value="prop.node.obj.completed" color="primary" keep-color @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
                 <q-item-label @click.stop="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
               </q-item>
             </template>
           </q-tree>
-          <q-tree v-else
-          :nodes="layerZero"
-          node-key="key"
-          dense
-          @lazy-load="loadChildren"
-          ref="theTree"
-          @update:expanded="onExpanded"
-          v-model:expanded="useRawExpandedStateStore().expandedNodesRegular"
-          class="text-primary">
-            <template v-slot:default-header="prop">
+          <q-tree 
+            v-else
+            ref="theTree"
+            v-model:expanded="useRawExpandedStateStore().expandedNodesRegular"
+            :nodes="layerZero"
+            node-key="key"
+            dense
+            class="text-primary"
+            @lazy-load="loadChildren"
+            @update:expanded="onExpanded">
+            <template #default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
-                <q-checkbox v-model:model-value="prop.node.obj.completed" @update:model-value="updateTaskCompletedStatus(prop.node.obj)" color="primary" keep-color></q-checkbox>
+                <q-checkbox v-model:model-value="prop.node.obj.completed" color="primary" keep-color @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>

@@ -58,9 +58,10 @@
 
 <script setup lang="ts">
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { Task } from 'src/stores/tasks/task'
 import { SimpleMenuItem, λ } from 'src/types'
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { onUpdated } from 'vue'
 import { ref } from 'vue'
 
@@ -88,23 +89,31 @@ const addItemLabel = `Add ${prop.dependencyType.plural}`
 
 const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem', 'pruneDependencies' ])
 
+const busySignal = computed(() => useLoadingStateStore().busy)
+
 const updateRedundants = () => {
-  console.time('updateRedundants')
+  if(busySignal.value) return
+  const start = performance.now()
   aboves.value.clear()
   belows.value.clear()
   if(prop.items.length === 0) return
-  console.warn(`updating redundant check for ${prop.items.length} dependents`)
+  // console.warn(`updating redundant check for ${prop.items.length} dependents`)
   const arr = prop.items.map(x => x.id)
   const options = { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: true }
   prop.items.forEach(x => {
     const arrExcludingX = arr.filter(y => y !== x.id && !belows.value.has(y) && !aboves.value.has(y))
     const aboveX = x.anyIDsAbove(arrExcludingX, options)
     const belowX = x.anyIDsBelow(arrExcludingX, options)
-    aboveX.forEach((val, key) => { if(val) aboves.value.add(key) })
-    belowX.forEach((val, key) => { if(val) belows.value.add(key) })
-    console.debug({ x, arrExcludingX, aboveX, belowX })
+    aboveX.forEach((val, key) => { 
+      if(val) aboves.value.add(key)
+    })
+    belowX.forEach((val, key) => { 
+      if(val) belows.value.add(key)
+    })
+    // console.debug({ x, arrExcludingX, aboveX, belowX })
   })
-  console.timeEnd('updateRedundants')
+  const duration = performance.now() - start
+  if(duration > 50) console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
 }
 
 const aboves = ref<Set<number>>(new Set())
@@ -112,10 +121,14 @@ const belows = ref<Set<number>>(new Set())
 onMounted(updateRedundants)
 onUpdated(updateRedundants)
 
-const isNearRedundant = (x: number) => prop.dependencyType.singular === 'Prerequisite' ? belows.value.has(x) : aboves.value.has(x)
-const isFarRedundant = (x: number) => prop.dependencyType.singular === 'Prerequisite' ? aboves.value.has(x) : belows.value.has(x)
+const isNearRedundant = (x: number) => {
+  return prop.dependencyType.singular === 'Prerequisite' ? belows.value.has(x) : aboves.value.has(x)
+}
+const isFarRedundant = (x: number) => {
+  return prop.dependencyType.singular === 'Prerequisite' ? aboves.value.has(x) : belows.value.has(x)
+}
 
-const pruneDependencies = () => { 
+const pruneDependencies = () => {
   console.log(`pruning ${prop.dependencyType.plural}`)
   emit('pruneDependencies', { above: aboves.value, below: belows.value })
 }

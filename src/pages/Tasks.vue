@@ -23,7 +23,10 @@
             <q-list class="text-primary">
               <q-intersection v-for="currentTask, index in tasks" :key="index" once style="min-height: 48px;">
                 <q-item v-ripple clickable @click="open(currentTask)">
-                  <q-checkbox v-model:model-value="currentTask.completed" color="primary" keep-color
+                  <q-checkbox
+                    v-model:model-value="currentTask.completed"
+                    color="primary"
+                    keep-color
                     @update:model-value="updateTaskCompletedStatus(currentTask)" />
 
                   <q-item-section>
@@ -39,13 +42,18 @@
                   </q-item-section>
 
                   <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
-                    <q-chip v-if="currentTask.grabPostreqs(hideCompleted).length"
+                    <q-chip
+                      v-if="currentTask.grabPostreqs(hideCompleted).length"
                       :style="currentTask.grabPostreqs(hideCompleted).length > 5 ? 'background-color: red;' : 'background-color: gray;'">
                       {{ currentTask.grabPostreqs(hideCompleted).length }}
                     </q-chip>
                   </q-item-section>
                   <q-item-section side>
-                    <q-btn v-if="!currentTask.completed" outline rounded label="ADD PRE"
+                    <q-btn
+                      v-if="!currentTask.completed"
+                      outline
+                      rounded
+                      label="ADD PRE"
                       @click.stop="addTaskPre(currentTask)" />
                   </q-item-section>
 
@@ -68,7 +76,7 @@
 
 <script setup lang="ts">
 import { useQuasar, useMeta } from 'quasar'
-import { computed, defineComponent, ref, watch } from 'vue'
+import { computed, defineComponent, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { useRepo } from 'pinia-orm';
@@ -78,6 +86,7 @@ import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
 import SettingsButton from 'src/components/SettingsButton.vue'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
 useMeta(
   () => {
@@ -101,23 +110,21 @@ const { layerZeroOnly, hideCompleted, selectedList } = storeToRefs(localSettings
 const tasksPageSettings = ref({ 'Unblocked Only': layerZeroOnly, 'Incomplete Only': hideCompleted })
 
 const notCompleted = (x: Task) => x.completed === false
-const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
 const filterByList = (x: Task) => x?.list?.title === selectedList.value
 
 const tasks = computed(() => {
-  let baseQuery = useRepo(TaskRepo).withAll().get()
-  if (layerZeroOnly.value) baseQuery = baseQuery.filter(notBlocked)
-  if (hideCompleted.value) baseQuery = baseQuery.filter(notCompleted)
+  console.warn('updating tasks on Task page')
+  let baseQuery = useLayerZeroStore().layerZero as Task[]
   if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
   return baseQuery.sort((a, b) => b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length)
 })
 
 const updateTaskCompletedStatus = async (task: Task) => {
   await tasksRepo.updateAndCache({ id: task.id, payload: { task } })
-    .then(
-      TDLAPP.notifyUpdatedCompletionStatus(task),
-      Utils.handleError('Error updating completion status of a task.')
-    )
+    .then(() => {
+      TDLAPP.notifyUpdatedCompletionStatus(task)()
+    },
+    Utils.handleError('Error updating completion status of a task.'))
 }
 
 const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)

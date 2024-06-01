@@ -17,6 +17,7 @@ interface LocalSettingsState {
   expandAllWithSameID: boolean
   maxGraphNodeRadius: number
   reverseTreeView: boolean
+  disableQuickSort: boolean
   enableQuickSortOnNewTask: boolean
   enableQuickSortOnLayerZeroQTY: number
   backgroundMode: BackgroundMode
@@ -38,6 +39,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       expandAllWithSameID: false,
       maxGraphNodeRadius: 100,
       reverseTreeView: false,
+      disableQuickSort: true,
       enableQuickSortOnNewTask: false,
       enableQuickSortOnLayerZeroQTY: 0,
       backgroundMode: 'image',
@@ -45,11 +47,5 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       omitRedundantSearchResults: false
     }
   },
-  persist: true,
-  actions: {
-    toggleHideCompleted() {
-      this.hideCompleted = !this.hideCompleted
-      return this.hideCompleted
-    }
-  }
+  persist: true
 })

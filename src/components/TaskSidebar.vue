@@ -122,7 +122,7 @@
 import { computed, ref } from 'vue'
 import { useRepo } from 'pinia-orm'
 import { useQuasar } from 'quasar';
-import { ListRepo } from 'src/stores/lists/list'
+import { List, ListRepo } from 'src/stores/lists/list'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
 import { Utils } from 'src/util'
@@ -132,7 +132,7 @@ import { storeToRefs } from 'pinia'
 import { textColor } from 'src/hackerman/TextColor'
 
 const $q = useQuasar()
-const model = defineModel(false)
+const model = defineModel<boolean>({ default: false })
 const listsRepo = useRepo(ListRepo)
 const localSettingsStore = useLocalSettingsStore()
 const { selectedList } = storeToRefs(localSettingsStore)
@@ -140,17 +140,14 @@ const { selectedList } = storeToRefs(localSettingsStore)
 // FIXME: I hate this with every fiber of my being
 const hoveredList = ref(-1)
 
-await listsRepo.fetch()
-
-const lists = computed(
-  () => listsRepo.withAll().get()
-)
+const lists = computed(() => listsRepo.withAll().get())
+console.log({ lists: lists.value })
 
 const openSearchDialog = () => TDLAPP.searchDialog()
 
 const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
-  tr.add(payload)
+  tr.addAndCache(payload)
     .then(
       () => {
         Utils.notifySuccess('Successfully created a task')
@@ -173,32 +170,34 @@ const openCreateTaskDialog = () => {
   })
 }
 
-const setList = (list) => {
+type HasTitle = { title: string }
+
+const setList = (list: HasTitle) => {
   selectedList.value = list.title
 }
 
-const listSelected = (list) => {
+const listSelected = (list: HasTitle) => {
   return selectedList.value === list.title
 }
 
 // TODO: These can all be DRY'd up.
-const listCountStyle = (list) => {
-  return 'color: ' + textColor(list.color) + ';'
+const listCountStyle = (list: List) => {
+  return `color: ${textColor(list.color)};`
 }
 
-const listColorStyle = (list) => {
-  return 'color: ' + textColor(list.color) + '; background-color: ' + list.color + ';'
+const listColorStyle = (list: { color: string }) => {
+  return `color: ${textColor(list.color)}; background-color: ${list.color};`
 }
 
-const listIconColor = (list) => {
+const listIconColor = (list: List) => {
   if(listSelected(list)) {
-    return 'color: ' + textColor(list.color) + ';'
+    return `color: ${textColor(list.color)};`
   } else {
     return `color: ${list.color};`
   }
 }
 
-const openMenu = (index) => {
-  console.log(index)
+const openMenu = (index: number) => {
+  console.log({ index })
 }
 </script>

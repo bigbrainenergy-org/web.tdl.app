@@ -117,6 +117,8 @@
 
       </router-view> -->
     </q-page-container>
+
+    <QuickSortLayerZeroDialog v-if="shouldSort" v-model="shouldSort" />
   </q-layout>
 </template>
 
@@ -131,15 +133,16 @@ import TaskSidebar from 'src/components/TaskSidebar.vue'
 import { UserRepo } from 'src/stores/users/user'
 import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-import { Utils } from 'src/util'
+import { Utils, computedWithPrev } from 'src/util'
 import { syncWithBackend } from 'src/hackerman/sync'
 import { AxiosError } from 'axios'
 import { useAxiosStore } from 'src/stores/axios-store'
 import { ComponentPublicInstance } from 'vue'
 import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
-
-console.debug('In Main Layout')
+import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
 const $q = useQuasar()
 const $route = useRoute()
@@ -208,7 +211,7 @@ const logout = () => {
 
 const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
-  tr.add(payload)
+  tr.addAndCache(payload)
   .then(
     () => {
       Utils.notifySuccess('Successfully created a task')
@@ -237,7 +240,6 @@ const openCreateListDialog = () => {
 }
 
 const pullFresh = async () => {
-
   const syncResult = await syncWithBackend()
   if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
   else {
@@ -248,9 +250,13 @@ const pullFresh = async () => {
 
 onMounted(() => {
   const user = useRepo(UserRepo).getUser()
-  if(user === null || typeof user === 'undefined') return
+  if(user === null || typeof user === 'undefined') {
+    console.warn('user data issue.')
+    return
+  }
   Utils.updateLuxonTimeZone(user.time_zone)
   useAllTasksStore().regenerate()
+  useLayerZeroStore().regenerate()
 })
 
 const backgroundModeSetting = computed<BackgroundMode>(() => useLocalSettingsStore().backgroundMode)
@@ -301,5 +307,20 @@ watch(backgroundModeSetting, () => {
     if(backgroundModeSetting.value === currentBackgroundMode.value) clearInterval(animationHack)
     else currentBackgroundMode.value = incrementHexColor(currentBackgroundMode.value, backgroundModeSetting.value)
   }, 10)
+})
+
+const layerZero = computed(() => {
+  // no longer need to worry about busy signal because we are using cache that is updated by child components.
+  console.log('mainlayout: recalculate layerZero array')
+  return useLayerZeroStore().get()
+})
+
+// todo: storeToRefs
+const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
+const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length > 0 : false
+const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort
+const shouldSort = computed<boolean>({
+  get: () => quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero()),
+  set: x => { if(!x && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
 })
 </script>

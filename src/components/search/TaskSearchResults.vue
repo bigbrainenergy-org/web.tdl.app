@@ -39,11 +39,13 @@
 </template>
 
 <script setup lang="ts">
-import Fuse from 'fuse.js'
+import Fuse, { FuseResult } from 'fuse.js'
 import { useRepo } from 'pinia-orm'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed, ref } from 'vue'
 import type { λ } from '../../types'
+import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
+import { Utils } from 'src/util'
 
 interface Prop {
   search: string | undefined
@@ -110,11 +112,12 @@ const searchOptions = {
   keys: ['title']
 }
 
-const tasks = computed(() => {
+const tasks = computed(timeThisB(() => {
+  console.debug('recalculating tasks list for task search results')
   const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
   if(typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
   return allTasks
-})
+}, 'computedTasksForSearch', 100))
 
 const searchForTasks = () => {
   if(!props.search) { return } // Guard clause if search is empty
@@ -123,7 +126,9 @@ const searchForTasks = () => {
 
   // unsanitized user input being fed into a library? what could go wrong.
   // FIXME: AKA this is a vuln waiting to happen, fix it.
-  const run = fuse.search(props.search)
+  const run = timeThisB<FuseResult<Task>[]>(() => fuse.search(props.search ?? ''), 'fuse search', 21)()
+
+  // run.sort((a, b) => )
 
   results.value = tasks.value.filter(
     (task) => {
@@ -140,7 +145,7 @@ const searchForTasks = () => {
       return firstIndex - secondIndex
     }
   )
-  kickOffRedundancyCheck()
+  timeThis(kickOffRedundancyCheck, 'kickOffRedundancyCheck', 13)()
   //results.value.sort(byRedundancy)
 }
 
@@ -153,7 +158,7 @@ const kickOffRedundancyCheck = () => {
 const createTask = async () => {
   if(typeof props.search === 'undefined') return
   const toCreate: CreateTaskOptions = { title: props.search }
-  const newTask = await tr.addAndCache(toCreate)
+  const newTask = await timeThisABAsync(tr.addAndCache, 'addAndCache', 400)(toCreate)
   if(typeof props.taskID !== 'undefined') selectTask(newTask)
 }
 
@@ -161,5 +166,5 @@ const selectTask = (task: Task) => {
   emit('select', { task, callback: searchForTasks })
 }
 
-searchForTasks()
+timeThis(searchForTasks, 'search for tasks', 400)()
 </script>

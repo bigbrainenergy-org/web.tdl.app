@@ -7,6 +7,8 @@ import TaskSearchDialog from './components/dialog/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
 import { λ } from './types'
 import TaskSlicerDialog from './components/dialog/TaskSlicerDialog.vue'
+import AddDependencyDialog from './components/dialog/AddDependencyDialog.vue'
+import { timeThisAABAsync } from './perf'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number) => {
@@ -37,9 +39,12 @@ export class TDLAPP {
     })
   }
   static addPre = async (task: Task, newPreID: number) => {
-    await useRepo(TaskRepo).addPre(task, newPreID)
-    .then(
-      Utils.handleSuccess('Added Prerequisite', 'fa-solid fa-link'),
+    console.log('addPre')
+    await timeThisAABAsync(useRepo(TaskRepo).addPre, 'repo add pre function', 1000)(task, newPreID)
+    .then(() => {
+        console.log('successfully added pre.')
+        Utils.notifySuccess('Added Prerequisite', 'fa-solid fa-link')
+      },
       Utils.handleError('Failed to add prereq'))
   }
   static addPost = async (task: Task, newPostID: number) => {
@@ -51,7 +56,7 @@ export class TDLAPP {
   }
   static addPrerequisitesDialog = (currentTask: Task) => {
     return Dialog.create({
-      component: TaskSearchDialog,
+      component: AddDependencyDialog,
       componentProps: {
         dialogTitle: 'Add Prerequisite',
         taskID: currentTask.id,
@@ -82,7 +87,7 @@ export class TDLAPP {
   }
   static addPostrequisiteDialog = (currentTask: Task) => {
     return Dialog.create({
-      component: TaskSearchDialog,
+      component: AddDependencyDialog,
       componentProps: {
         dialogTitle: 'Add Postrequisite',
         taskID: currentTask.id,
@@ -117,7 +122,7 @@ export class TDLAPP {
       componentProps: { task }
     })
   }
-  static notifyUpdatedCompletionStatus: λ<Task, λ> = (task: Task) => () => {
+  static notifyUpdatedCompletionStatus: λ<Task, λ<void>> = (task: Task) => () => {
     console.log(`notifyUpdatedCompletionStatus: task is ${task.completed ? 'completed' : 'incomplete'}`)
     Notify.create({
       message: `Marked "${ task.title }" ${ task.completed ? 'Complete' : 'Incomplete'}`,

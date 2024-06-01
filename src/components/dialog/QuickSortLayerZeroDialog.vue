@@ -1,10 +1,11 @@
 <template>
-  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
+  <q-dialog ref="dialogRef" maximized @hide="hideDialog">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
         <div class="text-h6">Which task should come first?</div>
-        <div class="text-h6">{{ layerZero.length }} Tasks to Prioritize</div>
+        <div class="text-h6">{{ layerZero.length }} Layer Zero Tasks</div>
+        <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
           <SettingsButton v-model:settings="quickSortSettings" name="Quick Sort Settings" color="white" />
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
@@ -93,11 +94,15 @@ import { Utils } from 'src/util'
 import { watch } from 'vue'
 import { computed, ref } from 'vue'
 import SettingsButton from '../SettingsButton.vue'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+import { timeThis, timeThisAABAsync } from 'src/perf'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
 
-const tr = computed(() => useRepo(TaskRepo))
+const tr = useRepo(TaskRepo)
+useLoadingStateStore().busy = true
 
 class PostWeightedTask {
   t: Task
@@ -108,20 +113,32 @@ class PostWeightedTask {
   shouldReroll = () => Math.random() - this.weight() > 0
 }
 
+// todo: storeToRefs
+const disableQuickSort = ref<boolean>(useLocalSettingsStore().disableQuickSort)
 const deepQuickSort = ref<boolean>(useLocalSettingsStore().enableDeeperQuickSort)
 const maxLayerZero = ref<number>(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
-const quickSortSettings = ref({ 'Deeper Quick Sort': deepQuickSort, 'Max Quantity of Next-Up Tasks': maxLayerZero })
+const quickSortNew = ref<boolean>(useLocalSettingsStore().enableQuickSortOnNewTask)
+const quickSortSettings = ref({ 'Disable Quick Sort': disableQuickSort, 'Deeper Quick Sort': deepQuickSort, 'Max Quantity of Next-Up Tasks': maxLayerZero, 'Quick Sort on Any Task w/o Postreqs': quickSortNew })
+watch(disableQuickSort, () => {
+  useLocalSettingsStore().disableQuickSort = disableQuickSort.value
+})
 watch(deepQuickSort, () => {
   useLocalSettingsStore().enableDeeperQuickSort = deepQuickSort.value
 })
 watch(maxLayerZero, () => {
   useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value + 0 // bug where this randomly gets cast as a boolean and can't be coerced back to number type on mobile. this might not work, idk. throwing stuff at the wall.
 })
+watch(quickSortNew, () => {
+  useLocalSettingsStore().enableQuickSortOnNewTask = quickSortNew.value
+})
 
 const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-const layerZero = ref<PostWeightedTask[]>(tr.value.layerZero().map(postWeightedTask))
-const refreshLayerZero = () => layerZero.value = tr.value.layerZero().map(postWeightedTask)
+const layerZero = computed(() => {
+  console.log('re-computing layerZero for quick sort layer zero dialog')
+  return useLayerZeroStore().get().map(postWeightedTask)
+})
+const tasksWithoutPostreqs = computed(() => layerZero.value.filter(x => !x.t.hasIncompletePostreqs))
 const l0len = computed(() => layerZero.value.length)
 watch(l0len, (value: number) => {
   if(value < 2) {
@@ -153,19 +170,19 @@ let skippedPairs: pair<Task>[] = []
 
 const addPres = (x: Task) => {
   TDLAPP.addPrerequisitesDialog(x)
-  .onOk(     () => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
-  .onCancel( () => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
-  .onDismiss(() => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
+  .onOk(     () => { console.log('getting a new pair now'); skip() })
+  .onCancel( () => { console.log('getting a new pair now'); skip() })
+  .onDismiss(() => { console.log('getting a new pair now'); skip() })
 }
 
 const sliceTask = (x: Task) => {
   TDLAPP.sliceTask(x)
-  .onOk(     () => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
-  .onCancel( () => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
-  .onDismiss(() => { refreshLayerZero(); console.log('getting a new pair now'); skip() })
+  .onOk(     () => { console.log('getting a new pair now'); skip() })
+  .onCancel( () => { console.log('getting a new pair now'); skip() })
+  .onDismiss(() => { console.log('getting a new pair now'); skip() })
 }
 
-const reloadTasks = () => { refreshLayerZero(); tryNewPair() }
+const reloadTasks = () => { tryNewPair() }
 
 const complete = (x: Task) => x.toggleCompleted().then(reloadTasks)
 const taskDetails = (x: Task) => {
@@ -201,6 +218,7 @@ const menuItems: SimpleMenuItem<Task>[] = [
 
 const finishedSorting = (msg = 'Finished Sorting') => {
   Utils.notifySuccess(msg)
+  useLoadingStateStore().busy = false
   if(dialogRef !== null) onDialogHide()
 }
 
@@ -355,7 +373,7 @@ const generateNewPair = (): withID<pair<Task>> => {
     console.warn('falling back to selecting a layer zero task pair.')
   }
   console.debug('generating a layer zero pair!')
-  tmp = selectPair({ id: null, data: layerZero.value as PostWeightedTask[] })
+  tmp = selectPair({ id: null, data: layerZero.value })
   if(tmp !== null) return tmp
   throw new Error('Could not generate a new pair')
 }
@@ -391,21 +409,11 @@ const tryNewPair = () => {
 }
 
 const addRule = async (first: Task, second: Task) => {
-  // find any incomplete prereqs in common.
-  const incompletePresInCommon = Utils.innerJoin(first.grabPrereqs(true), second.grabPrereqs(true))
-  //
   loading.value = true
-  await TDLAPP.addPre(second, first.id)
-  .then(async () => {
+  await timeThisAABAsync(TDLAPP.addPre, 'add rule on quick sort dialog', 1000)(second, first.id)
+  .then(() => {
     forget(second.id)
-    // if the tasks shared pres, the redundant rule should be removed.
-    let i = incompletePresInCommon.length - 1
-    while(i >= 0) {
-      await tr.value.removePost(incompletePresInCommon[i], second.id)
-      .then(() => i--)
-    }
-    refreshLayerZero()
-    tryNewPair()
+    timeThis(tryNewPair, 'tryNewPair', 100)()
     loading.value = false
   })
 }
@@ -416,6 +424,11 @@ const skip = () => {
 }
 
 const onCancelClick = onDialogOK
+
+const hideDialog = () => {
+  useLoadingStateStore().busy = false
+  onDialogHide()
+}
 
 </script>
 

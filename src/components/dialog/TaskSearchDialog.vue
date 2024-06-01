@@ -1,11 +1,11 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
+  <q-dialog ref="dialogRef" maximized @hide="hideDialog">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton v-model:settings="taskSearchSettings" name="Task Search Settings" color="white" />
-        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onCancelClick" />
+        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
       <q-separator />
@@ -47,6 +47,7 @@ import { λ } from 'src/types'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useRepo } from 'pinia-orm'
 import SettingsButton from '../SettingsButton.vue';
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 
 interface Props {
   dialogTitle: string
@@ -76,6 +77,7 @@ const searchString = ref<string | undefined>(undefined)
 const key = ref(0)
 
 Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
+useLoadingStateStore().busy = true
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -137,7 +139,10 @@ const selectTask = (task: Task) => {
   if(props.closeOnSelect) onDialogCancel()
   else key.value++
 }
-const onCancelClick = onDialogCancel
+const onCancelClick = () => {
+  useLoadingStateStore().busy = false
+  onDialogCancel()
+}
 
 // const createTask = async () => {
 //   const toCreate: CreateTaskOptions = {
@@ -146,5 +151,10 @@ const onCancelClick = onDialogCancel
 //   const newTask = await tr.add(toCreate)
 //   selectTask(newTask)
 // }
+
+const hideDialog = () => {
+  useLoadingStateStore().busy = false
+  onDialogHide()
+}
 
 </script>

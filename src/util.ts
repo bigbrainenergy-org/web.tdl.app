@@ -5,6 +5,8 @@ import { NodeKey, λ } from './types'
 import { useRepo } from 'pinia-orm'
 import { UserRepo } from './stores/users/user'
 import { Settings } from 'luxon'
+import { trace } from 'console'
+import { DebuggerOptions, computed } from 'vue'
 
 export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
@@ -37,6 +39,7 @@ export class Utils {
   static arrayDelete<T>(arr: Array<T>, element: T) {
     const i = arr.indexOf(element)
     if(i >= 0) arr.splice(i, 1)
+    else console.warn('arrayDelete will not delete any elements because they were not found.')
     return arr
   }
   static onlyInLeftArray(leftArr: NodeKey[], rightArr: NodeKey[]) {
@@ -73,4 +76,29 @@ export class Utils {
   static updateLuxonTimeZone(newTimeZone: string) {
     Settings.defaultZone = newTimeZone
   }
+
+  static debugComputed(options: { debug: boolean, verbose: boolean } = { debug: false, verbose: false }) {
+    return {
+      // if verbose is enabled, this might log hundreds of thousands of things to console.
+      onTrack: options.verbose ? (event: unknown) => {
+        console.log('Tracked:', event);
+        if(options.debug) debugger; // This will pause execution in the debugger
+        console.trace('onTrack')
+      } : undefined,
+      onTrigger(event: unknown) {
+        console.log('Triggered:', event);
+        if(options.debug) debugger; // This will pause execution in the debugger
+        console.trace('onTrigger')
+      }
+    }
+  }
+}
+
+export function computedWithPrev<T>(func: λ<T, T>, options?: DebuggerOptions) {
+  let previous: T
+  return computed(() => {
+    const result = func(previous);
+    previous = result;
+    return result;
+  }, options);
 }

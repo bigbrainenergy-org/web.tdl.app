@@ -10,7 +10,7 @@ export function textColor(backgroundColor: string) {
       const red = parseInt(input.substr(0,2), 16);
       const green = parseInt(input.substr(2,2), 16);
       const blue = parseInt(input.substr(4,2), 16);
-      console.debug({red, green, blue})
+      // console.debug({red, green, blue})
       // Luminance values for different hues are not equal.
       const greyscale = red * 0.299 + green * 0.587 + blue * 0.114;
       // Perceived midpoint for grey is higher than 128. (around 186)

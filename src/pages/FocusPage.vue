@@ -39,14 +39,13 @@
           No tasks in this list!
         </q-card-section>
       </q-card>
-      <QuickSortLayerZeroDialog v-if="shouldSort" v-model="shouldSort"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRepo } from 'pinia-orm'
 import { TDLAPP } from 'src/TDLAPP'
-import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+// import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { computed } from 'vue'
@@ -59,12 +58,7 @@ const slice = TDLAPP.sliceTask
 
 const layerZero = computed(() => {
   const incomplete = (x: Task) => !x.completed
-  const tr = useRepo(TaskRepo)
-  let lzero = tr.withAll().get()
-  lzero = lzero.filter(x => !x.completed)
-  lzero = lzero.filter(x => !x.hard_prereqs.some(y => !y.completed))
-  lzero.sort((a, b) => b.hard_postreqs.filter(incomplete).length - a.hard_postreqs.filter(incomplete).length)
-  return lzero
+  return useRepo(TaskRepo).layerZero().sort((a, b) => b.hard_postreqs.filter(incomplete).length - a.hard_postreqs.filter(incomplete).length)
 })
 
 const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
