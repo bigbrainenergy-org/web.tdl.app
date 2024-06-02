@@ -363,7 +363,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     options.payload.task.hard_prereq_ids!.splice(position, 1)
     await this.updateAndCache(options).then(() => {
-      const pre = Utils.hardCheck(this.find(id_of_prereq))
+      const pre: Task = Utils.hardCheck(this.find(id_of_prereq))
       Utils.arrayDelete(pre.hard_postreq_ids, task.id)
       this.save(pre)
       this.setCache(pre)
@@ -460,14 +460,14 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if(currentTask === null || typeof currentTask === 'undefined') throw new Error('Task sent for updating was not found on the local repository')
     const anyPrereqsBelow = currentTask.anyIDsBelow(currentTask.hard_prereqs.filter(x => !x.completed).map(x => x.id), { incompleteOnly: true, useStore: false })
     const anyPrereqsBelowResult: Task[] = []
-    anyPrereqsBelow.forEach((val, key) => { if(val) anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key))) })
+    anyPrereqsBelow.forEach((val, key) => { if(val) anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key)) as Task) })
     if(anyPrereqsBelowResult.length > 0) {
       anyPrereqsBelowResult.forEach(x => console.error(`This prereq is already a postreq: ${x.title}`))
       throw new Error('There is a prereq that is already supposed to be AFTER the current task')
     }
     const anyPostreqsAbove = currentTask.anyIDsAbove(currentTask.hard_postreqs.filter(x => !x.completed).map(x => x.id), { incompleteOnly: true, useStore: false })
     const anyPostreqsAboveResult: Task[] = []
-    anyPostreqsAbove.forEach((val, key) => { if(val) anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)))})
+    anyPostreqsAbove.forEach((val, key) => { if(val) anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)) as Task)})
     if(anyPostreqsAboveResult.length > 0) {
       anyPostreqsAboveResult.forEach(x => console.error(`This postreq is already a prereq: ${x.title}`))
       throw new Error('There is a postreq that is already supposed to be BEFORE the current task')
@@ -490,10 +490,10 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     const layerZeroIndex = useLayerZeroStore().layerZero.findIndex(x => x.id === t.id)
     const isLayerZero = !t.hasIncompletePrereqs
     if(layerZeroIndex < 0) {
-      if(isLayerZero) useLayerZeroStore().layerZero.push(t)
+      if(isLayerZero && !t.completed) useLayerZeroStore().layerZero.push(t)
     }
     else {
-      if(isLayerZero) {
+      if(isLayerZero && !t.completed) {
         useLayerZeroStore().layerZero[layerZeroIndex] = t
       }
       else {
