@@ -102,3 +102,5 @@ jobs:
       # SBOM for no particular reason? 😏👉
       - name: Anchore SBOM Action
         uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/bigbrainenergy-org/web.tdl.app:main
