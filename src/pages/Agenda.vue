@@ -88,12 +88,13 @@ import { computed, defineComponent, ref, watch } from 'vue'
 import { useRepo } from 'pinia-orm';
 import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { Utils, computedWithPrev } from 'src/util'
+import { Utils, computedWithPrev, exists } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
 import SettingsButton from 'src/components/SettingsButton.vue'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
 const $q = useQuasar()
 
@@ -127,10 +128,11 @@ const notCompleted = (x: Task) => x.completed === false
 const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
 const qtyPostreqsSort = (a: Task, b: Task) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length
 
-const busySignal = computed(() => useLoadingStateStore().busy)
-
 const tasks = computedWithPrev<Task[]>((previous) => {
-  if(busySignal.value && typeof previous !== 'undefined' && previous !== null) return previous
+  if(useLoadingStateStore().busy && exists(previous)) {
+    console.log('busy signal received')
+    return previous
+  }
   let baseMap = new Map(useRepo(TaskRepo).where('completed', false).withAll().get().map(x => [x.id, x]))
   let traversed = new Set<number>() // ids
   let finalList: Array<Task> = []
@@ -156,6 +158,19 @@ const tasks = computedWithPrev<Task[]>((previous) => {
         nextUp.id = key
         nextUp.p = p
       }
+      else if(p === nextUp.p) {
+        if(!exists(nextUp.id)) {
+          nextUp.id = key
+          nextUp.p = p
+        }
+        else {
+          // todo: maybe change this to sum the qty postreqs of postreqs - i.e. use withAllRecursive for the baseMap
+          if(nextUp.id > key) {
+            nextUp.id = key
+            nextUp.p = p
+          }
+        }
+      }
     })
     if(typeof nextUp.id === 'undefined') {
       console.debug(`pushing remaining ${layer.size} tasks to list`)
@@ -167,7 +182,7 @@ const tasks = computedWithPrev<Task[]>((previous) => {
     traversed.add(nextUp.id)
   }
   return finalList
-}, Utils.debugComputed({ debug: false, verbose: false }))
+})
 
 const updateTaskCompletedStatus = async (task: Task) => {
   await tasksRepo.updateAndCache({ id: task.id, payload: { task }})
