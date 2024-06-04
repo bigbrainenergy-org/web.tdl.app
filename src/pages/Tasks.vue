@@ -116,7 +116,9 @@ const tasks = computed(() => {
   console.warn('updating tasks on Task page')
   let baseQuery = useLayerZeroStore().layerZero as Task[]
   if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
-  return baseQuery.sort((a, b) => b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length)
+  const results = baseQuery.sort((a, b) => b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length)
+  console.debug({ page: 'Tasks', results })
+  return results
 })
 
 const updateTaskCompletedStatus = async (task: Task) => {

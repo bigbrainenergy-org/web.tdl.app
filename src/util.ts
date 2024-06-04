@@ -29,7 +29,7 @@ export class Utils {
     throw new Error(s ?? 'needs refactor')
   }
   static hardCheck<T>(t: T | undefined | null, memo = 'ERROR'): T {
-    if (typeof t === 'undefined' || t === null) {
+    if (!exists(t)) {
       const e = new Error(`variable was undefined: ${memo}`)
       errorNotification(e, memo)
       throw e
@@ -101,4 +101,10 @@ export function computedWithPrev<T>(func: λ<T, T>, options?: DebuggerOptions) {
     previous = result;
     return result;
   }, options);
+}
+
+
+export function exists<T>(t: T | undefined | null): t is T {
+  if(typeof t === 'undefined' || t === null) return false
+  return true
 }

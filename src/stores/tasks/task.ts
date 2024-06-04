@@ -8,7 +8,7 @@ import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
-import { Utils } from 'src/util'
+import { Utils, exists } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
 import { Queue } from 'src/types'
 import { useAllTasksStore } from '../performance/all-tasks'
@@ -410,9 +410,9 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if(typeof options.payload.task.hard_prereq_ids === 'undefined') options.payload.task.hard_prereq_ids = [id_of_prereq]
     else options.payload.task.hard_prereq_ids.push(id_of_prereq)
     await this.updateAndCache(options) // we should only need one api call in order for the rails api to generate the hard_requisite record that joins two Tasks.
-    if(!pre.hard_prereq_ids.includes(task.id)) pre.hard_postreq_ids.push(task.id)
+    if(!pre.hard_postreq_ids.includes(task.id)) pre.hard_postreq_ids.push(task.id)
     this.save(pre)
-    this.setCache(pre)
+    this.setCache(pre, true)
   }
 
   /**
@@ -431,9 +431,9 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     options.payload.task.hard_postreq_ids!.push(id_of_postreq)
     await this.updateAndCache(options)
-    if(!post.hard_postreq_ids.includes(task.id)) post.hard_prereq_ids.push(task.id)
+    if(!post.hard_prereq_ids.includes(task.id)) post.hard_prereq_ids.push(task.id)
     this.save(post)
-    this.setCache(post)
+    this.setCache(post, true)
   }
 
   deleteTask = async (task: Task) => {
@@ -442,11 +442,12 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     const pres = currentTask.hard_prereqs
     const posts = currentTask.hard_postreqs
     console.debug({currentTask, pres, posts})
+    const debugError = (x: any) => console.debug(x)
     for(let i = 0; i < pres.length; i++) {
-      await this.removePost(pres[i], task.id).catch((x) => console.debug(x))
+      await this.removePost(pres[i], task.id).catch(debugError)
     }
     for(let i = 0; i < posts.length; i++) {
-      await this.removePre(posts[i], task.id).catch((x) => console.debug(x))
+      await this.removePre(posts[i], task.id).catch(debugError)
     }
     useRawExpandedStateStore().forgetTask(task.id)
     useAllTasksStore().allTasks.delete(task.id)
@@ -457,15 +458,17 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     // check if any hard prereq ids are in the recursive postreqs
     // check if any hard postreq ids are in the recursive prereqs
     const currentTask = useAllTasksStore().allTasks.get(options.id)
-    if(currentTask === null || typeof currentTask === 'undefined') throw new Error('Task sent for updating was not found on the local repository')
-    const anyPrereqsBelow = currentTask.anyIDsBelow(currentTask.hard_prereqs.filter(x => !x.completed).map(x => x.id), { incompleteOnly: true, useStore: false })
+    if(!exists(currentTask)) throw new Error('Task sent for updating was not found on the local repository')
+    const incompletePrereqIDs = exists(currentTask.hard_prereqs) ? currentTask.hard_prereqs.filter(x => !x.completed).map(x => x.id) : [] 
+    const anyPrereqsBelow = currentTask.anyIDsBelow(incompletePrereqIDs, { incompleteOnly: true, useStore: false })
     const anyPrereqsBelowResult: Task[] = []
     anyPrereqsBelow.forEach((val, key) => { if(val) anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key)) as Task) })
     if(anyPrereqsBelowResult.length > 0) {
       anyPrereqsBelowResult.forEach(x => console.error(`This prereq is already a postreq: ${x.title}`))
       throw new Error('There is a prereq that is already supposed to be AFTER the current task')
     }
-    const anyPostreqsAbove = currentTask.anyIDsAbove(currentTask.hard_postreqs.filter(x => !x.completed).map(x => x.id), { incompleteOnly: true, useStore: false })
+    const incompletePostreqIDs = typeof currentTask.hard_postreqs === 'undefined' ? [] : currentTask.hard_postreqs.filter(x => !x.completed).map(x => x.id)
+    const anyPostreqsAbove = currentTask.anyIDsAbove(incompletePostreqIDs, { incompleteOnly: true, useStore: false })
     const anyPostreqsAboveResult: Task[] = []
     anyPostreqsAbove.forEach((val, key) => { if(val) anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)) as Task)})
     if(anyPostreqsAboveResult.length > 0) {
@@ -474,7 +477,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     await this.update(options).then((data: void | Task) => { 
       if(data instanceof Task) {
-        this.setCache(data)
+        this.setCache(data, true)
       }
     })
   }
@@ -483,23 +486,11 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     return await timeThisABAsync(this.add, 'this.add', 500)(options).then((data: Task) => this.setCache(data))
   }
 
-  setCache = (task: Task) => {
-    const t = this.withAll().find(task.id)
+  setCache = (task: Task, getAll = false) => {
+    const t = getAll ? this.withAll().find(task.id) : task
     if(t === null) throw new Error('Task not found in the repository, so it cannot be cached.')
     useAllTasksStore().allTasks.set(t.id, t)
-    const layerZeroIndex = useLayerZeroStore().layerZero.findIndex(x => x.id === t.id)
-    const isLayerZero = !t.hasIncompletePrereqs
-    if(layerZeroIndex < 0) {
-      if(isLayerZero && !t.completed) useLayerZeroStore().layerZero.push(t)
-    }
-    else {
-      if(isLayerZero && !t.completed) {
-        useLayerZeroStore().layerZero[layerZeroIndex] = t
-      }
-      else {
-        useLayerZeroStore().layerZero.splice(layerZeroIndex, 1)
-      }
-    }
+    useLayerZeroStore().checkAndSet(t)
     return t
   }
 
