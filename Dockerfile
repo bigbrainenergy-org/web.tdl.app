@@ -27,6 +27,10 @@ RUN yarn build
 # Starting the production / final image
 FROM node:20-slim AS final
 
+LABEL org.opencontainers.image.title 'TDL App - Web UI'
+LABEL org.opencontainers.image.description "Web frontend for TDL App\n\n**Does this support markdown?**\n## Maybe"
+LABEL org.opencontainers.image.vendor 'Big Brain Energy'
+
 WORKDIR /app
 
 # Copy the files we need from the build stage
