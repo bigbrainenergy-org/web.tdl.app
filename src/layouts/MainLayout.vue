@@ -318,7 +318,7 @@ const layerZero = computed(() => {
 // todo: storeToRefs
 const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
 const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length > 0 : false
-const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort
+const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort && $route.path !== '/settings'
 const shouldSort = computed<boolean>({
   get: () => quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero()),
   set: x => { if(!x && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }

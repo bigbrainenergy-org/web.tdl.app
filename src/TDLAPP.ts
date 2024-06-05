@@ -9,6 +9,7 @@ import { λ } from './types'
 import TaskSlicerDialog from './components/dialog/TaskSlicerDialog.vue'
 import AddDependencyDialog from './components/dialog/AddDependencyDialog.vue'
 import { timeThisAABAsync } from './perf'
+import { useLocalSettingsStore } from './stores/local-settings/local-setting'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number) => {
@@ -131,7 +132,8 @@ export class TDLAPP {
       icon: 'fa-solid fa-check',
       actions: [
         { label: 'Undo', color: 'white', handler: () => { task.toggleCompleted() } }
-      ]
+      ],
+      timeout: useLocalSettingsStore().notificationSpeed * 1500
     })
   }
 }

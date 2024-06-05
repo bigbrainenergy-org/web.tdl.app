@@ -7,6 +7,7 @@ import { UserRepo } from './stores/users/user'
 import { Settings } from 'luxon'
 import { trace } from 'console'
 import { DebuggerOptions, computed } from 'vue'
+import { useLocalSettingsStore } from './stores/local-settings/local-setting'
 
 export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
@@ -19,7 +20,8 @@ export class Utils {
       color: 'positive',
       position: 'top',
       message: memo ?? 'I am so happy',
-      icon: icon ?? 'fa-solid fa-link'
+      icon: icon ?? 'fa-solid fa-link',
+      timeout: useLocalSettingsStore().notificationSpeed * 1500
     })
   }
   static handleSuccess(memo?: string, icon?: string): λ {

@@ -1,6 +1,6 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized>
+  <q-dialog ref="dialogRef" maximized @hide="hideDialog">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Create Task</div>
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { ref } from 'vue';
 
 const emit = defineEmits([
@@ -84,6 +85,16 @@ const clearFields = () => {
   notes.value = ''
 }
 
-const onCancelClick = onDialogCancel
+useLoadingStateStore().busy = true
+
+const onCancelClick = () => {
+  useLoadingStateStore().busy = false
+  onDialogCancel()
+}
+
+const hideDialog = () => {
+  useLoadingStateStore().busy = false
+  onDialogHide()
+}
 </script>
 

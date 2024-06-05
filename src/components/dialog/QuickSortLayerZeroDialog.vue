@@ -423,7 +423,10 @@ const skip = () => {
   tryNewPair()
 }
 
-const onCancelClick = onDialogOK
+const onCancelClick = () => {
+  useLoadingStateStore().busy = false
+  onDialogOK()
+}
 
 const hideDialog = () => {
   useLoadingStateStore().busy = false

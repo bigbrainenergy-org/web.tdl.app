@@ -128,10 +128,10 @@ const notCompleted = (x: Task) => x.completed === false
 const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
 const qtyPostreqsSort = (a: Task, b: Task) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length
 
-const tasks = computedWithPrev<Task[]>((previous) => {
-  if(useLoadingStateStore().busy && exists(previous)) {
+const tasks = computed(() => {
+  if(useLoadingStateStore().busy) {
     console.log('busy signal received')
-    return previous
+    return []
   }
   let baseMap = new Map(useRepo(TaskRepo).where('completed', false).withAll().get().map(x => [x.id, x]))
   let traversed = new Set<number>() // ids

@@ -17,6 +17,7 @@
           <TimeZoneSwitcher />
           <LanguageSwitcher />
           <BackgroundSwitcher />
+          <NotificationTimeSetting />
         </div>
         <q-btn
           class="q-ma-md"
@@ -61,6 +62,7 @@ import TimeZoneSwitcher from 'src/components/TimeZoneSwitcher.vue'
 import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
 import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
 import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
+import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
 
 defineComponent({name: 'SettingsPage'})
 
