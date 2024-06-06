@@ -129,10 +129,12 @@ const notBlocked = (x: Task) => x.hard_prereq_ids.length === 0 || x.hard_prereqs
 const qtyPostreqsSort = (a: Task, b: Task) => b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length
 
 const tasks = computed(() => {
-  if(useLoadingStateStore().busy) {
-    console.log('busy signal received')
+  if(useLoadingStateStore().busy || useLoadingStateStore().quickSortDialogActive) {
+    if(useLoadingStateStore().quickSortDialogActive) console.log('quick sort dialog active is TRUE, so skipping agenda recalc')
+    if(useLoadingStateStore().busy) console.log('busy signal is TRUE, so skipping agenda recalc')
     return []
   }
+  console.log('recalculating agenda.')
   let baseMap = new Map(useRepo(TaskRepo).where('completed', false).withAll().get().map(x => [x.id, x]))
   let traversed = new Set<number>() // ids
   let finalList: Array<Task> = []

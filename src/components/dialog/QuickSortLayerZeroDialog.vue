@@ -91,18 +91,25 @@ import { Task, TaskRepo } from 'src/stores/tasks/task'
 import { TDLAPP } from 'src/TDLAPP'
 import { SimpleMenuItem } from 'src/types'
 import { Utils } from 'src/util'
-import { watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { computed, ref } from 'vue'
 import SettingsButton from '../SettingsButton.vue'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { timeThis, timeThisAABAsync } from 'src/perf'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
+const props = withDefaults(defineProps<{ objective: number }>(), { objective: 1 })
+
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
 
 const tr = useRepo(TaskRepo)
-useLoadingStateStore().busy = true
+onMounted(() => {
+  console.log('busy for quick sort')
+  useLoadingStateStore().busy = true
+  console.log('setting quick sort dialog active to true')
+  useLoadingStateStore().quickSortDialogActive = true
+})
 
 class PostWeightedTask {
   t: Task
@@ -135,7 +142,6 @@ watch(quickSortNew, () => {
 const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
 const layerZero = computed(() => {
-  console.log('re-computing layerZero for quick sort layer zero dialog')
   return useLayerZeroStore().get().map(postWeightedTask)
 })
 const tasksWithoutPostreqs = computed(() => layerZero.value.filter(x => !x.t.hasIncompletePostreqs))
@@ -219,6 +225,8 @@ const menuItems: SimpleMenuItem<Task>[] = [
 const finishedSorting = (msg = 'Finished Sorting') => {
   Utils.notifySuccess(msg)
   useLoadingStateStore().busy = false
+  console.log('setting quick sort dialog active to false')
+  useLoadingStateStore().quickSortDialogActive = false
   if(dialogRef !== null) onDialogHide()
 }
 
@@ -336,6 +344,10 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
 
 const generateNewPair = (): withID<pair<Task>> => {
   // todo: if selecting a layer one task, cannot currently fallback to layer zero when all are skipped, and vice versa.
+  console.log(`layer zero length is ${l0len.value}; objective is ${props.objective}`)
+  if(l0len.value <= props.objective) {
+    throw new Error('reached layer zero length objective.')
+  }
   let tmp: withID<pair<Task>> | null = null
   const tryGetLayerOnePair = () => {
     if(layerOne.value === null || layerOne.value.length === 0) return null
@@ -424,12 +436,18 @@ const skip = () => {
 }
 
 const onCancelClick = () => {
+  console.log('onCancelClick')
   useLoadingStateStore().busy = false
+  console.log('setting quick sort dialog active to false')
+  useLoadingStateStore().quickSortDialogActive = false
   onDialogOK()
 }
 
 const hideDialog = () => {
+  console.log('hideDialog')
   useLoadingStateStore().busy = false
+  console.log('setting quick sort dialog active to false')
+  useLoadingStateStore().quickSortDialogActive = false
   onDialogHide()
 }
 

@@ -59,7 +59,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
 
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
@@ -105,7 +105,11 @@ const searchString = ref<string | undefined>(undefined)
 const key = ref(0)
 
 Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
-useLoadingStateStore().busy = true
+onMounted(() => {
+  console.log('busy and addDependencyDialogActive set to true')
+  useLoadingStateStore().busy = true
+  useLoadingStateStore().addDependencyDialogActive = true
+})
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -237,6 +241,7 @@ const selectTask = (task: Task) => {
 }
 const onCancelClick = () => {
   useLoadingStateStore().busy = false
+  useLoadingStateStore().addDependencyDialogActive = false
   onDialogCancel()
 }
 
@@ -253,6 +258,7 @@ const createTask = async () => {
 
 const hideDialog = () => {
   useLoadingStateStore().busy = false
+  useLoadingStateStore().addDependencyDialogActive = false
   onDialogHide()
 }
 

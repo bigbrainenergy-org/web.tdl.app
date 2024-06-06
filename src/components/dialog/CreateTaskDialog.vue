@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -85,15 +85,23 @@ const clearFields = () => {
   notes.value = ''
 }
 
-useLoadingStateStore().busy = true
+onMounted(() => {
+  console.log('busy and createTaskDialogActive are true')
+  useLoadingStateStore().busy = true
+  useLoadingStateStore().createTaskDialogActive = true
+})
 
 const onCancelClick = () => {
+  console.log('onCancelClick')
   useLoadingStateStore().busy = false
+  useLoadingStateStore().createTaskDialogActive = false
   onDialogCancel()
 }
 
 const hideDialog = () => {
+  console.log('hideDialog')
   useLoadingStateStore().busy = false
+  useLoadingStateStore().createTaskDialogActive = false
   onDialogHide()
 }
 </script>

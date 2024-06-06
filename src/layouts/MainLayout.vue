@@ -117,14 +117,12 @@
 
       </router-view> -->
     </q-page-container>
-
-    <QuickSortLayerZeroDialog v-if="shouldSort" v-model="shouldSort" />
   </q-layout>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useQuasar } from 'quasar';
+import { useQuasar, Dialog } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import errorNotification from 'src/hackerman/ErrorNotification';
@@ -311,16 +309,33 @@ watch(backgroundModeSetting, () => {
 
 const layerZero = computed(() => {
   // no longer need to worry about busy signal because we are using cache that is updated by child components.
-  console.log('mainlayout: recalculate layerZero array')
   return useLayerZeroStore().get()
 })
 
 // todo: storeToRefs
 const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
 const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length > 0 : false
-const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort && $route.path !== '/settings'
+const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort && $route.path !== '/settings' && !useLoadingStateStore().dialogOpenExclQuickSort
 const shouldSort = computed<boolean>({
   get: () => quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero()),
   set: x => { if(!x && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
+})
+
+const unbusy = () => {
+  console.log('unbusy.')
+  if(shouldSort.value = false) {
+    useLoadingStateStore().busy = false
+  }
+  console.log('setting quick sort active to FALSE')
+  useLoadingStateStore().quickSortDialogActive = false
+}
+
+const openQuickSortDialog = () => Dialog.create({ component: QuickSortLayerZeroDialog, componentProps: { objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY } })
+watch(shouldSort, () => {
+  console.log(`layer zero length is ${layerZero.value.length}`)
+  if(shouldSort.value) {
+    console.log('OPENING QUICK SORT')
+    openQuickSortDialog()
+  }
 })
 </script>
