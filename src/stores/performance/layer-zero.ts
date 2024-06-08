@@ -33,17 +33,22 @@ export const useLayerZeroStore = defineStore('layer-zero', {
     checkAndSet(task: Task) {
       const index = this.layerZero.findIndex(x => x.id === task.id)
       const inLZArray = index >= 0
-      const shouldBeLayerZero = (t: Task) => !t.completed && !t.hasIncompletePrereqs
-      const taskShouldBeLayerZero = shouldBeLayerZero(task)
-      if(inLZArray && !taskShouldBeLayerZero) {
-        this.layerZero.splice(index, 1)
-        task.grabPostreqs(false).forEach(x => this.checkAndSet(x))
+      const taskShouldBeLayerZero = !task.completed && !task.hasIncompletePrereqs
+      if(inLZArray) {
+        if(!taskShouldBeLayerZero) {
+          this.layerZero.splice(index, 1)
+          task.grabPostreqs(false).forEach(x => this.checkAndSet(x))
+        }
+        else {
+          this.layerZero[index] = task
+        }
       }
-      else if(!inLZArray && taskShouldBeLayerZero) {
-        this.layerZero.push(task)
-        this.layerZero = this.layerZero.filter(x => !task.hard_postreq_ids.includes(x.id))
+      else {
+        if(taskShouldBeLayerZero) {
+          this.layerZero.push(task)
+          this.layerZero = this.layerZero.filter(x => !task.hard_postreq_ids.includes(x.id))
+        }
       }
-      else if(inLZArray) this.layerZero[index] = task
     },
     removeIfExists(task: Task) {
       const index = this.layerZero.findIndex(x => x.id === task.id)

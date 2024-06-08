@@ -68,7 +68,10 @@
               </q-intersection>
               <template v-if="tasks.length === 0">
                 <q-item v-ripple clickable>
-                  <q-item-section>
+                  <q-item-section v-if="useLoadingStateStore().busy">
+                    <strong>Loading...</strong>
+                  </q-item-section>
+                  <q-item-section v-else>
                     <strong>Nothing yet!</strong>
                   </q-item-section>
                 </q-item>

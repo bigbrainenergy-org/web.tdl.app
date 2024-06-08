@@ -112,8 +112,9 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
     // console.debug(`${this.apidir} UPDATE`, { itemOptions })
     return this.api().patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
     .then((response) => {
-      return this.save(response.data as T)
-      // console.log({ id: itemOptions.id, newData: response.data })
+      const result = this.save(response.data as T)
+      console.log(result)
+      return result
     }, Utils.handleError('Error updating record'))
   }
 

@@ -477,6 +477,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     }
     await this.update(options).then((data: void | Task) => { 
       if(data instanceof Task) {
+        console.log('setting cache.')
         this.setCache(data, true)
       }
     })
@@ -488,6 +489,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
 
   setCache = (task: Task, getAll = false) => {
     const t = getAll ? this.withAll().find(task.id) : task
+    console.log({ method: 'setCache', t })
     if(t === null) throw new Error('Task not found in the repository, so it cannot be cached.')
     useAllTasksStore().allTasks.set(t.id, t)
     useLayerZeroStore().checkAndSet(t)

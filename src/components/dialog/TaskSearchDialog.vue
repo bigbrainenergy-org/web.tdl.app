@@ -14,20 +14,44 @@
       v-model:model-value="searchString"
       :search-label="searchLabel"
       :dialog-title="dialogTitle"
+      :debounce="debounceAmount"
       @do-a-search="key++" />
 
-      <TaskSearchResults
-      :key="key"
-      :search="searchString" 
-      :dialog-title="dialogTitle" 
-      :taskID="taskID" 
-      :search-label="searchLabel"
-      :results-title="resultsTitle"
-      :showCreateButton="showCreateButton"
-      :initial-filter="initialFilter"
-      :batch-filter="defaultBatchFilter"
-      @select="(e) => selectTask(e.task)" />
+      <q-card-section>
+        <div class="row q-gutter-md q-pa-sm">
+          <div class="col-12">
 
+            <template v-if="searchString">
+              <q-separator class="q-my-md" />
+              <div class="text-h4 q-mb-md">{{ resultsTitle }} - {{ results.length }}</div>
+              <q-list>
+                <q-item v-if="!results.length" v-ripple clickable>
+                  <q-item-section>No results found</q-item-section>
+                </q-item>
+                <q-item v-if="showCreateButton">
+                  <q-btn
+                  icon="fas fa-plus"
+                  label="Create A New Task"
+                  color="primary"
+                  @click="createTask"
+                />
+                </q-item>
+                <q-item
+                  v-for="task in results"
+                  :key="task.id ?? -1"
+                  v-ripple
+                  clickable
+                  @click="selectTask(task as Task)"
+                >
+                  <q-item-section>
+                    {{ task.title }}
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+          </div>
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
@@ -48,6 +72,7 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useRepo } from 'pinia-orm'
 import SettingsButton from '../SettingsButton.vue';
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+import { brushY } from 'd3'
 
 interface Props {
   dialogTitle: string
@@ -71,6 +96,9 @@ const props = withDefaults(defineProps<Props>(),
     batchFilter: undefined
   }
 )
+
+const debounceAmount = ref(100)
+const results = ref<Task[]>([])
 
 const searchString = ref<string | undefined>(undefined)
 
@@ -144,13 +172,14 @@ const onCancelClick = () => {
   onDialogCancel()
 }
 
-// const createTask = async () => {
-//   const toCreate: CreateTaskOptions = {
-//     title: search.value
-//   }
-//   const newTask = await tr.add(toCreate)
-//   selectTask(newTask)
-// }
+const createTask = async () => {
+  if(typeof searchString.value === 'undefined') return
+  const toCreate: CreateTaskOptions = {
+    title: search.value
+  }
+  const newTask = await tr.add(toCreate)
+  selectTask(newTask)
+}
 
 const hideDialog = () => {
   useLoadingStateStore().busy = false

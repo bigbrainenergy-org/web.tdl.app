@@ -98,7 +98,7 @@ import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { timeThis, timeThisAABAsync } from 'src/perf'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
-const props = withDefaults(defineProps<{ objective: number }>(), { objective: 1 })
+const props = withDefaults(defineProps<{ objective?: number }>(), { objective: 1 })
 
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
 const emit = defineEmits([ ...useDialogPluginComponent.emits ])
@@ -345,7 +345,7 @@ const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null 
 const generateNewPair = (): withID<pair<Task>> => {
   // todo: if selecting a layer one task, cannot currently fallback to layer zero when all are skipped, and vice versa.
   console.log(`layer zero length is ${l0len.value}; objective is ${props.objective}`)
-  if(l0len.value <= props.objective) {
+  if(l0len.value <= props.objective && (tasksWithoutPostreqs.value.length > 0 !== quickSortNew.value)) {
     throw new Error('reached layer zero length objective.')
   }
   let tmp: withID<pair<Task>> | null = null
@@ -394,7 +394,7 @@ let firstPair
 try {
   firstPair = generateNewPair()
 } catch(e: any) {
-  console.error(e)
+  console.log(e)
   finishedSorting()
 }
 if(firstPair === null || typeof firstPair === 'undefined') throw new Error('Could not generate first pair')

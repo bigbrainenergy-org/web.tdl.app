@@ -18,7 +18,7 @@ export const useLoadingStateStore = defineStore('loading-state', {
     dialogOpen: (state) => state.addDependencyDialogActive || state.createTaskDialogActive || state.quickSortDialogActive,
     dialogOpenExclQuickSort: (state) => {
       console.log({ depDialog: state.addDependencyDialogActive, createDialog: state.createTaskDialogActive })
-      return state.addDependencyDialogActive || state.createTaskDialogActive
+      return (state.addDependencyDialogActive || state.createTaskDialogActive) && !state.quickSortDialogActive
     }
   }
 })

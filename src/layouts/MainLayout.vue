@@ -36,6 +36,12 @@
           icon="fa-solid fa-refresh"
           @click="pullFresh"
         />
+        <q-btn
+          class="q-ma-md"
+          color="red"
+          icon="fa-solid fa-refresh"
+          @click="dumpDebug"
+        />
 
         <q-space />
 
@@ -246,6 +252,20 @@ const pullFresh = async () => {
   }
 }
 
+const dumpDebug = () => {
+  const lss = useLoadingStateStore()
+  const payload = {
+    busy: lss.busy,
+    quickSortOpen: lss.quickSortDialogActive,
+    addTaskOpen: lss.createTaskDialogActive,
+    addDependencyOpen: lss.addDependencyDialogActive,
+    layerZeroLength: layerZero.value.length,
+    tasksWithoutPosts: layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length,
+    shouldSort: shouldSort.value
+  }
+  console.debug(payload)
+}
+
 onMounted(() => {
   const user = useRepo(UserRepo).getUser()
   if(user === null || typeof user === 'undefined') {
@@ -316,14 +336,14 @@ const layerZero = computed(() => {
 const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
 const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length > 0 : false
 const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort && $route.path !== '/settings' && !useLoadingStateStore().dialogOpenExclQuickSort
-const shouldSort = computed<boolean>({
-  get: () => quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero()),
-  set: x => { if(!x && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
+const shouldSort = computed<{l0len: number, shouldSort: boolean}>({
+  get: () => ({ l0len: layerZero.value.length, shouldSort: quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero())}),
+  set: x => { if(!x.shouldSort && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
 })
 
 const unbusy = () => {
   console.log('unbusy.')
-  if(shouldSort.value = false) {
+  if(shouldSort.value.shouldSort === false) {
     useLoadingStateStore().busy = false
   }
   console.log('setting quick sort active to FALSE')
@@ -333,7 +353,7 @@ const unbusy = () => {
 const openQuickSortDialog = () => Dialog.create({ component: QuickSortLayerZeroDialog, componentProps: { objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY } })
 watch(shouldSort, () => {
   console.log(`layer zero length is ${layerZero.value.length}`)
-  if(shouldSort.value) {
+  if(shouldSort.value.shouldSort) {
     console.log('OPENING QUICK SORT')
     openQuickSortDialog()
   }
