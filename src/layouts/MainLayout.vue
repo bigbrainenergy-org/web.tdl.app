@@ -350,11 +350,16 @@ const unbusy = () => {
   useLoadingStateStore().quickSortDialogActive = false
 }
 
-const openQuickSortDialog = () => Dialog.create({ component: QuickSortLayerZeroDialog, componentProps: { objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY } })
+const openQuickSortDialog = () => {
+  if(useLoadingStateStore().quickSortDialogActive) return
+  // todo fixme this is BAD.
+  useLoadingStateStore().quickSortDialogActive = true
+  console.log('OPENING QUICK SORT')
+  Dialog.create({ component: QuickSortLayerZeroDialog, componentProps: { objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY } })
+}
 watch(shouldSort, () => {
   console.log(`layer zero length is ${layerZero.value.length}`)
   if(shouldSort.value.shouldSort) {
-    console.log('OPENING QUICK SORT')
     openQuickSortDialog()
   }
 })
