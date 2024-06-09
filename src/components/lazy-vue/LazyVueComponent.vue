@@ -17,30 +17,30 @@ edit.value = edit.value ?? false
     <q-item-label v-if="(typeof data.value === 'undefined')">UNDEFINED, NULL, OR UNSUPPORTED TYPE</q-item-label>
     <ArrayComponent
       v-else-if="isArray(data.value)"
-      :name="name"
       v-model:data="data.value"
       v-model:edit="edit"
+      :name="name"
       :show-edit="false" />
     <SingularComponent
       v-else-if="isNotArray(data.value)"
-      :name="name"
       v-model:data="data.value"
       v-model:edit="edit"
+      :name="name"
       :show-edit="false" />
   </div>
   <div v-else>
     <q-item-label v-if="(typeof data === 'undefined')">UNDEFINED, NULL, OR UNSUPPORTED TYPE</q-item-label>
     <ArrayComponent
       v-else-if="isArray(data)"
-      :name="name"
       v-model:data="data"
       v-model:edit="edit"
+      :name="name"
       :show-edit="false" />
     <SingularComponent
       v-else-if="isNotArray(data)"
-      :name="name"
       v-model:data="data"
       v-model:edit="edit"
+      :name="name"
       :show-edit="false" />
   </div>
 </template>

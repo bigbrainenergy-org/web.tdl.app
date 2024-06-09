@@ -29,11 +29,11 @@ const customUpdate = (/* key: string, value: WTF */) => {
     <q-list v-if="data" :key="renderCue" dense>
       <q-item v-for="item, key of Object.keys(data)" :key="key">
         <LazyVueComponent
+          :key="key"
           v-model:data="data[item]"
           :name="Object.keys(data)[key]"
           :edit="edit"
           :show-edit="false"
-          :key="key"
           @update:data="(x: WTF) => customUpdate(/*item, x*/)" />
       </q-item>
     </q-list>
