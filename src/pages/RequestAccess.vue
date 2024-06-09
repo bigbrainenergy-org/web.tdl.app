@@ -1,6 +1,11 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <q-card :class="$q.screen.lt.md ? 'fit': 'fit q-ma-md'" style="max-width: 1250px !important" :flat="$q.screen.lt.md" :square="$q.screen.lt.md">
+    <q-card
+      :class="$q.screen.lt.md ? 'fit' : 'fit q-ma-md'"
+      style="max-width: 1250px !important"
+      :flat="$q.screen.lt.md"
+      :square="$q.screen.lt.md"
+    >
       <q-card-section class="bg-grey-8 text-white">
         <q-item>
           <q-item-section avatar>
@@ -35,9 +40,7 @@
                 :label="$t('name')"
                 class="q-my-md"
                 lazy-rules
-                :rules="[
-                  (val) => present(val) || 'Please enter your name'
-                ]"
+                :rules="[(val) => present(val) || 'Please enter your name']"
               >
                 <template #prepend>
                   <q-icon name="fas fa-user" />
@@ -51,8 +54,8 @@
                 :label="$t('email')"
                 type="email"
                 :rules="[
-                  val => present(val) || 'Please enter your email',
-                  val => validEmail(val) || 'Invalid email format'
+                  (val) => present(val) || 'Please enter your email',
+                  (val) => validEmail(val) || 'Invalid email format'
                 ]"
               >
                 <template #prepend>
@@ -61,7 +64,12 @@
               </q-input>
 
               <q-stepper-navigation>
-                <q-btn :disable="!stepOneComplete()" color="primary" label="Continue" @click="step = 2" />
+                <q-btn
+                  :disable="!stepOneComplete()"
+                  color="primary"
+                  label="Continue"
+                  @click="step = 2"
+                />
               </q-stepper-navigation>
             </q-step>
 
@@ -78,7 +86,9 @@
                 :label="$t('reasonForInterest')"
                 type="textarea"
                 :rules="[
-                  val => present(val) || 'Please enter why you are interested in TDL App'
+                  (val) =>
+                    present(val) ||
+                    'Please enter why you are interested in TDL App'
                 ]"
               >
                 <template #prepend>
@@ -87,8 +97,19 @@
               </q-input>
 
               <q-stepper-navigation>
-                <q-btn :disable="!stepTwoComplete()" color="primary" label="Continue" @click="step = 3" />
-                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 1" />
+                <q-btn
+                  :disable="!stepTwoComplete()"
+                  color="primary"
+                  label="Continue"
+                  @click="step = 3"
+                />
+                <q-btn
+                  flat
+                  color="primary"
+                  label="Back"
+                  class="q-ml-sm"
+                  @click="step = 1"
+                />
               </q-stepper-navigation>
             </q-step>
 
@@ -108,15 +129,19 @@
 
                 <q-item v-ripple tag="label">
                   <q-item-section avatar>
-                    <q-radio v-model="versionInterest" val="alpha" color="red" />
+                    <q-radio
+                      v-model="versionInterest"
+                      val="alpha"
+                      color="red"
+                    />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>Alpha</q-item-label>
                     <q-item-label caption>
-                      Razor sharp edges and sudden drops present, watch your step.
-                      Not all features will be implemented yet, and things may break
-                      horribly.
-                      <br><br>
+                      Razor sharp edges and sudden drops present, watch your
+                      step. Not all features will be implemented yet, and things
+                      may break horribly.
+                      <br /><br />
                       Only power users should consider this option.
                     </q-item-label>
                   </q-item-section>
@@ -124,15 +149,20 @@
 
                 <q-item v-ripple tag="label">
                   <q-item-section avatar>
-                    <q-radio v-model="versionInterest" val="beta" color="blue" />
+                    <q-radio
+                      v-model="versionInterest"
+                      val="beta"
+                      color="blue"
+                    />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>Beta</q-item-label>
                     <q-item-label caption>
                       All of the intended features will be implemented, but may
-                      still be rough around the edges. Should be daily driver ready,
-                      and we will be mostly looking for bugs and UI/UX improvements.
-                      <br><br>
+                      still be rough around the edges. Should be daily driver
+                      ready, and we will be mostly looking for bugs and UI/UX
+                      improvements.
+                      <br /><br />
                       May not be polished, but anyone may consider this option.
                     </q-item-label>
                   </q-item-section>
@@ -140,14 +170,18 @@
 
                 <q-item v-ripple tag="label">
                   <q-item-section avatar top>
-                    <q-radio v-model="versionInterest" val="release" color="green" />
+                    <q-radio
+                      v-model="versionInterest"
+                      val="release"
+                      color="green"
+                    />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>Release</q-item-label>
                     <q-item-label caption>
                       For those seeking a truly polished TDL solution, and don't
                       have the time to deal with potential hiccups.
-                      <br><br>
+                      <br /><br />
                       Anyone may consider this option.
                     </q-item-label>
                   </q-item-section>
@@ -155,8 +189,19 @@
               </q-list>
 
               <q-stepper-navigation>
-                <q-btn :disable="!stepThreeComplete()" color="primary" label="Continue" @click="step = 4" />
-                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 2" />
+                <q-btn
+                  :disable="!stepThreeComplete()"
+                  color="primary"
+                  label="Continue"
+                  @click="step = 4"
+                />
+                <q-btn
+                  flat
+                  color="primary"
+                  label="Back"
+                  class="q-ml-sm"
+                  @click="step = 2"
+                />
               </q-stepper-navigation>
             </q-step>
 
@@ -167,13 +212,26 @@
               :done="step > 4"
               :header-nav="step > 4"
             >
-              <p>This site is protected by reCAPTCHA and the Google
-                <a href="https://policies.google.com/privacy">Privacy Policy</a> and
-                <a href="https://policies.google.com/terms">Terms of Service</a> apply.
+              <p>
+                This site is protected by reCAPTCHA and the Google
+                <a href="https://policies.google.com/privacy">Privacy Policy</a>
+                and
+                <a href="https://policies.google.com/terms">Terms of Service</a>
+                apply.
               </p>
               <q-stepper-navigation>
-                <q-btn color="primary" :label="$t('requestAccess')" type="submit" />
-                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 3" />
+                <q-btn
+                  color="primary"
+                  :label="$t('requestAccess')"
+                  type="submit"
+                />
+                <q-btn
+                  flat
+                  color="primary"
+                  label="Back"
+                  class="q-ml-sm"
+                  @click="step = 3"
+                />
               </q-stepper-navigation>
             </q-step>
           </q-stepper>
@@ -188,7 +246,7 @@ import { defineComponent, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import { useRouter } from 'vue-router'
-import { useAuthenticationStore}  from '../stores/authentication/pinia-authentication'
+import { useAuthenticationStore } from '../stores/authentication/pinia-authentication'
 import { Utils } from 'src/util'
 import { useAxiosStore } from 'src/stores/axios-store'
 
@@ -197,7 +255,7 @@ export default defineComponent({
 
   preFetch() {
     const authenticationStore = useAuthenticationStore()
-    if(authenticationStore.isLoggedIn){
+    if (authenticationStore.isLoggedIn) {
       this.$router.push('/')
     }
   },
@@ -214,7 +272,8 @@ export default defineComponent({
     const email = ref('')
     const reasonForInterest = ref('')
     const versionInterest = ref('')
-    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    const emailRegex =
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
     function present(val: string) {
       return val && val.length > 0
@@ -226,9 +285,7 @@ export default defineComponent({
 
     function stepOneComplete() {
       return (
-        present(name.value) &&
-        present(email.value) &&
-        validEmail(email.value)
+        present(name.value) && present(email.value) && validEmail(email.value)
       )
     }
 
@@ -245,14 +302,15 @@ export default defineComponent({
       const recaptcha = await executeRecaptcha('accessRequest')
       const api = useAxiosStore().axios()
 
-      api.post('/access-request', {
-        name: name.value,
-        email: email.value,
-        reason_for_interest: reasonForInterest.value,
-        version: versionInterest.value,
-        recaptcha: recaptcha
-      }).then(
-        (response) => {
+      api
+        .post('/access-request', {
+          name: name.value,
+          email: email.value,
+          reason_for_interest: reasonForInterest.value,
+          version: versionInterest.value,
+          recaptcha: recaptcha
+        })
+        .then((response) => {
           step.value = 1
           name.value = ''
           email.value = ''
@@ -266,9 +324,7 @@ export default defineComponent({
             message: 'Successfully requested access!',
             icon: 'fas fa-laptop-code'
           })
-        },
-        Utils.handleError('Failed to request access')
-      )
+        }, Utils.handleError('Failed to request access'))
     }
 
     return {
@@ -283,7 +339,7 @@ export default defineComponent({
       stepTwoComplete,
       stepThreeComplete,
       onSubmit
-    };
+    }
   }
-});
+})
 </script>

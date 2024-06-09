@@ -1,4 +1,4 @@
-import { boot } from 'quasar/wrappers';
+import { boot } from 'quasar/wrappers'
 import { VueReCaptcha } from 'vue-recaptcha-v3'
 
 export default boot(({ app }) => {
@@ -8,5 +8,5 @@ export default boot(({ app }) => {
     loaderOptions: {
       autoHideBadge: true
     }
-  });
-});
+  })
+})

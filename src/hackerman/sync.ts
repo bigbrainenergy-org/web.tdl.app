@@ -15,7 +15,7 @@ interface verySpecial {
 
 export async function syncWithBackend(): Promise<number> {
   let tries = 3
-  const queue: verySpecial[] = [ 
+  const queue: verySpecial[] = [
     {
       modelname: 'User',
       repo: UserRepo
@@ -31,26 +31,34 @@ export async function syncWithBackend(): Promise<number> {
     {
       modelname: 'Time Zone',
       repo: TimeZoneRepo
-    }]
-  
-    while(queue.length && tries > 0) {
-      await useRepo(queue[queue.length - 1].repo).fetch()
+    }
+  ]
+
+  while (queue.length && tries > 0) {
+    await useRepo(queue[queue.length - 1].repo)
+      .fetch()
       .then(queue.pop())
       .catch(() => {
-        Utils.handleError(`Failed to fetch from repo ${queue[0].repo.apidir}; MAKING ${tries} MORE ATTEMPTS`)
+        Utils.handleError(
+          `Failed to fetch from repo ${queue[0].repo.apidir}; MAKING ${tries} MORE ATTEMPTS`
+        )
         tries--
       })
-    }
-    if(queue.length === 0) {
-      // this is the good
-      const currentUser = useRepo(UserRepo).getUser()
-      if(currentUser === null || typeof currentUser === 'undefined') return 2
-      console.log({ user: currentUser })
-      Utils.updateLuxonTimeZone(currentUser.time_zone)
-      console.log({ setting: Settings.defaultZone, currentUserSetting: currentUser.time_zone, obj: currentUser.timeZoneObj })
-      useAllTasksStore().regenerate()
-      useLayerZeroStore().regenerate()
-      return 0
-    }
+  }
+  if (queue.length === 0) {
+    // this is the good
+    const currentUser = useRepo(UserRepo).getUser()
+    if (currentUser === null || typeof currentUser === 'undefined') return 2
+    console.log({ user: currentUser })
+    Utils.updateLuxonTimeZone(currentUser.time_zone)
+    console.log({
+      setting: Settings.defaultZone,
+      currentUserSetting: currentUser.time_zone,
+      obj: currentUser.timeZoneObj
+    })
+    useAllTasksStore().regenerate()
+    useLayerZeroStore().regenerate()
+    return 0
+  }
   return 1
 }

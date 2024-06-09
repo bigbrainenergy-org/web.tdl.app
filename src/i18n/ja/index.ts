@@ -5,4 +5,4 @@ export default {
   logout: 'ログアウト',
   language: '言語',
   settings: '設定'
-};
+}

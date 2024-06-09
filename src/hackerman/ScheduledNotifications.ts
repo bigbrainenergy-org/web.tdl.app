@@ -1,24 +1,24 @@
-import {
-  Task
-} from '../stores/tasks/task'
+import { Task } from '../stores/tasks/task'
 import { Notification as NotificationInterface } from 'src/models/Notification'
 import { DateTime } from 'luxon'
 
 let Notifications: any = null
 
 if (process.env.MODE === 'capacitor') {
-  import('@capacitor/local-notifications').then(
-    ({ LocalNotifications }) => {
-      Notifications = LocalNotifications
-    }
-  )
+  import('@capacitor/local-notifications').then(({ LocalNotifications }) => {
+    Notifications = LocalNotifications
+  })
 }
 
-export function scheduleNotifications(notifications: Array<NotificationInterface>) {
+export function scheduleNotifications(
+  notifications: Array<NotificationInterface>
+) {
   if (process.env.MODE === 'capacitor') {
-    Notifications.schedule({ notifications: notifications });
+    Notifications.schedule({ notifications: notifications })
   } else {
-    console.log('Progressive Web Apps don\'t support scheduled notifications. Sadge')
+    console.log(
+      "Progressive Web Apps don't support scheduled notifications. Sadge"
+    )
   }
 }
 
@@ -28,7 +28,7 @@ export function scheduleNotification(notification: NotificationInterface) {
 }
 
 export function scheduleTaskNotification(task: Task) {
-  if(task.id === null) return
+  if (task.id === null) return
   if (task.remind_me_at) {
     scheduleNotification({
       id: task.id,
@@ -40,7 +40,7 @@ export function scheduleTaskNotification(task: Task) {
 }
 
 export function cancelTaskNotification(task: Task) {
-  if(task.id === null) return
+  if (task.id === null) return
   cancelNotification({ id: task.id })
 }
 
@@ -48,11 +48,15 @@ export function cancelNotification(notification: NotificationInterface) {
   cancelNotifications([notification])
 }
 
-export function cancelNotifications(notifications: Array<NotificationInterface>) {
+export function cancelNotifications(
+  notifications: Array<NotificationInterface>
+) {
   if (process.env.MODE === 'capacitor') {
     Notifications.cancel({ notifications: notifications })
   } else {
-    console.log('Progressive Web Apps don\'t support scheduled notifications. Sadge')
+    console.log(
+      "Progressive Web Apps don't support scheduled notifications. Sadge"
+    )
   }
 }
 
@@ -62,25 +66,19 @@ export async function syncNotifications(store: any) {
     const currentlyScheduled = store.getters['tasks/tasksWithReminders'](store)
     const toBeCancelled = previouslyScheduled.notifications.filter(
       (notification: NotificationInterface) => {
-        return !(
-          currentlyScheduled.some(
-            (task: Task) => {
-              return notification.id === task.id
-            }
-          )
-        )
+        return !currentlyScheduled.some((task: Task) => {
+          return notification.id === task.id
+        })
       }
     ) // previouslyScheduled where not currentlyScheduled
-    const toBeScheduled = currentlyScheduled.map(
-      (task: Task) => {
-        return {
-          id: task.id,
-          title: task.title,
-          schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
-          group: 'tasks'
-        }
+    const toBeScheduled = currentlyScheduled.map((task: Task) => {
+      return {
+        id: task.id,
+        title: task.title,
+        schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
+        group: 'tasks'
       }
-    )
+    })
     if (toBeCancelled.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       cancelNotifications(toBeCancelled)

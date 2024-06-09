@@ -11,7 +11,7 @@ const tr = useRepo(TaskRepo)
 const loadChildren = (t: Task) => {
   console.log('loadChildren')
   t.expandedState = true
-  if(t.hard_postreq_ids.length > 1) {
+  if (t.hard_postreq_ids.length > 1) {
     tr.with('hard_postreqs').load([t])
   }
 }
@@ -19,8 +19,18 @@ const loadChildren = (t: Task) => {
 
 <template>
   <q-item>
-    <q-btn v-if="task.expandedState === false && task.hard_postreq_ids.length > 0" icon="fa-solid fa-square-caret-right" style="height: 20px;" @click="loadChildren(task)"/>
-    <q-btn v-if="task.expanded" icon="fa-solid fa-square-caret-down" style="height: 20px;" @click="() => task.expandedState = false"/>
+    <q-btn
+      v-if="task.expandedState === false && task.hard_postreq_ids.length > 0"
+      icon="fa-solid fa-square-caret-right"
+      style="height: 20px"
+      @click="loadChildren(task)"
+    />
+    <q-btn
+      v-if="task.expanded"
+      icon="fa-solid fa-square-caret-down"
+      style="height: 20px"
+      @click="() => (task.expandedState = false)"
+    />
     {{ task.title }}
     <ul v-if="task.expanded" style="list-style-type: none">
       <li v-for="post in task.hard_postreqs" :key="post.id ?? -1">

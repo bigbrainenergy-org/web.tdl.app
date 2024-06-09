@@ -15,11 +15,10 @@ export class TDLAPP {
   static openTask = (currentTask: Task | number) => {
     const cts = useCurrentTaskStore()
     let msg: string
-    if(currentTask instanceof Task) {
+    if (currentTask instanceof Task) {
       cts.id = currentTask.id
       msg = `opening UpdateTaskDialog with task of ${currentTask.title}`
-    }
-    else {
+    } else {
       cts.id = currentTask
       msg = `opening UpdateTaskDialog with task ID ${currentTask}`
     }
@@ -27,7 +26,10 @@ export class TDLAPP {
       component: UpdateTaskDialog
     })
   }
-  static searchDialog = (onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task)) => {
+  static searchDialog = (
+    onSelect: (payload: { task: Task }) => void = (x: { task: Task }) =>
+      this.openTask(x.task)
+  ) => {
     return Dialog.create({
       component: TaskSearchDialog,
       componentProps: {
@@ -41,19 +43,22 @@ export class TDLAPP {
   }
   static addPre = async (task: Task, newPreID: number) => {
     console.log('addPre')
-    await timeThisAABAsync(useRepo(TaskRepo).addPre, 'repo add pre function', 1000)(task, newPreID)
-    .then(() => {
-        console.log('successfully added pre.')
-        Utils.notifySuccess('Added Prerequisite', 'fa-solid fa-link')
-      },
-      Utils.handleError('Failed to add prereq'))
+    await timeThisAABAsync(
+      useRepo(TaskRepo).addPre,
+      'repo add pre function',
+      1000
+    )(task, newPreID).then(() => {
+      console.log('successfully added pre.')
+      Utils.notifySuccess('Added Prerequisite', 'fa-solid fa-link')
+    }, Utils.handleError('Failed to add prereq'))
   }
   static addPost = async (task: Task, newPostID: number) => {
-    await useRepo(TaskRepo).addPost(task, newPostID)
-    .then(
-      Utils.handleSuccess('Added Postrequisite', 'fa-solid fa-link'),
-      Utils.handleError('Failed to add postreq')
-    )
+    await useRepo(TaskRepo)
+      .addPost(task, newPostID)
+      .then(
+        Utils.handleSuccess('Added Postrequisite', 'fa-solid fa-link'),
+        Utils.handleError('Failed to add postreq')
+      )
   }
   static addPrerequisitesDialog = (currentTask: Task) => {
     return Dialog.create({
@@ -66,22 +71,26 @@ export class TDLAPP {
           await this.addPre(currentTask, payload.task.id)
         },
         initialFilter: (currentTaskID: number | undefined) => {
-          if(typeof currentTaskID === 'undefined') throw new Error('Add Prerequisite: Current Task ID is undefined')
+          if (typeof currentTaskID === 'undefined')
+            throw new Error('Add Prerequisite: Current Task ID is undefined')
           const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
-          if(ct === null) throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
+          if (ct === null)
+            throw new Error(
+              `Add Prerequisite: Task not found with Task ID ${currentTaskID}`
+            )
           return (x: Task) => {
-            if(x.completed) return false
-            if(x.id === ct.id) return false
-            if(ct.hard_prereq_ids.includes(x.id)) return false
+            if (x.completed) return false
+            if (x.id === ct.id) return false
+            if (ct.hard_prereq_ids.includes(x.id)) return false
             return true
           }
         },
         batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
-          if(typeof taskID === 'undefined') return undefined
+          if (typeof taskID === 'undefined') return undefined
           const ct = useRepo(TaskRepo).find(taskID)
-          if(ct === null) return undefined
-          const relationInfo = ct.anyIDsBelow(tasks.map(x => x.id))
-          return tasks.filter(x => relationInfo.get(x.id) !== true)
+          if (ct === null) return undefined
+          const relationInfo = ct.anyIDsBelow(tasks.map((x) => x.id))
+          return tasks.filter((x) => relationInfo.get(x.id) !== true)
         }
       }
     })
@@ -97,22 +106,26 @@ export class TDLAPP {
           this.addPost(currentTask, payload.task.id)
         },
         initialFilter: (currentTaskID: number | undefined) => {
-          if(typeof currentTaskID === 'undefined') throw new Error('Add Postrequisite: Current Task ID is undefined')
+          if (typeof currentTaskID === 'undefined')
+            throw new Error('Add Postrequisite: Current Task ID is undefined')
           const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
-          if(ct === null) throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
+          if (ct === null)
+            throw new Error(
+              `Add Postrequisite: Task not found with Task ID ${currentTaskID}`
+            )
           return (x: Task) => {
-            if(x.completed) return false
-            if(x.id === ct.id) return false
-            if(ct.hard_postreq_ids.includes(x.id)) return false
+            if (x.completed) return false
+            if (x.id === ct.id) return false
+            if (ct.hard_postreq_ids.includes(x.id)) return false
             return true
           }
         },
         batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
-          if(typeof taskID === 'undefined') return undefined
+          if (typeof taskID === 'undefined') return undefined
           const ct = useRepo(TaskRepo).find(taskID)
-          if(ct === null) return undefined
-          const relationInfo = ct.anyIDsAbove(tasks.map(x => x.id))
-          return tasks.filter(x => relationInfo.get(x.id) !== true)
+          if (ct === null) return undefined
+          const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
+          return tasks.filter((x) => relationInfo.get(x.id) !== true)
         }
       }
     })
@@ -123,17 +136,30 @@ export class TDLAPP {
       componentProps: { task }
     })
   }
-  static notifyUpdatedCompletionStatus: λ<Task, λ<void>> = (task: Task) => () => {
-    console.log(`notifyUpdatedCompletionStatus: task is ${task.completed ? 'completed' : 'incomplete'}`)
-    Notify.create({
-      message: `Marked "${ task.title }" ${ task.completed ? 'Complete' : 'Incomplete'}`,
-      color: 'positive',
-      position: 'top',
-      icon: 'fa-solid fa-check',
-      actions: [
-        { label: 'Undo', color: 'white', handler: () => { task.toggleCompleted() } }
-      ],
-      timeout: useLocalSettingsStore().notificationSpeed * 1500
-    })
-  }
+  static notifyUpdatedCompletionStatus: λ<Task, λ<void>> =
+    (task: Task) => () => {
+      console.log(
+        `notifyUpdatedCompletionStatus: task is ${
+          task.completed ? 'completed' : 'incomplete'
+        }`
+      )
+      Notify.create({
+        message: `Marked "${task.title}" ${
+          task.completed ? 'Complete' : 'Incomplete'
+        }`,
+        color: 'positive',
+        position: 'top',
+        icon: 'fa-solid fa-check',
+        actions: [
+          {
+            label: 'Undo',
+            color: 'white',
+            handler: () => {
+              task.toggleCompleted()
+            }
+          }
+        ],
+        timeout: useLocalSettingsStore().notificationSpeed * 1500
+      })
+    }
 }

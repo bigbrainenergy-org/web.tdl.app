@@ -47,23 +47,24 @@ const newPassword = ref('')
 const confirmPassword = ref('')
 
 function changePassword() {
-  if(newPassword.value !== confirmPassword.value) {
+  if (newPassword.value !== confirmPassword.value) {
     $q.notify({
       color: 'negative',
       position: 'top',
-      message: 'New password and confirm password didn\'t match, please try again',
+      message:
+        "New password and confirm password didn't match, please try again",
       icon: 'report_problem'
     })
     newPassword.value = ''
     confirmPassword.value = ''
     return
   }
-  userRepo.value.changePassword({
-    current_password: currentPassword.value,
-    password: newPassword.value
-  }).
-  then(
-    () => {
+  userRepo.value
+    .changePassword({
+      current_password: currentPassword.value,
+      password: newPassword.value
+    })
+    .then(() => {
       currentPassword.value = ''
       newPassword.value = ''
       confirmPassword.value = ''
@@ -72,8 +73,6 @@ function changePassword() {
         position: 'top',
         message: 'Password changed!'
       })
-    },
-    Utils.handleError('Failed to change password.')
-  )
+    }, Utils.handleError('Failed to change password.'))
 }
 </script>

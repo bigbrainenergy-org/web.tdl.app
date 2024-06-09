@@ -10,5 +10,7 @@ import { useRepo } from 'pinia-orm'
 
 const tr = useRepo(TaskRepo)
 
-const layerZeroTasks = computed(() => tr.where((x: Task) => x.hard_prereq_ids.length === 0).get())
+const layerZeroTasks = computed(() =>
+  tr.where((x: Task) => x.hard_prereq_ids.length === 0).get()
+)
 </script>

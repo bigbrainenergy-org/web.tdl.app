@@ -15,10 +15,20 @@ export const useLoadingStateStore = defineStore('loading-state', {
     quickSortDialogActive: false
   }),
   getters: {
-    dialogOpen: (state) => state.addDependencyDialogActive || state.createTaskDialogActive || state.quickSortDialogActive,
+    dialogOpen: (state) =>
+      state.addDependencyDialogActive ||
+      state.createTaskDialogActive ||
+      state.quickSortDialogActive,
     dialogOpenExclQuickSort: (state) => {
-      console.log({ depDialog: state.addDependencyDialogActive, createDialog: state.createTaskDialogActive, quickSortActive: state.quickSortDialogActive })
-      return (state.addDependencyDialogActive || state.createTaskDialogActive) && !state.quickSortDialogActive
+      console.log({
+        depDialog: state.addDependencyDialogActive,
+        createDialog: state.createTaskDialogActive,
+        quickSortActive: state.quickSortDialogActive
+      })
+      return (
+        (state.addDependencyDialogActive || state.createTaskDialogActive) &&
+        !state.quickSortDialogActive
+      )
     }
   }
 })

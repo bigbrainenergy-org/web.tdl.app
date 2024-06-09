@@ -13,12 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed,
-  ref,
-  onMounted,
-  onBeforeUnmount
-} from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { DateTime } from 'luxon'
 import { useRepo } from 'pinia-orm'
 import { Utils } from 'src/util'
@@ -30,15 +25,16 @@ const userRepo = computed(() => useRepo(UserRepo))
 
 const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
 
-const user = computed(() => Utils.hardCheck(userRepo.value.getUser(), 'user not found in authentication store or user repo'))
-
-const userTimeZone = computed(
-  () => Utils.hardCheck(user.value).timeZoneObj
+const user = computed(() =>
+  Utils.hardCheck(
+    userRepo.value.getUser(),
+    'user not found in authentication store or user repo'
+  )
 )
 
-const timeZones = computed(
-  () => tzr.all()
-)
+const userTimeZone = computed(() => Utils.hardCheck(user.value).timeZoneObj)
+
+const timeZones = computed(() => tzr.all())
 
 // Was originally used to construct the timezone object via:
 // const editTimeZone = ref({
@@ -71,7 +67,7 @@ function updateCurrentTime() {
 
 // If timer is active, deactivate it to free up memory / CPU.
 function clearTimer() {
-  if(timer) {
+  if (timer) {
     clearInterval(timer)
     timer = null
   }
@@ -79,25 +75,20 @@ function clearTimer() {
 
 // If using KeepAlive to cache in the MainLayout, switch to onActivated
 //onActivated(
-onMounted(
-  () =>{
-    // Immediately update so the user doesn't notice a huge time jump after 1 second
+onMounted(() => {
+  // Immediately update so the user doesn't notice a huge time jump after 1 second
+  updateCurrentTime()
+  // Restart timer
+  timer = setInterval(() => {
     updateCurrentTime()
-    // Restart timer
-    timer = setInterval(
-      () => {
-        updateCurrentTime()
-      },
-      1000
-    )
-  }
-)
+  }, 1000)
+})
 
 // Uncomment if using KeepAlive in MainLayout to cache
 // onDeactivated(
 //   () => { clearTimer() }
 // )
-onBeforeUnmount(
-  () => { clearTimer() }
-)
+onBeforeUnmount(() => {
+  clearTimer()
+})
 </script>

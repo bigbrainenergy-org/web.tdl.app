@@ -1,14 +1,20 @@
 <template>
-  <q-drawer v-model="model" side="left" elevated dark show-if-above :width="200" :breakpoint="500">
+  <q-drawer
+    v-model="model"
+    side="left"
+    elevated
+    dark
+    show-if-above
+    :width="200"
+    :breakpoint="500"
+  >
     <q-list padding>
       <q-item v-ripple clickable @click="openCreateTaskDialog">
         <q-item-section avatar>
           <q-icon name="add" />
         </q-item-section>
 
-        <q-item-section>
-          Add Task
-        </q-item-section>
+        <q-item-section> Add Task </q-item-section>
       </q-item>
 
       <q-item v-ripple clickable @click="openSearchDialog">
@@ -16,9 +22,7 @@
           <q-icon name="search" />
         </q-item-section>
 
-        <q-item-section>
-          Search
-        </q-item-section>
+        <q-item-section> Search </q-item-section>
       </q-item>
 
       <q-item v-ripple clickable>
@@ -26,9 +30,7 @@
           <q-icon name="inbox" />
         </q-item-section>
 
-        <q-item-section>
-          Inbox
-        </q-item-section>
+        <q-item-section> Inbox </q-item-section>
       </q-item>
 
       <q-item v-ripple clickable>
@@ -36,9 +38,7 @@
           <q-icon name="today" />
         </q-item-section>
 
-        <q-item-section>
-          Today
-        </q-item-section>
+        <q-item-section> Today </q-item-section>
       </q-item>
 
       <q-item v-ripple clickable>
@@ -46,25 +46,25 @@
           <q-icon name="calendar_month" />
         </q-item-section>
 
-        <q-item-section>
-          Upcoming
-        </q-item-section>
+        <q-item-section> Upcoming </q-item-section>
       </q-item>
 
       <q-item
         v-ripple
         clickable
-        :active="listSelected({title: ''})"
-        :style="listSelected({title: ''}) ? listColorStyle({color: '#ffffff'}) : null"
-        @click="setList({title: ''})"
+        :active="listSelected({ title: '' })"
+        :style="
+          listSelected({ title: '' })
+            ? listColorStyle({ color: '#ffffff' })
+            : null
+        "
+        @click="setList({ title: '' })"
       >
         <q-item-section avatar>
           <q-icon name="checklist" />
         </q-item-section>
 
-        <q-item-section>
-          All Tasks
-        </q-item-section>
+        <q-item-section> All Tasks </q-item-section>
       </q-item>
     </q-list>
 
@@ -72,7 +72,7 @@
 
     <q-list padding overflow-hidden full-width>
       <q-item
-        v-for="list, index in lists"
+        v-for="(list, index) in lists"
         :key="index"
         v-ripple
         :active="listSelected(list)"
@@ -86,9 +86,7 @@
         <q-menu context-menu>
           <q-list>
             <q-item clickable>
-              <q-item-section>
-                Edit
-              </q-item-section>
+              <q-item-section> Edit </q-item-section>
               <q-item-section avatar>
                 <q-icon name="edit" />
               </q-item-section>
@@ -105,9 +103,19 @@
           </q-item-label>
         </q-item-section>
 
-        <q-item-section side :style="listSelected(list) ? listCountStyle(list) : null" class="q-pa-none q-ma-none">
+        <q-item-section
+          side
+          :style="listSelected(list) ? listCountStyle(list) : null"
+          class="q-pa-none q-ma-none"
+        >
           <template v-if="hoveredList === index">
-            <q-btn icon="more_horiz" flat padding="xs" size="md" @click.stop="openMenu(index)" />
+            <q-btn
+              icon="more_horiz"
+              flat
+              padding="xs"
+              size="md"
+              @click.stop="openMenu(index)"
+            />
           </template>
           <template v-else>
             {{ list.incompleteTaskCount }}
@@ -121,7 +129,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRepo } from 'pinia-orm'
-import { useQuasar } from 'quasar';
+import { useQuasar } from 'quasar'
 import { List, ListRepo } from 'src/stores/lists/list'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
@@ -147,20 +155,19 @@ const openSearchDialog = () => TDLAPP.searchDialog()
 
 const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
-  tr.addAndCache(payload)
-    .then(
-      () => {
-        Utils.notifySuccess('Successfully created a task')
-      },
-      Utils.handleError('Failed to create task.')
-    )
+  tr.addAndCache(payload).then(() => {
+    Utils.notifySuccess('Successfully created a task')
+  }, Utils.handleError('Failed to create task.'))
 }
 
 const openCreateTaskDialog = () => {
   $q.dialog({
     component: CreateTaskDialog,
     componentProps: {
-      onCreate: (payload: { options: CreateTaskOptions, callback: () => void }) => {
+      onCreate: (payload: {
+        options: CreateTaskOptions
+        callback: () => void
+      }) => {
         const newTask = payload.options
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
@@ -190,7 +197,7 @@ const listColorStyle = (list: { color: string }) => {
 }
 
 const listIconColor = (list: List) => {
-  if(listSelected(list)) {
+  if (listSelected(list)) {
     return `color: ${textColor(list.color)};`
   } else {
     return `color: ${list.color};`

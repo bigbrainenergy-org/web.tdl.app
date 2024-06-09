@@ -13,7 +13,7 @@
 
 <script>
 import { useDialogPluginComponent } from 'quasar'
-import QDatetime from 'components/QDatetime.vue';
+import QDatetime from 'components/QDatetime.vue'
 import { ref } from 'vue'
 
 export default {
@@ -35,9 +35,10 @@ export default {
     ...useDialogPluginComponent.emits
   ],
 
-  setup (props) {
+  setup(props) {
     // REQUIRED; must be called inside of setup()
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
+    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
+      useDialogPluginComponent()
     // dialogRef      - Vue ref to be applied to QDialog
     // onDialogHide   - Function to be used as handler for @hide on QDialog
     // onDialogOK     - Function to call to settle dialog with "ok" outcome
@@ -64,7 +65,7 @@ export default {
 
       // other methods that we used in our vue html template;
       // these are part of our example (so not required)
-      onOKClick () {
+      onOKClick() {
         // on OK, it is REQUIRED to
         // call onDialogOK (with optional payload)
         onDialogOK()

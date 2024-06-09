@@ -19,7 +19,8 @@ export default class Priority extends Model {
     this.needs_recalc = true
     const tr = useRepo(TaskRepo)
     const t = tr.withAllRecursive().find(this.id)
-    if(t === null) throw new Error('priority record does not match any task record')
-    t.hard_prereqs.forEach(x => x.rerun())
+    if (t === null)
+      throw new Error('priority record does not match any task record')
+    t.hard_prereqs.forEach((x) => x.rerun())
   }
 }

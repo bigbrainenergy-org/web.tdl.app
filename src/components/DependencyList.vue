@@ -4,55 +4,75 @@
       <div class="col">
         <div class="text-h5">{{ dependencyType.plural }}</div>
       </div>
-      <q-btn v-if="showPrune" @click="pruneDependencies">Prune {{ dependencyType.plural }}</q-btn>
+      <q-btn v-if="showPrune" @click="pruneDependencies"
+        >Prune {{ dependencyType.plural }}</q-btn
+      >
       <div class="col text-right">
-        <q-btn color="primary" icon="fas fa-link" :label="addItemLabel" @click="emit('addItem')" />
+        <q-btn
+          color="primary"
+          icon="fas fa-link"
+          :label="addItemLabel"
+          @click="emit('addItem')"
+        />
       </div>
     </div>
     <div class="col-grow">
-      
-    <q-list ref="el" class="q-my-md" style="width: 100%">
-      <q-item v-if="!items.length" v-ripple>
-        <q-item-section>No {{ dependencyType.plural }}</q-item-section>
-      </q-item>
-      <q-item
-        v-for="item, itemkey in items"
-        :key="itemkey"
-        :ref="itemkey === 0 ? el : undefined"
-        v-ripple>
-        <q-btn-dropdown
-          style="width: 100%; overflow: hidden" 
-          split
-          auto-close 
-          dropdown-icon="more_vert"
-          @click.stop="emit('selectItem', item)">
-          <template #label>
-            <q-item-section avatar style="width: 9%; max-width: 9%;">
-              <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
-            </q-item-section>
-            <q-item-section class="vertical-top wrapped" :style="style">
-              <q-icon v-if="isNearRedundant(item.id)" name='fas fa-triangle-exclamation' color="green" />
-              <q-icon v-if="isFarRedundant(item.id)" name='fas fa-triangle-exclamation' color="red" />
-              <q-item-label lines="2">
-                {{ item.title }}
-              </q-item-label>
-            </q-item-section>
-          </template>
-          <q-list>
-            <q-item
-            v-for="menuitem, index in menuItems"
-            :key="index"
-            v-close-popup
-            clickable
-            @click.stop="menuitem.action(item)">
-              <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-              <q-space />
-              <q-icon :name="menuitem.icon" />
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
-      </q-item>
-    </q-list>
+      <q-list ref="el" class="q-my-md" style="width: 100%">
+        <q-item v-if="!items.length" v-ripple>
+          <q-item-section>No {{ dependencyType.plural }}</q-item-section>
+        </q-item>
+        <q-item
+          v-for="(item, itemkey) in items"
+          :key="itemkey"
+          :ref="itemkey === 0 ? el : undefined"
+          v-ripple
+        >
+          <q-btn-dropdown
+            style="width: 100%; overflow: hidden"
+            split
+            auto-close
+            dropdown-icon="more_vert"
+            @click.stop="emit('selectItem', item)"
+          >
+            <template #label>
+              <q-item-section avatar style="width: 9%; max-width: 9%">
+                <q-checkbox
+                  v-model:model-value="item.completed"
+                  @update:model-value="emit('toggleCompletedItem', item)"
+                />
+              </q-item-section>
+              <q-item-section class="vertical-top wrapped" :style="style">
+                <q-icon
+                  v-if="isNearRedundant(item.id)"
+                  name="fas fa-triangle-exclamation"
+                  color="green"
+                />
+                <q-icon
+                  v-if="isFarRedundant(item.id)"
+                  name="fas fa-triangle-exclamation"
+                  color="red"
+                />
+                <q-item-label lines="2">
+                  {{ item.title }}
+                </q-item-label>
+              </q-item-section>
+            </template>
+            <q-list>
+              <q-item
+                v-for="(menuitem, index) in menuItems"
+                :key="index"
+                v-close-popup
+                clickable
+                @click.stop="menuitem.action(item)"
+              >
+                <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
+                <q-space />
+                <q-icon :name="menuitem.icon" />
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </q-item>
+      </q-list>
     </div>
   </div>
 </template>
@@ -89,33 +109,45 @@ const prop = defineProps<Props>()
 
 const addItemLabel = `Add ${prop.dependencyType.plural}`
 
-const emit = defineEmits([ 'addItem', 'removeItem', 'selectItem', 'toggleCompletedItem', 'pruneDependencies' ])
+const emit = defineEmits([
+  'addItem',
+  'removeItem',
+  'selectItem',
+  'toggleCompletedItem',
+  'pruneDependencies'
+])
 
 const busySignal = computed(() => useLoadingStateStore().busy)
 
 const updateRedundants = () => {
-  if(busySignal.value) return
+  if (busySignal.value) return
   const start = performance.now()
   aboves.value.clear()
   belows.value.clear()
-  if(prop.items.length === 0) return
+  if (prop.items.length === 0) return
   // console.warn(`updating redundant check for ${prop.items.length} dependents`)
-  const arr = prop.items.map(x => x.id)
-  const options = { incompleteOnly: useLocalSettingsStore().hideCompleted, useStore: true }
-  prop.items.forEach(x => {
-    const arrExcludingX = arr.filter(y => y !== x.id && !belows.value.has(y) && !aboves.value.has(y))
+  const arr = prop.items.map((x) => x.id)
+  const options = {
+    incompleteOnly: useLocalSettingsStore().hideCompleted,
+    useStore: true
+  }
+  prop.items.forEach((x) => {
+    const arrExcludingX = arr.filter(
+      (y) => y !== x.id && !belows.value.has(y) && !aboves.value.has(y)
+    )
     const aboveX = x.anyIDsAbove(arrExcludingX, options)
     const belowX = x.anyIDsBelow(arrExcludingX, options)
-    aboveX.forEach((val, key) => { 
-      if(val) aboves.value.add(key)
+    aboveX.forEach((val, key) => {
+      if (val) aboves.value.add(key)
     })
-    belowX.forEach((val, key) => { 
-      if(val) belows.value.add(key)
+    belowX.forEach((val, key) => {
+      if (val) belows.value.add(key)
     })
     // console.debug({ x, arrExcludingX, aboveX, belowX })
   })
   const duration = performance.now() - start
-  if(duration > 50) console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
+  if (duration > 50)
+    console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
 }
 
 const aboves = ref<Set<number>>(new Set())
@@ -124,10 +156,14 @@ onMounted(updateRedundants)
 onUpdated(updateRedundants)
 
 const isNearRedundant = (x: number) => {
-  return prop.dependencyType.singular === 'Prerequisite' ? belows.value.has(x) : aboves.value.has(x)
+  return prop.dependencyType.singular === 'Prerequisite'
+    ? belows.value.has(x)
+    : aboves.value.has(x)
 }
 const isFarRedundant = (x: number) => {
-  return prop.dependencyType.singular === 'Prerequisite' ? aboves.value.has(x) : belows.value.has(x)
+  return prop.dependencyType.singular === 'Prerequisite'
+    ? aboves.value.has(x)
+    : belows.value.has(x)
 }
 
 const pruneDependencies = () => {
@@ -143,10 +179,10 @@ const style = computed(() => {
   const multiple = 0.75
   console.log(`${width.value} x ${multiple} = ${width.value * multiple}`)
   return {
-    'width': `${(width.value - 32) * multiple}px`,
+    width: `${(width.value - 32) * multiple}px`,
     'max-width': `${(width.value - 32) * multiple}px`
-} })
-
+  }
+})
 </script>
 
 <style>

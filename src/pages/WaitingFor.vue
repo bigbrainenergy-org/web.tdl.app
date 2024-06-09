@@ -37,7 +37,15 @@
                   </q-icon>
                 </q-item-section>
 
-                <q-menu :ref="el => { if(el) taskMenus[index] = el }" context-menu auto-close>
+                <q-menu
+                  :ref="
+                    (el) => {
+                      if (el) taskMenus[index] = el
+                    }
+                  "
+                  context-menu
+                  auto-close
+                >
                   <q-list style="min-width: 100px">
                     <q-item clickable @click="openTask(currentTask)">
                       <q-item-section>Open</q-item-section>
@@ -108,5 +116,5 @@ export default defineComponent({
       openTask
     }
   }
-});
+})
 </script>

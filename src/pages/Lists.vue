@@ -24,7 +24,12 @@
                       dense
                     >
                       <template #default-header="prop">
-                        <q-item v-ripple class="fit q-ml-md text-primary" clickable @click.stop="doThing(prop)">
+                        <q-item
+                          v-ripple
+                          class="fit q-ml-md text-primary"
+                          clickable
+                          @click.stop="doThing(prop)"
+                        >
                           <q-item-section>
                             {{ prop.node.title }}
                           </q-item-section>
@@ -46,8 +51,12 @@
               <template #after>
                 <div class="q-pa-md">
                   <template v-if="selectedList">
-                    <div class="text-h4 q-mb-lg text-primary">{{ selectedList.title }}</div>
-                    <p style="white-space: pre-line;" class="text-primary">{{ selectedList.notes }}</p>
+                    <div class="text-h4 q-mb-lg text-primary">
+                      {{ selectedList.title }}
+                    </div>
+                    <p style="white-space: pre-line" class="text-primary">
+                      {{ selectedList.notes }}
+                    </p>
                   </template>
 
                   <template v-else>
@@ -73,8 +82,8 @@
 
 <script setup lang="ts">
 import { defineComponent, ref, computed } from 'vue'
-import { useRepo } from 'pinia-orm';
-import { List, ListRepo } from 'src/stores/lists/list';
+import { useRepo } from 'pinia-orm'
+import { List, ListRepo } from 'src/stores/lists/list'
 import { Utils } from 'src/util'
 
 defineComponent({
@@ -86,9 +95,7 @@ const repo = useRepo(ListRepo)
 await repo.fetch()
 
 //TODO: lazy load this list
-const lists = computed(
-  () => repo.withAllRecursive().get()
-)
+const lists = computed(() => repo.withAllRecursive().get())
 
 const selectedList = ref<List | null>(null)
 const listSplitter = ref(50)

@@ -45,7 +45,8 @@
           <a
             href="https://github.com/bigbrainenergy-org/web.tdl.app"
             target="_blank"
-          >Github</a>.
+            >Github</a
+          >.
         </p>
       </q-card-section>
     </q-card>
@@ -64,12 +65,12 @@ import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
 import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
 import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
 
-defineComponent({name: 'SettingsPage'})
+defineComponent({ name: 'SettingsPage' })
 
 const r = useRouter()
 
 const authenticationStore = useAuthenticationStore()
-if(authenticationStore.isLoggedIn !== true) {
+if (authenticationStore.isLoggedIn !== true) {
   r.push('/login')
 }
 

@@ -15,7 +15,11 @@ interface SimpleApiBackedRepo {
 // T can implement iCreateT but what really matters is iCreateT should be what that API expects
 // iUpdateT is meant to be all optional a subset of properties can be updated
 // todo: support optional UUID client-side id generation
-export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends iRecord>
+export default abstract class GenericRepo<
+    iCreateT,
+    iUpdateT extends iOptions,
+    T extends iRecord
+  >
   extends Repository<T>
   implements SimpleApiBackedRepo
 {
@@ -27,8 +31,8 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   commonHeader = () => {
     try {
       const auth = useAuthenticationStore()
-      return { headers: { Authorization: auth.bearerToken }}
-    } catch(error) {
+      return { headers: { Authorization: auth.bearerToken } }
+    } catch (error) {
       console.error(`error in commonHeader: ${error}`)
     }
   }
@@ -36,7 +40,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   api = () => {
     try {
       return useAxiosStore().axios()
-    } catch(error) {
+    } catch (error) {
       console.error(`error in api dynamic assembly: ${error}`)
       throw new Error(`error in api dynamic assembly: ${error}`)
     }
@@ -50,56 +54,57 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   }
 
   fetch = async () => {
-    await this.api().get(
-      `/${this.apidir}`,
-      this.commonHeader()
-    ).
-    then(
-      (response: AxiosResponse) => {
+    await this.api()
+      .get(`/${this.apidir}`, this.commonHeader())
+      .then((response: AxiosResponse) => {
         // console.debug(`${this.apidir} fetched: `, { response })
         this.fresh(response.data as T[])
-      },
-      Utils.handleError(`Could not fetch all ${this.apidir}`)
-    )
+      }, Utils.handleError(`Could not fetch all ${this.apidir}`))
   }
 
   getId = async (id: number): Promise<T | null> => {
-    return await this.api().get(`/${this.apidir}/${id}`, this.commonHeader())
-    .then((response: AxiosResponse) => {
-      // console.log(response.data as T)
-      return this.save(response.data as T)
-    }, (error: ApiError) => {
-      Utils.handleError(`Could not get ${this.apidir} id ${id}`)(error)
-      return null
-    })
+    return await this.api()
+      .get(`/${this.apidir}/${id}`, this.commonHeader())
+      .then(
+        (response: AxiosResponse) => {
+          // console.log(response.data as T)
+          return this.save(response.data as T)
+        },
+        (error: ApiError) => {
+          Utils.handleError(`Could not get ${this.apidir} id ${id}`)(error)
+          return null
+        }
+      )
   }
 
   add = (newItem: iCreateT): Promise<T> => {
     // console.debug('add item: ', { newItem });
-  
-    return this.api().post(`/${this.apidir}`, newItem, this.commonHeader())
-      .then(response => {
+
+    return this.api()
+      .post(`/${this.apidir}`, newItem, this.commonHeader())
+      .then((response) => {
         // console.debug('response: ', response);
-        return this.save(response.data as T);
+        return this.save(response.data as T)
       })
-      .catch(error => {
-        console.error('Error adding item:', error);
-        throw error; // Re-throw the error to propagate it to the caller
-      });
+      .catch((error) => {
+        console.error('Error adding item:', error)
+        throw error // Re-throw the error to propagate it to the caller
+      })
   }
 
   addMultiple = (newItems: iCreateT[]): Promise<T[]> => {
     // console.debug('add multiple')
-    return this.api().post(`/${this.apidir}`, newItems, this.commonHeader())
-    .then(response => {
-      // console.debug({ response })
-      this.save(response.data as T[])
-      return response.data as T[]
-    })
-    .catch(error => {
-      console.error('Error adding item:', error)
-      throw error
-    })
+    return this.api()
+      .post(`/${this.apidir}`, newItems, this.commonHeader())
+      .then((response) => {
+        // console.debug({ response })
+        this.save(response.data as T[])
+        return response.data as T[]
+      })
+      .catch((error) => {
+        console.error('Error adding item:', error)
+        throw error
+      })
   }
 
   delete = async (id: number) => {
@@ -110,12 +115,17 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
 
   update = async (itemOptions: iUpdateT) => {
     // console.debug(`${this.apidir} UPDATE`, { itemOptions })
-    return this.api().patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
-    .then((response) => {
-      const result = this.save(response.data as T)
-      console.log(result)
-      return result
-    }, Utils.handleError('Error updating record'))
+    return this.api()
+      .patch(
+        `/${this.apidir}/${itemOptions.id}`,
+        itemOptions.payload,
+        this.commonHeader()
+      )
+      .then((response) => {
+        const result = this.save(response.data as T)
+        console.log(result)
+        return result
+      }, Utils.handleError('Error updating record'))
   }
 
   /**
@@ -129,7 +139,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   sorted = (sort: (a: T, b: T) => number, includeEntity?: string) => {
     if (typeof includeEntity === 'undefined') return this.all().sort(sort)
     if (includeEntity === '**') return this.withAllRecursive().get().sort(sort)
-    if (includeEntity ===  '*') return this.withAll().get().sort(sort)
+    if (includeEntity === '*') return this.withAll().get().sort(sort)
     return this.with(includeEntity).get().sort(sort)
   }
 }

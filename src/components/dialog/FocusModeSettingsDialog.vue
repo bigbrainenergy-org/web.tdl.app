@@ -6,12 +6,17 @@ import { useDialogPluginComponent } from 'quasar'
 
 // todo: storeToRefs
 const disableQuickSort = ref<boolean>(useLocalSettingsStore().disableQuickSort)
-const enableQuickSortOnNewTask = ref<boolean>(useLocalSettingsStore().enableQuickSortOnNewTask)
-const enableQuickSortOnLayerZeroQTY = ref<number>(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
+const enableQuickSortOnNewTask = ref<boolean>(
+  useLocalSettingsStore().enableQuickSortOnNewTask
+)
+const enableQuickSortOnLayerZeroQTY = ref<number>(
+  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+)
 const settings = {
   'Disable Quick Sort': disableQuickSort,
   'Quick Sort On New Task': enableQuickSortOnNewTask,
-  'Quick Sort When Length of Unblocked Tasks Reaches x': enableQuickSortOnLayerZeroQTY
+  'Quick Sort When Length of Unblocked Tasks Reaches x':
+    enableQuickSortOnLayerZeroQTY
 }
 
 watch(disableQuickSort, () => {
@@ -19,14 +24,16 @@ watch(disableQuickSort, () => {
 })
 
 watch(enableQuickSortOnNewTask, () => {
-  useLocalSettingsStore().enableQuickSortOnNewTask = enableQuickSortOnNewTask.value
+  useLocalSettingsStore().enableQuickSortOnNewTask =
+    enableQuickSortOnNewTask.value
 })
 
 watch(enableQuickSortOnLayerZeroQTY, () => {
-  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = enableQuickSortOnLayerZeroQTY.value
+  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY =
+    enableQuickSortOnLayerZeroQTY.value
 })
 
-const emit = defineEmits([ ...useDialogPluginComponent.emits ])
+const emit = defineEmits([...useDialogPluginComponent.emits])
 
 const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 
@@ -38,13 +45,24 @@ const name = 'Configure These Options'
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Focus Mode Settings</div>
-        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onDialogCancel"/>
+        <q-btn
+          class="q-ma-sm"
+          size="md"
+          color="grey"
+          label="close"
+          @click="onDialogCancel"
+        />
       </q-card-section>
       <q-separator />
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <LazyVueComponent :data="settings" :edit="true" :name="name" :show-edit="false" />
+            <LazyVueComponent
+              :data="settings"
+              :edit="true"
+              :name="name"
+              :show-edit="false"
+            />
           </div>
         </div>
       </q-card-section>

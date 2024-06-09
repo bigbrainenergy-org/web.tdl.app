@@ -8,9 +8,21 @@
           <q-btn
             class="q-ma-sm"
             size="md"
-            :color="content[currentStep].backColor !== undefined ? content[currentStep].backColor : 'grey'"
-            :label="content[currentStep].backLabel !== undefined ? content[currentStep].backLabel : 'Close'"
-            @click="content[currentStep].backAction !== undefined ? content[currentStep].backAction() : onCancelClick()"
+            :color="
+              content[currentStep].backColor !== undefined
+                ? content[currentStep].backColor
+                : 'grey'
+            "
+            :label="
+              content[currentStep].backLabel !== undefined
+                ? content[currentStep].backLabel
+                : 'Close'
+            "
+            @click="
+              content[currentStep].backAction !== undefined
+                ? content[currentStep].backAction()
+                : onCancelClick()
+            "
           />
         </template>
         <template v-else>
@@ -46,11 +58,15 @@
               <div class="q-my-lg">
                 <template v-if="currentList">
                   <div>{{ currentList.title }}</div>
-                  <div v-if="currentList.notes" style="white-space: pre-line;">{{ currentList.notes }}</div>
+                  <div v-if="currentList.notes" style="white-space: pre-line">
+                    {{ currentList.notes }}
+                  </div>
                 </template>
                 <template v-else>
                   <div>{{ currentTask.title }}</div>
-                  <div v-if="currentTask.notes" style="white-space: pre-line;">{{ currentTask.notes }}</div>
+                  <div v-if="currentTask.notes" style="white-space: pre-line">
+                    {{ currentTask.notes }}
+                  </div>
                 </template>
               </div>
 
@@ -120,9 +136,11 @@
           </div>
         </template>
 
-        <q-inner-loading :showing="currentStep === 'done'" >
+        <q-inner-loading :showing="currentStep === 'done'">
           <q-spinner-puff size="50px" color="pink" />
-          <div class="text-pink q-mt-md" style="font-size: 1.1em;">Processing, please wait...</div>
+          <div class="text-pink q-mt-md" style="font-size: 1.1em">
+            Processing, please wait...
+          </div>
         </q-inner-loading>
       </q-card-section>
     </q-card>
@@ -132,10 +150,7 @@
 <script>
 import { useDialogPluginComponent, useQuasar } from 'quasar'
 
-import {
-  ref,
-  computed,
-} from 'vue';
+import { ref, computed } from 'vue'
 
 import CreateTaskDialog from 'src/components/CreateTaskDialog.vue'
 import { errorNotification } from '../hackerman/ErrorNotification'
@@ -147,24 +162,17 @@ export default {
     ...useDialogPluginComponent.emits
   ],
 
-  setup (props, { emit }) {
+  setup(props, { emit }) {
     const $q = useQuasar()
 
+    const taskItems = computed(() => $store.$repo(Task).all())
 
-    const taskItems = computed(
-      () => $store.$repo(Task).all()
-    )
-
-    const mainProgress = computed(
-      () => {
-        return (currentTaskCount.value / totalTaskCount.value)
-      }
-    )
-    const secondaryProgress = computed(
-      () => {
-        return (currentStepCount.value / maxStepCount.value)
-      }
-    )
+    const mainProgress = computed(() => {
+      return currentTaskCount.value / totalTaskCount.value
+    })
+    const secondaryProgress = computed(() => {
+      return currentStepCount.value / maxStepCount.value
+    })
 
     const nextTaskTitle = ref('')
     const nextTaskNotes = ref('')
@@ -198,12 +206,9 @@ export default {
       instantFeedback.value = true
       setStepCount(0, 1)
       currentStep.value = 'actionable'
-      let timeout = setTimeout(
-        () => {
-          instantFeedback.value = false
-        },
-        500
-      )
+      let timeout = setTimeout(() => {
+        instantFeedback.value = false
+      }, 500)
     }
 
     function stepKeepForFuture() {
@@ -237,21 +242,22 @@ export default {
     }
 
     function createList() {
-      $store.dispatch('lists/create', {
-        title: listTitle.value,
-        notes: listNotes.value
-      }).
-      then(
-        (response) => {
-          currentList.value = $store.$repo(List).find(response.data.id)
-          listTitle.value = ''
-          listNotes.value = ''
-          stepProcessNow()
-        },
-        (error) => {
-          errorNotification(error, 'Failed to create project')
-        }
-      )
+      $store
+        .dispatch('lists/create', {
+          title: listTitle.value,
+          notes: listNotes.value
+        })
+        .then(
+          (response) => {
+            currentList.value = $store.$repo(List).find(response.data.id)
+            listTitle.value = ''
+            listNotes.value = ''
+            stepProcessNow()
+          },
+          (error) => {
+            errorNotification(error, 'Failed to create project')
+          }
+        )
     }
 
     function stepProcessNow() {
@@ -293,20 +299,21 @@ export default {
     }
 
     function createTask() {
-      $store.dispatch('tasks/create', {
-        title: nextTaskTitle.value,
-        notes: nextTaskNotes.value
-      }).
-      then(
-        (response) => {
-          nextTaskTitle.value = ''
-          nextTaskNotes.value = ''
-          stepMoreActions()
-        },
-        (error) => {
-          errorNotification(error, 'Failed to create task')
-        }
-      )
+      $store
+        .dispatch('tasks/create', {
+          title: nextTaskTitle.value,
+          notes: nextTaskNotes.value
+        })
+        .then(
+          (response) => {
+            nextTaskTitle.value = ''
+            nextTaskNotes.value = ''
+            stepMoreActions()
+          },
+          (error) => {
+            errorNotification(error, 'Failed to create task')
+          }
+        )
     }
 
     function stepDefer() {
@@ -361,8 +368,7 @@ export default {
       currentList.value = null
       setStepCount(1, 1)
       // TODO: Delete inbox item here before executing the rest below.
-      $store.dispatch('tasks/delete', { id: currentTask.value.id }).
-      then(
+      $store.dispatch('tasks/delete', { id: currentTask.value.id }).then(
         (response) => {
           if (taskItems.value.length === 0) {
             // All done! Close up shop.
@@ -382,24 +388,24 @@ export default {
     }
 
     const content = {
-      'actionable': {
+      actionable: {
         prompt: 'Is it actionable?',
         buttons: [
           {
             color: 'primary',
             icon: 'task_alt',
             label: 'Yes, it can be completed',
-            click: stepMoreThanOneAction,
+            click: stepMoreThanOneAction
           },
           {
             color: 'primary',
             icon: 'fas fa-lightbulb',
-            label: 'No, it\'s information',
-            click: stepKeepForFuture,
-          },
+            label: "No, it's information",
+            click: stepKeepForFuture
+          }
         ]
       },
-      'keepForFuture': {
+      keepForFuture: {
         prompt: 'Do you want to keep it for the future?',
         backLabel: 'Back',
         backAction: stepActionable,
@@ -408,23 +414,23 @@ export default {
             color: 'positive',
             icon: 'fas fa-search',
             label: 'Yes, but only for lookups',
-            click: stepReference,
+            click: stepReference
           },
           {
             color: 'positive',
             icon: 'fas fa-clock',
             label: 'Yes, and I want to be reminded',
-            click: stepSomedayMaybe,
+            click: stepSomedayMaybe
           },
           {
             color: 'negative',
             icon: 'fas fa-trash',
             label: 'No, toss it',
-            click: stepTrash,
-          },
+            click: stepTrash
+          }
         ]
       },
-      'somedayMaybe': {
+      somedayMaybe: {
         prompt: 'Someday/Maybe',
         backLabel: 'Back',
         backAction: stepKeepForFuture,
@@ -433,11 +439,11 @@ export default {
             color: 'secondary',
             icon: 'fas fa-check',
             label: 'Done!',
-            click: stepDone,
-          },
+            click: stepDone
+          }
         ]
       },
-      'reference': {
+      reference: {
         prompt: 'Reference',
         backLabel: 'Back',
         backAction: stepKeepForFuture,
@@ -446,11 +452,11 @@ export default {
             color: 'secondary',
             icon: 'fas fa-check',
             label: 'Done!',
-            click: stepDone,
-          },
+            click: stepDone
+          }
         ]
       },
-      'moreThanOneAction': {
+      moreThanOneAction: {
         prompt: 'Is there more than one action?',
         backLabel: 'Back',
         backAction: stepActionable,
@@ -459,28 +465,28 @@ export default {
             color: 'positive',
             icon: 'fas fa-project-diagram',
             label: 'Yes, multiple',
-            click: stepProjects,
+            click: stepProjects
           },
           {
             color: 'primary',
             icon: 'far fa-check-square',
             label: 'No, just one',
-            click: stepTwoMinutes,
-          },
+            click: stepTwoMinutes
+          }
         ]
       },
-      'projects': {
+      projects: {
         prompt: 'Create a Project',
         backAction: stepMoreThanOneAction,
         buttons: [
           {
             color: 'primary',
             label: 'Create Project',
-            click: createList,
-          },
+            click: createList
+          }
         ]
       },
-      'processNow': {
+      processNow: {
         prompt: 'Do you want to process it for next actions now?',
         backLabel: 'Back',
         backAction: stepProjects,
@@ -488,18 +494,18 @@ export default {
           {
             color: 'primary',
             icon: 'add_task',
-            label: 'Yes, let\'s do it now',
-            click: stepProjectPlans,
+            label: "Yes, let's do it now",
+            click: stepProjectPlans
           },
           {
             color: 'secondary',
             icon: 'far fa-clock',
-            label: 'No, I\'ll do that later',
-            click: stepDone,
-          },
+            label: "No, I'll do that later",
+            click: stepDone
+          }
         ]
       },
-      'projectPlans': {
+      projectPlans: {
         prompt: 'Review any support materials, then start adding next actions.',
         backLabel: 'Back',
         backAction: stepProcessNow,
@@ -508,130 +514,131 @@ export default {
             color: 'primary',
             icon: 'fas fa-tasks',
             label: 'Start Processing Next Actions',
-            click: stepTwoMinutes,
-          },
+            click: stepTwoMinutes
+          }
         ]
       },
-      'twoMinutes': {
+      twoMinutes: {
         prompt: 'Will it take less than 2 minutes? (starting right now)',
         buttons: [
           {
             color: 'positive',
             icon: 'fas fa-hourglass-start',
             label: 'Yes, 2 or less minutes',
-            click: stepDoIt,
+            click: stepDoIt
           },
           {
             color: 'primary',
             icon: 'fas fa-clock',
             label: 'No, it will take longer',
-            click: stepBestPerson,
-          },
+            click: stepBestPerson
+          }
         ]
       },
-      'bestPerson': {
+      bestPerson: {
         prompt: 'Are you the best person to complete this task?',
         buttons: [
           {
             color: 'primary',
             icon: 'fas fa-clock',
             label: 'Yes, do this myself later',
-            click: stepDefer,
+            click: stepDefer
           },
           {
             color: 'positive',
             icon: 'fas fa-user-clock',
             label: 'No, delegate it to someone else',
-            click: stepDelegate,
-          },
+            click: stepDelegate
+          }
         ]
       },
-      'delegate': {
+      delegate: {
         prompt: 'Create a Waiting For',
         buttons: [
           {
             color: 'secondary',
             label: 'Create Waiting For',
-            click: createTask,
-          },
+            click: createTask
+          }
         ]
       },
-      'defer': {
+      defer: {
         prompt: 'Does this need to be done at a specific time?',
         buttons: [
           {
             color: 'positive',
             icon: 'fas fa-calendar-check',
             label: 'Yes, create a calendar entry',
-            click: stepCalendar,
+            click: stepCalendar
           },
           {
             color: 'positive',
             icon: 'fas fa-tasks',
             label: 'No, create a next action',
-            click: stepNextAction,
-          },
+            click: stepNextAction
+          }
         ]
       },
-      'nextAction': {
+      nextAction: {
         prompt: 'Create a Next Action',
         buttons: [
           {
             color: 'secondary',
             label: 'Create Next Action',
-            click: createTask,
-          },
+            click: createTask
+          }
         ]
       },
-      'calendar': {
+      calendar: {
         prompt: 'Create a Calendar Entry',
         buttons: [
           {
             color: 'secondary',
             icon: 'fas fa-check',
             label: 'Done',
-            click: stepMoreActions,
-          },
+            click: stepMoreActions
+          }
         ]
       },
-      'doIt': {
-        prompt: 'Just DO it! Don\'t let your dreams be dreams!',
+      doIt: {
+        prompt: "Just DO it! Don't let your dreams be dreams!",
         buttons: [
           {
             color: 'secondary',
             icon: 'fas fa-check',
             label: 'Done!',
-            click: stepMoreActions,
+            click: stepMoreActions
           },
           {
             color: 'primary',
             icon: 'fas fa-undo-alt',
             label: 'Just kidding, this takes more than 2 minutes',
-            click: stepBestPerson,
-          },
+            click: stepBestPerson
+          }
         ]
       },
-      'moreActions': {
+      moreActions: {
         prompt: 'Are there any more next actions to add?',
         buttons: [
           {
             color: 'primary',
             icon: 'add_task',
             label: 'Yes, add more',
-            click: stepTwoMinutes,
+            click: stepTwoMinutes
           },
           {
             color: 'secondary',
             icon: 'fas fa-check',
             label: 'No, all done!',
-            click: stepDone,
-          },
+            click: stepDone
+          }
         ]
-      },
+      }
     }
 
     // REQUIRED; must be called inside of setup()
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent()
+    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
+      useDialogPluginComponent()
     // dialogRef      - Vue ref to be applied to QDialog
     // onDialogHide   - Function to be used as handler for @hide on QDialog
     // onDialogOK     - Function to call to settle dialog with "ok" outcome
@@ -687,7 +694,7 @@ export default {
 
       // other methods that we used in our vue html template;
       // these are part of our example (so not required)
-      onOKClick () {
+      onOKClick() {
         // on OK, it is REQUIRED to
         // call onDialogOK (with optional payload)
         onDialogOK()
@@ -701,4 +708,3 @@ export default {
   }
 }
 </script>
-

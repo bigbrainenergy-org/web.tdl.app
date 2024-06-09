@@ -11,7 +11,7 @@ export interface CreateSubtaskOptions {
 }
 
 export interface UpdateSubtaskOptions extends iOptions {
-  id: number,
+  id: number
   payload: {
     subtask: {
       task_id?: number | null
@@ -20,7 +20,6 @@ export interface UpdateSubtaskOptions extends iOptions {
       completed?: boolean
     }
   }
-
 }
 
 export class Subtask extends Model implements iRecord {
@@ -34,7 +33,11 @@ export class Subtask extends Model implements iRecord {
   @Attr(false) declare completed: boolean
 }
 
-export class SubtaskRepo extends GenericRepo<CreateSubtaskOptions, UpdateSubtaskOptions, Subtask> {
+export class SubtaskRepo extends GenericRepo<
+  CreateSubtaskOptions,
+  UpdateSubtaskOptions,
+  Subtask
+> {
   use = Subtask
   apidir = Subtask.entity
 }

@@ -2,7 +2,9 @@ import { AxiosError } from 'axios'
 import { Model, PrimaryKey } from 'pinia-orm'
 
 // hahaha.... started as a joke but I kindof like it.
-export type λ<inputType = void | unknown, returnType = void> = (inputArgument: inputType) => returnType
+export type λ<inputType = void | unknown, returnType = void> = (
+  inputArgument: inputType
+) => returnType
 
 export class NodeKey {
   id: number
@@ -12,13 +14,13 @@ export class NodeKey {
     this.key = key
   }
   static idFromKey(key: string) {
-    return parseInt(key.slice(0, key.indexOf('.'))) 
+    return parseInt(key.slice(0, key.indexOf('.')))
   }
   static fromKey(key: string): NodeKey {
     return new NodeKey(this.idFromKey(key), key)
   }
   static fromKeys(keys: string[]): NodeKey[] {
-    return keys.map(x => this.fromKey(x))
+    return keys.map((x) => this.fromKey(x))
   }
 }
 
@@ -39,7 +41,7 @@ export class Queue<T> {
     this.set.add(value)
   }
   enqueueAll(values: T[]): void {
-    values.forEach(x => this.enqueue(x))
+    values.forEach((x) => this.enqueue(x))
   }
   dequeue(): T {
     const values = this.set.values()

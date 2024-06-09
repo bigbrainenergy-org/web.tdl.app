@@ -13,7 +13,7 @@ withDefaults(defineProps<PropStructure>(), {
   edit: false
 })
 const emit = defineEmits(['updateme'])
-const formattedText = computed(() => data.value ? 'TRUE' : 'FALSE')
+const formattedText = computed(() => (data.value ? 'TRUE' : 'FALSE'))
 </script>
 
 <template>

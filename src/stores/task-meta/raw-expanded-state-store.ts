@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 
 interface ExpandedState {
-  id: number,
+  id: number
   expanded: boolean
 }
 
 interface RawExpandedStateStoreState {
-  expandedNodesRegular: string[],
+  expandedNodesRegular: string[]
   expandedNodesReverse: string[]
 }
 
@@ -22,14 +22,16 @@ export const useRawExpandedStateStore = defineStore('raw-expanded-state', {
     forgetTask(id: number) {
       const iToS = id.toString()
       const doesNotContainID = (key: string) => !key.includes(iToS)
-      this.expandedNodesRegular = this.expandedNodesRegular.filter(doesNotContainID)
-      this.expandedNodesReverse = this.expandedNodesReverse.filter(doesNotContainID)
+      this.expandedNodesRegular =
+        this.expandedNodesRegular.filter(doesNotContainID)
+      this.expandedNodesReverse =
+        this.expandedNodesReverse.filter(doesNotContainID)
     }
   },
   getters: {
     hasKey: (state) => {
       return (key: string, reverseMode = false) => {
-        if(reverseMode) return state.expandedNodesReverse.includes(key)
+        if (reverseMode) return state.expandedNodesReverse.includes(key)
         return state.expandedNodesRegular.includes(key)
       }
     }

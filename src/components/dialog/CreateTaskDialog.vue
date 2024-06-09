@@ -1,10 +1,21 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" backdrop-filter="blur(4px)" @hide="hideDialog">
+  <q-dialog
+    ref="dialogRef"
+    :maximized="$q.screen.lt.md"
+    backdrop-filter="blur(4px)"
+    @hide="hideDialog"
+  >
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Create Task</div>
-        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onCancelClick" />
+        <q-btn
+          class="q-ma-sm"
+          size="md"
+          color="grey"
+          label="close"
+          @click="onCancelClick"
+        />
       </q-card-section>
 
       <q-separator />
@@ -12,22 +23,11 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <q-input
-              v-model="title"
-              filled
-              clearable
-              label="Title"
-            />
-            <br>
-            <q-input
-              v-model="notes"
-              filled
-              autogrow
-              clearable
-              label="Notes"
-            />
+            <q-input v-model="title" filled clearable label="Title" />
+            <br />
+            <q-input v-model="notes" filled autogrow clearable label="Notes" />
 
-            <br>
+            <br />
 
             <div class="row">
               <div class="col-grow">
@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-import { onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -105,4 +105,3 @@ const hideDialog = () => {
   onDialogHide()
 }
 </script>
-

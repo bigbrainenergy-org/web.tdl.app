@@ -1,9 +1,9 @@
 export type SimpleTreeNode<T> = {
-  id: number,
-  obj: T,
+  id: number
+  obj: T
   label: string
-  expandable: boolean,
-  lazy: boolean,
+  expandable: boolean
+  lazy: boolean
   key: string // key is supposedly fine as any but really q-tree needs it to be string, esp for lazy loading.
 }
 export type details<T> = {
@@ -26,7 +26,7 @@ export interface QTreeComponent<T> {
 //   console.debug(`load postreqs of ${d.node.value.title}`)
 //   setTimeout(() => {
 //     const postreqs = tr.with('hard_postreqs').where((x) => d.node.value.hard_postreq_ids.includes(x.id)).get()
-//     d.done(postreqs.map((x) => { 
+//     d.done(postreqs.map((x) => {
 //       return {
 //         key: x.id + '',
 //         summary: '',
@@ -39,17 +39,17 @@ export interface QTreeComponent<T> {
 
 // and template
 // <q-tree
-    // :nodes="layerZeroTasks"
-    // node-key="id"
-    // label-key="title"
-    // dense
-    // children-key="hard_postreqs"
-    // @update:expanded="loadPostreqsOfNewExpanded">
-    //   <template v-slot:default-header="prop">
-    //     <q-item class="text-primary">
-    //       <q-item-label @click="openTask(prop.node)">
-    //         {{ prop.node.title }}
-    //       </q-item-label>
-    //     </q-item>
-    //   </template>
-    // </q-tree> -->
+// :nodes="layerZeroTasks"
+// node-key="id"
+// label-key="title"
+// dense
+// children-key="hard_postreqs"
+// @update:expanded="loadPostreqsOfNewExpanded">
+//   <template v-slot:default-header="prop">
+//     <q-item class="text-primary">
+//       <q-item-label @click="openTask(prop.node)">
+//         {{ prop.node.title }}
+//       </q-item-label>
+//     </q-item>
+//   </template>
+// </q-tree> -->

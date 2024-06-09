@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 // import { Model } from 'pinia-orm'
 // import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
 
-
 export type BackgroundMode = 'image' | '#000000' | '#220000'
 
 interface LocalSettingsState {

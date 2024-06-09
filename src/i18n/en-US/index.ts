@@ -10,4 +10,4 @@ export default {
   hellofren: 'Hello UwU',
   language: 'Language',
   settings: 'Settings'
-};
+}

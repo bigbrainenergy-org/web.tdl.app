@@ -2,7 +2,10 @@ import { AxiosError } from 'axios'
 import { Notify } from 'quasar'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
-export default function errorNotification(error: Error | AxiosError, fallbackMessage: string) {
+export default function errorNotification(
+  error: Error | AxiosError,
+  fallbackMessage: string
+) {
   const errorMessage = `${fallbackMessage}: ${error.message}`
 
   Notify.create({

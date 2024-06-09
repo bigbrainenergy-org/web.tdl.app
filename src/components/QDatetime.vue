@@ -1,6 +1,8 @@
 <template>
   <q-card>
-    <q-card-section class="bg-primary text-white text-center q-ma-none q-pa-none">
+    <q-card-section
+      class="bg-primary text-white text-center q-ma-none q-pa-none"
+    >
       <q-tabs v-model="activeTab">
         <q-tab icon="event" name="date" label="Date" />
         <q-tab icon="access_time" name="time" label="Time" :disable="!date" />
@@ -22,19 +24,14 @@
         </q-tab-panel>
 
         <q-tab-panel class="q-pa-none" name="time">
-          <q-time
-            v-model="time"
-            color="secondary"
-            landscape
-            square
-          />
+          <q-time v-model="time" color="secondary" landscape square />
         </q-tab-panel>
       </q-tab-panels>
     </q-card-section>
 
     <q-separator />
 
-    <div style="float: left;" class="q-ma-md">
+    <div style="float: left" class="q-ma-md">
       {{ label }}
     </div>
     <q-card-actions align="right">
@@ -52,10 +49,7 @@
 </template>
 
 <script>
-import {
-  watch,
-  ref,
-} from 'vue';
+import { watch, ref } from 'vue'
 import { useQuasar } from 'quasar'
 
 import { DateTime } from 'luxon'
@@ -83,9 +77,8 @@ export default {
 
   emits: ['cancel', 'update:modelValue'],
 
-  setup (props, { emit }) {
+  setup(props, { emit }) {
     const $q = useQuasar()
-    
 
     const activeTab = ref('date')
     const date = ref(DEFAULT_DATE)
@@ -116,14 +109,14 @@ export default {
 
     function gotoTime() {
       // if(date.value && !time.value) {
-      if(date.value) {
+      if (date.value) {
         activeTab.value = 'time'
       }
     }
 
     function save() {
       let datetime = DateTime.fromFormat(
-        date.value  + ' ' + time.value,
+        date.value + ' ' + time.value,
         DATE_FORMAT + ' ' + TIME_FORMAT
       ).toISO()
       emit('update:modelValue', datetime)

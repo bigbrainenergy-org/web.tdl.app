@@ -13,20 +13,20 @@
         />
         <q-btn
           v-if="pagesWithNewTaskButton.includes(currentPath)"
-          color='green'
-          icon='fa-solid fa-plus'
+          color="green"
+          icon="fa-solid fa-plus"
           @click="openCreateTaskDialog"
         />
         <q-btn
           v-if="currentPath === '/settings'"
-          color='green'
+          color="green"
           label="Go Back"
           icon="fa-solid fa-arrow-left"
           @click="$router.go(-1)"
         />
         <q-btn
           v-if="currentPath === '/lists'"
-          color='green'
+          color="green"
           icon="fa-solid fa-plus"
           @click="openCreateListDialog"
         />
@@ -45,11 +45,7 @@
 
         <q-space />
 
-        <q-btn
-          dense
-          flat
-          no-wrap
-        >
+        <q-btn dense flat no-wrap>
           <q-avatar rounded size="32px">
             <q-icon name="fas fa-user-circle" />
           </q-avatar>
@@ -104,18 +100,57 @@
 
     <q-footer elevated class="bg-grey-8 text-white">
       <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
-        <q-route-tab icon="fa-solid fa-circle-dot" to="/focus" label="Focus" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fa-solid fa-inbox" to="/tasks" label="Tasks" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fa-solid fa-inbox" to="/josh-page" label="Josh" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-          <q-route-tab icon="fa-solid fa-inbox" to="/agenda" label="Agenda" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fa-solid fa-project-diagram" to="/lists" label="Lists" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fa-solid fa-project-diagram" to="/tasks-tree" label="Tree" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
-        <q-route-tab icon="fa-solid fa-project-diagram" to="/graph" label="Graph" :class="$q.screen.lt.sm ? 'q-pt-sm' : null" />
+        <q-route-tab
+          icon="fa-solid fa-circle-dot"
+          to="/focus"
+          label="Focus"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
+        <q-route-tab
+          icon="fa-solid fa-inbox"
+          to="/tasks"
+          label="Tasks"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
+        <q-route-tab
+          icon="fa-solid fa-inbox"
+          to="/josh-page"
+          label="Josh"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
+        <q-route-tab
+          icon="fa-solid fa-inbox"
+          to="/agenda"
+          label="Agenda"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
+        <q-route-tab
+          icon="fa-solid fa-project-diagram"
+          to="/lists"
+          label="Lists"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
+        <q-route-tab
+          icon="fa-solid fa-project-diagram"
+          to="/tasks-tree"
+          label="Tree"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
+        <q-route-tab
+          icon="fa-solid fa-project-diagram"
+          to="/graph"
+          label="Graph"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
       </q-tabs>
     </q-footer>
 
     <q-page-container>
-      <router-view ref="routedComponent" :key="routedKey" keep-alive></router-view>
+      <router-view
+        ref="routedComponent"
+        :key="routedKey"
+        keep-alive
+      ></router-view>
       <!-- <router-view v-slot="{ Component }">
           <keep-alive>
             <component :is="Component" />
@@ -127,11 +162,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useQuasar, Dialog } from 'quasar';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
-import errorNotification from 'src/hackerman/ErrorNotification';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useQuasar, Dialog } from 'quasar'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
+import errorNotification from 'src/hackerman/ErrorNotification'
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialog/TaskSearchDialog.vue'
 import TaskSidebar from 'src/components/TaskSidebar.vue'
@@ -143,7 +178,10 @@ import { syncWithBackend } from 'src/hackerman/sync'
 import { AxiosError } from 'axios'
 import { useAxiosStore } from 'src/stores/axios-store'
 import { ComponentPublicInstance } from 'vue'
-import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import {
+  BackgroundMode,
+  useLocalSettingsStore
+} from 'src/stores/local-settings/local-setting'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
@@ -165,11 +203,12 @@ const currentPath = computed(() => $route.path)
 
 const handleKeyUp = (event: KeyboardEvent) => {
   const activeElement = document.activeElement
-  if(activeElement === null) {
+  if (activeElement === null) {
     console.warn('keyboard event thrown but active element not found')
     return
   }
-  const isTextInputFocused = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA'
+  const isTextInputFocused =
+    activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA'
   if (event.key === 'Q' || event.key === 'q') {
     if (!isTextInputFocused && !isDialogOpen.value) {
       openCreateTaskDialog()
@@ -212,19 +251,22 @@ const pagesWithNewTaskButton = [
 const authenticationStore = useAuthenticationStore()
 const ur = useRepo(UserRepo)
 
-const username = computed(
-  () => { return (ur.getUser() ?? { username: 'guest' }).username }
-)
+const username = computed(() => {
+  return (ur.getUser() ?? { username: 'guest' }).username
+})
 
 const sessionTokenComputed = computed({
   get: () => authenticationStore.sessionToken,
-  set: value => {
+  set: (value) => {
     authenticationStore.sessionToken = value
   }
 })
 
 const logout = () => {
-  if(sessionTokenComputed.value === null || sessionTokenComputed.value === '') {
+  if (
+    sessionTokenComputed.value === null ||
+    sessionTokenComputed.value === ''
+  ) {
     $q.notify({
       color: 'negative',
       position: 'top',
@@ -233,37 +275,38 @@ const logout = () => {
     })
     return
   }
-  useAxiosStore().axios().delete('/logout', {
-    headers: {
-      Authorization: `Bearer ${sessionTokenComputed.value}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    }
-  }).
-  then(
-    () => {
-      sessionTokenComputed.value = ''
-      void $router.push({ path: '/login' })
-      Utils.notifySuccess('Logged out successfully', 'fa-solid fa-sign-out-alt')
-    },
-    (error: AxiosError | Error) => {
-      sessionTokenComputed.value = '' // Remove token even if it fails
-      void $router.push({ path: '/login' })
-      errorNotification(error, 'Failed to logout properly')
-    }
-  )
+  useAxiosStore()
+    .axios()
+    .delete('/logout', {
+      headers: {
+        Authorization: `Bearer ${sessionTokenComputed.value}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      }
+    })
+    .then(
+      () => {
+        sessionTokenComputed.value = ''
+        void $router.push({ path: '/login' })
+        Utils.notifySuccess(
+          'Logged out successfully',
+          'fa-solid fa-sign-out-alt'
+        )
+      },
+      (error: AxiosError | Error) => {
+        sessionTokenComputed.value = '' // Remove token even if it fails
+        void $router.push({ path: '/login' })
+        errorNotification(error, 'Failed to logout properly')
+      }
+    )
 }
 
 const createTask = (payload: CreateTaskOptions) => {
   const tr = useRepo(TaskRepo)
-  tr.addAndCache(payload)
-  .then(
-    () => {
-      Utils.notifySuccess('Successfully created a task')
-      refreshRoutedComponent()
-    },
-    Utils.handleError('Failed to create task.')
-  )
+  tr.addAndCache(payload).then(() => {
+    Utils.notifySuccess('Successfully created a task')
+    refreshRoutedComponent()
+  }, Utils.handleError('Failed to create task.'))
 }
 
 // HACK: This is super fragile and dumb atm
@@ -274,7 +317,10 @@ const openCreateTaskDialog = () => {
   $q.dialog({
     component: CreateTaskDialog,
     componentProps: {
-      onCreate: (payload: {options: CreateTaskOptions, callback: () => void}) => {
+      onCreate: (payload: {
+        options: CreateTaskOptions
+        callback: () => void
+      }) => {
         const newTask = payload.options
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
@@ -311,7 +357,11 @@ const openCreateListDialog = () => {
 
 const pullFresh = async () => {
   const syncResult = await syncWithBackend()
-  if(syncResult === 1) errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+  if (syncResult === 1)
+    errorNotification(
+      new Error('Failed to refresh local storage'),
+      'Error Refreshing All'
+    )
   else {
     Utils.notifySuccess('Refreshed All')
     refreshRoutedComponent()
@@ -326,7 +376,9 @@ const dumpDebug = () => {
     addTaskOpen: lss.createTaskDialogActive,
     addDependencyOpen: lss.addDependencyDialogActive,
     layerZeroLength: layerZero.value.length,
-    tasksWithoutPosts: layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length,
+    tasksWithoutPosts: layerZero.value.filter(
+      (x) => x.grabPostreqs(true).length === 0
+    ).length,
     shouldSort: shouldSort.value
   }
   console.debug(payload)
@@ -334,7 +386,7 @@ const dumpDebug = () => {
 
 onMounted(() => {
   const user = useRepo(UserRepo).getUser()
-  if(user === null || typeof user === 'undefined') {
+  if (user === null || typeof user === 'undefined') {
     console.warn('user data issue.')
     return
   }
@@ -343,53 +395,71 @@ onMounted(() => {
   useLayerZeroStore().regenerate()
 })
 
-const backgroundModeSetting = computed<BackgroundMode>(() => useLocalSettingsStore().backgroundMode)
+const backgroundModeSetting = computed<BackgroundMode>(
+  () => useLocalSettingsStore().backgroundMode
+)
 const initialMode = backgroundModeSetting.value
-const currentBackgroundMode = ref<string>(initialMode === 'image' ? '#000000' : initialMode)
-const formattedBackgroundMode = computed(() => backgroundModeSetting.value !== 'image' ? `background-color: ${currentBackgroundMode.value} !important` : undefined)
+const currentBackgroundMode = ref<string>(
+  initialMode === 'image' ? '#000000' : initialMode
+)
+const formattedBackgroundMode = computed(() =>
+  backgroundModeSetting.value !== 'image'
+    ? `background-color: ${currentBackgroundMode.value} !important`
+    : undefined
+)
 
 function hexToRgb(hex: string) {
-  let r = parseInt(hex.slice(1, 3), 16);
-  let g = parseInt(hex.slice(3, 5), 16);
-  let b = parseInt(hex.slice(5, 7), 16);
-  return { r, g, b };
+  let r = parseInt(hex.slice(1, 3), 16)
+  let g = parseInt(hex.slice(3, 5), 16)
+  let b = parseInt(hex.slice(5, 7), 16)
+  return { r, g, b }
 }
 
 // Helper function to convert RGB to hex
 function rgbToHex(r: number, g: number, b: number) {
   console.debug({ r, g, b })
-  return '#' + [r, g, b].map(x => {
-    const hex = x.toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  }).join('');
+  return (
+    '#' +
+    [r, g, b]
+      .map((x) => {
+        const hex = x.toString(16)
+        return hex.length === 1 ? '0' + hex : hex
+      })
+      .join('')
+  )
 }
 
 // Helper function to increment or decrement a value by one step towards a target
 function stepTowards(current: number, target: number) {
   if (current < target) {
-    return current + 1;
+    return current + 1
   } else if (current > target) {
-    return current - 1;
+    return current - 1
   } else {
-    return current;
+    return current
   }
 }
 
 const incrementHexColor = (currentValue: string, targetValue: string) => {
   let currentRGB = hexToRgb(currentValue)
-  let targetRGB  = hexToRgb(targetValue)
-  currentRGB.r = stepTowards(currentRGB.r, targetRGB.r);
-  currentRGB.g = stepTowards(currentRGB.g, targetRGB.g);
-  currentRGB.b = stepTowards(currentRGB.b, targetRGB.b);
-  return rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b);
+  let targetRGB = hexToRgb(targetValue)
+  currentRGB.r = stepTowards(currentRGB.r, targetRGB.r)
+  currentRGB.g = stepTowards(currentRGB.g, targetRGB.g)
+  currentRGB.b = stepTowards(currentRGB.b, targetRGB.b)
+  return rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b)
 }
 
 watch(backgroundModeSetting, () => {
   console.log('background mode setting was changed.')
   let animationHack = setInterval(() => {
-    if(backgroundModeSetting.value === 'image') clearInterval(animationHack)
-    if(backgroundModeSetting.value === currentBackgroundMode.value) clearInterval(animationHack)
-    else currentBackgroundMode.value = incrementHexColor(currentBackgroundMode.value, backgroundModeSetting.value)
+    if (backgroundModeSetting.value === 'image') clearInterval(animationHack)
+    if (backgroundModeSetting.value === currentBackgroundMode.value)
+      clearInterval(animationHack)
+    else
+      currentBackgroundMode.value = incrementHexColor(
+        currentBackgroundMode.value,
+        backgroundModeSetting.value
+      )
   }, 10)
 })
 
@@ -399,17 +469,36 @@ const layerZero = computed(() => {
 })
 
 // todo: storeToRefs
-const hasTooManyInLayerZero = () => useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0 ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY : false
-const hasNewTasksInLayerZero = () => useLocalSettingsStore().enableQuickSortOnNewTask ? layerZero.value.filter(x => x.grabPostreqs(true).length === 0).length > 0 : false
-const quickSortEnabled = () => !useLocalSettingsStore().disableQuickSort && $route.path !== '/settings' && !useLoadingStateStore().dialogOpenExclQuickSort
-const shouldSort = computed<{l0len: number, shouldSort: boolean}>({
-  get: () => ({ l0len: layerZero.value.length, shouldSort: quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero())}),
-  set: x => { if(!x.shouldSort && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x }
+const hasTooManyInLayerZero = () =>
+  useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0
+    ? layerZero.value.length >
+      useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+    : false
+const hasNewTasksInLayerZero = () =>
+  useLocalSettingsStore().enableQuickSortOnNewTask
+    ? layerZero.value.filter((x) => x.grabPostreqs(true).length === 0).length >
+      0
+    : false
+const quickSortEnabled = () =>
+  !useLocalSettingsStore().disableQuickSort &&
+  $route.path !== '/settings' &&
+  !useLoadingStateStore().dialogOpenExclQuickSort
+const shouldSort = computed<{ l0len: number; shouldSort: boolean }>({
+  get: () => ({
+    l0len: layerZero.value.length,
+    shouldSort:
+      quickSortEnabled() &&
+      (hasTooManyInLayerZero() || hasNewTasksInLayerZero())
+  }),
+  set: (x) => {
+    if (!x.shouldSort && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero()))
+      return x
+  }
 })
 
 const unbusy = () => {
   console.log('unbusy.')
-  if(shouldSort.value.shouldSort === false) {
+  if (shouldSort.value.shouldSort === false) {
     useLoadingStateStore().busy = false
   }
   console.log('setting quick sort active to FALSE')
@@ -417,15 +506,20 @@ const unbusy = () => {
 }
 
 const openQuickSortDialog = () => {
-  if(useLoadingStateStore().quickSortDialogActive) return
+  if (useLoadingStateStore().quickSortDialogActive) return
   // todo fixme this is BAD.
   useLoadingStateStore().quickSortDialogActive = true
   console.log('OPENING QUICK SORT')
-  Dialog.create({ component: QuickSortLayerZeroDialog, componentProps: { objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY } })
+  Dialog.create({
+    component: QuickSortLayerZeroDialog,
+    componentProps: {
+      objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+    }
+  })
 }
 watch(shouldSort, () => {
   console.log(`layer zero length is ${layerZero.value.length}`)
-  if(shouldSort.value.shouldSort) {
+  if (shouldSort.value.shouldSort) {
     openQuickSortDialog()
   }
 })

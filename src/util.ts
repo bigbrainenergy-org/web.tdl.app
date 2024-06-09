@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import { AxiosError } from 'axios'
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
 import { NodeKey, λ } from './types'
@@ -10,7 +10,8 @@ import { DebuggerOptions, computed } from 'vue'
 import { useLocalSettingsStore } from './stores/local-settings/local-setting'
 
 export class Utils {
-  static gracefulError = (error: Error | AxiosError, memo = 'Error') => errorNotification(error, memo)
+  static gracefulError = (error: Error | AxiosError, memo = 'Error') =>
+    errorNotification(error, memo)
 
   static handleError(memo: string): λ<Error | AxiosError, void> {
     return (error: Error | AxiosError) => errorNotification(error, memo)
@@ -40,12 +41,15 @@ export class Utils {
   }
   static arrayDelete<T>(arr: Array<T>, element: T) {
     const i = arr.indexOf(element)
-    if(i >= 0) arr.splice(i, 1)
-    else console.warn('arrayDelete will not delete any elements because they were not found.')
+    if (i >= 0) arr.splice(i, 1)
+    else
+      console.warn(
+        'arrayDelete will not delete any elements because they were not found.'
+      )
     return arr
   }
   static onlyInLeftArray(leftArr: NodeKey[], rightArr: NodeKey[]) {
-    return leftArr.filter(x => !rightArr.some(y => y.key === x.key))
+    return leftArr.filter((x) => !rightArr.some((y) => y.key === x.key))
   }
   /**
    * @param a an array
@@ -54,42 +58,52 @@ export class Utils {
    */
   static innerJoin<T>(a: T[], b: T[]) {
     const setB = new Set(b)
-    return a.filter(x => setB.has(x))
+    return a.filter((x) => setB.has(x))
   }
   static combineArrays(a: NodeKey[], b: NodeKey[]) {
     return [...a, ...this.onlyInLeftArray(b, a)]
   }
 
-  static filterMap<K, V>(map: Map<K, V>, predicate: (key: K, value: V) => boolean) {
-    const result = new Map();
+  static filterMap<K, V>(
+    map: Map<K, V>,
+    predicate: (key: K, value: V) => boolean
+  ) {
+    const result = new Map()
     // eslint-disable-next-line prefer-const
     for (let [key, value] of map) {
       if (predicate(key, value)) {
-        result.set(key, value);
+        result.set(key, value)
       }
     }
-    return result;
+    return result
   }
 
   static getRandomInt(max: number) {
-    return Math.floor(Math.random() * max);
+    return Math.floor(Math.random() * max)
   }
 
   static updateLuxonTimeZone(newTimeZone: string) {
     Settings.defaultZone = newTimeZone
   }
 
-  static debugComputed(options: { debug: boolean, verbose: boolean } = { debug: false, verbose: false }) {
+  static debugComputed(
+    options: { debug: boolean; verbose: boolean } = {
+      debug: false,
+      verbose: false
+    }
+  ) {
     return {
       // if verbose is enabled, this might log hundreds of thousands of things to console.
-      onTrack: options.verbose ? (event: unknown) => {
-        console.log('Tracked:', event);
-        if(options.debug) debugger; // This will pause execution in the debugger
-        console.trace('onTrack')
-      } : undefined,
+      onTrack: options.verbose
+        ? (event: unknown) => {
+            console.log('Tracked:', event)
+            if (options.debug) debugger // This will pause execution in the debugger
+            console.trace('onTrack')
+          }
+        : undefined,
       onTrigger(event: unknown) {
-        console.log('Triggered:', event);
-        if(options.debug) debugger; // This will pause execution in the debugger
+        console.log('Triggered:', event)
+        if (options.debug) debugger // This will pause execution in the debugger
         console.trace('onTrigger')
       }
     }
@@ -99,14 +113,13 @@ export class Utils {
 export function computedWithPrev<T>(func: λ<T, T>, options?: DebuggerOptions) {
   let previous: T
   return computed(() => {
-    const result = func(previous);
-    previous = result;
-    return result;
-  }, options);
+    const result = func(previous)
+    previous = result
+    return result
+  }, options)
 }
 
-
 export function exists<T>(t: T | undefined | null): t is T {
-  if(typeof t === 'undefined' || t === null) return false
+  if (typeof t === 'undefined' || t === null) return false
   return true
 }

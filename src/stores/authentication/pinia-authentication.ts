@@ -1,5 +1,5 @@
-import { AxiosError } from 'axios';
-import { defineStore } from 'pinia';
+import { AxiosError } from 'axios'
+import { defineStore } from 'pinia'
 import { useAxiosStore } from '../axios-store'
 
 interface IAuthenticationState {
@@ -16,8 +16,8 @@ export const useAuthenticationStore = defineStore('authentication', {
   state: (): IAuthenticationState => {
     return {
       sessionToken: '',
-      userId: -1,
-    };
+      userId: -1
+    }
   },
   persist: true,
   getters: {
@@ -25,20 +25,20 @@ export const useAuthenticationStore = defineStore('authentication', {
     isLoggedIn: (state) =>
       state.sessionToken !== null &&
       typeof state.sessionToken !== 'undefined' &&
-      state.sessionToken.length > 0,
+      state.sessionToken.length > 0
   },
   actions: {
     async login(options: ILoginOptions) {
       const api = useAxiosStore().axios()
-      return new Promise(
-        (resolve, reject) => {
-          api.post('/login', {
+      return new Promise((resolve, reject) => {
+        api
+          .post('/login', {
             username: options.username,
             password: options.password,
             dataType: 'json',
             contentType: 'application/json'
-          }).
-          then(
+          })
+          .then(
             (response) => {
               this.sessionToken = response.data.session_token
               this.userId = response.data.user_id
@@ -48,8 +48,7 @@ export const useAuthenticationStore = defineStore('authentication', {
               reject(error)
             }
           )
-        }
-      )
-    },
-  },
-});
+      })
+    }
+  }
+})

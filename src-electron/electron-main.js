@@ -2,15 +2,21 @@ import { app, BrowserWindow, nativeTheme } from 'electron'
 import path from 'path'
 
 try {
-  if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-argument
-    require('fs').unlinkSync(require('path').join(app.getPath('userData'), 'DevTools Extensions'))
+  if (
+    process.platform === 'win32' &&
+    nativeTheme.shouldUseDarkColors === true
+  ) {
+    /* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-argument */
+    require('fs').unlinkSync(
+      require('path').join(app.getPath('userData'), 'DevTools Extensions')
+    )
+    /* eslint-enable */
   }
-} catch (_) { }
+} catch (_) {}
 
 let mainWindow
 
-function createWindow () {
+function createWindow() {
   /**
    * Initial window options
    */
