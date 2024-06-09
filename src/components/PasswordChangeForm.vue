@@ -5,6 +5,7 @@
     filled
     type="password"
     label="Current Password"
+    name="current_password"
   />
   <q-input
     v-model="newPassword"
@@ -12,7 +13,7 @@
     filled
     type="password"
     label="New Password"
-    name="password"
+    name="new_password"
   />
   <q-input
     v-model="confirmPassword"

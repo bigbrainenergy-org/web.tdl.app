@@ -8,7 +8,7 @@
     emit-value
     map-options
   >
-    <template v-slot:prepend>
+    <template #prepend>
       <q-icon name="fa fa-language" />
     </template>
   </q-select>
