@@ -56,7 +56,7 @@ export default configure(function (/* ctx */) {
     build: {
       target: {
         browser: [ 'es2019', 'edge88', 'firefox78', 'chrome87', 'safari13.1' ],
-        node: 'node18'
+        node: 'node20'
       },
 
       vueRouterMode: 'history', // available values: 'hash', 'history'
@@ -80,19 +80,19 @@ export default configure(function (/* ctx */) {
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
 
-      vitePlugins: [
-        ['@intlify/vite-plugin-vue-i18n', {
-          // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
-          // compositionOnly: false,
+      // vitePlugins: [
+      //   ['@intlify/unplugin-vue-i18n', {
+      //     // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
+      //     // compositionOnly: false,
 
-          // if you want to use named tokens in your Vue I18n messages, such as 'Hello {name}',
-          // you need to set `runtimeOnly: false`
-          // runtimeOnly: false,
+      //     // if you want to use named tokens in your Vue I18n messages, such as 'Hello {name}',
+      //     // you need to set `runtimeOnly: false`
+      //     // runtimeOnly: false,
 
-          // you need to set i18n resource including paths !
-          include: resolve(__dirname, './src/i18n/**')
-        }]
-      ]
+      //     // you need to set i18n resource including paths !
+      //     include: resolve(__dirname, './src/i18n/**')
+      //   }]
+      // ]
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
@@ -149,25 +149,25 @@ export default configure(function (/* ctx */) {
     // },
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
-    ssr: {
-      // ssrPwaHtmlFilename: 'offline.html', // do NOT use index.html as name!
-                                          // will mess up SSR
+    // ssr: {
+    //   // ssrPwaHtmlFilename: 'offline.html', // do NOT use index.html as name!
+    //                                       // will mess up SSR
 
-      // extendSSRWebserverConf (esbuildConf) {},
-      // extendPackageJson (json) {},
+    //   // extendSSRWebserverConf (esbuildConf) {},
+    //   // extendPackageJson (json) {},
 
-      pwa: false,
+    //   pwa: false,
 
-      // manualStoreHydration: true,
-      // manualPostHydrationTrigger: true,
+    //   // manualStoreHydration: true,
+    //   // manualPostHydrationTrigger: true,
 
-      prodPort: 3000, // The default port that the production server should use
-                      // (gets superseded if process.env.PORT is specified at runtime)
+    //   prodPort: 3000, // The default port that the production server should use
+    //                   // (gets superseded if process.env.PORT is specified at runtime)
 
-      middlewares: [
-        'render' // keep this as last one
-      ]
-    },
+    //   middlewares: [
+    //     'render' // keep this as last one
+    //   ]
+    // },
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
