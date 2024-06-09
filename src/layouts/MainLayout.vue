@@ -60,8 +60,8 @@
               <q-item>
                 <q-item-section class="text-center">
                   <div class="text-pain">Logged in as:</div>
-                  <div class="text-glitch text-h4" :data-text="ur.username">
-                    {{ ur.username }}
+                  <div class="text-glitch text-h4" :data-text="username">
+                    {{ username }}
                   </div>
                 </q-item-section>
               </q-item>
@@ -174,6 +174,10 @@ const pagesWithNewTaskButton = [
 
 const authenticationStore = useAuthenticationStore()
 const ur = useRepo(UserRepo)
+
+const username = computed(
+  () => { return ur.getUser().username }
+)
 
 const sessionTokenComputed = computed({
   get: () => authenticationStore.sessionToken,
@@ -315,7 +319,7 @@ const incrementHexColor = (currentValue: string, targetValue: string) => {
   currentRGB.r = stepTowards(currentRGB.r, targetRGB.r);
   currentRGB.g = stepTowards(currentRGB.g, targetRGB.g);
   currentRGB.b = stepTowards(currentRGB.b, targetRGB.b);
-  return rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b); 
+  return rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b);
 }
 
 watch(backgroundModeSetting, () => {
