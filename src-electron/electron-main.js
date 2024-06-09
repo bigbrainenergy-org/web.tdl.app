@@ -3,6 +3,7 @@ import path from 'path'
 
 try {
   if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-argument
     require('fs').unlinkSync(require('path').join(app.getPath('userData'), 'DevTools Extensions'))
   }
 } catch (_) { }

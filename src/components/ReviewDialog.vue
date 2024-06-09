@@ -149,7 +149,7 @@ export default {
 
   setup (props, { emit }) {
     const $q = useQuasar()
-    
+
 
     const taskItems = computed(
       () => $store.$repo(Task).all()
@@ -294,17 +294,17 @@ export default {
 
     function createTask() {
       $store.dispatch('tasks/create', {
-        title: taskTitle.value,
-        notes: taskNotes.value
+        title: nextTaskTitle.value,
+        notes: nextTaskNotes.value
       }).
       then(
         (response) => {
-          taskTitle.value = ''
-          taskNotes.value = ''
+          nextTaskTitle.value = ''
+          nextTaskNotes.value = ''
           stepMoreActions()
         },
         (error) => {
-          errorNotification(error, 'Failed to create waiting for')
+          errorNotification(error, 'Failed to create task')
         }
       )
     }
@@ -325,23 +325,6 @@ export default {
         setStepCount(5, 6)
       }
       currentStep.value = 'nextAction'
-    }
-
-    function createTask() {
-      $store.dispatch('tasks/create', {
-        title: nextTaskTitle.value,
-        notes: nextTaskNotes.value
-      }).
-      then(
-        (response) => {
-          nextTaskTitle.value = ''
-          nextTaskNotes.value = ''
-          stepMoreActions()
-        },
-        (error) => {
-          errorNotification(error, 'Failed to create task')
-        }
-      )
     }
 
     function stepCalendar() {

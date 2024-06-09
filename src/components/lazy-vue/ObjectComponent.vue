@@ -5,6 +5,7 @@ import { ref } from 'vue'
 import LazyVueComponent from './LazyVueComponent.vue'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const data = defineModel<any>('data')
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 if (isNotObject(data.value)) throw new Error('ObjectComponent: data provided was not an object!')
 const edit = defineModel<boolean | undefined>('edit')
 withDefaults(defineProps<GenericPropStructure>(), { showEdit: true })
