@@ -30,7 +30,9 @@
                     @update:model-value="updateTaskCompletedStatus(currentTask)" />
 
                   <q-item-section>
-                    {{ currentTask.title }}
+                    <q-item-label lines="2">
+                      {{ currentTask.title }}
+                    </q-item-label>
                   </q-item-section>
 
                   <q-item-section v-if="currentTask.notes" side>

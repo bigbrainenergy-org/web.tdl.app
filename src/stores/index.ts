@@ -25,7 +25,6 @@ declare module 'pinia' {
  */
 
 export default store((/* { ssrContext } */) => {
-  const pinia = createPinia().use(createORM() as PiniaPlugin);
-  pinia.use(createPersistedState())
+  const pinia = createPinia().use(createORM()).use(createPersistedState())
   return pinia;
 });

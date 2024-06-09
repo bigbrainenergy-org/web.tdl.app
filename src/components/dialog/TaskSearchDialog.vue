@@ -15,7 +15,7 @@
       :search-label="searchLabel"
       :dialog-title="dialogTitle"
       :debounce="debounceAmount"
-      @do-a-search="key++" />
+      @do-a-search="searchForTasks" />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
@@ -59,9 +59,9 @@
 <script setup lang="ts">
 import { useDialogPluginComponent } from 'quasar'
 
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
-import { Task, TaskRepo } from 'src/stores/tasks/task';
+import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task';
 import { Utils } from 'src/util'
 // import { useRepo } from 'pinia-orm'
 // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -72,7 +72,9 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useRepo } from 'pinia-orm'
 import SettingsButton from '../SettingsButton.vue';
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-import { brushY } from 'd3'
+import { brushY, filter } from 'd3'
+import Fuse, { FuseResult } from 'fuse.js'
+import { timeThis, timeThisB } from 'src/perf'
 
 interface Props {
   dialogTitle: string
@@ -132,30 +134,21 @@ const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 //   keys: ['title']
 // }
 
-// const tr = useRepo(TaskRepo)
+const tr = useRepo(TaskRepo)
 // const usr = useLocalSettingsStore()
 
 const usr = useLocalSettingsStore()
-const omitRedundant = ref(usr.omitRedundantSearchResults)
-const taskSearchSettings = ref({ 'Omit Redundant Tasks': omitRedundant })
+const hideCompleted = ref(usr.hideCompleted)
+const taskSearchSettings = ref({ 'Omit Completed Tasks': hideCompleted })
 
-watch(omitRedundant, () => {
-  usr.omitRedundantSearchResults = omitRedundant.value
+watch(hideCompleted, () => {
+  usr.hideCompleted = hideCompleted.value
 })
 
 /**
  * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
  */
 const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
-  if(omitRedundant.value) {
-    if(typeof taskID !== 'undefined') {
-      const ct = useRepo(TaskRepo).find(taskID)
-      if(ct !== null) {
-        const relationInfo = ct.BulkHasRelationTo(tasks.map(x => x.id), { incompleteOnly: true, useStore: true })
-        tasks = tasks.filter(x => relationInfo.get(x.id) !== true)
-      }
-    }
-  }
   if(typeof props.batchFilter !== 'undefined') {
     return props.batchFilter(taskID)(tasks)
   }
@@ -175,7 +168,7 @@ const onCancelClick = () => {
 const createTask = async () => {
   if(typeof searchString.value === 'undefined') return
   const toCreate: CreateTaskOptions = {
-    title: search.value
+    title: searchString.value
   }
   const newTask = await tr.add(toCreate)
   selectTask(newTask)
@@ -184,6 +177,61 @@ const createTask = async () => {
 const hideDialog = () => {
   useLoadingStateStore().busy = false
   onDialogHide()
+}
+
+// can't set this in withDefaults... don't even try
+// DON'T
+const defaultFilter = (currentTaskID: number | undefined) => {
+  const filterCompleted = useLocalSettingsStore().hideCompleted
+  if(filterCompleted) {
+    return (x: Task) => {
+      if(x.completed) return false
+      return true
+    }
+  }
+  return (x: Task) => true
+}
+
+const filterish = computed(() => props.initialFilter ?? defaultFilter)
+
+const getTasks = () => {
+  console.debug('getting pre filtered task list.')
+  const start = performance.now()
+  const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+  if(typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
+  const duration = performance.now() - start
+  if(duration > (allTasks.length / 2)) console.warn(`getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${allTasks.length / 2}ms`)
+  return allTasks
+}
+
+const tasks = computed(getTasks)
+
+const searchOptions = {
+  isCaseSensitive: false,
+  ignoreLocation: true,
+  keys: ['title']
+}
+
+const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+
+const searchForTasks = () => {
+  const start = performance.now()
+  const str = searchString.value ?? ''
+
+  // unsanitized user input being fed into a library? what could go wrong.
+  // FIXME: AKA this is a vuln waiting to happen, fix it.
+  const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+
+  console.log({ run })
+
+  results.value = run.map(x => x.item)
+  const duration = Math.floor(performance.now() - start)
+  console.log(`task search took ${Math.floor(duration)}ms`)
+  if((duration * 2) > debounceAmount.value) {
+    const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+    console.warn(`rolling back debounce to ${newDebounce}`)
+    debounceAmount.value = newDebounce
+  }
 }
 
 </script>

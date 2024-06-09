@@ -163,8 +163,12 @@ const refreshRoutedComponent = () => {
 
 const currentPath = computed(() => $route.path)
 
-const handleKeyUp = (event) => {
+const handleKeyUp = (event: KeyboardEvent) => {
   const activeElement = document.activeElement
+  if(activeElement === null) {
+    console.warn('keyboard event thrown but active element not found')
+    return
+  }
   const isTextInputFocused = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA'
   if (event.key === 'Q' || event.key === 'q') {
     if (!isTextInputFocused && !isDialogOpen.value) {
@@ -179,7 +183,7 @@ const handleKeyUp = (event) => {
   }
 }
 
-const handleKeyDown = (event) => {
+const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === '/' || event.key === 'Slash') {
     event.preventDefault()
   }
@@ -209,7 +213,7 @@ const authenticationStore = useAuthenticationStore()
 const ur = useRepo(UserRepo)
 
 const username = computed(
-  () => { return ur.getUser().username }
+  () => { return (ur.getUser() ?? { username: 'guest' }).username }
 )
 
 const sessionTokenComputed = computed({
