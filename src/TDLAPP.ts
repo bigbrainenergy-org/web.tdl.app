@@ -35,7 +35,9 @@ export class TDLAPP {
         taskID: undefined,
         showCreateButton: true,
         onSelect,
-        closeOnSelect: true
+        closeOnSelect: true,
+        initialFilter: [],
+        batchFilter: []
       }
     })
   }

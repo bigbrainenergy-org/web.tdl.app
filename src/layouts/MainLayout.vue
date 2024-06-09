@@ -60,8 +60,8 @@
               <q-item>
                 <q-item-section class="text-center">
                   <div class="text-pain">Logged in as:</div>
-                  <div class="text-glitch text-h4" :data-text="ur.username">
-                    {{ ur.username }}
+                  <div class="text-glitch text-h4" :data-text="username">
+                    {{ username }}
                   </div>
                 </q-item-section>
               </q-item>
@@ -127,12 +127,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useQuasar, Dialog } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication';
 import errorNotification from 'src/hackerman/ErrorNotification';
 import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
+import TaskSearchDialog from 'src/components/dialog/TaskSearchDialog.vue'
 import TaskSidebar from 'src/components/TaskSidebar.vue'
 import { UserRepo } from 'src/stores/users/user'
 import { useRepo } from 'pinia-orm'
@@ -162,6 +163,38 @@ const refreshRoutedComponent = () => {
 
 const currentPath = computed(() => $route.path)
 
+const handleKeyUp = (event) => {
+  const activeElement = document.activeElement
+  const isTextInputFocused = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA'
+  if (event.key === 'Q' || event.key === 'q') {
+    if (!isTextInputFocused && !isDialogOpen.value) {
+      openCreateTaskDialog()
+    }
+  } else if (event.key === '/' || event.key === 'Slash') {
+    console.log('yup')
+    if (!isTextInputFocused && !isDialogOpen.value) {
+      event.preventDefault()
+      openSearchDialog()
+    }
+  }
+}
+
+const handleKeyDown = (event) => {
+  if (event.key === '/' || event.key === 'Slash') {
+    event.preventDefault()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keyup', handleKeyUp)
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keyup', handleKeyUp)
+  window.removeEventListener('keydown', handleKeyDown)
+})
+
 const pagesWithNewTaskButton = [
   '/focus',
   '/tasks',
@@ -174,6 +207,10 @@ const pagesWithNewTaskButton = [
 
 const authenticationStore = useAuthenticationStore()
 const ur = useRepo(UserRepo)
+
+const username = computed(
+  () => { return ur.getUser().username }
+)
 
 const sessionTokenComputed = computed({
   get: () => authenticationStore.sessionToken,
@@ -225,7 +262,11 @@ const createTask = (payload: CreateTaskOptions) => {
   )
 }
 
+// HACK: This is super fragile and dumb atm
+const isDialogOpen = ref(false)
+
 const openCreateTaskDialog = () => {
+  isDialogOpen.value = true
   $q.dialog({
     component: CreateTaskDialog,
     componentProps: {
@@ -234,8 +275,29 @@ const openCreateTaskDialog = () => {
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
         createTask(newTask)
+        isDialogOpen.value = false
       }
     }
+  }).onDismiss(() => {
+    isDialogOpen.value = false
+  })
+}
+
+// FIXME: DRY
+const openSearchDialog = () => {
+  isDialogOpen.value = true
+  $q.dialog({
+    component: TaskSearchDialog,
+    componentProps: {
+      dialogTitle: 'Search For A Task',
+      taskID: undefined,
+      showCreateButton: true,
+      closeOnSelect: true,
+      initialFilter: [],
+      batchFilter: []
+    }
+  }).onDismiss(() => {
+    isDialogOpen.value = false
   })
 }
 
@@ -315,7 +377,7 @@ const incrementHexColor = (currentValue: string, targetValue: string) => {
   currentRGB.r = stepTowards(currentRGB.r, targetRGB.r);
   currentRGB.g = stepTowards(currentRGB.g, targetRGB.g);
   currentRGB.b = stepTowards(currentRGB.b, targetRGB.b);
-  return rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b); 
+  return rgbToHex(currentRGB.r, currentRGB.g, currentRGB.b);
 }
 
 watch(backgroundModeSetting, () => {

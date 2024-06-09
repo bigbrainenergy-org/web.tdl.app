@@ -1,7 +1,7 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" maximized @hide="hideDialog">
-    <q-card class="q-dialog-plugin">
+  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" backdrop-filter="blur(4px)" @hide="hideDialog">
+    <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Create Task</div>
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onCancelClick" />
