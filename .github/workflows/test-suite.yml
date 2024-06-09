@@ -1,0 +1,56 @@
+name: Test Suite
+
+# Run against all commits and pull requests.
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+  pull_request:
+
+jobs:
+  yarn-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+      - name: Run yarn audit
+        run: yarn audit
+
+  # TODO: Also run integration tests
+  vitest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+      - name: Run tests
+        run: yarn test:unit:ci
+
+  linter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+      - name: Run linter
+        run: yarn lint
+
+  finish:
+    runs-on: ubuntu-latest
+    needs: [yarn-audit, vitest, linter]
+    steps:
+      - name: Wait for status checks
+        run: echo "All Green!"
