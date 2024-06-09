@@ -32,6 +32,10 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
+      # FIXME: Because the setup-node action is dumb, we have to manually
+      #        Install the dependencies ourselves. See: https://github.com/actions/setup-node/issues/182
+      - name: Install dependencies
+        run: yarn install
       - name: Run tests
         run: yarn test:unit:ci
 
@@ -45,6 +49,10 @@ jobs:
         with:
           node-version: 20
           cache: 'yarn'
+      # FIXME: Because the setup-node action is dumb, we have to manually
+      #        Install the dependencies ourselves. See: https://github.com/actions/setup-node/issues/182
+      - name: Install dependencies
+        run: yarn install
       - name: Run linter
         run: yarn lint
 
