@@ -1,6 +1,7 @@
 <template>
   <q-dialog ref="dialogRef" maximized @hide="hideDialog">
-    <q-card class="q-dialog-plugin">
+    <q-card 
+      ref="el" class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
         <div class="text-h6">Which task should come first?</div>
@@ -13,7 +14,7 @@
       </q-card-section>
       <q-linear-progress v-if="loading" query stripe size="10px" />
       <q-card-section class="q-ma-lg vertical-top">
-        <q-btn-dropdown 
+        <q-btn-dropdown
           :disable="loading"
           size="lg"
           color="positive"
@@ -24,8 +25,9 @@
           @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)"
           @touchstart.stop @mousedown.stop>
           <template #label>
-            <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped" :style="isRelated">
+            <q-item-section
+              class="vertical-top">
+              <q-item-label lines="2" class="wrapped" :style="style">
                 {{ currentPair.data.a.title }}
               </q-item-label>
             </q-item-section>
@@ -57,7 +59,7 @@
           @touchstart.stop @mousedown.stop>
           <template #label>
             <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped" :style="isRelated">
+              <q-item-label lines="2" class="wrapped" :style="style">
                 {{ currentPair.data.b.title }}
               </q-item-label>
             </q-item-section>
@@ -97,6 +99,7 @@ import SettingsButton from '../SettingsButton.vue'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { timeThis, timeThisAABAsync } from 'src/perf'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { useElementSize } from '@vueuse/core'
 
 const props = withDefaults(defineProps<{ objective?: number }>(), { objective: 1 })
 
@@ -400,8 +403,6 @@ try {
 if(firstPair === null || typeof firstPair === 'undefined') throw new Error('Could not generate first pair')
 const currentPair = ref<withID<pair<Task>>>(firstPair)
 
-const isRelated = computed(() => currentPair.value.data.a.hasRelationTo(currentPair.value.data.b.id, { incompleteOnly: true, useStore: true }) ? 'color: red' : undefined)
-
 const forget = (id: number) => {
   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
   skippedLayerOnePairs = skippedLayerOnePairs.map(x => ({
@@ -450,6 +451,19 @@ const hideDialog = () => {
   useLoadingStateStore().quickSortDialogActive = false
   onDialogHide()
 }
+
+const el = ref(undefined)
+const { width } = useElementSize(el)
+// fixme - I could not get q-item-label lines="x" to work in dynamic-width parent elements. This is a workaround to bind a px width.
+const style = computed(() => {
+  //margins are 2(24+16) = 80px
+  //dropdown section is 35px; total is 115px.
+  
+  console.log(`${width.value} - 152 = ${width.value - 152}`)
+  return {
+    'width': `${width.value - 152}px`,
+    'max-width': `${width.value - 152}px`
+} })
 
 </script>
 

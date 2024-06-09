@@ -30,6 +30,7 @@
     "@quasar/cli": "^2.3.0",
     "@quasar/extras": "^1.16.4",
     "@types/luxon": "^3.3.3",
+    "@vueuse/core": "^10.10.0",
     "axios": "^1.2.1",
     "d3": "^7.8.5",
     "fuse.js": "^7.0.0",

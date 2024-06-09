@@ -21,7 +21,7 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
-            <div class="text-h4 text-primary">{{ taskTitle }}</div>
+            <q-item-label class="text-h4 text-primary" lines="3">{{ taskTitle }}</q-item-label>
             <q-input
               v-model="editTitle"
               filled

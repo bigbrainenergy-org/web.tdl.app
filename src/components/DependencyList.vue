@@ -11,25 +11,26 @@
     </div>
     <div class="col-grow">
       
-    <q-list class="q-my-md">
+    <q-list ref="el" class="q-my-md" style="width: 100%">
       <q-item v-if="!items.length" v-ripple>
         <q-item-section>No {{ dependencyType.plural }}</q-item-section>
       </q-item>
       <q-item
         v-for="item, itemkey in items"
         :key="itemkey"
+        :ref="itemkey === 0 ? el : undefined"
         v-ripple>
         <q-btn-dropdown
-          style="width: 100%;"
-          split 
-          auto-close
-          dropdown-icon="more_vert" 
+          style="width: 100%; overflow: hidden" 
+          split
+          auto-close 
+          dropdown-icon="more_vert"
           @click.stop="emit('selectItem', item)">
           <template #label>
-            <q-item-section avatar style="width: 10%;">
+            <q-item-section avatar style="width: 9%; max-width: 9%;">
               <q-checkbox v-model:model-value="item.completed" @update:model-value="emit('toggleCompletedItem', item)"/>
             </q-item-section>
-            <q-item-section class="vertical-top wrapped" style="width: 90%;">
+            <q-item-section class="vertical-top wrapped" :style="style">
               <q-icon v-if="isNearRedundant(item.id)" name='fas fa-triangle-exclamation' color="green" />
               <q-icon v-if="isFarRedundant(item.id)" name='fas fa-triangle-exclamation' color="red" />
               <q-item-label lines="2">
@@ -57,11 +58,12 @@
 </template>
 
 <script setup lang="ts">
+import { useElementSize } from '@vueuse/core'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { Task } from 'src/stores/tasks/task'
 import { SimpleMenuItem, λ } from 'src/types'
-import { computed, onMounted } from 'vue'
+import { Ref, computed, onMounted } from 'vue'
 import { onUpdated } from 'vue'
 import { ref } from 'vue'
 
@@ -132,11 +134,25 @@ const pruneDependencies = () => {
   console.log(`pruning ${prop.dependencyType.plural}`)
   emit('pruneDependencies', { above: aboves.value, below: belows.value })
 }
+
+const el = ref(undefined)
+
+const { width } = useElementSize(el)
+
+const style = computed(() => {
+  const multiple = 0.75
+  console.log(`${width.value} x ${multiple} = ${width.value * multiple}`)
+  return {
+    'width': `${(width.value - 32) * multiple}px`,
+    'max-width': `${(width.value - 32) * multiple}px`
+} })
+
 </script>
 
 <style>
 .wrapped {
   word-break: break-spaces;
   white-space: break-spaces !important;
+  text-overflow: ellipsis;
 }
 </style>
