@@ -19,7 +19,7 @@ jobs:
           node-version: 20.x
           cache: 'yarn'
       - name: Run yarn audit
-        run: yarn audit
+        run: npx yarn audit
 
   # TODO: Also run integration tests
   vitest:
@@ -33,7 +33,7 @@ jobs:
           node-version: 20.x
           cache: 'yarn'
       - name: Run tests
-        run: yarn test:unit:ci
+        run: npx yarn test:unit:ci
 
   linter:
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
           node-version: 20.x
           cache: 'yarn'
       - name: Run linter
-        run: yarn lint
+        run: npx yarn lint
 
   finish:
     runs-on: ubuntu-latest
