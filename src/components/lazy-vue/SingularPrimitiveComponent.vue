@@ -23,14 +23,14 @@ edit.value = edit.value ?? false
     <div class="row">
       <BooleanItemComponent
         v-if="nbool(data)"
-        :name="props.name"
         v-model:data="data"
+        :name="props.name"
         :edit="edit"
         class="col" />
       <PlaintextItemComponent
         v-if="nplaintext(data)"
-        :name="props.name"
         v-model:data="data"
+        :name="props.name"
         :edit="edit"
         class="col" />
     </div>

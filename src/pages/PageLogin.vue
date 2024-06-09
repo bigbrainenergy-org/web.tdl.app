@@ -19,7 +19,7 @@
             filled
             :label="$t('server')"
           >
-            <template v-slot:prepend>
+            <template #prepend>
               <q-icon name="fas fa-network-wired" />
             </template>
           </q-input>
@@ -29,7 +29,7 @@
             filled
             :label="$t('username')"
           >
-            <template v-slot:prepend>
+            <template #prepend>
               <q-icon name="account_circle" />
             </template>
           </q-input>
@@ -41,7 +41,7 @@
             type="password"
             @keyup.enter="login"
           >
-            <template v-slot:prepend>
+            <template #prepend>
               <q-icon name="lock" />
             </template>
           </q-input>

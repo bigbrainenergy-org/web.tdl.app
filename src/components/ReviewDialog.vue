@@ -1,6 +1,6 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" @hide="onDialogHide" maximized persistent>
+  <q-dialog ref="dialogRef" maximized persistent @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center q-mb-xs">
         <div class="text-h6">Inbox Review</div>
@@ -46,11 +46,11 @@
               <div class="q-my-lg">
                 <template v-if="currentList">
                   <div>{{ currentList.title }}</div>
-                  <div style="white-space: pre-line;" v-if="currentList.notes">{{ currentList.notes }}</div>
+                  <div v-if="currentList.notes" style="white-space: pre-line;">{{ currentList.notes }}</div>
                 </template>
                 <template v-else>
                   <div>{{ currentTask.title }}</div>
-                  <div style="white-space: pre-line;" v-if="currentTask.notes">{{ currentTask.notes }}</div>
+                  <div v-if="currentTask.notes" style="white-space: pre-line;">{{ currentTask.notes }}</div>
                 </template>
               </div>
 
@@ -108,9 +108,9 @@
 
               <q-btn
                 v-for="button in content[currentStep].buttons"
+                :key="button.label"
                 padding="lg"
                 class="q-ma-lg"
-                :key="button.label"
                 :color="button.color"
                 :icon="button.icon"
                 :label="button.label"

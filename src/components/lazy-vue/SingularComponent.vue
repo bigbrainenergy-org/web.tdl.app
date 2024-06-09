@@ -16,15 +16,15 @@ edit.value = edit.value ?? false
   <EditModeSwitch v-if="showEdit" v-model="edit" />
   <ObjectComponent
     v-else-if="isSingularObject(data)"
-    :name="name"
     v-model:data="data"
     v-model:edit="edit"
+    :name="name"
     :show-edit="false" />
   <SingularPrimitiveComponent
     v-else-if="isSingularPrimitive(data)"
-    :name="name"
     v-model:data="data"
     v-model:edit="edit"
+    :name="name"
     :show-edit="false" />
  </div>
 </template>

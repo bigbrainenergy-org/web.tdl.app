@@ -15,17 +15,17 @@
           <q-card-section>
             <q-list>
               <q-item
-                clickable
-                v-ripple
                 v-for="(currentTask, index) in tasks"
                 :key="currentTask.id"
+                v-ripple
+                clickable
                 @click="openTask(currentTask)"
               >
                 <q-item-section>
                   {{ currentTask.title }}
                 </q-item-section>
 
-                <q-item-section side v-if="currentTask.notes">
+                <q-item-section v-if="currentTask.notes" side>
                   <q-icon name="description">
                     <q-tooltip
                       anchor="center right"
@@ -37,7 +37,7 @@
                   </q-icon>
                 </q-item-section>
 
-                <q-menu context-menu auto-close :ref="el => { if(el) taskMenus[index] = el }">
+                <q-menu :ref="el => { if(el) taskMenus[index] = el }" context-menu auto-close>
                   <q-list style="min-width: 100px">
                     <q-item clickable @click="openTask(currentTask)">
                       <q-item-section>Open</q-item-section>
@@ -58,7 +58,7 @@
                 </q-menu>
               </q-item>
               <template v-if="tasks.length === 0">
-                <q-item clickable v-ripple>
+                <q-item v-ripple clickable>
                   <q-item-section>
                     <strong>Nothing yet!</strong>
                   </q-item-section>

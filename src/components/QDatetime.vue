@@ -15,9 +15,9 @@
           <q-date
             v-model="date"
             color="secondary"
-            @update:model-value="gotoTime"
             landscape
             square
+            @update:model-value="gotoTime"
           />
         </q-tab-panel>
 
@@ -38,14 +38,14 @@
       {{ label }}
     </div>
     <q-card-actions align="right">
-      <q-btn flat @click="clear" v-if="displayClearButton">Clear</q-btn>
+      <q-btn v-if="displayClearButton" flat @click="clear">Clear</q-btn>
       <template v-if="activeTab == 'date'">
         <q-btn flat @click="$emit('cancel')">Cancel</q-btn>
-        <q-btn flat @click="activeTab = 'time'" :disable="!date">Next</q-btn>
+        <q-btn flat :disable="!date" @click="activeTab = 'time'">Next</q-btn>
       </template>
       <template v-else>
         <q-btn flat @click="activeTab = 'date'">Back</q-btn>
-        <q-btn flat @click="save" :disable="!date || !time">Save</q-btn>
+        <q-btn flat :disable="!date || !time" @click="save">Save</q-btn>
       </template>
     </q-card-actions>
   </q-card>

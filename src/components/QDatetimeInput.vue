@@ -1,6 +1,6 @@
 <template>
-  <q-input filled clearable v-model="textFieldValue" :label="label">
-    <template v-slot:append>
+  <q-input v-model="textFieldValue" filled clearable :label="label">
+    <template #append>
       <q-icon name="access_time" class="cursor-pointer">
         <q-popup-proxy v-model="showPicker" transition-show="scale" transition-hide="scale">
           <q-datetime v-model="datetime" :label="label" @cancel="onCancel" @update:model-value="onSave" />

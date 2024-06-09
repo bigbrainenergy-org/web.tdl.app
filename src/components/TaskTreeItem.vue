@@ -19,8 +19,8 @@ const loadChildren = (t: Task) => {
 
 <template>
   <q-item>
-    <q-btn @click="loadChildren(task)" icon="fa-solid fa-square-caret-right" v-if="task.expandedState === false && task.hard_postreq_ids.length > 0" style="height: 20px;"/>
-    <q-btn @click="() => task.expandedState = false" icon="fa-solid fa-square-caret-down" v-if="task.expanded" style="height: 20px;"/>
+    <q-btn v-if="task.expandedState === false && task.hard_postreq_ids.length > 0" icon="fa-solid fa-square-caret-right" style="height: 20px;" @click="loadChildren(task)"/>
+    <q-btn v-if="task.expanded" icon="fa-solid fa-square-caret-down" style="height: 20px;" @click="() => task.expandedState = false"/>
     {{ task.title }}
     <ul v-if="task.expanded" style="list-style-type: none">
       <li v-for="post in task.hard_postreqs" :key="post.id ?? -1">

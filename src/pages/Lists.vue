@@ -13,7 +13,7 @@
 
           <q-card-section class="q-pa-none">
             <q-splitter v-model="listSplitter">
-              <template v-slot:before>
+              <template #before>
                 <div class="q-pa-md">
                   <q-list class="text-primary">
                     <q-tree
@@ -23,8 +23,8 @@
                       children-key="sublists"
                       dense
                     >
-                      <template v-slot:default-header="prop">
-                        <q-item class="fit q-ml-md text-primary" clickable v-ripple @click.stop="doThing(prop)">
+                      <template #default-header="prop">
+                        <q-item v-ripple class="fit q-ml-md text-primary" clickable @click.stop="doThing(prop)">
                           <q-item-section>
                             {{ prop.node.title }}
                           </q-item-section>
@@ -43,7 +43,7 @@
                 </div>
               </template>
 
-              <template v-slot:after>
+              <template #after>
                 <div class="q-pa-md">
                   <template v-if="selectedList">
                     <div class="text-h4 q-mb-lg text-primary">{{ selectedList.title }}</div>

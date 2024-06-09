@@ -13,7 +13,7 @@
       </q-card-section>
 
       <q-card-section>
-        <q-form class="q-gutter-md" @submit="onSubmit" autofocus>
+        <q-form class="q-gutter-md" autofocus @submit="onSubmit">
           <q-stepper
             v-model="step"
             vertical
@@ -39,7 +39,7 @@
                   (val) => present(val) || 'Please enter your name'
                 ]"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <q-icon name="fas fa-user" />
                 </template>
               </q-input>
@@ -55,13 +55,13 @@
                   val => validEmail(val) || 'Invalid email format'
                 ]"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <q-icon name="email" />
                 </template>
               </q-input>
 
               <q-stepper-navigation>
-                <q-btn :disable="!stepOneComplete()" @click="step = 2" color="primary" label="Continue" />
+                <q-btn :disable="!stepOneComplete()" color="primary" label="Continue" @click="step = 2" />
               </q-stepper-navigation>
             </q-step>
 
@@ -81,14 +81,14 @@
                   val => present(val) || 'Please enter why you are interested in TDL App'
                 ]"
               >
-                <template v-slot:prepend>
+                <template #prepend>
                   <q-icon name="help" />
                 </template>
               </q-input>
 
               <q-stepper-navigation>
-                <q-btn :disable="!stepTwoComplete()" @click="step = 3" color="primary" label="Continue" />
-                <q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
+                <q-btn :disable="!stepTwoComplete()" color="primary" label="Continue" @click="step = 3" />
+                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 1" />
               </q-stepper-navigation>
             </q-step>
 
@@ -106,7 +106,7 @@
                   change Toggle state.
                 -->
 
-                <q-item tag="label" v-ripple>
+                <q-item v-ripple tag="label">
                   <q-item-section avatar>
                     <q-radio v-model="versionInterest" val="alpha" color="red" />
                   </q-item-section>
@@ -122,7 +122,7 @@
                   </q-item-section>
                 </q-item>
 
-                <q-item tag="label" v-ripple>
+                <q-item v-ripple tag="label">
                   <q-item-section avatar>
                     <q-radio v-model="versionInterest" val="beta" color="blue" />
                   </q-item-section>
@@ -138,7 +138,7 @@
                   </q-item-section>
                 </q-item>
 
-                <q-item tag="label" v-ripple>
+                <q-item v-ripple tag="label">
                   <q-item-section avatar top>
                     <q-radio v-model="versionInterest" val="release" color="green" />
                   </q-item-section>
@@ -155,8 +155,8 @@
               </q-list>
 
               <q-stepper-navigation>
-                <q-btn :disable="!stepThreeComplete()" @click="step = 4" color="primary" label="Continue" />
-                <q-btn flat @click="step = 2" color="primary" label="Back" class="q-ml-sm" />
+                <q-btn :disable="!stepThreeComplete()" color="primary" label="Continue" @click="step = 4" />
+                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 2" />
               </q-stepper-navigation>
             </q-step>
 
@@ -173,7 +173,7 @@
               </p>
               <q-stepper-navigation>
                 <q-btn color="primary" :label="$t('requestAccess')" type="submit" />
-                <q-btn flat @click="step = 3" color="primary" label="Back" class="q-ml-sm" />
+                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 3" />
               </q-stepper-navigation>
             </q-step>
           </q-stepper>
