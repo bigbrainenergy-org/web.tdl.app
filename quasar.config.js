@@ -22,11 +22,12 @@ module.exports = configure(function (/* ctx */) {
           // exclude: [],
           // rawOptions: {},
           warnings: true,
-          errors: true
+          errors: true,
+          files: './src/**/*.{ts,tsx,js,jsx,vue}'
         }
       }
     },
-    
+
 
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -36,6 +37,8 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
       'i18n',
+      'pinia',
+      'recaptcha'
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -45,14 +48,6 @@ module.exports = configure(function (/* ctx */) {
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
-      // 'ionicons-v4',
-      // 'mdi-v5',
-      // 'fontawesome-v6',
-      // 'eva-icons',
-      // 'themify',
-      // 'line-awesome',
-      // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
-
       'roboto-font', // optional, you are not bound to it
       'material-icons', // optional, you are not bound to it
       'fontawesome-v6'
@@ -74,7 +69,9 @@ module.exports = configure(function (/* ctx */) {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -101,13 +98,21 @@ module.exports = configure(function (/* ctx */) {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer: {
-      // https: true
+      https: false,
+      port: 8080,
       open: true // opens browser window automatically
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
     framework: {
-      config: {},
+      config: {
+        dark: true,
+        loadingBar: {
+          color: 'purple',
+          position: 'bottom',
+          size: '15px'
+        }
+      },
 
       iconSet: 'fontawesome-v6', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
@@ -120,7 +125,12 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify', 'Dialog']
+      plugins: [
+        'Dialog',
+        // 'LocalStorage',
+        'Notify',
+        'LoadingBar'
+      ]
     },
 
     // animations: 'all', // --- includes all animations
@@ -209,7 +219,7 @@ module.exports = configure(function (/* ctx */) {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: 'new-web-tdl-app'
+        appId: 'web.tdl.app'
       }
     },
 
