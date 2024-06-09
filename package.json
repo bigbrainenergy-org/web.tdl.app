@@ -19,7 +19,6 @@
     "test": "echo \"See package.json => scripts for available tests.\" && exit 0",
     "dev": "yarn exec quasar dev",
     "build": "yarn exec quasar build -m spa",
-    "test:unit:ui": "vitest --ui",
     "test:unit": "vitest",
     "test:unit:ci": "vitest run",
     "start": "node server.js"
