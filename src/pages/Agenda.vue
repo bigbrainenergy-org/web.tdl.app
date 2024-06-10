@@ -4,25 +4,16 @@
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <SettingsButton
-              v-model:settings="tasksPageSettings"
-              name="Tasks Page Settings"
-            />
+            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
             <q-space />
-            <q-item-label class="text-primary"
-              >{{ tasks.length }} tasks</q-item-label
-            >
+            <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
             <q-btn
               icon="fa-solid fa-signs-post"
               class="text-primary"
               @click="openQuickSortDialog"
             />
-            <q-btn
-              icon="fa-solid fa-search"
-              class="text-primary"
-              @click="openSearchDialog"
-            />
+            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
@@ -49,30 +40,24 @@
                   />
 
                   <q-item-section>
-                    {{ currentTask.title }}
+                    <q-item-label lines="2">
+                      {{ currentTask.title }}
+                    </q-item-label>
                   </q-item-section>
 
                   <q-item-section v-if="currentTask.notes" side>
                     <q-avatar icon="description">
-                      <q-tooltip
-                        anchor="center right"
-                        self="center left"
-                        :offset="[10, 10]"
-                      >
+                      <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
                         Has additional notes! Click to view.
                       </q-tooltip>
                     </q-avatar>
                   </q-item-section>
 
-                  <q-item-section
-                    v-if="currentTask.grabPostreqs(incompleteOnly).length"
-                    side
-                  >
+                  <q-item-section v-if="currentTask.grabPostreqs(incompleteOnly).length" side>
                     <q-chip
                       v-if="currentTask.grabPostreqs(incompleteOnly).length"
                       :style="
-                        currentTask.grabPostreqs(incompleteOnly).length >
-                        sortQty
+                        currentTask.grabPostreqs(incompleteOnly).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
                       "
@@ -157,21 +142,15 @@ watch(incompleteOnly, () => {
 
 const notCompleted = (x: Task) => x.completed === false
 const notBlocked = (x: Task) =>
-  x.hard_prereq_ids.length === 0 ||
-  x.hard_prereqs.filter(notCompleted).length === 0
+  x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
 const qtyPostreqsSort = (a: Task, b: Task) =>
-  b.grabPostreqs(incompleteOnly.value).length -
-  a.grabPostreqs(incompleteOnly.value).length
+  b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length
 
 const tasks = computed(() => {
-  if (
-    useLoadingStateStore().busy ||
-    useLoadingStateStore().quickSortDialogActive
-  ) {
+  if (useLoadingStateStore().busy || useLoadingStateStore().quickSortDialogActive) {
     if (useLoadingStateStore().quickSortDialogActive)
       console.log('quick sort dialog active is TRUE, so skipping agenda recalc')
-    if (useLoadingStateStore().busy)
-      console.log('busy signal is TRUE, so skipping agenda recalc')
+    if (useLoadingStateStore().busy) console.log('busy signal is TRUE, so skipping agenda recalc')
     return []
   }
   console.log('recalculating agenda.')
@@ -202,8 +181,7 @@ const tasks = computed(() => {
   let layer = new Map<number, Task>()
   while (baseMap.size || layer.size) {
     // console.debug({ size: baseMap.size, traversed: traversed.size, layer: layer.size })
-    if (baseMap.size)
-      filterMap<number, Task>(baseMap, layer, notBlockedByTraversed)
+    if (baseMap.size) filterMap<number, Task>(baseMap, layer, notBlockedByTraversed)
     let nextUp: { id?: number; p: number } = { p: 0 }
     // todo: SortedMap? That a thing?
     layer.forEach((val: Task, key: number) => {
@@ -245,10 +223,8 @@ const updateTaskCompletedStatus = async (task: Task) => {
     )
 }
 
-const addTaskPre = (currentTask: Task) =>
-  TDLAPP.addPrerequisitesDialog(currentTask)
+const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
 const openSearchDialog = () => TDLAPP.searchDialog()
 
-const openQuickSortDialog = () =>
-  $q.dialog({ component: QuickSortLayerZeroDialog })
+const openQuickSortDialog = () => $q.dialog({ component: QuickSortLayerZeroDialog })
 </script>
