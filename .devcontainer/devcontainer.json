@@ -13,7 +13,8 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "Vue.volar"
+        "Vue.volar",
+        "usernamehw.errorlens"
       ]
     }
   },
