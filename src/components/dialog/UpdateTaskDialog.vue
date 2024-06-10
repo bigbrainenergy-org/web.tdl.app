@@ -43,13 +43,7 @@
           label="Delete"
           @click="deleteTask(getTask().title, currentTask as Task)"
         />
-        <q-btn
-          class="q-ma-sm"
-          size="md"
-          color="grey"
-          label="Close"
-          @click="onDialogCancel"
-        />
+        <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onDialogCancel" />
       </q-card-section>
 
       <q-separator />
@@ -57,9 +51,7 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
-            <q-item-label class="text-h4 text-primary" lines="3">{{
-              taskTitle
-            }}</q-item-label>
+            <q-item-label class="text-h4 text-primary" lines="3">{{ taskTitle }}</q-item-label>
             <q-input
               v-model="editTitle"
               filled
@@ -217,11 +209,7 @@
                 <div class="text-h5">Subtasks</div>
               </div>
               <div class="col text-right">
-                <q-btn
-                  color="primary"
-                  icon="fas fa-tasks"
-                  label="Add Subtask"
-                />
+                <q-btn color="primary" icon="fas fa-tasks" label="Add Subtask" />
               </div>
             </div>
             <q-list class="q-my-md">
@@ -245,11 +233,7 @@ import DependencyList from '../DependencyList.vue'
 import QDatetimeInput from 'components/QDatetimeInput.vue'
 
 import { ListRepo } from 'src/stores/lists/list'
-import {
-  AllOptionalTaskProperties,
-  Task,
-  TaskRepo
-} from 'src/stores/tasks/task'
+import { AllOptionalTaskProperties, Task, TaskRepo } from 'src/stores/tasks/task'
 import { useRepo } from 'pinia-orm'
 import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
@@ -263,6 +247,7 @@ import { λ } from 'src/types'
 import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { onMounted } from 'vue'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+import { storeToRefs } from 'pinia'
 
 const emit = defineEmits([
   // REQUIRED; need to specify some events that your
@@ -282,14 +267,21 @@ const $q = useQuasar()
 const listsRepo = useRepo(ListRepo)
 const tr = useRepo(TaskRepo)
 const usr = useLocalSettingsStore()
-const ctr = useCurrentTaskStore()
+
+const { id } = storeToRefs(useCurrentTaskStore())
 
 const currentTaskID = computed((): number =>
-  Utils.hardCheck(ctr.id, 'currentTaskID was null or undefined.')
+  Utils.hardCheck(id.value, 'currentTaskID was null or undefined.')
 )
-const currentTask = computed((): Task | null =>
-  tr.withAll().find(currentTaskID.value)
-)
+
+const fetchTaskFromRepo = () => {
+  const taskFromRepo = tr.withAll().find(currentTaskID.value)
+  console.debug({ taskFromRepo })
+  return taskFromRepo
+}
+
+const currentTask = computed(fetchTaskFromRepo)
+
 const getTask = (): Task => {
   if (currentTask.value === null) {
     onDialogCancel()
@@ -298,12 +290,8 @@ const getTask = (): Task => {
   return currentTask.value
 }
 onMounted(() => {
-  getTask().hard_postreqs.sort(
-    (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-  )
-  getTask().hard_prereqs.sort(
-    (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-  )
+  getTask().hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+  getTask().hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
 })
 
 let currentPre: Task | null = null
@@ -314,11 +302,7 @@ console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 const taskTitle = computed(() => getTask().title)
 // const updatedFlag = ref(false)
 
-useMeta(() => {
-  return {
-    title: taskTitle.value + ' | TDL App'
-  }
-})
+useMeta(() => ({ title: taskTitle.value + ' | TDL App' }))
 
 const editTitle = ref(getTask().title)
 const editNotes = ref(getTask().notes)
@@ -326,6 +310,7 @@ const editRemindMeAt = ref(getTask().remind_me_at)
 const editMentalEnergyRequired = ref(getTask().mental_energy_required)
 const editPhysicalEnergyRequired = ref(getTask().physical_energy_required)
 
+// todo: storeToRefs?
 const expandEnergyStats = ref(usr.expandEnergyStats)
 
 const incompleteOnly = ref(usr.hideCompleted)
@@ -337,14 +322,12 @@ const updateLocalSettings = () => {
 const lists = computed(() => listsRepo.all())
 
 const allPres = computed(() => {
-  if (incompleteOnly.value)
-    return getTask().hard_prereqs.filter((x) => !x.completed)
+  if (incompleteOnly.value) return getTask().hard_prereqs.filter((x) => !x.completed)
   return getTask().hard_prereqs
 })
 
 const allPosts = computed(() => {
-  if (incompleteOnly.value)
-    return getTask().hard_postreqs.filter((x) => !x.completed)
+  if (incompleteOnly.value) return getTask().hard_postreqs.filter((x) => !x.completed)
   return getTask().hard_postreqs
 })
 
@@ -380,7 +363,7 @@ const selectedList = ref(getSelectedList(getTask()))
 
 function setCurrentTask(newTask: Task) {
   console.debug('setCurrentTask')
-  ctr.id = newTask.id
+  id.value = newTask.id
   editTitle.value = getTask().title
   editNotes.value = getTask().notes
   editRemindMeAt.value = getTask().remind_me_at
@@ -450,9 +433,7 @@ const toggleComplete = async (task: Task) => {
 
 const mvpPostrequisite = async (post: Task) => {
   console.debug(post)
-  const allOtherPosts = allPosts.value.filter(
-    (x) => !x.completed && x.id !== post.id
-  )
+  const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)
   for (let i = 0; i < allOtherPosts.length; i++) {
     await tr
       .removePre(allOtherPosts[i], getTask().id)
@@ -462,17 +443,11 @@ const mvpPostrequisite = async (post: Task) => {
       )
     await tr
       .addPre(allOtherPosts[i], post.id)
-      .then(
-        Utils.handleSuccess('moved a task'),
-        Utils.handleError('failed to move a task')
-      )
+      .then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
   }
   const syncResult = await syncWithBackend()
   if (syncResult === 1)
-    errorNotification(
-      new Error('Failed to refresh local storage'),
-      'Error Refreshing All'
-    )
+    errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
   else Utils.notifySuccess('Refreshed All')
 }
 
@@ -481,25 +456,19 @@ const insertBetweenPost = async (payload: { task: Task }) => {
   // start: A --> C
   // desired end state: A --> B --> C
   // 2. remove rule A --> C
-  console.debug(
-    'removing the old (now redundant) postrequisite from the current task'
-  )
+  console.debug('removing the old (now redundant) postrequisite from the current task')
   await tr.removePost(getTask(), oldPost.id).then(() => {
     const ct = useRepo(TaskRepo).find(currentTaskID.value)
     if (ct === null) throw new Error('current task was not found by id')
-    if (ct.hard_postreq_ids.includes(oldPost.id))
-      throw new Error('postreq was not removed!')
+    if (ct.hard_postreq_ids.includes(oldPost.id)) throw new Error('postreq was not removed!')
     const op = useRepo(TaskRepo).find(oldPost.id)
     if (op === null) throw new Error('old post was not found by id')
-    if (op.hard_prereq_ids.includes(currentTaskID.value))
-      throw new Error('prereq was not removed!')
+    if (op.hard_prereq_ids.includes(currentTaskID.value)) throw new Error('prereq was not removed!')
   }, Utils.handleError('error moving postrequisite!'))
   // FIXME: if these steps are done in 1->2->3 order, currentTask somehow ends up with no postrequisite.
   // FIXME: I'm sure there is the same error for insertbetweenPre.
   // 3. add rule B --> C
-  console.debug(
-    'adding the old postrequisite to the new postrequisite of the current task'
-  )
+  console.debug('adding the old postrequisite to the new postrequisite of the current task')
   await tr.addPost(payload.task, oldPost.id).then(() => {
     const pt = useRepo(TaskRepo).find(payload.task.id)
     if (pt === null) throw new Error('new task was not found by id')
@@ -517,14 +486,11 @@ const insertBetweenPost = async (payload: { task: Task }) => {
     await tr.addPost(getTask(), payload.task.id).then(() => {
       const ct = useRepo(TaskRepo).find(currentTaskID.value)
       if (ct === null) throw new Error('current task was not found by id')
-      if (!ct.hard_postreq_ids.includes(payload.task.id))
-        throw new Error('postreq was not added!')
+      if (!ct.hard_postreq_ids.includes(payload.task.id)) throw new Error('postreq was not added!')
       const pt = useRepo(TaskRepo).find(payload.task.id)
       if (pt === null) throw new Error('payload task was not found by id')
       if (!pt.hard_prereq_ids.includes(currentTaskID.value))
-        throw new Error(
-          'prereq (current task) was not found related to new postreq'
-        )
+        throw new Error('prereq (current task) was not found related to new postreq')
     }, Utils.handleError('error adding new post to current task'))
 
     const newPost = await useRepo(TaskRepo).getId(payload.task.id)
@@ -540,10 +506,7 @@ const insertBetweenPre = async (payload: { task: Task }) => {
   const oldPre = Utils.hardCheck(currentPre)
   await tr
     .removePre(getTask(), oldPre.id)
-    .then(
-      Utils.handleSuccess('moving pre...'),
-      Utils.handleError('error moving pre!')
-    )
+    .then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
   await tr
     .addPre(payload.task, oldPre.id)
     .then(
@@ -677,24 +640,16 @@ const postreqMenuItems = [
   }
 ]
 
-const prunePosts = async (payload: {
-  above: Set<number>
-  below: Set<number>
-}) => {
+const prunePosts = async (payload: { above: Set<number>; below: Set<number> }) => {
   useLoadingStateStore().busy = true
-  const toRemove = allPosts.value.filter(
-    (x) => payload.below.has(x.id) && !payload.above.has(x.id)
-  )
+  const toRemove = allPosts.value.filter((x) => payload.below.has(x.id) && !payload.above.has(x.id))
   for (let i = 0; i < toRemove.length; i++) {
     await removePostrequisite(toRemove[i])
   }
   useLoadingStateStore().busy = false
 }
 
-const prunePres = async (payload: {
-  above: Set<number>
-  below: Set<number>
-}) => {
+const prunePres = async (payload: { above: Set<number>; below: Set<number> }) => {
   useLoadingStateStore().busy = true
   const toRemove = allPres.value.filter((x) => {
     const hasRelationsAbove = payload.above.has(x.id)
