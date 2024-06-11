@@ -19,14 +19,7 @@
 
       <q-card-section>
         <q-form class="q-gutter-md" autofocus @submit="onSubmit">
-          <q-stepper
-            v-model="step"
-            vertical
-            color="primary"
-            animated
-            flat
-            header-nav
-          >
+          <q-stepper v-model="step" vertical color="primary" animated flat header-nav>
             <q-step
               :name="1"
               title="Who are you?"
@@ -85,11 +78,7 @@
                 filled
                 :label="$t('reasonForInterest')"
                 type="textarea"
-                :rules="[
-                  (val) =>
-                    present(val) ||
-                    'Please enter why you are interested in TDL App'
-                ]"
+                :rules="[(val) => present(val) || 'Please enter why you are interested in TDL App']"
               >
                 <template #prepend>
                   <q-icon name="help" />
@@ -103,13 +92,7 @@
                   label="Continue"
                   @click="step = 3"
                 />
-                <q-btn
-                  flat
-                  color="primary"
-                  label="Back"
-                  class="q-ml-sm"
-                  @click="step = 1"
-                />
+                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 1" />
               </q-stepper-navigation>
             </q-step>
 
@@ -129,18 +112,13 @@
 
                 <q-item v-ripple tag="label">
                   <q-item-section avatar>
-                    <q-radio
-                      v-model="versionInterest"
-                      val="alpha"
-                      color="red"
-                    />
+                    <q-radio v-model="versionInterest" val="alpha" color="red" />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>Alpha</q-item-label>
                     <q-item-label caption>
-                      Razor sharp edges and sudden drops present, watch your
-                      step. Not all features will be implemented yet, and things
-                      may break horribly.
+                      Razor sharp edges and sudden drops present, watch your step. Not all features
+                      will be implemented yet, and things may break horribly.
                       <br /><br />
                       Only power users should consider this option.
                     </q-item-label>
@@ -149,19 +127,14 @@
 
                 <q-item v-ripple tag="label">
                   <q-item-section avatar>
-                    <q-radio
-                      v-model="versionInterest"
-                      val="beta"
-                      color="blue"
-                    />
+                    <q-radio v-model="versionInterest" val="beta" color="blue" />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>Beta</q-item-label>
                     <q-item-label caption>
-                      All of the intended features will be implemented, but may
-                      still be rough around the edges. Should be daily driver
-                      ready, and we will be mostly looking for bugs and UI/UX
-                      improvements.
+                      All of the intended features will be implemented, but may still be rough
+                      around the edges. Should be daily driver ready, and we will be mostly looking
+                      for bugs and UI/UX improvements.
                       <br /><br />
                       May not be polished, but anyone may consider this option.
                     </q-item-label>
@@ -170,17 +143,13 @@
 
                 <q-item v-ripple tag="label">
                   <q-item-section avatar top>
-                    <q-radio
-                      v-model="versionInterest"
-                      val="release"
-                      color="green"
-                    />
+                    <q-radio v-model="versionInterest" val="release" color="green" />
                   </q-item-section>
                   <q-item-section>
                     <q-item-label>Release</q-item-label>
                     <q-item-label caption>
-                      For those seeking a truly polished TDL solution, and don't
-                      have the time to deal with potential hiccups.
+                      For those seeking a truly polished TDL solution, and don't have the time to
+                      deal with potential hiccups.
                       <br /><br />
                       Anyone may consider this option.
                     </q-item-label>
@@ -195,13 +164,7 @@
                   label="Continue"
                   @click="step = 4"
                 />
-                <q-btn
-                  flat
-                  color="primary"
-                  label="Back"
-                  class="q-ml-sm"
-                  @click="step = 2"
-                />
+                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 2" />
               </q-stepper-navigation>
             </q-step>
 
@@ -220,18 +183,8 @@
                 apply.
               </p>
               <q-stepper-navigation>
-                <q-btn
-                  color="primary"
-                  :label="$t('requestAccess')"
-                  type="submit"
-                />
-                <q-btn
-                  flat
-                  color="primary"
-                  label="Back"
-                  class="q-ml-sm"
-                  @click="step = 3"
-                />
+                <q-btn color="primary" :label="$t('requestAccess')" type="submit" />
+                <q-btn flat color="primary" label="Back" class="q-ml-sm" @click="step = 3" />
               </q-stepper-navigation>
             </q-step>
           </q-stepper>
@@ -242,104 +195,102 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import { useQuasar } from 'quasar'
+  import { defineComponent, ref } from 'vue'
+  import { useQuasar } from 'quasar'
 
-import { useRouter } from 'vue-router'
-import { useAuthenticationStore } from '../stores/authentication/pinia-authentication'
-import { Utils } from 'src/util'
-import { useAxiosStore } from 'src/stores/axios-store'
+  import { useRouter } from 'vue-router'
+  import { useAuthenticationStore } from '../stores/authentication/pinia-authentication'
+  import { Utils } from 'src/util'
+  import { useAxiosStore } from 'src/stores/axios-store'
 
-export default defineComponent({
-  name: 'PageRegister',
+  export default defineComponent({
+    name: 'PageRegister',
 
-  preFetch() {
-    const authenticationStore = useAuthenticationStore()
-    if (authenticationStore.isLoggedIn) {
-      this.$router.push('/')
-    }
-  },
+    preFetch() {
+      const authenticationStore = useAuthenticationStore()
+      if (authenticationStore.isLoggedIn) {
+        this.$router.push('/')
+      }
+    },
 
-  setup() {
-    const $q = useQuasar()
+    setup() {
+      const $q = useQuasar()
 
-    const $router = useRouter()
-    // @ts-ignore
-    const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
+      const $router = useRouter()
+      // @ts-ignore
+      const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
 
-    const step = ref(1)
-    const name = ref('')
-    const email = ref('')
-    const reasonForInterest = ref('')
-    const versionInterest = ref('')
-    const emailRegex =
-      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      const step = ref(1)
+      const name = ref('')
+      const email = ref('')
+      const reasonForInterest = ref('')
+      const versionInterest = ref('')
+      const emailRegex =
+        /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
-    function present(val: string) {
-      return val && val.length > 0
-    }
+      function present(val: string) {
+        return val && val.length > 0
+      }
 
-    function validEmail(val: string) {
-      return emailRegex.test(val)
-    }
+      function validEmail(val: string) {
+        return emailRegex.test(val)
+      }
 
-    function stepOneComplete() {
-      return (
-        present(name.value) && present(email.value) && validEmail(email.value)
-      )
-    }
+      function stepOneComplete() {
+        return present(name.value) && present(email.value) && validEmail(email.value)
+      }
 
-    function stepTwoComplete() {
-      return present(reasonForInterest.value)
-    }
+      function stepTwoComplete() {
+        return present(reasonForInterest.value)
+      }
 
-    function stepThreeComplete() {
-      return present(versionInterest.value)
-    }
+      function stepThreeComplete() {
+        return present(versionInterest.value)
+      }
 
-    async function onSubmit() {
-      await recaptchaLoaded()
-      const recaptcha = await executeRecaptcha('accessRequest')
-      const api = useAxiosStore().axios()
+      async function onSubmit() {
+        await recaptchaLoaded()
+        const recaptcha = await executeRecaptcha('accessRequest')
+        const api = useAxiosStore().axios()
 
-      api
-        .post('/access-request', {
-          name: name.value,
-          email: email.value,
-          reason_for_interest: reasonForInterest.value,
-          version: versionInterest.value,
-          recaptcha: recaptcha
-        })
-        .then((response) => {
-          step.value = 1
-          name.value = ''
-          email.value = ''
-          reasonForInterest.value = ''
-          versionInterest.value = ''
-          void $router.push({ path: '/login' })
-          // clear out form and redirect to login
-          $q.notify({
-            color: 'positive',
-            position: 'top',
-            message: 'Successfully requested access!',
-            icon: 'fas fa-laptop-code'
+        api
+          .post('/access-request', {
+            name: name.value,
+            email: email.value,
+            reason_for_interest: reasonForInterest.value,
+            version: versionInterest.value,
+            recaptcha: recaptcha
           })
-        }, Utils.handleError('Failed to request access'))
-    }
+          .then((response) => {
+            step.value = 1
+            name.value = ''
+            email.value = ''
+            reasonForInterest.value = ''
+            versionInterest.value = ''
+            void $router.push({ path: '/login' })
+            // clear out form and redirect to login
+            $q.notify({
+              color: 'positive',
+              position: 'top',
+              message: 'Successfully requested access!',
+              icon: 'fas fa-laptop-code'
+            })
+          }, Utils.handleError('Failed to request access'))
+      }
 
-    return {
-      step,
-      name,
-      email,
-      present,
-      validEmail,
-      reasonForInterest,
-      versionInterest,
-      stepOneComplete,
-      stepTwoComplete,
-      stepThreeComplete,
-      onSubmit
+      return {
+        step,
+        name,
+        email,
+        present,
+        validEmail,
+        reasonForInterest,
+        versionInterest,
+        stepOneComplete,
+        stepTwoComplete,
+        stepThreeComplete,
+        onSubmit
+      }
     }
-  }
-})
+  })
 </script>

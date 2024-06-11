@@ -15,8 +15,7 @@ export const useLayerZeroStore = defineStore('layer-zero', {
       this.layerZero = []
       useAllTasksStore().allTasks.forEach((val, key) => {
         if (val.completed) return
-        if (!val.hard_prereqs.some((x) => !x.completed))
-          this.layerZero.push(val)
+        if (!val.hard_prereqs.some((x) => !x.completed)) this.layerZero.push(val)
       })
       const duration = performance.now() - start
       const target = Math.max(21, this.layerZero.length / 2)
@@ -41,8 +40,7 @@ export const useLayerZeroStore = defineStore('layer-zero', {
     checkAndSet(task: Task) {
       const index = this.layerZero.findIndex((x) => x.id === task.id)
       const inLZArray = index >= 0
-      const taskShouldBeLayerZero =
-        !task.completed && !task.hasIncompletePrereqs
+      const taskShouldBeLayerZero = !task.completed && !task.hasIncompletePrereqs
       if (inLZArray) {
         if (!taskShouldBeLayerZero) {
           this.layerZero.splice(index, 1)
@@ -53,9 +51,7 @@ export const useLayerZeroStore = defineStore('layer-zero', {
       } else {
         if (taskShouldBeLayerZero) {
           this.layerZero.push(task)
-          this.layerZero = this.layerZero.filter(
-            (x) => !task.hard_postreq_ids.includes(x.id)
-          )
+          this.layerZero = this.layerZero.filter((x) => !task.hard_postreq_ids.includes(x.id))
         }
       }
     },

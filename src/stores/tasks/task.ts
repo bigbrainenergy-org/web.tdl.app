@@ -1,13 +1,6 @@
 import { Model, useRepo } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import {
-  Attr,
-  BelongsTo,
-  Bool,
-  HasManyBy,
-  HasOne,
-  Num
-} from 'pinia-orm/dist/decorators'
+import { Attr, BelongsTo, Bool, HasManyBy, HasOne, Num } from 'pinia-orm/dist/decorators'
 import { List } from '../lists/list'
 import GenericRepo from '../generics/generic-repo'
 import ExpandedState from '../task-meta/expanded-state'
@@ -98,24 +91,16 @@ export class Task extends Model implements iRecord {
     return this.hard_postreq_ids.length > 0
   }
   get hasIncompletePostreqs() {
-    return this.hard_postreq_ids.length > 0
-      ? this.grabPostreqs().some((x) => !x.completed)
-      : false
+    return this.hard_postreq_ids.length > 0 ? this.grabPostreqs().some((x) => !x.completed) : false
   }
   get hasPrereqs() {
     return this.hard_prereq_ids.length > 0
   }
   get hasIncompletePrereqs() {
-    return this.hard_prereq_ids.length > 0
-      ? this.grabPrereqs(true).length > 0
-      : false
+    return this.hard_prereq_ids.length > 0 ? this.grabPrereqs(true).length > 0 : false
   }
 
-  treeNode(
-    reverse = false,
-    hideCompleted = false,
-    parentKey = ''
-  ): SimpleTreeNode<Task> {
+  treeNode(reverse = false, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task> {
     const node: any = {
       id: this.id,
       obj: this,
@@ -132,8 +117,7 @@ export class Task extends Model implements iRecord {
       return node
     }
     if (hideCompleted) {
-      ;(node.expandable = this.hasIncompletePostreqs),
-        (node.lazy = this.hasIncompletePostreqs)
+      ;(node.expandable = this.hasIncompletePostreqs), (node.lazy = this.hasIncompletePostreqs)
       return node
     }
     node.expandable = this.hasPostreqs
@@ -188,8 +172,7 @@ export class Task extends Model implements iRecord {
     }
     const input: string = (this.id ?? '-1') + this.title
     const hash = exampleHash(input)
-    const hexColor =
-      '#' + (hash % 0xffffff).toString(16).padStart(6, '0') + '66'
+    const hexColor = '#' + (hash % 0xffffff).toString(16).padStart(6, '0') + '66'
     return hexColor
   }
 
@@ -198,9 +181,7 @@ export class Task extends Model implements iRecord {
 
   grabPrereqs(incompleteOnly = false): Task[] {
     const repo = useRepo(TaskRepo)
-    const pres =
-      this.hard_prereqs ??
-      repo.where((x) => x.hard_postreq_ids.includes(this.id)).get()
+    const pres = this.hard_prereqs ?? repo.where((x) => x.hard_postreq_ids.includes(this.id)).get()
     // console.debug({ incompleteOnly, pres_before_filtering: pres })
     return incompleteOnly ? pres.filter((x) => !x.completed) : pres
   }
@@ -208,9 +189,7 @@ export class Task extends Model implements iRecord {
   grabPostreqs(incompleteOnly = false): Task[] {
     const repo = useRepo(TaskRepo)
     // if(typeof this.hard_postreqs === 'undefined') console.log('have to call repo to fetch postreqs')
-    const posts =
-      this.hard_postreqs ??
-      repo.where((x) => x.hard_prereq_ids.includes(this.id)).get()
+    const posts = this.hard_postreqs ?? repo.where((x) => x.hard_prereq_ids.includes(this.id)).get()
     return incompleteOnly ? posts.filter((x) => !x.completed) : posts
   }
 
@@ -229,9 +208,7 @@ export class Task extends Model implements iRecord {
     hideCompleted = false,
     parentKey = ''
   ): SimpleTreeNode<Task>[] {
-    return this.grabPrereqs(hideCompleted).map((x) =>
-      x.treeNode(reverse, hideCompleted, parentKey)
-    )
+    return this.grabPrereqs(hideCompleted).map((x) => x.treeNode(reverse, hideCompleted, parentKey))
   }
 
   async toggleCompleted() {
@@ -254,8 +231,7 @@ export class Task extends Model implements iRecord {
   async split(slices: number) {
     const repo = useRepo(TaskRepo)
     const title = (number: number) => `${this.title} (${number}/${slices})`
-    if (slices <= 1)
-      throw new Error(`Cannot slice a task into ${slices} piece(s).`)
+    if (slices <= 1) throw new Error(`Cannot slice a task into ${slices} piece(s).`)
     // copy the prereq and postreq id arrays
     const prereq_ids = Array.from(this.hard_prereq_ids)
     for (let i = 0; i < prereq_ids.length; i++) {
@@ -315,10 +291,9 @@ export class Task extends Model implements iRecord {
       allTasks.set(this.id, this)
     }
     const preIDs = (t: Task) =>
-      (options.incompleteOnly
-        ? t.hard_prereqs.filter((x) => !x.completed)
-        : t.hard_prereqs
-      ).map((x) => x.id)
+      (options.incompleteOnly ? t.hard_prereqs.filter((x) => !x.completed) : t.hard_prereqs).map(
+        (x) => x.id
+      )
     const thisPres = preIDs(this)
     queue.enqueueAll(thisPres)
     while (queue.size > 0) {
@@ -329,9 +304,7 @@ export class Task extends Model implements iRecord {
       if (typeof tmpTask === 'undefined')
         tmpTask = useRepo(TaskRepo).withAll().find(tmpID) ?? undefined
       if (typeof tmpTask === 'undefined')
-        throw new Error(
-          `Task ID ${tmpID} cannot be found in the Task Repository.`
-        )
+        throw new Error(`Task ID ${tmpID} cannot be found in the Task Repository.`)
       else allTasks.set(tmpID, tmpTask)
       queue.enqueueAll(preIDs(tmpTask))
     }
@@ -360,9 +333,7 @@ export class Task extends Model implements iRecord {
         allTasks.set(t.id, t)
       }
       return (
-        options.incompleteOnly
-          ? t.hard_postreqs.filter((x) => !x.completed)
-          : t.hard_postreqs
+        options.incompleteOnly ? t.hard_postreqs.filter((x) => !x.completed) : t.hard_postreqs
       ).map((x) => x.id)
     }
     const thisPosts = postIDs(this)
@@ -375,27 +346,19 @@ export class Task extends Model implements iRecord {
       if (typeof tmpTask === 'undefined')
         tmpTask = useRepo(TaskRepo).withAll().find(tmpID) ?? undefined
       if (typeof tmpTask === 'undefined')
-        throw new Error(
-          `Task ID ${tmpID} cannot be found in the Task Repository`
-        )
+        throw new Error(`Task ID ${tmpID} cannot be found in the Task Repository`)
       else allTasks.set(tmpID, tmpTask)
       queue.enqueueAll(postIDs(tmpTask))
     }
     return allPosts
   }
 
-  isIDAbove(
-    id: number,
-    options: { incompleteOnly: boolean; useStore: boolean }
-  ): boolean {
+  isIDAbove(id: number, options: { incompleteOnly: boolean; useStore: boolean }): boolean {
     const allPreIDs = this.preIDsRecursive(options)
     return allPreIDs.has(id)
   }
 
-  isIDBelow(
-    id: number,
-    options: { incompleteOnly: boolean; useStore: boolean }
-  ): boolean {
+  isIDBelow(id: number, options: { incompleteOnly: boolean; useStore: boolean }): boolean {
     const allPostIDs = this.allPostIDsRecursive(options)
     return allPostIDs.has(id)
   }
@@ -416,10 +379,7 @@ export class Task extends Model implements iRecord {
     return new Map(ids.map((x) => [x, allIDsBelow.has(x)]))
   }
 
-  hasRelationTo(
-    id: number,
-    options = { incompleteOnly: true, useStore: false }
-  ) {
+  hasRelationTo(id: number, options = { incompleteOnly: true, useStore: false }) {
     const opts = {
       incompleteOnly: options.incompleteOnly,
       useStore: options.useStore
@@ -427,10 +387,7 @@ export class Task extends Model implements iRecord {
     return this.isIDAbove(id, opts) || this.isIDBelow(id, opts)
   }
 
-  BulkHasRelationTo(
-    ids: number[],
-    options = { incompleteOnly: true, useStore: false }
-  ) {
+  BulkHasRelationTo(ids: number[], options = { incompleteOnly: true, useStore: false }) {
     const opts = {
       incompleteOnly: options.incompleteOnly,
       useStore: options.useStore
@@ -447,27 +404,21 @@ export class Task extends Model implements iRecord {
   }
 }
 
-export class TaskRepo extends GenericRepo<
-  CreateTaskOptions,
-  UpdateTaskOptions,
-  Task
-> {
+export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, Task> {
   use = Task
   apidir = Task.entity
 
   getTaskWithKey = (key: string, ...properties: string[]) => {
     const id = parseInt(key.slice(0, key.indexOf('.')))
     const taskWithKey = this.where((x) => x.id === id).get()
-    if (taskWithKey.length === 0)
-      console.warn('getTaskWithKey did not find any match')
+    if (taskWithKey.length === 0) console.warn('getTaskWithKey did not find any match')
     properties.forEach((p) => this.with(p).load(taskWithKey))
     return taskWithKey[0]
   }
 
   removePre = async (task: Task, id_of_prereq: number) => {
     const position = task.hard_prereq_ids.indexOf(id_of_prereq)
-    if (position < 0)
-      throw new Error('removePre: id provided was not found in prereqs list')
+    if (position < 0) throw new Error('removePre: id provided was not found in prereqs list')
     const options: UpdateTaskOptions = {
       id: task.id,
       payload: { task: Object.assign({}, task) }
@@ -488,8 +439,7 @@ export class TaskRepo extends GenericRepo<
    */
   removePost = async (task: Task, id_of_postreq: number) => {
     const position = task.hard_postreq_ids.indexOf(id_of_postreq)
-    if (position < 0)
-      throw new Error('removePost: id provided was not found in postreqs list')
+    if (position < 0) throw new Error('removePost: id provided was not found in postreqs list')
     const options: UpdateTaskOptions = {
       id: task.id,
       payload: { task: Object.assign({}, task) }
@@ -527,8 +477,7 @@ export class TaskRepo extends GenericRepo<
       options.payload.task.hard_prereq_ids = [id_of_prereq]
     else options.payload.task.hard_prereq_ids.push(id_of_prereq)
     await this.updateAndCache(options) // we should only need one api call in order for the rails api to generate the hard_requisite record that joins two Tasks.
-    if (!pre.hard_postreq_ids.includes(task.id))
-      pre.hard_postreq_ids.push(task.id)
+    if (!pre.hard_postreq_ids.includes(task.id)) pre.hard_postreq_ids.push(task.id)
     this.save(pre)
     this.setCache(pre, true)
   }
@@ -553,20 +502,15 @@ export class TaskRepo extends GenericRepo<
     }
     options.payload.task.hard_postreq_ids!.push(id_of_postreq)
     await this.updateAndCache(options)
-    if (!post.hard_prereq_ids.includes(task.id))
-      post.hard_prereq_ids.push(task.id)
+    if (!post.hard_prereq_ids.includes(task.id)) post.hard_prereq_ids.push(task.id)
     this.save(post)
     this.setCache(post, true)
   }
 
   deleteTask = async (task: Task) => {
-    const currentTask = this.with('hard_prereqs')
-      .with('hard_postreqs')
-      .find(task.id)
+    const currentTask = this.with('hard_prereqs').with('hard_postreqs').find(task.id)
     if (currentTask === null)
-      throw new Error(
-        'task to delete was given but then it was not found in the list'
-      )
+      throw new Error('task to delete was given but then it was not found in the list')
     const pres = currentTask.hard_prereqs
     const posts = currentTask.hard_postreqs
     console.debug({ currentTask, pres, posts })
@@ -587,9 +531,7 @@ export class TaskRepo extends GenericRepo<
     // check if any hard postreq ids are in the recursive prereqs
     const currentTask = useAllTasksStore().allTasks.get(options.id)
     if (!exists(currentTask))
-      throw new Error(
-        'Task sent for updating was not found on the local repository'
-      )
+      throw new Error('Task sent for updating was not found on the local repository')
     const incompletePrereqIDs = exists(currentTask.hard_prereqs)
       ? currentTask.hard_prereqs.filter((x) => !x.completed).map((x) => x.id)
       : []
@@ -599,16 +541,13 @@ export class TaskRepo extends GenericRepo<
     })
     const anyPrereqsBelowResult: Task[] = []
     anyPrereqsBelow.forEach((val, key) => {
-      if (val)
-        anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key)) as Task)
+      if (val) anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key)) as Task)
     })
     if (anyPrereqsBelowResult.length > 0) {
       anyPrereqsBelowResult.forEach((x) =>
         console.error(`This prereq is already a postreq: ${x.title}`)
       )
-      throw new Error(
-        'There is a prereq that is already supposed to be AFTER the current task'
-      )
+      throw new Error('There is a prereq that is already supposed to be AFTER the current task')
     }
     const incompletePostreqIDs =
       typeof currentTask.hard_postreqs === 'undefined'
@@ -620,16 +559,13 @@ export class TaskRepo extends GenericRepo<
     })
     const anyPostreqsAboveResult: Task[] = []
     anyPostreqsAbove.forEach((val, key) => {
-      if (val)
-        anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)) as Task)
+      if (val) anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)) as Task)
     })
     if (anyPostreqsAboveResult.length > 0) {
       anyPostreqsAboveResult.forEach((x) =>
         console.error(`This postreq is already a prereq: ${x.title}`)
       )
-      throw new Error(
-        'There is a postreq that is already supposed to be BEFORE the current task'
-      )
+      throw new Error('There is a postreq that is already supposed to be BEFORE the current task')
     }
     await this.update(options).then((data: void | Task) => {
       if (data instanceof Task) {
@@ -650,10 +586,7 @@ export class TaskRepo extends GenericRepo<
   setCache = (task: Task, getAll = false) => {
     const t = getAll ? this.withAll().find(task.id) : task
     console.log({ method: 'setCache', t })
-    if (t === null)
-      throw new Error(
-        'Task not found in the repository, so it cannot be cached.'
-      )
+    if (t === null) throw new Error('Task not found in the repository, so it cannot be cached.')
     useAllTasksStore().allTasks.set(t.id, t)
     useLayerZeroStore().checkAndSet(t)
     return t
@@ -665,10 +598,7 @@ export class TaskRepo extends GenericRepo<
       .filter((x) => !x.completed)
   layerZero = (): Task[] =>
     timeThisB(
-      () =>
-        this.incompleteOnly().filter(
-          (x) => !x.hard_prereqs.some((y) => !y.completed)
-        ),
+      () => this.incompleteOnly().filter((x) => !x.hard_prereqs.some((y) => !y.completed)),
       'layerZeroRepoFunction',
       200
     )()

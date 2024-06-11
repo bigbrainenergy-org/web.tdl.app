@@ -16,13 +16,13 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-// import { ref } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  // import { ref } from 'vue'
 
-const { locale } = useI18n({ useScope: 'global' })
-// const locale = ref({})
-const localeOptions = [
-  { value: 'en-US', label: 'English' },
-  { value: 'ja', label: '日本語' }
-]
+  const { locale } = useI18n({ useScope: 'global' })
+  // const locale = ref({})
+  const localeOptions = [
+    { value: 'en-US', label: 'English' },
+    { value: 'ja', label: '日本語' }
+  ]
 </script>

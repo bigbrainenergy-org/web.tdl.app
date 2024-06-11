@@ -38,11 +38,7 @@ export class Status extends Model implements iRecord {
   @BelongsTo(() => User, 'user_id') declare user: User | null
 }
 
-export class StatusRepo extends GenericRepo<
-  CreateStatusOptions,
-  UpdateStatusOptions,
-  Status
-> {
+export class StatusRepo extends GenericRepo<CreateStatusOptions, UpdateStatusOptions, Status> {
   use = Status
   apidir = Status.entity
 }

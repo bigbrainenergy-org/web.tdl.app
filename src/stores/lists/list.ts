@@ -38,11 +38,7 @@ export class List extends Model implements iRecord {
   }
 }
 
-export class ListRepo extends GenericRepo<
-  CreateListOptions,
-  UpdateListOptions,
-  List
-> {
+export class ListRepo extends GenericRepo<CreateListOptions, UpdateListOptions, List> {
   use = List
   apidir = List.entity
 }

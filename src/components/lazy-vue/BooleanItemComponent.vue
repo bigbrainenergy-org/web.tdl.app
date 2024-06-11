@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { QBadge } from 'quasar'
-import { PropStructure } from './lazyVueUtils'
-const data = defineModel<boolean>('data', {
-  set: (x) => {
-    emit('updateme')
-    return x
-  }
-})
-withDefaults(defineProps<PropStructure>(), {
-  config: 'pretty',
-  edit: false
-})
-const emit = defineEmits(['updateme'])
-const formattedText = computed(() => (data.value ? 'TRUE' : 'FALSE'))
+  import { computed } from 'vue'
+  import { QBadge } from 'quasar'
+  import { PropStructure } from './lazyVueUtils'
+  const data = defineModel<boolean>('data', {
+    set: (x) => {
+      emit('updateme')
+      return x
+    }
+  })
+  withDefaults(defineProps<PropStructure>(), {
+    config: 'pretty',
+    edit: false
+  })
+  const emit = defineEmits(['updateme'])
+  const formattedText = computed(() => (data.value ? 'TRUE' : 'FALSE'))
 </script>
 
 <template>

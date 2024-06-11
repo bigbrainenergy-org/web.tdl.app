@@ -48,43 +48,43 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar'
+  import { useQuasar } from 'quasar'
 
-import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { ref } from 'vue'
 
-import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-import { Utils } from 'src/util'
-import { useAxiosStore } from 'src/stores/axios-store'
-import { syncWithBackend } from 'src/hackerman/sync'
-const authenticationStore = useAuthenticationStore()
-const $q = useQuasar()
-const $router = useRouter()
+  import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
+  import { Utils } from 'src/util'
+  import { useAxiosStore } from 'src/stores/axios-store'
+  import { syncWithBackend } from 'src/hackerman/sync'
+  const authenticationStore = useAuthenticationStore()
+  const $q = useQuasar()
+  const $router = useRouter()
 
-const username = ref('')
-const password = ref('')
-const server = ref(useAxiosStore().URL())
+  const username = ref('')
+  const password = ref('')
+  const server = ref(useAxiosStore().URL())
 
-const login = () => {
-  useAxiosStore().axios(server.value)
-  authenticationStore
-    .login({
-      username: username.value,
-      password: password.value
-    })
-    .then(() => {
-      username.value = ''
-      password.value = ''
-      $q.notify({
-        color: 'positive',
-        position: 'top',
-        message: 'Logged in successfully',
-        icon: 'fas fa-sign-out-alt'
+  const login = () => {
+    useAxiosStore().axios(server.value)
+    authenticationStore
+      .login({
+        username: username.value,
+        password: password.value
       })
-      syncWithBackend().then(
-        () => $router.push({ path: '/' }),
-        Utils.handleError('Failed to fetch data')
-      )
-    }, Utils.handleError('Failed to log in'))
-}
+      .then(() => {
+        username.value = ''
+        password.value = ''
+        $q.notify({
+          color: 'positive',
+          position: 'top',
+          message: 'Logged in successfully',
+          icon: 'fas fa-sign-out-alt'
+        })
+        syncWithBackend().then(
+          () => $router.push({ path: '/' }),
+          Utils.handleError('Failed to fetch data')
+        )
+      }, Utils.handleError('Failed to log in'))
+  }
 </script>

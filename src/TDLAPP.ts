@@ -27,8 +27,7 @@ export class TDLAPP {
     })
   }
   static searchDialog = (
-    onSelect: (payload: { task: Task }) => void = (x: { task: Task }) =>
-      this.openTask(x.task)
+    onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task)
   ) => {
     return Dialog.create({
       component: TaskSearchDialog,
@@ -75,9 +74,7 @@ export class TDLAPP {
             throw new Error('Add Prerequisite: Current Task ID is undefined')
           const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
           if (ct === null)
-            throw new Error(
-              `Add Prerequisite: Task not found with Task ID ${currentTaskID}`
-            )
+            throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
           return (x: Task) => {
             if (x.completed) return false
             if (x.id === ct.id) return false
@@ -110,9 +107,7 @@ export class TDLAPP {
             throw new Error('Add Postrequisite: Current Task ID is undefined')
           const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
           if (ct === null)
-            throw new Error(
-              `Add Postrequisite: Task not found with Task ID ${currentTaskID}`
-            )
+            throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
           return (x: Task) => {
             if (x.completed) return false
             if (x.id === ct.id) return false
@@ -136,30 +131,25 @@ export class TDLAPP {
       componentProps: { task }
     })
   }
-  static notifyUpdatedCompletionStatus: λ<Task, λ<void>> =
-    (task: Task) => () => {
-      console.log(
-        `notifyUpdatedCompletionStatus: task is ${
-          task.completed ? 'completed' : 'incomplete'
-        }`
-      )
-      Notify.create({
-        message: `Marked "${task.title}" ${
-          task.completed ? 'Complete' : 'Incomplete'
-        }`,
-        color: 'positive',
-        position: 'top',
-        icon: 'fa-solid fa-check',
-        actions: [
-          {
-            label: 'Undo',
-            color: 'white',
-            handler: () => {
-              task.toggleCompleted()
-            }
+  static notifyUpdatedCompletionStatus: λ<Task, λ<void>> = (task: Task) => () => {
+    console.log(
+      `notifyUpdatedCompletionStatus: task is ${task.completed ? 'completed' : 'incomplete'}`
+    )
+    Notify.create({
+      message: `Marked "${task.title}" ${task.completed ? 'Complete' : 'Incomplete'}`,
+      color: 'positive',
+      position: 'top',
+      icon: 'fa-solid fa-check',
+      actions: [
+        {
+          label: 'Undo',
+          color: 'white',
+          handler: () => {
+            task.toggleCompleted()
           }
-        ],
-        timeout: useLocalSettingsStore().notificationSpeed * 1500
-      })
-    }
+        }
+      ],
+      timeout: useLocalSettingsStore().notificationSpeed * 1500
+    })
+  }
 }

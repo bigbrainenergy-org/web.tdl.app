@@ -37,8 +37,7 @@ export default route(function (/* { store, ssrContext } */) {
 
   router.beforeEach((to, from, next) => {
     const authenticationStore = useAuthenticationStore()
-    if (authenticationStore.isLoggedIn !== true && to.name !== 'Login')
-      next({ name: 'Login' })
+    if (authenticationStore.isLoggedIn !== true && to.name !== 'Login') next({ name: 'Login' })
     else next()
   })
 

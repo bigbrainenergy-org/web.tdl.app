@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { useRepo } from 'pinia-orm'
-import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { ref } from 'vue'
+  import { useRepo } from 'pinia-orm'
+  import { Task, TaskRepo } from 'src/stores/tasks/task'
+  import { ref } from 'vue'
 
-const props = defineProps<{ task: Task }>()
-const task = ref(props.task)
+  const props = defineProps<{ task: Task }>()
+  const task = ref(props.task)
 
-const tr = useRepo(TaskRepo)
+  const tr = useRepo(TaskRepo)
 
-const loadChildren = (t: Task) => {
-  console.log('loadChildren')
-  t.expandedState = true
-  if (t.hard_postreq_ids.length > 1) {
-    tr.with('hard_postreqs').load([t])
+  const loadChildren = (t: Task) => {
+    console.log('loadChildren')
+    t.expandedState = true
+    if (t.hard_postreq_ids.length > 1) {
+      tr.with('hard_postreqs').load([t])
+    }
   }
-}
 </script>
 
 <template>

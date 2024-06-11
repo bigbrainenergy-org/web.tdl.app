@@ -3,13 +3,7 @@
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Slice a Task</div>
-        <q-btn
-          class="q-ma-sm"
-          size="md"
-          color="grey"
-          label="close"
-          @click="onDialogCancel"
-        />
+        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onDialogCancel" />
       </q-card-section>
       <q-separator />
       <q-card-section>
@@ -26,12 +20,7 @@
             <br />
             <div class="row">
               <div class="col-grow">
-                <q-btn
-                  icon="fas fa-plus"
-                  label="Slice Task"
-                  color="primary"
-                  @click="sliceTask"
-                />
+                <q-btn icon="fas fa-plus" label="Slice Task" color="primary" @click="sliceTask" />
               </div>
             </div>
           </div>
@@ -42,23 +31,20 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from 'quasar'
-import { ref } from 'vue'
-import { Task } from 'src/stores/tasks/task'
-import { Utils } from 'src/util'
+  import { useDialogPluginComponent } from 'quasar'
+  import { ref } from 'vue'
+  import { Task } from 'src/stores/tasks/task'
+  import { Utils } from 'src/util'
 
-const props = defineProps<{ task: Task }>()
+  const props = defineProps<{ task: Task }>()
 
-const emit = defineEmits([...useDialogPluginComponent.emits])
+  const emit = defineEmits([...useDialogPluginComponent.emits])
 
-const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } =
-  useDialogPluginComponent()
+  const { dialogRef, onDialogHide, onDialogCancel, onDialogOK } = useDialogPluginComponent()
 
-const slices = ref(0)
+  const slices = ref(0)
 
-const sliceTask = async () => {
-  await props.task
-    .split(slices.value)
-    .then(onDialogOK, Utils.handleError('Error slicing task.'))
-}
+  const sliceTask = async () => {
+    await props.task.split(slices.value).then(onDialogOK, Utils.handleError('Error slicing task.'))
+  }
 </script>

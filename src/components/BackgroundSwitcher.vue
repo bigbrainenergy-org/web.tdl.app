@@ -9,21 +9,16 @@
   />
 </template>
 <script setup lang="ts">
-import {
-  BackgroundMode,
-  useLocalSettingsStore
-} from 'src/stores/local-settings/local-setting'
-import { ref } from 'vue'
+  import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { ref } from 'vue'
 
-const backgroundMode = ref<BackgroundMode>(
-  useLocalSettingsStore().backgroundMode
-)
-const backgroundOptions: { label: string; value: BackgroundMode }[] = [
-  { label: 'Ocean Image', value: 'image' },
-  { label: 'Solid Black', value: '#000000' },
-  { label: 'Dark Red', value: '#220000' }
-]
-const updateBackgroundMode = () => {
-  useLocalSettingsStore().backgroundMode = backgroundMode.value
-}
+  const backgroundMode = ref<BackgroundMode>(useLocalSettingsStore().backgroundMode)
+  const backgroundOptions: { label: string; value: BackgroundMode }[] = [
+    { label: 'Ocean Image', value: 'image' },
+    { label: 'Solid Black', value: '#000000' },
+    { label: 'Dark Red', value: '#220000' }
+  ]
+  const updateBackgroundMode = () => {
+    useLocalSettingsStore().backgroundMode = backgroundMode.value
+  }
 </script>

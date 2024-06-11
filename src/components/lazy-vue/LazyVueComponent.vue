@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { GenericPropStructure, isArray, isNotArray } from './lazyVueUtils'
-import ArrayComponent from './ArrayComponent.vue'
-import EditModeSwitch from './EditModeSwitch.vue'
-import SingularComponent from './SingularComponent.vue'
-import { isRef } from 'vue'
+  import { GenericPropStructure, isArray, isNotArray } from './lazyVueUtils'
+  import ArrayComponent from './ArrayComponent.vue'
+  import EditModeSwitch from './EditModeSwitch.vue'
+  import SingularComponent from './SingularComponent.vue'
+  import { isRef } from 'vue'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const data = defineModel<any>('data')
-const edit = defineModel<boolean | undefined>('edit')
-withDefaults(defineProps<GenericPropStructure>(), { showEdit: true })
-edit.value = edit.value ?? false
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = defineModel<any>('data')
+  const edit = defineModel<boolean | undefined>('edit')
+  withDefaults(defineProps<GenericPropStructure>(), { showEdit: true })
+  edit.value = edit.value ?? false
 </script>
 <template>
   <EditModeSwitch v-if="showEdit" v-model="edit" />

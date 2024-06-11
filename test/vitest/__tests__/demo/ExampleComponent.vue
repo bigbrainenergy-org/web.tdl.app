@@ -14,34 +14,34 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+  import { computed, ref } from 'vue'
 
-interface Todo {
-  id: number
-  content: string
-}
-
-interface Meta {
-  totalCount: number
-}
-
-const props = withDefaults(
-  defineProps<{
-    title: string
-    todos?: Todo[]
-    meta: Meta
-    active?: boolean
-  }>(),
-  {
-    todos: () => []
+  interface Todo {
+    id: number
+    content: string
   }
-)
 
-const clickCount = ref(0)
-function increment() {
-  clickCount.value += 1
-  return clickCount.value
-}
+  interface Meta {
+    totalCount: number
+  }
 
-const todoCount = computed(() => props.todos.length)
+  const props = withDefaults(
+    defineProps<{
+      title: string
+      todos?: Todo[]
+      meta: Meta
+      active?: boolean
+    }>(),
+    {
+      todos: () => []
+    }
+  )
+
+  const clickCount = ref(0)
+  function increment() {
+    clickCount.value += 1
+    return clickCount.value
+  }
+
+  const todoCount = computed(() => props.todos.length)
 </script>

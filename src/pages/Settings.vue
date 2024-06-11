@@ -19,12 +19,7 @@
           <BackgroundSwitcher />
           <NotificationTimeSetting />
         </div>
-        <q-btn
-          class="q-ma-md"
-          icon="fas fa-bell"
-          color="indigo"
-          label="Test Notification"
-        />
+        <q-btn class="q-ma-md" icon="fas fa-bell" color="indigo" label="Test Notification" />
 
         <q-btn
           class="q-ma-md"
@@ -42,11 +37,7 @@
 
         <p>
           This app is open source! Check out the code on
-          <a
-            href="https://github.com/bigbrainenergy-org/web.tdl.app"
-            target="_blank"
-            >Github</a
-          >.
+          <a href="https://github.com/bigbrainenergy-org/web.tdl.app" target="_blank">Github</a>.
         </p>
       </q-card-section>
     </q-card>
@@ -54,31 +45,31 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent } from 'vue'
-import { useQuasar } from 'quasar'
-import { useRouter } from 'vue-router'
-import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
-import TimeZoneSwitcher from 'src/components/TimeZoneSwitcher.vue'
-import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
-import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
-import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
-import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
+  import { defineComponent } from 'vue'
+  import { useQuasar } from 'quasar'
+  import { useRouter } from 'vue-router'
+  import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
+  import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
+  import TimeZoneSwitcher from 'src/components/TimeZoneSwitcher.vue'
+  import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
+  import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
+  import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
+  import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
 
-defineComponent({ name: 'SettingsPage' })
+  defineComponent({ name: 'SettingsPage' })
 
-const r = useRouter()
+  const r = useRouter()
 
-const authenticationStore = useAuthenticationStore()
-if (authenticationStore.isLoggedIn !== true) {
-  r.push('/login')
-}
+  const authenticationStore = useAuthenticationStore()
+  if (authenticationStore.isLoggedIn !== true) {
+    r.push('/login')
+  }
 
-const $q = useQuasar()
+  const $q = useQuasar()
 
-const openFocusModeSettingsDialog = () => {
-  $q.dialog({
-    component: FocusModeSettingsDialog
-  })
-}
+  const openFocusModeSettingsDialog = () => {
+    $q.dialog({
+      component: FocusModeSettingsDialog
+    })
+  }
 </script>

@@ -15,11 +15,7 @@ interface SimpleApiBackedRepo {
 // T can implement iCreateT but what really matters is iCreateT should be what that API expects
 // iUpdateT is meant to be all optional a subset of properties can be updated
 // todo: support optional UUID client-side id generation
-export default abstract class GenericRepo<
-    iCreateT,
-    iUpdateT extends iOptions,
-    T extends iRecord
-  >
+export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T extends iRecord>
   extends Repository<T>
   implements SimpleApiBackedRepo
 {
@@ -48,9 +44,7 @@ export default abstract class GenericRepo<
 
   highestID = () => {
     // todo: it would be nice if id wasn't always nullable. Perhaps Model could make id not-null
-    return this.all().reduce((max, x) =>
-      (x.id ?? 0) > (max.id ?? 0) ? x : max
-    )
+    return this.all().reduce((max, x) => ((x.id ?? 0) > (max.id ?? 0) ? x : max))
   }
 
   fetch = async () => {
@@ -116,11 +110,7 @@ export default abstract class GenericRepo<
   update = async (itemOptions: iUpdateT) => {
     // console.debug(`${this.apidir} UPDATE`, { itemOptions })
     return this.api()
-      .patch(
-        `/${this.apidir}/${itemOptions.id}`,
-        itemOptions.payload,
-        this.commonHeader()
-      )
+      .patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
       .then((response) => {
         const result = this.save(response.data as T)
         console.log(result)

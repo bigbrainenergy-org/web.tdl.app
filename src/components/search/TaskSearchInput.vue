@@ -14,10 +14,10 @@
   </q-input>
 </template>
 <script setup lang="ts">
-const search = defineModel<string | undefined>({ required: true })
-const emit = defineEmits(['doASearch'])
-defineProps<{
-  searchLabel: string
-  debounce: number
-}>()
+  const search = defineModel<string | undefined>({ required: true })
+  const emit = defineEmits(['doASearch'])
+  defineProps<{
+    searchLabel: string
+    debounce: number
+  }>()
 </script>

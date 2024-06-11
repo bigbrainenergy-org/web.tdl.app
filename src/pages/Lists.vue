@@ -81,32 +81,32 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref, computed } from 'vue'
-import { useRepo } from 'pinia-orm'
-import { List, ListRepo } from 'src/stores/lists/list'
-import { Utils } from 'src/util'
+  import { defineComponent, ref, computed } from 'vue'
+  import { useRepo } from 'pinia-orm'
+  import { List, ListRepo } from 'src/stores/lists/list'
+  import { Utils } from 'src/util'
 
-defineComponent({
-  name: 'PageLists'
-})
+  defineComponent({
+    name: 'PageLists'
+  })
 
-const repo = useRepo(ListRepo)
+  const repo = useRepo(ListRepo)
 
-await repo.fetch()
+  await repo.fetch()
 
-//TODO: lazy load this list
-const lists = computed(() => repo.withAllRecursive().get())
+  //TODO: lazy load this list
+  const lists = computed(() => repo.withAllRecursive().get())
 
-const selectedList = ref<List | null>(null)
-const listSplitter = ref(50)
+  const selectedList = ref<List | null>(null)
+  const listSplitter = ref(50)
 
-function doThing(prop: any) {
-  console.debug('doThing Fired with argument: ', { prop })
-  //Utils.todo('fix doThing and rename it')
-  if (selectedList.value?.id == prop.node?.id) {
-    selectedList.value = null
-  } else {
-    selectedList.value = prop.node
+  function doThing(prop: any) {
+    console.debug('doThing Fired with argument: ', { prop })
+    //Utils.todo('fix doThing and rename it')
+    if (selectedList.value?.id == prop.node?.id) {
+      selectedList.value = null
+    } else {
+      selectedList.value = prop.node
+    }
   }
-}
 </script>

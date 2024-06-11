@@ -27,11 +27,7 @@
 
                 <q-item-section v-if="currentTask.notes" side>
                   <q-icon name="description">
-                    <q-tooltip
-                      anchor="center right"
-                      self="center left"
-                      :offset="[10, 10]"
-                    >
+                    <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
                       Has additional notes! Click to view.
                     </q-tooltip>
                   </q-icon>
@@ -81,40 +77,40 @@
 </template>
 
 <script lang="ts">
-import { useQuasar } from 'quasar'
-import { computed, defineComponent, ref } from 'vue'
+  import { useQuasar } from 'quasar'
+  import { computed, defineComponent, ref } from 'vue'
 
-import Task from '../models/task'
-import { ITask as TaskInterface } from 'components/models'
-import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
-import { useRepo } from 'pinia-orm'
+  import Task from '../models/task'
+  import { ITask as TaskInterface } from 'components/models'
+  import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
+  import { useRepo } from 'pinia-orm'
 
-export default defineComponent({
-  name: 'PageTask',
+  export default defineComponent({
+    name: 'PageTask',
 
-  setup() {
-    const tasksRepo = useRepo(Task)
-    const tasks = computed(() => tasksRepo.all())
+    setup() {
+      const tasksRepo = useRepo(Task)
+      const tasks = computed(() => tasksRepo.all())
 
-    const $q = useQuasar()
+      const $q = useQuasar()
 
-    const taskMenus = ref<TaskInterface[]>([])
+      const taskMenus = ref<TaskInterface[]>([])
 
-    function openTask(currentTask: TaskInterface) {
-      $q.dialog({
-        component: UpdateTaskDialog,
+      function openTask(currentTask: TaskInterface) {
+        $q.dialog({
+          component: UpdateTaskDialog,
 
-        componentProps: {
-          currentTask: currentTask
-        }
-      })
+          componentProps: {
+            currentTask: currentTask
+          }
+        })
+      }
+
+      return {
+        tasks,
+        taskMenus,
+        openTask
+      }
     }
-
-    return {
-      tasks,
-      taskMenus,
-      openTask
-    }
-  }
-})
+  })
 </script>

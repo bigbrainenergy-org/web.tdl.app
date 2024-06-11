@@ -1,8 +1,6 @@
 <template>
   <q-card>
-    <q-card-section
-      class="bg-primary text-white text-center q-ma-none q-pa-none"
-    >
+    <q-card-section class="bg-primary text-white text-center q-ma-none q-pa-none">
       <q-tabs v-model="activeTab">
         <q-tab icon="event" name="date" label="Date" />
         <q-tab icon="access_time" name="time" label="Time" :disable="!date" />
@@ -49,93 +47,93 @@
 </template>
 
 <script>
-import { watch, ref } from 'vue'
-import { useQuasar } from 'quasar'
+  import { watch, ref } from 'vue'
+  import { useQuasar } from 'quasar'
 
-import { DateTime } from 'luxon'
+  import { DateTime } from 'luxon'
 
-const DEFAULT_DATE = ''
-const DEFAULT_TIME = ''
-const DATE_FORMAT = 'yyyy/MM/dd'
-const TIME_FORMAT = 'HH:mm'
+  const DEFAULT_DATE = ''
+  const DEFAULT_TIME = ''
+  const DATE_FORMAT = 'yyyy/MM/dd'
+  const TIME_FORMAT = 'HH:mm'
 
-export default {
-  props: {
-    modelValue: {
-      type: String,
-      default: ''
+  export default {
+    props: {
+      modelValue: {
+        type: String,
+        default: ''
+      },
+      label: {
+        type: String,
+        default: ''
+      },
+      displayClearButton: {
+        type: Boolean,
+        default: false
+      }
     },
-    label: {
-      type: String,
-      default: ''
-    },
-    displayClearButton: {
-      type: Boolean,
-      default: false
-    }
-  },
 
-  emits: ['cancel', 'update:modelValue'],
+    emits: ['cancel', 'update:modelValue'],
 
-  setup(props, { emit }) {
-    const $q = useQuasar()
+    setup(props, { emit }) {
+      const $q = useQuasar()
 
-    const activeTab = ref('date')
-    const date = ref(DEFAULT_DATE)
-    const time = ref(DEFAULT_TIME)
+      const activeTab = ref('date')
+      const date = ref(DEFAULT_DATE)
+      const time = ref(DEFAULT_TIME)
 
-    function init(datetime) {
-      if (!datetime) {
-        date.value = DEFAULT_DATE
-        time.value = DEFAULT_TIME
-        return
+      function init(datetime) {
+        if (!datetime) {
+          date.value = DEFAULT_DATE
+          time.value = DEFAULT_TIME
+          return
+        }
+
+        let initDateTime = null
+
+        if (datetime instanceof DateTime) {
+          initDateTime = datetime
+        } else if (datetime instanceof Date) {
+          initDateTime = DateTime.fromJSDate(datetime)
+        } else if (typeof datetime === 'string' || datetime instanceof String) {
+          initDateTime = DateTime.fromISO(datetime)
+        } else {
+          return
+        }
+
+        date.value = initDateTime.toFormat(DATE_FORMAT)
+        time.value = initDateTime.toFormat(TIME_FORMAT)
       }
 
-      let initDateTime = null
-
-      if (datetime instanceof DateTime) {
-        initDateTime = datetime
-      } else if (datetime instanceof Date) {
-        initDateTime = DateTime.fromJSDate(datetime)
-      } else if (typeof datetime === 'string' || datetime instanceof String) {
-        initDateTime = DateTime.fromISO(datetime)
-      } else {
-        return
+      function gotoTime() {
+        // if(date.value && !time.value) {
+        if (date.value) {
+          activeTab.value = 'time'
+        }
       }
 
-      date.value = initDateTime.toFormat(DATE_FORMAT)
-      time.value = initDateTime.toFormat(TIME_FORMAT)
-    }
-
-    function gotoTime() {
-      // if(date.value && !time.value) {
-      if (date.value) {
-        activeTab.value = 'time'
+      function save() {
+        let datetime = DateTime.fromFormat(
+          date.value + ' ' + time.value,
+          DATE_FORMAT + ' ' + TIME_FORMAT
+        ).toISO()
+        emit('update:modelValue', datetime)
       }
-    }
 
-    function save() {
-      let datetime = DateTime.fromFormat(
-        date.value + ' ' + time.value,
-        DATE_FORMAT + ' ' + TIME_FORMAT
-      ).toISO()
-      emit('update:modelValue', datetime)
-    }
-
-    function clear() {
-      emit('update:modelValue', '')
-    }
-
-    init(props.modelValue)
-
-    watch(
-      () => props.modelValue,
-      (newValue) => {
-        init(newValue)
+      function clear() {
+        emit('update:modelValue', '')
       }
-    )
 
-    return { activeTab, date, time, gotoTime, save, clear }
+      init(props.modelValue)
+
+      watch(
+        () => props.modelValue,
+        (newValue) => {
+          init(newValue)
+        }
+      )
+
+      return { activeTab, date, time, gotoTime, save, clear }
+    }
   }
-}
 </script>

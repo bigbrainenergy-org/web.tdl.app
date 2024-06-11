@@ -33,11 +33,7 @@ export class Subtask extends Model implements iRecord {
   @Attr(false) declare completed: boolean
 }
 
-export class SubtaskRepo extends GenericRepo<
-  CreateSubtaskOptions,
-  UpdateSubtaskOptions,
-  Subtask
-> {
+export class SubtaskRepo extends GenericRepo<CreateSubtaskOptions, UpdateSubtaskOptions, Subtask> {
   use = Subtask
   apidir = Subtask.entity
 }

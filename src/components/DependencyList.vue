@@ -66,112 +66,116 @@
 </template>
 
 <script setup lang="ts">
-import { useElementSize } from '@vueuse/core'
-import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-import { Task } from 'src/stores/tasks/task'
-import { SimpleMenuItem, λ } from 'src/types'
-import { Ref, computed, onMounted } from 'vue'
-import { onUpdated } from 'vue'
-import { ref } from 'vue'
+  import { useElementSize } from '@vueuse/core'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+  import { Task } from 'src/stores/tasks/task'
+  import { SimpleMenuItem, λ } from 'src/types'
+  import { Ref, computed, onMounted } from 'vue'
+  import { onUpdated } from 'vue'
+  import { ref } from 'vue'
 
-export interface EntityType {
-  singular: 'Prerequisite' | 'Postrequisite'
-  plural: 'Prerequisites' | 'Postrequisites'
-}
-
-interface Props {
-  items: Array<Task>
-  dependencyType: EntityType // eg. Prerequisites (capitalize)
-  menuItems: Array<SimpleMenuItem<Task>>
-  showPrune: boolean
-}
-
-const prop = defineProps<Props>()
-
-// can do something like this to limit recalculations, especially when setting a task as MVP
-// const act = (action: (inputArgument: Task) => void | Promise<void | Task>, inputArgument: Task) => {
-//   action(inputArgument)
-//   updateRedundants()
-// }
-
-const addItemLabel = `Add ${prop.dependencyType.plural}`
-
-const emit = defineEmits([
-  'addItem',
-  'removeItem',
-  'selectItem',
-  'toggleCompletedItem',
-  'pruneDependencies'
-])
-
-const busySignal = computed(() => useLoadingStateStore().busy)
-
-const updateRedundants = () => {
-  if (busySignal.value) return
-  const start = performance.now()
-  aboves.value.clear()
-  belows.value.clear()
-  if (prop.items.length === 0) return
-  // console.warn(`updating redundant check for ${prop.items.length} dependents`)
-  const arr = prop.items.map((x) => x.id)
-  const options = {
-    incompleteOnly: useLocalSettingsStore().hideCompleted,
-    useStore: true
+  export interface EntityType {
+    singular: 'Prerequisite' | 'Postrequisite'
+    plural: 'Prerequisites' | 'Postrequisites'
   }
-  prop.items.forEach((x) => {
-    const arrExcludingX = arr.filter(
-      (y) => y !== x.id && !belows.value.has(y) && !aboves.value.has(y)
-    )
-    const aboveX = x.anyIDsAbove(arrExcludingX, options)
-    const belowX = x.anyIDsBelow(arrExcludingX, options)
-    aboveX.forEach((val, key) => {
-      if (val) aboves.value.add(key)
+
+  interface Props {
+    items: Array<Task>
+    dependencyType: EntityType // eg. Prerequisites (capitalize)
+    menuItems: Array<SimpleMenuItem<Task>>
+    showPrune: boolean
+  }
+
+  const prop = defineProps<Props>()
+
+  // can do something like this to limit recalculations, especially when setting a task as MVP
+  // const act = (action: (inputArgument: Task) => void | Promise<void | Task>, inputArgument: Task) => {
+  //   action(inputArgument)
+  //   updateRedundants()
+  // }
+
+  const addItemLabel = `Add ${prop.dependencyType.plural}`
+
+  const emit = defineEmits([
+    'addItem',
+    'removeItem',
+    'selectItem',
+    'toggleCompletedItem',
+    'pruneDependencies'
+  ])
+
+  const busySignal = computed(() => useLoadingStateStore().busy)
+
+  const updateRedundants = () => {
+    if (busySignal.value) return
+    const start = performance.now()
+    aboves.value.clear()
+    belows.value.clear()
+    if (prop.items.length === 0) return
+    // console.warn(`updating redundant check for ${prop.items.length} dependents`)
+    const arr = prop.items.map((x) => x.id)
+    const options = {
+      incompleteOnly: useLocalSettingsStore().hideCompleted,
+      useStore: true
+    }
+    prop.items.forEach((x) => {
+      const arrExcludingX = arr.filter(
+        (y) => y !== x.id && !belows.value.has(y) && !aboves.value.has(y)
+      )
+      const aboveX = x.anyIDsAbove(arrExcludingX, options)
+      const belowX = x.anyIDsBelow(arrExcludingX, options)
+      aboveX.forEach((val, key) => {
+        if (val) aboves.value.add(key)
+      })
+      belowX.forEach((val, key) => {
+        if (val) belows.value.add(key)
+      })
+      // console.debug({ x, arrExcludingX, aboveX, belowX })
     })
-    belowX.forEach((val, key) => {
-      if (val) belows.value.add(key)
-    })
-    // console.debug({ x, arrExcludingX, aboveX, belowX })
+    const duration = performance.now() - start
+    if (duration > 50) console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
+  }
+
+  const aboves = ref<Set<number>>(new Set())
+  const belows = ref<Set<number>>(new Set())
+  onMounted(updateRedundants)
+  onUpdated(updateRedundants)
+
+  const isNearRedundant = (x: number) => {
+    return prop.dependencyType.singular === 'Prerequisite'
+      ? belows.value.has(x)
+      : aboves.value.has(x)
+  }
+  const isFarRedundant = (x: number) => {
+    return prop.dependencyType.singular === 'Prerequisite'
+      ? aboves.value.has(x)
+      : belows.value.has(x)
+  }
+
+  const pruneDependencies = () => {
+    console.log(`pruning ${prop.dependencyType.plural}`)
+    emit('pruneDependencies', { above: aboves.value, below: belows.value })
+  }
+
+  const el = ref()
+  const setEl = (x: any) => (el.value = x)
+  const { width } = useElementSize(el)
+
+  const style = computed(() => {
+    const multiple = 0.75
+    console.log(`${width.value} x ${multiple} = ${width.value * multiple}`)
+    return {
+      width: `${(width.value - 32) * multiple}px`,
+      'max-width': `${(width.value - 32) * multiple}px`
+    }
   })
-  const duration = performance.now() - start
-  if (duration > 50) console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
-}
-
-const aboves = ref<Set<number>>(new Set())
-const belows = ref<Set<number>>(new Set())
-onMounted(updateRedundants)
-onUpdated(updateRedundants)
-
-const isNearRedundant = (x: number) => {
-  return prop.dependencyType.singular === 'Prerequisite' ? belows.value.has(x) : aboves.value.has(x)
-}
-const isFarRedundant = (x: number) => {
-  return prop.dependencyType.singular === 'Prerequisite' ? aboves.value.has(x) : belows.value.has(x)
-}
-
-const pruneDependencies = () => {
-  console.log(`pruning ${prop.dependencyType.plural}`)
-  emit('pruneDependencies', { above: aboves.value, below: belows.value })
-}
-
-const el = ref()
-const setEl = (x: any) => (el.value = x)
-const { width } = useElementSize(el)
-
-const style = computed(() => {
-  const multiple = 0.75
-  console.log(`${width.value} x ${multiple} = ${width.value * multiple}`)
-  return {
-    width: `${(width.value - 32) * multiple}px`,
-    'max-width': `${(width.value - 32) * multiple}px`
-  }
-})
 </script>
 
 <style>
-.wrapped {
-  word-break: break-spaces;
-  white-space: break-spaces !important;
-  text-overflow: ellipsis;
-}
+  .wrapped {
+    word-break: break-spaces;
+    white-space: break-spaces !important;
+    text-overflow: ellipsis;
+  }
 </style>

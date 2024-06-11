@@ -1,25 +1,24 @@
 <script setup lang="ts">
-import { QBadge } from 'quasar'
-import { PropStructure } from './lazyVueUtils'
-import { computed, onBeforeUpdate, ref } from 'vue'
+  import { QBadge } from 'quasar'
+  import { PropStructure } from './lazyVueUtils'
+  import { computed, onBeforeUpdate, ref } from 'vue'
 
-// todo: don't do a badge once the item length gets really long
-// todo: handle numbers differently, possibly break off into own component
-// todo: toggle editable
-const data = defineModel<string | number>('data')
-withDefaults(defineProps<PropStructure>(), {
-  edit: false
-})
-const val = ref(data.value)
-const ntext = (x: string | number | undefined): x is string =>
-  typeof x === 'string'
-const isText = computed(() => ntext(data.value))
-const bump = () => {
-  if (data.value === val.value) return
-  data.value = val.value
-  console.log(`bump ${data.value}`)
-}
-onBeforeUpdate(bump)
+  // todo: don't do a badge once the item length gets really long
+  // todo: handle numbers differently, possibly break off into own component
+  // todo: toggle editable
+  const data = defineModel<string | number>('data')
+  withDefaults(defineProps<PropStructure>(), {
+    edit: false
+  })
+  const val = ref(data.value)
+  const ntext = (x: string | number | undefined): x is string => typeof x === 'string'
+  const isText = computed(() => ntext(data.value))
+  const bump = () => {
+    if (data.value === val.value) return
+    data.value = val.value
+    console.log(`bump ${data.value}`)
+  }
+  onBeforeUpdate(bump)
 </script>
 <template>
   <q-item>

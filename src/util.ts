@@ -42,10 +42,7 @@ export class Utils {
   static arrayDelete<T>(arr: Array<T>, element: T) {
     const i = arr.indexOf(element)
     if (i >= 0) arr.splice(i, 1)
-    else
-      console.warn(
-        'arrayDelete will not delete any elements because they were not found.'
-      )
+    else console.warn('arrayDelete will not delete any elements because they were not found.')
     return arr
   }
   static onlyInLeftArray(leftArr: NodeKey[], rightArr: NodeKey[]) {
@@ -64,10 +61,7 @@ export class Utils {
     return [...a, ...this.onlyInLeftArray(b, a)]
   }
 
-  static filterMap<K, V>(
-    map: Map<K, V>,
-    predicate: (key: K, value: V) => boolean
-  ) {
+  static filterMap<K, V>(map: Map<K, V>, predicate: (key: K, value: V) => boolean) {
     const result = new Map()
     // eslint-disable-next-line prefer-const
     for (let [key, value] of map) {

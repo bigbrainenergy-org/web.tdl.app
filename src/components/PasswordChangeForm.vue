@@ -33,46 +33,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useQuasar } from 'quasar'
-import { useRepo } from 'pinia-orm'
-import { UserRepo } from 'src/stores/users/user'
-import { Utils } from 'src/util'
+  import { ref, computed } from 'vue'
+  import { useQuasar } from 'quasar'
+  import { useRepo } from 'pinia-orm'
+  import { UserRepo } from 'src/stores/users/user'
+  import { Utils } from 'src/util'
 
-const $q = useQuasar()
-const userRepo = computed(() => useRepo(UserRepo))
+  const $q = useQuasar()
+  const userRepo = computed(() => useRepo(UserRepo))
 
-const currentPassword = ref('')
-const newPassword = ref('')
-const confirmPassword = ref('')
+  const currentPassword = ref('')
+  const newPassword = ref('')
+  const confirmPassword = ref('')
 
-function changePassword() {
-  if (newPassword.value !== confirmPassword.value) {
-    $q.notify({
-      color: 'negative',
-      position: 'top',
-      message:
-        "New password and confirm password didn't match, please try again",
-      icon: 'report_problem'
-    })
-    newPassword.value = ''
-    confirmPassword.value = ''
-    return
-  }
-  userRepo.value
-    .changePassword({
-      current_password: currentPassword.value,
-      password: newPassword.value
-    })
-    .then(() => {
-      currentPassword.value = ''
+  function changePassword() {
+    if (newPassword.value !== confirmPassword.value) {
+      $q.notify({
+        color: 'negative',
+        position: 'top',
+        message: "New password and confirm password didn't match, please try again",
+        icon: 'report_problem'
+      })
       newPassword.value = ''
       confirmPassword.value = ''
-      $q.notify({
-        color: 'positive',
-        position: 'top',
-        message: 'Password changed!'
+      return
+    }
+    userRepo.value
+      .changePassword({
+        current_password: currentPassword.value,
+        password: newPassword.value
       })
-    }, Utils.handleError('Failed to change password.'))
-}
+      .then(() => {
+        currentPassword.value = ''
+        newPassword.value = ''
+        confirmPassword.value = ''
+        $q.notify({
+          color: 'positive',
+          position: 'top',
+          message: 'Password changed!'
+        })
+      }, Utils.handleError('Failed to change password.'))
+  }
 </script>

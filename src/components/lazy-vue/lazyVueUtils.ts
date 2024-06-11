@@ -40,9 +40,7 @@ export function isNotObject(
   return typeof x !== 'object' || isArray(x)
 }
 
-export function isSingularPrimitive(
-  x: unknown | unknown[]
-): x is SingularPrimitive {
+export function isSingularPrimitive(x: unknown | unknown[]): x is SingularPrimitive {
   return (
     typeof x === 'boolean' ||
     typeof x === 'number' ||

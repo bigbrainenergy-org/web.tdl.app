@@ -37,11 +37,7 @@ export class User extends Model implements iRecord {
 }
 
 type passOptions = { current_password: string; password: string }
-export class UserRepo extends GenericRepo<
-  CreateUserOptions,
-  UpdateUserOptions,
-  User
-> {
+export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, User> {
   use = User
   apidir = User.entity
 

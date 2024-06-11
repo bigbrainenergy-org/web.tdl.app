@@ -3,11 +3,7 @@
     <q-footer elevated class="bg-grey-8 text-white">
       <q-tabs shrink inline-label>
         <q-route-tab icon="fas fa-sign-in-alt" to="/login" label="Login" />
-        <q-route-tab
-          icon="fas fa-laptop-code"
-          to="/request-access"
-          label="Request Access"
-        />
+        <q-route-tab icon="fas fa-laptop-code" to="/request-access" label="Request Access" />
       </q-tabs>
     </q-footer>
 
@@ -22,5 +18,5 @@
 </template>
 
 <script setup lang="ts">
-console.warn('In Guest Layout')
+  console.warn('In Guest Layout')
 </script>

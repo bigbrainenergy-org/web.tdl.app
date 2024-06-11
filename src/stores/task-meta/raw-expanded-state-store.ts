@@ -22,10 +22,8 @@ export const useRawExpandedStateStore = defineStore('raw-expanded-state', {
     forgetTask(id: number) {
       const iToS = id.toString()
       const doesNotContainID = (key: string) => !key.includes(iToS)
-      this.expandedNodesRegular =
-        this.expandedNodesRegular.filter(doesNotContainID)
-      this.expandedNodesReverse =
-        this.expandedNodesReverse.filter(doesNotContainID)
+      this.expandedNodesRegular = this.expandedNodesRegular.filter(doesNotContainID)
+      this.expandedNodesReverse = this.expandedNodesReverse.filter(doesNotContainID)
     }
   },
   getters: {

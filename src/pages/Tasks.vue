@@ -4,25 +4,16 @@
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <SettingsButton
-              v-model:settings="tasksPageSettings"
-              name="Tasks Page Settings"
-            />
+            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
             <q-space />
-            <q-item-label class="text-primary"
-              >{{ tasks.length }} tasks</q-item-label
-            >
+            <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
             <q-btn
               icon="fa-solid fa-signs-post"
               class="text-primary"
               @click="openQuickSortDialog"
             />
-            <q-btn
-              icon="fa-solid fa-search"
-              class="text-primary"
-              @click="openSearchDialog"
-            />
+            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
@@ -56,20 +47,13 @@
 
                   <q-item-section v-if="currentTask.notes" side>
                     <q-avatar icon="description">
-                      <q-tooltip
-                        anchor="center right"
-                        self="center left"
-                        :offset="[10, 10]"
-                      >
+                      <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
                         Has additional notes! Click to view.
                       </q-tooltip>
                     </q-avatar>
                   </q-item-section>
 
-                  <q-item-section
-                    v-if="currentTask.grabPostreqs(hideCompleted).length"
-                    side
-                  >
+                  <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
                     <q-chip
                       v-if="currentTask.grabPostreqs(hideCompleted).length"
                       :style="
@@ -108,72 +92,67 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar, useMeta } from 'quasar'
-import { computed, defineComponent, ref } from 'vue'
-import { storeToRefs } from 'pinia'
+  import { useQuasar, useMeta } from 'quasar'
+  import { computed, defineComponent, ref } from 'vue'
+  import { storeToRefs } from 'pinia'
 
-import { useRepo } from 'pinia-orm'
-import { Task, TaskRepo } from 'src/stores/tasks/task'
-import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { Utils } from 'src/util'
-import { TDLAPP } from 'src/TDLAPP'
-import SettingsButton from 'src/components/SettingsButton.vue'
-import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { useRepo } from 'pinia-orm'
+  import { Task, TaskRepo } from 'src/stores/tasks/task'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { Utils } from 'src/util'
+  import { TDLAPP } from 'src/TDLAPP'
+  import SettingsButton from 'src/components/SettingsButton.vue'
+  import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
-useMeta(() => {
-  return {
-    title: 'Tasks | TDL App'
-  }
-})
+  useMeta(() => {
+    return {
+      title: 'Tasks | TDL App'
+    }
+  })
 
-const $q = useQuasar()
+  const $q = useQuasar()
 
-const open = (task: Task) => TDLAPP.openTask(task)
+  const open = (task: Task) => TDLAPP.openTask(task)
 
-const pageTasks = defineComponent({
-  name: 'PageTasks'
-})
-const tasksRepo = useRepo(TaskRepo)
-const localSettingsStore = useLocalSettingsStore()
-const { layerZeroOnly, hideCompleted, selectedList } =
-  storeToRefs(localSettingsStore)
+  const pageTasks = defineComponent({
+    name: 'PageTasks'
+  })
+  const tasksRepo = useRepo(TaskRepo)
+  const localSettingsStore = useLocalSettingsStore()
+  const { layerZeroOnly, hideCompleted, selectedList } = storeToRefs(localSettingsStore)
 
-const tasksPageSettings = ref({
-  'Unblocked Only': layerZeroOnly,
-  'Incomplete Only': hideCompleted
-})
+  const tasksPageSettings = ref({
+    'Unblocked Only': layerZeroOnly,
+    'Incomplete Only': hideCompleted
+  })
 
-const notCompleted = (x: Task) => x.completed === false
-const filterByList = (x: Task) => x?.list?.title === selectedList.value
+  const notCompleted = (x: Task) => x.completed === false
+  const filterByList = (x: Task) => x?.list?.title === selectedList.value
 
-const tasks = computed(() => {
-  console.warn('updating tasks on Task page')
-  let baseQuery = useLayerZeroStore().layerZero as Task[]
-  if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
-  const results = baseQuery.sort(
-    (a, b) =>
-      b.grabPostreqs(hideCompleted.value).length -
-      a.grabPostreqs(hideCompleted.value).length
-  )
-  console.debug({ page: 'Tasks', results })
-  return results
-})
+  const tasks = computed(() => {
+    console.warn('updating tasks on Task page')
+    let baseQuery = useLayerZeroStore().layerZero as Task[]
+    if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
+    const results = baseQuery.sort(
+      (a, b) =>
+        b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length
+    )
+    console.debug({ page: 'Tasks', results })
+    return results
+  })
 
-const updateTaskCompletedStatus = async (task: Task) => {
-  await tasksRepo
-    .updateAndCache({ id: task.id, payload: { task } })
-    .then(() => {
+  const updateTaskCompletedStatus = async (task: Task) => {
+    await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then(() => {
       TDLAPP.notifyUpdatedCompletionStatus(task)()
     }, Utils.handleError('Error updating completion status of a task.'))
-}
+  }
 
-const addTaskPre = (currentTask: Task) =>
-  TDLAPP.addPrerequisitesDialog(currentTask)
-const openSearchDialog = () => TDLAPP.searchDialog()
+  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const openSearchDialog = () => TDLAPP.searchDialog()
 
-const openQuickSortDialog = () =>
-  $q.dialog({
-    component: QuickSortLayerZeroDialog
-  })
+  const openQuickSortDialog = () =>
+    $q.dialog({
+      component: QuickSortLayerZeroDialog
+    })
 </script>

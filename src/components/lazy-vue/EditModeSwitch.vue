@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const mode = defineModel<boolean>('mode')
+  const mode = defineModel<boolean>('mode')
 </script>
 <template>
   <q-toggle

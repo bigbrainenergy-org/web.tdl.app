@@ -1,13 +1,5 @@
 <template>
-  <q-drawer
-    v-model="model"
-    side="left"
-    elevated
-    dark
-    show-if-above
-    :width="200"
-    :breakpoint="500"
-  >
+  <q-drawer v-model="model" side="left" elevated dark show-if-above :width="200" :breakpoint="500">
     <q-list padding>
       <q-item v-ripple clickable @click="openCreateTaskDialog">
         <q-item-section avatar>
@@ -53,11 +45,7 @@
         v-ripple
         clickable
         :active="listSelected({ title: '' })"
-        :style="
-          listSelected({ title: '' })
-            ? listColorStyle({ color: '#ffffff' })
-            : null
-        "
+        :style="listSelected({ title: '' }) ? listColorStyle({ color: '#ffffff' }) : null"
         @click="setList({ title: '' })"
       >
         <q-item-section avatar>
@@ -109,13 +97,7 @@
           class="q-pa-none q-ma-none"
         >
           <template v-if="hoveredList === index">
-            <q-btn
-              icon="more_horiz"
-              flat
-              padding="xs"
-              size="md"
-              @click.stop="openMenu(index)"
-            />
+            <q-btn icon="more_horiz" flat padding="xs" size="md" @click.stop="openMenu(index)" />
           </template>
           <template v-else>
             {{ list.incompleteTaskCount }}
@@ -127,84 +109,81 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRepo } from 'pinia-orm'
-import { useQuasar } from 'quasar'
-import { List, ListRepo } from 'src/stores/lists/list'
-import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
-import { Utils } from 'src/util'
-import { TDLAPP } from 'src/TDLAPP'
-import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { storeToRefs } from 'pinia'
-import { textColor } from 'src/hackerman/TextColor'
+  import { computed, ref } from 'vue'
+  import { useRepo } from 'pinia-orm'
+  import { useQuasar } from 'quasar'
+  import { List, ListRepo } from 'src/stores/lists/list'
+  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+  import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
+  import { Utils } from 'src/util'
+  import { TDLAPP } from 'src/TDLAPP'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { storeToRefs } from 'pinia'
+  import { textColor } from 'src/hackerman/TextColor'
 
-const $q = useQuasar()
-const model = defineModel<boolean>({ default: false })
-const listsRepo = useRepo(ListRepo)
-const localSettingsStore = useLocalSettingsStore()
-const { selectedList } = storeToRefs(localSettingsStore)
+  const $q = useQuasar()
+  const model = defineModel<boolean>({ default: false })
+  const listsRepo = useRepo(ListRepo)
+  const localSettingsStore = useLocalSettingsStore()
+  const { selectedList } = storeToRefs(localSettingsStore)
 
-// FIXME: I hate this with every fiber of my being
-const hoveredList = ref(-1)
+  // FIXME: I hate this with every fiber of my being
+  const hoveredList = ref(-1)
 
-const lists = computed(() => listsRepo.withAll().get())
-console.log({ lists: lists.value })
+  const lists = computed(() => listsRepo.withAll().get())
+  console.log({ lists: lists.value })
 
-const openSearchDialog = () => TDLAPP.searchDialog()
+  const openSearchDialog = () => TDLAPP.searchDialog()
 
-const createTask = (payload: CreateTaskOptions) => {
-  const tr = useRepo(TaskRepo)
-  tr.addAndCache(payload).then(() => {
-    Utils.notifySuccess('Successfully created a task')
-  }, Utils.handleError('Failed to create task.'))
-}
-
-const openCreateTaskDialog = () => {
-  $q.dialog({
-    component: CreateTaskDialog,
-    componentProps: {
-      onCreate: (payload: {
-        options: CreateTaskOptions
-        callback: () => void
-      }) => {
-        const newTask = payload.options
-        newTask.hard_prereq_ids = []
-        newTask.hard_postreq_ids = []
-        createTask(newTask)
-      }
-    }
-  })
-}
-
-type HasTitle = { title: string }
-
-const setList = (list: HasTitle) => {
-  selectedList.value = list.title
-}
-
-const listSelected = (list: HasTitle) => {
-  return selectedList.value === list.title
-}
-
-// TODO: These can all be DRY'd up.
-const listCountStyle = (list: List) => {
-  return `color: ${textColor(list.color)};`
-}
-
-const listColorStyle = (list: { color: string }) => {
-  return `color: ${textColor(list.color)}; background-color: ${list.color};`
-}
-
-const listIconColor = (list: List) => {
-  if (listSelected(list)) {
-    return `color: ${textColor(list.color)};`
-  } else {
-    return `color: ${list.color};`
+  const createTask = (payload: CreateTaskOptions) => {
+    const tr = useRepo(TaskRepo)
+    tr.addAndCache(payload).then(() => {
+      Utils.notifySuccess('Successfully created a task')
+    }, Utils.handleError('Failed to create task.'))
   }
-}
 
-const openMenu = (index: number) => {
-  console.log({ index })
-}
+  const openCreateTaskDialog = () => {
+    $q.dialog({
+      component: CreateTaskDialog,
+      componentProps: {
+        onCreate: (payload: { options: CreateTaskOptions; callback: () => void }) => {
+          const newTask = payload.options
+          newTask.hard_prereq_ids = []
+          newTask.hard_postreq_ids = []
+          createTask(newTask)
+        }
+      }
+    })
+  }
+
+  type HasTitle = { title: string }
+
+  const setList = (list: HasTitle) => {
+    selectedList.value = list.title
+  }
+
+  const listSelected = (list: HasTitle) => {
+    return selectedList.value === list.title
+  }
+
+  // TODO: These can all be DRY'd up.
+  const listCountStyle = (list: List) => {
+    return `color: ${textColor(list.color)};`
+  }
+
+  const listColorStyle = (list: { color: string }) => {
+    return `color: ${textColor(list.color)}; background-color: ${list.color};`
+  }
+
+  const listIconColor = (list: List) => {
+    if (listSelected(list)) {
+      return `color: ${textColor(list.color)};`
+    } else {
+      return `color: ${list.color};`
+    }
+  }
+
+  const openMenu = (index: number) => {
+    console.log({ index })
+  }
 </script>

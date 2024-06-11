@@ -1,9 +1,5 @@
 {
-  "recommendations": [
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "Vue.volar"
-  ],
+  "recommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "Vue.volar"],
   "unwantedRecommendations": [
     "hookyqr.beautify",
     "dbaeumer.jshint",

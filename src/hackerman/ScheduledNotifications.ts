@@ -10,15 +10,11 @@ if (process.env.MODE === 'capacitor') {
   })
 }
 
-export function scheduleNotifications(
-  notifications: Array<NotificationInterface>
-) {
+export function scheduleNotifications(notifications: Array<NotificationInterface>) {
   if (process.env.MODE === 'capacitor') {
     Notifications.schedule({ notifications: notifications })
   } else {
-    console.log(
-      "Progressive Web Apps don't support scheduled notifications. Sadge"
-    )
+    console.log("Progressive Web Apps don't support scheduled notifications. Sadge")
   }
 }
 
@@ -48,15 +44,11 @@ export function cancelNotification(notification: NotificationInterface) {
   cancelNotifications([notification])
 }
 
-export function cancelNotifications(
-  notifications: Array<NotificationInterface>
-) {
+export function cancelNotifications(notifications: Array<NotificationInterface>) {
   if (process.env.MODE === 'capacitor') {
     Notifications.cancel({ notifications: notifications })
   } else {
-    console.log(
-      "Progressive Web Apps don't support scheduled notifications. Sadge"
-    )
+    console.log("Progressive Web Apps don't support scheduled notifications. Sadge")
   }
 }
 
