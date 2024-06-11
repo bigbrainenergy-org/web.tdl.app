@@ -4,16 +4,9 @@
       <div class="col">
         <div class="text-h5">{{ dependencyType.plural }}</div>
       </div>
-      <q-btn v-if="showPrune" @click="pruneDependencies"
-        >Prune {{ dependencyType.plural }}</q-btn
-      >
+      <q-btn v-if="showPrune" @click="pruneDependencies">Prune {{ dependencyType.plural }}</q-btn>
       <div class="col text-right">
-        <q-btn
-          color="primary"
-          icon="fas fa-link"
-          :label="addItemLabel"
-          @click="emit('addItem')"
-        />
+        <q-btn color="primary" icon="fas fa-link" :label="addItemLabel" @click="emit('addItem')" />
       </div>
     </div>
     <div class="col-grow">
@@ -21,12 +14,7 @@
         <q-item v-if="!items.length" v-ripple>
           <q-item-section>No {{ dependencyType.plural }}</q-item-section>
         </q-item>
-        <q-item
-          v-for="(item, itemkey) in items"
-          :key="itemkey"
-          :ref="itemkey === 0 ? el : undefined"
-          v-ripple
-        >
+        <q-item v-for="(item, itemkey) in items" :key="itemkey" v-ripple>
           <q-btn-dropdown
             style="width: 100%; overflow: hidden"
             split
@@ -146,8 +134,7 @@ const updateRedundants = () => {
     // console.debug({ x, arrExcludingX, aboveX, belowX })
   })
   const duration = performance.now() - start
-  if (duration > 50)
-    console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
+  if (duration > 50) console.warn(`updateRedundants took ${Math.floor(duration)}ms`)
 }
 
 const aboves = ref<Set<number>>(new Set())
@@ -156,14 +143,10 @@ onMounted(updateRedundants)
 onUpdated(updateRedundants)
 
 const isNearRedundant = (x: number) => {
-  return prop.dependencyType.singular === 'Prerequisite'
-    ? belows.value.has(x)
-    : aboves.value.has(x)
+  return prop.dependencyType.singular === 'Prerequisite' ? belows.value.has(x) : aboves.value.has(x)
 }
 const isFarRedundant = (x: number) => {
-  return prop.dependencyType.singular === 'Prerequisite'
-    ? aboves.value.has(x)
-    : belows.value.has(x)
+  return prop.dependencyType.singular === 'Prerequisite' ? aboves.value.has(x) : belows.value.has(x)
 }
 
 const pruneDependencies = () => {
@@ -171,8 +154,8 @@ const pruneDependencies = () => {
   emit('pruneDependencies', { above: aboves.value, below: belows.value })
 }
 
-const el = ref(undefined)
-
+const el = ref()
+const setEl = (x: any) => (el.value = x)
 const { width } = useElementSize(el)
 
 const style = computed(() => {
