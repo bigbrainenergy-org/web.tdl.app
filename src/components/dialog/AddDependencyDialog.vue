@@ -28,7 +28,7 @@
       />
 
       <q-card-section>
-        <div class="row q-gutter-md q-pa-sm">
+        <div class="row q-gutter-md q-pa-sm text-white">
           <div class="col-12">
             <template v-if="searchString">
               <q-separator class="q-my-md" />
@@ -282,7 +282,8 @@
 
   const results = ref<Task[]>([])
   const redundantTasks = ref<Map<number, boolean>>(new Map())
-  const colorize = (id: number) => (redundantTasks.value.get(id) ? 'color: orange' : 'color: black')
+  const colorize = (id: number) =>
+    redundantTasks.value.get(id) ? "color: 'warning'" : "color: 'primary'"
   type HasID = { id: number }
   const byRedundancy = (a: HasID, b: HasID) =>
     redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1

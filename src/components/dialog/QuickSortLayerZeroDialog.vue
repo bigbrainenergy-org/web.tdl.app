@@ -1,6 +1,11 @@
 <template>
-  <q-dialog ref="dialogRef" maximized @hide="hideDialog">
-    <q-card ref="el" class="q-dialog-plugin">
+  <q-dialog
+    ref="dialogRef"
+    :maximized="$q.screen.lt.md"
+    backdrop-filter="blur(4px)"
+    @hide="hideDialog"
+  >
+    <q-card ref="el" class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
         <div class="text-h6">Which task should come first?</div>
@@ -512,14 +517,13 @@
     onDialogHide()
   }
 
-  const el = ref(undefined)
+  const el = ref()
   const { width } = useElementSize(el)
   // fixme - I could not get q-item-label lines="x" to work in dynamic-width parent elements. This is a workaround to bind a px width.
   const style = computed(() => {
     //margins are 2(24+16) = 80px
     //dropdown section is 35px; total is 115px.
 
-    console.log(`${width.value} - 152 = ${width.value - 152}`)
     return {
       width: `${width.value - 152}px`,
       'max-width': `${width.value - 152}px`
