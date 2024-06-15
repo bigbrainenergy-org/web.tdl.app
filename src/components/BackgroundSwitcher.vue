@@ -5,14 +5,14 @@
     toggle-color="primary"
     :options="backgroundOptions"
     label="Background Theme"
-    @update:model-value="updateBackgroundMode"
-  />
+    @update:model-value="updateBackgroundMode" />
 </template>
 <script setup lang="ts">
+  import { storeToRefs } from 'pinia'
   import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { ref } from 'vue'
 
-  const backgroundMode = ref<BackgroundMode>(useLocalSettingsStore().backgroundMode)
+  const { backgroundMode } = storeToRefs(useLocalSettingsStore())
   const backgroundOptions: { label: string; value: BackgroundMode }[] = [
     { label: 'Ocean Image', value: 'image' },
     { label: 'Solid Black', value: '#000000' },

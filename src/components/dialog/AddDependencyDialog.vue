@@ -4,16 +4,14 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
-    @hide="hideDialog"
-  >
+    @hide="hideDialog">
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton
           v-model:settings="taskSearchSettings"
           name="Task Search Settings"
-          color="white"
-        />
+          color="white" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -24,39 +22,40 @@
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
         :debounce="debounceAmount"
-        @do-a-search="searchForTasks"
-      />
+        @do-a-search="searchForTasks" />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm text-white">
-          <div class="col-12">
+          <div class="col-12" style="height: 800px">
             <template v-if="searchString">
               <q-separator class="q-my-md" />
               <div class="text-h4 q-mb-md">{{ resultsTitle }} - {{ results.length }}</div>
-              <q-list>
-                <q-item v-if="!results.length" v-ripple clickable>
-                  <q-item-section>No results found</q-item-section>
-                </q-item>
-                <q-item v-if="showCreateButton">
-                  <q-btn
-                    icon="fas fa-plus"
-                    label="Create A New Task"
-                    color="primary"
-                    @click="createTask"
-                  />
-                </q-item>
+              <q-item v-if="showCreateButton">
+                <q-btn
+                  icon="fas fa-plus"
+                  label="Create A New Task"
+                  color="primary"
+                  @click="createTask" />
+              </q-item>
+              <q-item v-if="!results.length" v-ripple clickable>
+                <q-item-section>No results found</q-item-section>
+              </q-item>
+              <!-- <q-scroll-area v-else> -->
+              <q-list v-else ref="el">
                 <q-item
                   v-for="task in results"
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="selectTask(task as Task)"
-                >
+                  @click="selectTask(task as Task)">
                   <q-item-section :style="colorize(task.id)">
-                    {{ task.title }}
+                    <q-item-label lines="2">
+                      {{ task.title }}
+                    </q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
+              <!-- </q-scroll-area> -->
             </template>
           </div>
         </div>
@@ -85,6 +84,7 @@
   import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   import Fuse, { FuseResult } from 'fuse.js'
   import { brushY } from 'd3'
+  import { useElementSize } from '@vueuse/core'
 
   interface Props {
     dialogTitle: string
@@ -225,7 +225,7 @@
     if (busy.value) {
       console.debug('skipping searchForTasks due to busy signal.')
     }
-    console.debug('searchForTasks begins.')
+    // console.debug('searchForTasks begins.')
     const start = performance.now()
     const str = searchString.value ?? ''
 
@@ -233,14 +233,14 @@
     // FIXME: AKA this is a vuln waiting to happen, fix it.
     const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
-    console.log({ run })
+    // console.log({ run })
 
     results.value = run.map((x) => x.item)
     timeThis(kickOffRedundancyCheck, 'kickOffRedundancyCheck', 13)()
     //results.value.sort(byRedundancy)
     const duration = Math.floor(performance.now() - start)
-    console.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value) {
+    // console.log(`task search took ${Math.floor(duration)}ms`)
+    if (duration * 2 > debounceAmount.value && debounceAmount.value < 500) {
       const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
       console.warn(`rolling back debounce to ${newDebounce}`)
       debounceAmount.value = newDebounce
@@ -301,4 +301,8 @@
   )
   const debounceAmount = ref(100)
   fuse.value
+
+  const el = ref()
+  const { width } = useElementSize(el)
+  const widthHack = computed(() => ({ width: `${width.value}px`, 'max-width': `${width.value}px` }))
 </script>

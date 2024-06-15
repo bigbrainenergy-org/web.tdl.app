@@ -213,7 +213,9 @@ export class Task extends Model implements iRecord {
 
   async toggleCompleted() {
     const repo = useRepo(TaskRepo)
+    console.debug(this.completed + ' prev completed status')
     this.completed = !this.completed
+    console.debug(this.completed + ' new completed status')
     await repo
       .updateAndCache({
         id: this.id,

@@ -20,26 +20,22 @@
             split
             auto-close
             dropdown-icon="more_vert"
-            @click.stop="emit('selectItem', item)"
-          >
+            @click.stop="emit('selectItem', item)">
             <template #label>
               <q-item-section avatar style="width: 9%; max-width: 9%">
                 <q-checkbox
                   v-model:model-value="item.completed"
-                  @update:model-value="emit('toggleCompletedItem', item)"
-                />
+                  @update:model-value="emit('toggleCompletedItem', item)" />
               </q-item-section>
               <q-item-section class="vertical-top wrapped" :style="style">
                 <q-icon
                   v-if="isNearRedundant(item.id)"
                   name="fas fa-triangle-exclamation"
-                  color="green"
-                />
+                  color="green" />
                 <q-icon
                   v-if="isFarRedundant(item.id)"
                   name="fas fa-triangle-exclamation"
-                  color="red"
-                />
+                  color="red" />
                 <q-item-label lines="2">
                   {{ item.title }}
                 </q-item-label>
@@ -51,8 +47,7 @@
                 :key="index"
                 v-close-popup
                 clickable
-                @click.stop="menuitem.action(item)"
-              >
+                @click.stop="menuitem.action(item)">
                 <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
                 <q-space />
                 <q-icon :name="menuitem.icon" />
@@ -164,7 +159,7 @@
 
   const style = computed(() => {
     const multiple = 0.75
-    console.log(`${width.value} x ${multiple} = ${width.value * multiple}`)
+    // console.log(`${width.value} x ${multiple} = ${width.value * multiple}`)
     return {
       width: `${(width.value - 32) * multiple}px`,
       'max-width': `${(width.value - 32) * multiple}px`

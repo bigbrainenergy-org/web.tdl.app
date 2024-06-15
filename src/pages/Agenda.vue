@@ -11,8 +11,7 @@
             <q-btn
               icon="fa-solid fa-signs-post"
               class="text-primary"
-              @click="openQuickSortDialog"
-            />
+              @click="openQuickSortDialog" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
@@ -29,15 +28,13 @@
                 v-for="(currentTask, index) in tasks"
                 :key="index"
                 once
-                style="min-height: 48px"
-              >
+                style="min-height: 48px">
                 <q-item v-ripple clickable @click="open(currentTask)">
                   <q-checkbox
                     v-model:model-value="currentTask.completed"
                     color="primary"
                     keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
-                  />
+                    @update:model-value="updateTaskCompletedStatus(currentTask)" />
 
                   <q-item-section>
                     <q-item-label lines="2">
@@ -60,8 +57,7 @@
                         currentTask.grabPostreqs(incompleteOnly).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
-                      "
-                    >
+                      ">
                       {{ currentTask.grabPostreqs(incompleteOnly).length }}
                     </q-chip>
                   </q-item-section>
@@ -71,8 +67,7 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)"
-                    />
+                      @click.stop="addTaskPre(currentTask)" />
                   </q-item-section>
                 </q-item>
               </q-intersection>
@@ -95,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-  import { useQuasar } from 'quasar'
+  import { useMeta, useQuasar } from 'quasar'
   import { computed, defineComponent, ref, watch } from 'vue'
 
   import { useRepo } from 'pinia-orm'
@@ -227,4 +222,5 @@
   const openSearchDialog = () => TDLAPP.searchDialog()
 
   const openQuickSortDialog = () => $q.dialog({ component: QuickSortLayerZeroDialog })
+  useMeta(() => ({ title: 'Agenda | TDL App' }))
 </script>

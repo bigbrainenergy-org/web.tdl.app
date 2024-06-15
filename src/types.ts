@@ -61,3 +61,11 @@ export interface TaskGetterOptions {
   incompleteOnly: boolean | undefined
   useStore: boolean | undefined
 }
+
+export type unknownishλ<T> = λ<T, unknown | Promise<unknown>>
+
+export type Button<T> = {
+  color: string
+  label: string
+  action: unknownishλ<T>
+}

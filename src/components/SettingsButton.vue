@@ -10,7 +10,11 @@
   import { computed } from 'vue'
   import LazyVueComponent from './lazy-vue/LazyVueComponent.vue'
   const settings = defineModel<any>('settings')
-  const prop = withDefaults(defineProps<{ name: string; color?: string }>(), {
+  interface Prop {
+    name?: string
+    color?: string
+  }
+  const prop = withDefaults(defineProps<Prop>(), {
     name: 'Settings',
     color: 'primary'
   })

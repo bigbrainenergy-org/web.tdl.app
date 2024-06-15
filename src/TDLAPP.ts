@@ -22,9 +22,7 @@ export class TDLAPP {
       cts.id = currentTask
       msg = `opening UpdateTaskDialog with task ID ${currentTask}`
     }
-    return Dialog.create({
-      component: UpdateTaskDialog
-    })
+    return Dialog.create({ component: UpdateTaskDialog })
   }
   static searchDialog = (
     onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task)

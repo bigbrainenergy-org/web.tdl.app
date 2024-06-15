@@ -4,15 +4,14 @@
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
+            <SettingsButton v-model:settings="tasksPageSettings" />
             <q-space />
             <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
             <q-btn
               icon="fa-solid fa-signs-post"
               class="text-primary"
-              @click="openQuickSortDialog"
-            />
+              @click="openQuickSortDialog" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
@@ -29,15 +28,13 @@
                 v-for="(currentTask, index) in tasks"
                 :key="index"
                 once
-                style="min-height: 48px"
-              >
+                style="min-height: 48px">
                 <q-item v-ripple clickable @click="open(currentTask)">
                   <q-checkbox
                     v-model:model-value="currentTask.completed"
                     color="primary"
                     keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
-                  />
+                    @update:model-value="updateTaskCompletedStatus(currentTask)" />
 
                   <q-item-section>
                     <q-item-label lines="2">
@@ -60,8 +57,7 @@
                         currentTask.grabPostreqs(hideCompleted).length > 5
                           ? 'background-color: red;'
                           : 'background-color: gray;'
-                      "
-                    >
+                      ">
                       {{ currentTask.grabPostreqs(hideCompleted).length }}
                     </q-chip>
                   </q-item-section>
@@ -71,8 +67,7 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)"
-                    />
+                      @click.stop="addTaskPre(currentTask)" />
                   </q-item-section>
                 </q-item>
               </q-intersection>
@@ -95,15 +90,14 @@
   import { useQuasar, useMeta } from 'quasar'
   import { computed, defineComponent, ref } from 'vue'
   import { storeToRefs } from 'pinia'
-
   import { useRepo } from 'pinia-orm'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
-  import SettingsButton from 'src/components/SettingsButton.vue'
   import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import SettingsButton from 'src/components/SettingsButton.vue'
 
   useMeta(() => {
     return {
@@ -128,7 +122,7 @@
   })
 
   const notCompleted = (x: Task) => x.completed === false
-  const filterByList = (x: Task) => x?.list?.title === selectedList.value
+  const filterByList = (x: Task) => x.list?.title === selectedList.value
 
   const tasks = computed(() => {
     console.warn('updating tasks on Task page')

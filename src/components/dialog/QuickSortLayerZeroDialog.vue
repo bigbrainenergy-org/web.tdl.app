@@ -398,10 +398,10 @@
   const generateNewPair = (): withID<pair<Task>> => {
     // todo: if selecting a layer one task, cannot currently fallback to layer zero when all are skipped, and vice versa.
     console.log(`layer zero length is ${l0len.value}; objective is ${props.objective}`)
-    if (
-      l0len.value <= props.objective &&
-      tasksWithoutPostreqs.value.length > 0 !== quickSortNew.value
-    ) {
+    const metLayerZeroLengthObjective = l0len.value <= props.objective
+    const metNewTaskObjective =
+      (tasksWithoutPostreqs.value.length === 0 && quickSortNew.value) || !quickSortNew.value
+    if (metLayerZeroLengthObjective && metNewTaskObjective) {
       throw new Error('reached layer zero length objective.')
     }
     let tmp: withID<pair<Task>> | null = null

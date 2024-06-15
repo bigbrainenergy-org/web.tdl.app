@@ -4,46 +4,7 @@
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Task Details</div>
-        <template v-if="getTask().completed !== true">
-          <q-btn
-            class="q-ma-sm"
-            size="md"
-            color="positive"
-            label="Mark Complete"
-            @click.stop="toggleComplete(currentTask as Task)"
-          />
-          <q-btn
-            class="q-ma-sm"
-            size="md"
-            color="positive"
-            label="Prioritize"
-            @click.stop="prioritize()"
-          />
-          <q-btn
-            class="q-ma-sm"
-            size="md"
-            color="positive"
-            label="Slice Task"
-            @click.stop="TDLAPP.sliceTask(currentTask as Task)"
-          />
-        </template>
-        <template v-else>
-          <q-btn
-            class="q-ma-sm"
-            size="md"
-            color="primary"
-            label="Mark Incomplete"
-            @click.stop="toggleComplete(currentTask as Task)"
-          />
-        </template>
-        <q-btn
-          class="q-ma-sm"
-          size="md"
-          color="negative"
-          label="Delete"
-          @click="deleteTask(getTask().title, currentTask as Task)"
-        />
-        <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onDialogCancel" />
+        <ButtonBarComponent :buttons="topButtonBar" :target="currentTask as Task" />
       </q-card-section>
 
       <q-separator />
@@ -51,16 +12,14 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
-            <q-item-label class="text-h4 text-primary" lines="3">{{ taskTitle }}</q-item-label>
-            <q-input
+            <q-item-label class="text-h4 text-primary" lines="3">{{
+              currentTask.title
+            }}</q-item-label>
+            <GloriousTextInput
               v-model="editTitle"
-              filled
               label="Task Title"
-              :placeholder="getTask().title"
-              clearable
-              class="q-my-md"
-              @keyup.enter="updateTask({ title: editTitle })"
-            />
+              :placeholder="currentTask.title"
+              @enter-key="updateTask({ title: editTitle })" />
             <q-select
               v-model="selectedList"
               filled
@@ -76,94 +35,27 @@
               option-value="id"
               class="q-my-md text-primary"
               @filter="filterSelection"
-              @update:model-value="
-                updateTask({
-                  list_id: selectedList === null ? null : selectedList.id
-                })
-              "
-            />
+              @update:model-value="updateList" />
             <q-datetime-input
               v-model="editRemindMeAt"
               label="Remind me at"
               class="q-my-md"
-              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })"
-            />
+              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })" />
             <q-expansion-item
               v-model="expandEnergyStats"
               expand-separator
               switch-toggle-side
               icon="fas fa-lightbulb"
               caption="Metadata"
-              @update:model-value="updateLocalSettings"
-            >
+              @update:model-value="updateLocalSettings">
               <br />
-              <q-list>
-                <q-item class="q-my-sm">
-                  <q-item-section side>
-                    <q-icon name="far fa-tired" />
-                  </q-item-section>
-
-                  <q-item-section>
-                    <div>
-                      <!-- <q-badge>Mental Energy Required</q-badge> -->
-
-                      <q-slider
-                        v-model="editMentalEnergyRequired"
-                        :min="0"
-                        :max="100"
-                        :step="1"
-                        label
-                        label-always
-                        :label-value="`Mental ${editMentalEnergyRequired}%`"
-                        color="blue"
-                        @change="
-                          updateTask({
-                            mental_energy_required: editMentalEnergyRequired
-                          })
-                        "
-                      />
-                    </div>
-                  </q-item-section>
-
-                  <q-item-section side>
-                    <q-icon name="fas fa-lightbulb" />
-                  </q-item-section>
-                </q-item>
-
-                <q-item class="q-my-sm">
-                  <q-item-section side>
-                    <q-icon name="far fa-tired" />
-                  </q-item-section>
-
-                  <q-item-section>
-                    <div>
-                      <!-- <q-badge color="red">Physical Energy Required</q-badge> -->
-
-                      <q-slider
-                        v-model="editPhysicalEnergyRequired"
-                        :min="0"
-                        :max="100"
-                        :step="1"
-                        label
-                        label-always
-                        :label-value="`Physical ${editPhysicalEnergyRequired}%`"
-                        color="red"
-                        @change="
-                          updateTask({
-                            physical_energy_required: editPhysicalEnergyRequired
-                          })
-                        "
-                      />
-                    </div>
-                  </q-item-section>
-
-                  <q-item-section side>
-                    <q-icon name="fas fa-dumbbell" />
-                  </q-item-section>
-                </q-item>
-              </q-list>
+              <GloriousSlider
+                v-for="(s, key) of sliders"
+                :key="key"
+                v-model="s.modelRef.value"
+                v-bind="s"
+                @change="s.updateFunc" />
             </q-expansion-item>
-
             <br />
             <q-input
               v-model="editNotes"
@@ -171,17 +63,10 @@
               autogrow
               debounce="1000"
               label="Notes"
-              @update:model-value="updateTask({ notes: editNotes })"
-            />
+              @update:model-value="updateTask({ notes: editNotes })" />
           </div>
-
           <div class="col-12 col-md">
-            <q-toggle
-              v-model="incompleteOnly"
-              label="Hide Completed Pres and Posts"
-              class="text-primary"
-              @click="updateLocalSettings"
-            />
+            <IncompleteOnlyToggle />
             <DependencyList
               :items="allPres"
               :dependency-type="preDepType"
@@ -191,8 +76,7 @@
               @add-item="openPrerequisiteDialog"
               @remove-item="(pre: Task) => removePrerequisite(pre)"
               @select-item="(t: Task) => setCurrentTask(t)"
-              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)"
-            />
+              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
             <DependencyList
               :items="allPosts"
               :dependency-type="postDepType"
@@ -202,8 +86,7 @@
               @add-item="openPostrequisiteDialog"
               @remove-item="(post: Task) => removePostrequisite(post)"
               @select-item="(t: Task) => setCurrentTask(t)"
-              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)"
-            />
+              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
             <div class="row">
               <div class="col">
                 <div class="text-h5">Subtasks</div>
@@ -227,11 +110,8 @@
 <script setup lang="ts">
   import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
   import { computed, ref } from 'vue'
-
   import DependencyList from '../DependencyList.vue'
-
   import QDatetimeInput from 'components/QDatetimeInput.vue'
-
   import { ListRepo } from 'src/stores/lists/list'
   import { AllOptionalTaskProperties, Task, TaskRepo } from 'src/stores/tasks/task'
   import { useRepo } from 'pinia-orm'
@@ -239,76 +119,117 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { syncWithBackend } from 'src/hackerman/sync'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
   import errorNotification from 'src/hackerman/ErrorNotification'
   import TaskSearchDialog from './TaskSearchDialog.vue'
-  import { λ } from 'src/types'
-  import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { Button, unknownishλ, λ } from 'src/types'
   import { onMounted } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { storeToRefs } from 'pinia'
+  import GloriousTextInput from '../GloriousTextInput.vue'
+  import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
+  import { GloriousSliderConfig } from 'src/glorious'
+  import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
+  import ButtonBarComponent from '../ButtonBarComponent.vue'
+  import GloriousSlider from '../GloriousSlider.vue'
 
-  const emit = defineEmits([
-    // REQUIRED; need to specify some events that your
-    // component will emit through useDialogPluginComponent()
-    ...useDialogPluginComponent.emits
-  ])
+  const cts = useCurrentTaskStore()
+  const currentTaskID = computed(() => cts.id)
+  const currentTask = computed(() => {
+    const id = currentTaskID.value
+    if (id === null) throw new Error('no id')
+    const t = useRepo(TaskRepo).withAll().find(id)
+    if (typeof t === 'undefined' || t === null)
+      throw new Error('id does not match a task in the repo')
+    return t
+  })
+
+  const prioritize = () => {
+    $q.dialog({
+      component: QuickPrioritizeDialog,
+      componentProps: {
+        task: currentTask.value
+      }
+    })
+  }
+
+  const topButtonBar = computed((): Button<Task>[] => {
+    const action = (x: Task) => x.toggleCompleted()
+    // why am I like this?
+    const positiveColorButton = (label: string, action: unknownishλ<Task>) => ({
+      color: 'positive',
+      label,
+      action
+    })
+    const deleteButton = {
+      color: 'negative',
+      label: 'Delete',
+      action: deleteTask
+    }
+    const markIncompleteButton = {
+      color: 'primary',
+      label: 'Mark Incomplete',
+      action
+    }
+    const closeButton = {
+      color: 'grey',
+      label: 'Close',
+      action: onDialogCancel
+    }
+    const markCompleteButton = positiveColorButton('Mark Complete', action)
+    const prioritizeButton = positiveColorButton('Prioritize', prioritize)
+    const sliceButton = positiveColorButton('Slice Task', TDLAPP.sliceTask)
+    if (currentTask.value.completed) return [markIncompleteButton, deleteButton, closeButton]
+    return [markCompleteButton, prioritizeButton, sliceButton, deleteButton, closeButton]
+  })
+
+  const editMentalEnergyRequired = ref(currentTask.value.mental_energy_required)
+  const editPhysicalEnergyRequired = ref(currentTask.value.physical_energy_required)
+
+  const sliders: GloriousSliderConfig[] = [
+    {
+      beginIcon: 'far fa-tired',
+      endIcon: 'fas fa-lightbulb',
+      cuteName: 'Mental',
+      modelRef: editMentalEnergyRequired,
+      updateFunc: (x) => updateTask({ mental_energy_required: x })
+    },
+    {
+      beginIcon: 'far fa-tired',
+      endIcon: 'fas fa-dumbbell',
+      cuteName: 'Physical',
+      color: 'red',
+      modelRef: editPhysicalEnergyRequired,
+      updateFunc: (x) => updateTask({ physical_energy_required: x })
+    }
+  ]
+
+  const emit = defineEmits([...useDialogPluginComponent.emits])
 
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-  // dialogRef      - Vue ref to be applied to QDialog
-  // onDialogHide   - Function to be used as handler for @hide on QDialog
-  // onDialogOK     - Function to call to settle dialog with "ok" outcome
-  //                    example: onDialogOK() - no payload
-  //                    example: onDialogOK({ /*.../* }) - with payload
-  // onDialogCancel - Function to call to settle dialog with "cancel" outcome
-
   const $q = useQuasar()
   const listsRepo = useRepo(ListRepo)
   const tr = useRepo(TaskRepo)
   const usr = useLocalSettingsStore()
 
-  const { id } = storeToRefs(useCurrentTaskStore())
-
-  const currentTaskID = computed((): number =>
-    Utils.hardCheck(id.value, 'currentTaskID was null or undefined.')
-  )
-
-  const fetchTaskFromRepo = () => {
-    const taskFromRepo = tr.withAll().find(currentTaskID.value)
-    console.debug({ taskFromRepo })
-    return taskFromRepo
-  }
-
-  const currentTask = computed(fetchTaskFromRepo)
-
-  const getTask = (): Task => {
-    if (currentTask.value === null) {
-      onDialogCancel()
-      throw new Error('Task was deleted, so dialog has to close.')
-    }
-    return currentTask.value
-  }
   onMounted(() => {
-    getTask().hard_postreqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
-    getTask().hard_prereqs.sort((a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length)
+    currentTask.value.hard_postreqs.sort(
+      (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
+    )
+    currentTask.value.hard_prereqs.sort(
+      (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
+    )
   })
 
   let currentPre: Task | null = null
   let currentPost: Task | null = null
 
   console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
-  // const taskID = computed(() => currentTask.value.id)
-  const taskTitle = computed(() => getTask().title)
-  // const updatedFlag = ref(false)
 
-  useMeta(() => ({ title: taskTitle.value + ' | TDL App' }))
+  useMeta(() => ({ title: currentTask.value.title + ' | TDL App' }))
 
-  const editTitle = ref(getTask().title)
-  const editNotes = ref(getTask().notes)
-  const editRemindMeAt = ref(getTask().remind_me_at)
-  const editMentalEnergyRequired = ref(getTask().mental_energy_required)
-  const editPhysicalEnergyRequired = ref(getTask().physical_energy_required)
+  const editTitle = ref(currentTask.value.title)
+  const editNotes = ref(currentTask.value.notes)
+  const editRemindMeAt = ref(currentTask.value.remind_me_at)
 
   // todo: storeToRefs?
   const expandEnergyStats = ref(usr.expandEnergyStats)
@@ -322,18 +243,20 @@
   const lists = computed(() => listsRepo.all())
 
   const allPres = computed(() => {
-    if (incompleteOnly.value) return getTask().hard_prereqs.filter((x) => !x.completed)
-    return getTask().hard_prereqs
+    if (incompleteOnly.value) return currentTask.value.hard_prereqs.filter((x) => !x.completed)
+    return currentTask.value.hard_prereqs
   })
 
   const allPosts = computed(() => {
-    if (incompleteOnly.value) return getTask().hard_postreqs.filter((x) => !x.completed)
-    return getTask().hard_postreqs
+    if (incompleteOnly.value) return currentTask.value.hard_postreqs.filter((x) => !x.completed)
+    return currentTask.value.hard_postreqs
   })
 
   const updateTaskCompletedStatus = (task: Task) => {
     tr.updateAndCache({ id: task.id, payload: { task } })
   }
+
+  const updateList = () => updateTask({ list_id: selectedList.value?.id })
 
   const allLists = listsRepo.all()
   const listOptions = ref(allLists)
@@ -359,22 +282,22 @@
     return !!task.list ? { id: task.list.id, title: task.list.title } : null
   }
 
-  const selectedList = ref(getSelectedList(getTask()))
+  const selectedList = ref(getSelectedList(currentTask.value))
 
   function setCurrentTask(newTask: Task) {
     console.debug('setCurrentTask')
-    id.value = newTask.id
-    editTitle.value = getTask().title
-    editNotes.value = getTask().notes
-    editRemindMeAt.value = getTask().remind_me_at
-    editMentalEnergyRequired.value = getTask().mental_energy_required
-    editPhysicalEnergyRequired.value = getTask().physical_energy_required
-    selectedList.value = getSelectedList(getTask())
+    cts.id = newTask.id
+    editTitle.value = currentTask.value.title
+    editNotes.value = currentTask.value.notes
+    editRemindMeAt.value = currentTask.value.remind_me_at
+    editMentalEnergyRequired.value = currentTask.value.mental_energy_required
+    editPhysicalEnergyRequired.value = currentTask.value.physical_energy_required
+    selectedList.value = getSelectedList(currentTask.value)
   }
 
-  function deleteTask(title: string, task: Task) {
+  function deleteTask(task: Task) {
     $q.dialog({
-      title: `Delete task: "${title}"`,
+      title: `Delete task: "${task.title}"`,
       message: 'This cannot be undone! Are you sure?',
       ok: {
         label: 'Delete',
@@ -394,41 +317,27 @@
 
   function updateTask(options: AllOptionalTaskProperties) {
     tr.updateAndCache({
-      id: getTask().id ?? -1,
+      id: currentTask.value.id,
       payload: { task: options }
     }).then(() => {
       Utils.notifySuccess('Task Was Updated')
     }, Utils.handleError('Error updating task'))
   }
 
-  const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(getTask())
+  const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value)
 
-  const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(getTask())
-
-  const prioritize = () => {
-    $q.dialog({
-      component: QuickPrioritizeDialog,
-      componentProps: {
-        task: getTask()
-      }
-    })
-  }
+  const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value)
 
   const removePrerequisite = async (prereq: Task) => {
     await tr
-      .removePre(getTask(), prereq.id)
+      .removePre(currentTask.value, prereq.id)
       .then(Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'))
   }
 
   const removePostrequisite = async (postreq: Task) => {
     await tr
-      .removePost(getTask(), postreq.id)
+      .removePost(currentTask.value, postreq.id)
       .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
-  }
-
-  const toggleComplete = async (task: Task) => {
-    await task.toggleCompleted()
-    // .then(Utils.handleSuccess(`Marked ${ task.completed ? 'Complete' : 'Incomplete'}`, 'fa-solid fa-check'))
   }
 
   const mvpPostrequisite = async (post: Task) => {
@@ -436,7 +345,7 @@
     const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)
     for (let i = 0; i < allOtherPosts.length; i++) {
       await tr
-        .removePre(allOtherPosts[i], getTask().id)
+        .removePre(allOtherPosts[i], currentTask.value.id)
         .then(
           Utils.handleSuccess('removed redundant prerequisite'),
           Utils.handleError('error removing redundant prerequisite')
@@ -457,7 +366,7 @@
     // desired end state: A --> B --> C
     // 2. remove rule A --> C
     console.debug('removing the old (now redundant) postrequisite from the current task')
-    await tr.removePost(getTask(), oldPost.id).then(() => {
+    await tr.removePost(currentTask.value, oldPost.id).then(() => {
       const ct = useRepo(TaskRepo).find(currentTaskID.value)
       if (ct === null) throw new Error('current task was not found by id')
       if (ct.hard_postreq_ids.includes(oldPost.id)) throw new Error('postreq was not removed!')
@@ -483,8 +392,8 @@
     }, Utils.handleError('error moving postrequisite!'))
     // 1. add rule A --> B
     console.debug('adding selected postrequisite to current task')
-    if (!getTask().hard_postreq_ids.includes(payload.task.id)) {
-      await tr.addPost(getTask(), payload.task.id).then(() => {
+    if (!currentTask.value.hard_postreq_ids.includes(payload.task.id)) {
+      await tr.addPost(currentTask.value, payload.task.id).then(() => {
         const ct = useRepo(TaskRepo).find(currentTaskID.value)
         if (ct === null) throw new Error('current task was not found by id')
         if (!ct.hard_postreq_ids.includes(payload.task.id))
@@ -498,7 +407,7 @@
       const newPost = await useRepo(TaskRepo).getId(payload.task.id)
       console.log({ newPost })
       if (newPost === null) throw new Error('newPost is null')
-      if (!newPost.hard_prereq_ids.includes(currentTaskID.value)) {
+      if (!newPost.hard_prereq_ids.includes(currentTask.value.id)) {
         throw new Error('new post does not have current task as a pre!')
       }
     }
@@ -507,7 +416,7 @@
   const insertBetweenPre = async (payload: { task: Task }) => {
     const oldPre = Utils.hardCheck(currentPre)
     await tr
-      .removePre(getTask(), oldPre.id)
+      .removePre(currentTask.value, oldPre.id)
       .then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
     await tr
       .addPre(payload.task, oldPre.id)
@@ -515,9 +424,9 @@
         Utils.handleSuccess('successfully moved prerequisite!'),
         Utils.handleError('error moving prerequisite!')
       )
-    if (!getTask().hard_prereq_ids.includes(payload.task.id)) {
+    if (!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
       await tr
-        .addPre(getTask(), payload.task.id)
+        .addPre(currentTask.value, payload.task.id)
         .then(
           Utils.handleSuccess('added new pre to current task'),
           Utils.handleError('error adding new pre to current task')
@@ -606,6 +515,7 @@
     plural: 'Prerequisites',
     singular: 'Prerequisite'
   } as const
+
   const postDepType = {
     plural: 'Postrequisites',
     singular: 'Postrequisite'

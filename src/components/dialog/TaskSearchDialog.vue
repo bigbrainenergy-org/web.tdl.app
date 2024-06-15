@@ -4,16 +4,14 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
-    @hide="hideDialog"
-  >
+    @hide="hideDialog">
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton
           v-model:settings="taskSearchSettings"
           name="Task Search Settings"
-          color="white"
-        />
+          color="white" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -24,8 +22,7 @@
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
         :debounce="debounceAmount"
-        @do-a-search="searchForTasks"
-      />
+        @do-a-search="searchForTasks" />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
@@ -42,18 +39,18 @@
                     icon="fas fa-plus"
                     label="Create A New Task"
                     color="primary"
-                    @click="createTask"
-                  />
+                    @click="createTask" />
                 </q-item>
                 <q-item
                   v-for="task in results"
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="selectTask(task as Task)"
-                >
+                  @click="selectTask(task as Task)">
                   <q-item-section>
-                    {{ task.title }}
+                    <q-item-label lines="2">
+                      {{ task.title }}
+                    </q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
