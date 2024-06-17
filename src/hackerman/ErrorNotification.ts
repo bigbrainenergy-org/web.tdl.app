@@ -12,4 +12,6 @@ export default function errorNotification(error: Error | AxiosError, fallbackMes
     icon: 'report_problem',
     timeout: useLocalSettingsStore().notificationSpeed * 1500
   })
+
+  return null
 }

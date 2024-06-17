@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { Task } from '../tasks/task'
+import { Task, TaskRepo } from '../tasks/task'
 import { useAllTasksStore } from './all-tasks'
+import { useRepo } from 'pinia-orm'
 interface LayerZeroTasksStore {
   layerZero: Array<Task>
 }
@@ -40,18 +41,39 @@ export const useLayerZeroStore = defineStore('layer-zero', {
     checkAndSet(task: Task) {
       const index = this.layerZero.findIndex((x) => x.id === task.id)
       const inLZArray = index >= 0
-      const taskShouldBeLayerZero = !task.completed && !task.hasIncompletePrereqs
+      const taskShouldBeLayerZero = (x: Task) => !x.completed && !x.hasIncompletePrereqs
+      const thisTaskShouldBeLayerZero = taskShouldBeLayerZero(task)
+      console.debug({
+        task,
+        inLZArray,
+        thisTaskShouldBeLayerZero,
+        index,
+        valueAtIndex: this.layerZero[index]
+      })
       if (inLZArray) {
-        if (!taskShouldBeLayerZero) {
+        if (!thisTaskShouldBeLayerZero) {
           this.layerZero.splice(index, 1)
-          task.grabPostreqs(false).forEach((x) => this.checkAndSet(x))
+          console.debug('removed task from layer zero cache')
+          task.grabPostreqs(true).forEach((x) => this.checkAndSet(x))
         } else {
           this.layerZero[index] = task
+          console.debug('UPDATED task in layer zero cache')
         }
       } else {
-        if (taskShouldBeLayerZero) {
+        if (thisTaskShouldBeLayerZero) {
           this.layerZero.push(task)
+          console.debug('ADDED task to layer zero cache')
           this.layerZero = this.layerZero.filter((x) => !task.hard_postreq_ids.includes(x.id))
+        } else {
+          console.debug("wasn't in layer zero, and shouldn't be")
+          const postreqs = task.grabPostreqs(true)
+          postreqs.forEach((x) => {
+            if (taskShouldBeLayerZero(x)) {
+              console.debug({ 'pushed to layer zero': x })
+              const loadedTask = useRepo(TaskRepo).withAll().find(x.id)
+              if (loadedTask !== null) this.layerZero.push(loadedTask)
+            }
+          })
         }
       }
     },

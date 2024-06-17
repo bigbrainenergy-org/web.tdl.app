@@ -5,11 +5,13 @@ import { useCurrentTaskStore } from './stores/task-meta/current-task'
 import UpdateTaskDialog from './components/dialog/UpdateTaskDialog.vue'
 import TaskSearchDialog from './components/dialog/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
-import { λ } from './types'
+import { unknownishλ, λ } from './types'
 import TaskSlicerDialog from './components/dialog/TaskSlicerDialog.vue'
 import AddDependencyDialog from './components/dialog/AddDependencyDialog.vue'
 import { timeThisAABAsync } from './perf'
 import { useLocalSettingsStore } from './stores/local-settings/local-setting'
+import { T } from 'vitest/dist/reporters-yx5ZTtEV'
+import { useLoadingStateStore } from './stores/performance/loading-state'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number) => {
@@ -129,7 +131,7 @@ export class TDLAPP {
       componentProps: { task }
     })
   }
-  static notifyUpdatedCompletionStatus: λ<Task, λ<void>> = (task: Task) => () => {
+  static notifyUpdatedCompletionStatus: λ<Task, Task> = (task: Task) => {
     console.log(
       `notifyUpdatedCompletionStatus: task is ${task.completed ? 'completed' : 'incomplete'}`
     )
@@ -149,5 +151,18 @@ export class TDLAPP {
       ],
       timeout: useLocalSettingsStore().notificationSpeed * 1500
     })
+    return task
+  }
+  /**
+   * Pass in a function and this will return a modified function that can pause heavy computed properties.
+   * @param func the function that needs to be run while main computed properties are paused.
+   * @returns the function that includes necessary blocking logic
+   */
+  static blockingFunc<T>(func: (x: T) => Promise<unknown>): (x: T) => Promise<unknown> {
+    return async (x: T) => {
+      useLoadingStateStore().busy = true
+      await func(x)
+      useLoadingStateStore().busy = false
+    }
   }
 }

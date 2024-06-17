@@ -11,7 +11,8 @@
             <q-btn
               icon="fa-solid fa-signs-post"
               class="text-primary"
-              @click="openQuickSortDialog" />
+              @click="openQuickSortDialog"
+            />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
@@ -28,13 +29,15 @@
                 v-for="(currentTask, index) in tasks"
                 :key="index"
                 once
-                style="min-height: 48px">
+                style="min-height: 48px"
+              >
                 <q-item v-ripple clickable @click="open(currentTask)">
                   <q-checkbox
                     v-model:model-value="currentTask.completed"
                     color="primary"
                     keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)" />
+                    @update:model-value="updateTaskCompletedStatus(currentTask)"
+                  />
 
                   <q-item-section>
                     <q-item-label lines="2">
@@ -57,7 +60,8 @@
                         currentTask.grabPostreqs(incompleteOnly).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
-                      ">
+                      "
+                    >
                       {{ currentTask.grabPostreqs(incompleteOnly).length }}
                     </q-chip>
                   </q-item-section>
@@ -67,7 +71,8 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)" />
+                      @click.stop="addTaskPre(currentTask)"
+                    />
                   </q-item-section>
                 </q-item>
               </q-intersection>
@@ -210,12 +215,11 @@
   })
 
   const updateTaskCompletedStatus = async (task: Task) => {
-    await tasksRepo
-      .updateAndCache({ id: task.id, payload: { task } })
-      .then(
-        TDLAPP.notifyUpdatedCompletionStatus(task),
-        Utils.handleError('Error updating completion status of a task.')
-      )
+    const newStatus = task.completed
+    await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
+      if (result.completed !== newStatus) throw new Error('error saving completed status of task')
+      TDLAPP.notifyUpdatedCompletionStatus(result)
+    }, Utils.handleError('Error updating completion status of a task.'))
   }
 
   const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)

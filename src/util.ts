@@ -13,8 +13,11 @@ export class Utils {
   static gracefulError = (error: Error | AxiosError, memo = 'Error') =>
     errorNotification(error, memo)
 
-  static handleError(memo: string): λ<Error | AxiosError, void> {
-    return (error: Error | AxiosError) => errorNotification(error, memo)
+  static handleError(memo: string): λ<Error | AxiosError, null> {
+    return (error: Error | AxiosError) => {
+      errorNotification(error, memo)
+      return null
+    }
   }
   static notifySuccess(memo?: string, icon?: string) {
     Notify.create({

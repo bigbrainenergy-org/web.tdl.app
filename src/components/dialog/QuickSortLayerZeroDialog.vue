@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
   import { useRepo } from 'pinia-orm'
-  import { useDialogPluginComponent } from 'quasar'
+  import { Notify, useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
@@ -120,6 +120,7 @@
   import { timeThis, timeThisAABAsync } from 'src/perf'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useElementSize } from '@vueuse/core'
+  import { AxiosError } from 'axios'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -246,7 +247,17 @@
     tryNewPair()
   }
 
-  const complete = (x: Task) => x.toggleCompleted().then(reloadTasks)
+  const complete = async (x: Task) => {
+    try {
+      const result = await x.toggleCompleted()
+      if (result.completed === false) throw new Error('somehow task was not marked as complete.')
+      reloadTasks()
+      return result
+    } catch (error: any) {
+      Notify.create('Failed to mark the task complete.')
+      console.error(error)
+    }
+  }
   const taskDetails = (x: Task) => {
     console.debug(`opening details for task ID ${x.id}`)
     TDLAPP.openTask(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)

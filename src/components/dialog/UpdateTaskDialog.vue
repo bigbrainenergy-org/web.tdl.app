@@ -19,7 +19,8 @@
               v-model="editTitle"
               label="Task Title"
               :placeholder="currentTask.title"
-              @enter-key="updateTask({ title: editTitle })" />
+              @enter-key="updateTask({ title: editTitle })"
+            />
             <q-select
               v-model="selectedList"
               filled
@@ -35,26 +36,29 @@
               option-value="id"
               class="q-my-md text-primary"
               @filter="filterSelection"
-              @update:model-value="updateList" />
+              @update:model-value="updateList"
+            />
             <q-datetime-input
               v-model="editRemindMeAt"
               label="Remind me at"
               class="q-my-md"
-              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })" />
+              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })"
+            />
             <q-expansion-item
               v-model="expandEnergyStats"
               expand-separator
               switch-toggle-side
               icon="fas fa-lightbulb"
               caption="Metadata"
-              @update:model-value="updateLocalSettings">
+            >
               <br />
               <GloriousSlider
                 v-for="(s, key) of sliders"
                 :key="key"
                 v-model="s.modelRef.value"
                 v-bind="s"
-                @change="s.updateFunc" />
+                @change="s.updateFunc"
+              />
             </q-expansion-item>
             <br />
             <q-input
@@ -63,7 +67,8 @@
               autogrow
               debounce="1000"
               label="Notes"
-              @update:model-value="updateTask({ notes: editNotes })" />
+              @update:model-value="updateTask({ notes: editNotes })"
+            />
           </div>
           <div class="col-12 col-md">
             <IncompleteOnlyToggle />
@@ -74,9 +79,10 @@
               show-prune
               @prune-dependencies="prunePres"
               @add-item="openPrerequisiteDialog"
-              @remove-item="(pre: Task) => removePrerequisite(pre)"
-              @select-item="(t: Task) => setCurrentTask(t)"
-              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
+              @remove-item="tr.removePre"
+              @select-item="setCurrentTask"
+              @toggle-completed-item="updateTaskCompletedStatus"
+            />
             <DependencyList
               :items="allPosts"
               :dependency-type="postDepType"
@@ -84,9 +90,10 @@
               show-prune
               @prune-dependencies="prunePosts"
               @add-item="openPostrequisiteDialog"
-              @remove-item="(post: Task) => removePostrequisite(post)"
-              @select-item="(t: Task) => setCurrentTask(t)"
-              @toggle-completed-item="(t: Task) => updateTaskCompletedStatus(t)" />
+              @remove-item="tr.removePost"
+              @select-item="setCurrentTask"
+              @toggle-completed-item="updateTaskCompletedStatus"
+            />
             <div class="row">
               <div class="col">
                 <div class="text-h5">Subtasks</div>
@@ -131,6 +138,7 @@
   import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import GloriousSlider from '../GloriousSlider.vue'
+  import { storeToRefs } from 'pinia'
 
   const cts = useCurrentTaskStore()
   const currentTaskID = computed(() => cts.id)
@@ -231,29 +239,20 @@
   const editNotes = ref(currentTask.value.notes)
   const editRemindMeAt = ref(currentTask.value.remind_me_at)
 
-  // todo: storeToRefs?
-  const expandEnergyStats = ref(usr.expandEnergyStats)
+  const { expandEnergyStats } = storeToRefs(usr)
 
   const incompleteOnly = ref(usr.hideCompleted)
-  const updateLocalSettings = () => {
-    usr.hideCompleted = incompleteOnly.value
-    usr.expandEnergyStats = expandEnergyStats.value
-  }
 
   const lists = computed(() => listsRepo.all())
+  const allPres = computed(() => currentTask.value.grabPrereqs(incompleteOnly.value))
+  const allPosts = computed(() => currentTask.value.grabPostreqs(incompleteOnly.value))
 
-  const allPres = computed(() => {
-    if (incompleteOnly.value) return currentTask.value.hard_prereqs.filter((x) => !x.completed)
-    return currentTask.value.hard_prereqs
-  })
-
-  const allPosts = computed(() => {
-    if (incompleteOnly.value) return currentTask.value.hard_postreqs.filter((x) => !x.completed)
-    return currentTask.value.hard_postreqs
-  })
-
-  const updateTaskCompletedStatus = (task: Task) => {
-    tr.updateAndCache({ id: task.id, payload: { task } })
+  const updateTaskCompletedStatus = async (task: Task) => {
+    const newStatus = task.completed
+    console.debug(`marking ${task.id} ${newStatus ? 'completed' : 'incomplete'}.`)
+    const result = await tr.updateAndCache({ id: task.id, payload: { task } })
+    if (result.completed !== newStatus)
+      throw new Error('result from update request is not the same as the status marked on UI')
   }
 
   const updateList = () => updateTask({ list_id: selectedList.value?.id })
@@ -327,18 +326,6 @@
   const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value)
 
   const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value)
-
-  const removePrerequisite = async (prereq: Task) => {
-    await tr
-      .removePre(currentTask.value, prereq.id)
-      .then(Utils.handleSuccess('Removed Prerequisite', 'fa-solid fa-unlink'))
-  }
-
-  const removePostrequisite = async (postreq: Task) => {
-    await tr
-      .removePost(currentTask.value, postreq.id)
-      .then(Utils.handleSuccess('Removed Postrequisite', 'fa-solid fa-unlink'))
-  }
 
   const mvpPostrequisite = async (post: Task) => {
     console.debug(post)
@@ -525,7 +512,7 @@
     {
       label: 'Unlink this Prerequisite',
       icon: 'fas fa-unlink',
-      action: removePrerequisite
+      action: (x: Task) => tr.removePre(currentTask.value, x.id)
     },
     {
       label: 'Add Task Between This Prereq and This Task',
@@ -538,7 +525,7 @@
     {
       label: 'Unlink this Postrequisite',
       icon: 'fas fa-unlink',
-      action: removePostrequisite
+      action: (x: Task) => tr.removePost(currentTask.value, x.id)
     },
     {
       label: 'Move all Postreqs from Current Task to This Task',
@@ -552,29 +539,31 @@
     }
   ]
 
-  const prunePosts = async (payload: { above: Set<number>; below: Set<number> }) => {
-    useLoadingStateStore().busy = true
-    const toRemove = allPosts.value.filter(
-      (x) => payload.below.has(x.id) && !payload.above.has(x.id)
-    )
-    for (let i = 0; i < toRemove.length; i++) {
-      await removePostrequisite(toRemove[i])
+  const prunePosts = TDLAPP.blockingFunc(
+    async (payload: { above: Set<number>; below: Set<number> }) => {
+      useLoadingStateStore().busy = true
+      const toRemove = allPosts.value.filter(
+        (x) => payload.below.has(x.id) && !payload.above.has(x.id)
+      )
+      for (let i = 0; i < toRemove.length; i++) {
+        await tr.removePost(currentTask.value, toRemove[i].id)
+      }
+      useLoadingStateStore().busy = false
     }
-    useLoadingStateStore().busy = false
-  }
+  )
 
-  const prunePres = async (payload: { above: Set<number>; below: Set<number> }) => {
-    useLoadingStateStore().busy = true
-    const toRemove = allPres.value.filter((x) => {
-      const hasRelationsAbove = payload.above.has(x.id)
-      const hasRelationsBelow = payload.below.has(x.id)
-      console.log({ hasRelationsAbove, hasRelationsBelow, x })
-      return hasRelationsAbove && !hasRelationsBelow
-    })
-    console.log('pruning prerequisites', { payload, toRemove })
-    for (let i = 0; i < toRemove.length; i++) {
-      await removePrerequisite(toRemove[i])
+  const prunePres = TDLAPP.blockingFunc(
+    async (payload: { above: Set<number>; below: Set<number> }) => {
+      const toRemove = allPres.value.filter((x) => {
+        const hasRelationsAbove = payload.above.has(x.id)
+        const hasRelationsBelow = payload.below.has(x.id)
+        console.log({ hasRelationsAbove, hasRelationsBelow, x })
+        return hasRelationsAbove && !hasRelationsBelow
+      })
+      console.log('pruning prerequisites', { payload, toRemove })
+      for (let i = 0; i < toRemove.length; i++) {
+        await tr.removePre(currentTask.value, toRemove[i].id)
+      }
     }
-    useLoadingStateStore().busy = false
-  }
+  )
 </script>

@@ -213,18 +213,15 @@ export class Task extends Model implements iRecord {
 
   async toggleCompleted() {
     const repo = useRepo(TaskRepo)
-    console.debug(this.completed + ' prev completed status')
     this.completed = !this.completed
-    console.debug(this.completed + ' new completed status')
-    await repo
+    return repo
       .updateAndCache({
         id: this.id,
         payload: { task: { completed: this.completed } }
       })
-      .then(
-        TDLAPP.notifyUpdatedCompletionStatus(this),
-        Utils.handleError('Error updating status of task.')
-      )
+      .then(TDLAPP.notifyUpdatedCompletionStatus, (error) => {
+        throw error
+      })
   }
 
   /***
@@ -431,7 +428,8 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       Utils.arrayDelete(pre.hard_postreq_ids, task.id)
       this.save(pre)
       this.setCache(pre)
-    })
+      Utils.notifySuccess('Removed prerequisite')
+    }, Utils.handleError('Error removing prerequisite'))
   }
 
   /**
@@ -454,7 +452,8 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       console.log(`after arrayDelete (pre ids): ${post.hard_prereq_ids}`)
       this.save(post)
       this.setCache(post)
-    })
+      Utils.notifySuccess('Removed postrequisite')
+    }, Utils.handleError('Error removing postrequisite'))
   }
 
   /**
@@ -528,7 +527,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     return this.delete(task.id)
   }
 
-  updateAndCache = async (options: UpdateTaskOptions) => {
+  updateAndCache = async (options: UpdateTaskOptions): Promise<Task> => {
     // check if any hard prereq ids are in the recursive postreqs
     // check if any hard postreq ids are in the recursive prereqs
     const currentTask = useAllTasksStore().allTasks.get(options.id)
@@ -569,12 +568,22 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       )
       throw new Error('There is a postreq that is already supposed to be BEFORE the current task')
     }
-    await this.update(options).then((data: void | Task) => {
-      if (data instanceof Task) {
-        console.log('setting cache.')
-        this.setCache(data, true)
+    return this.update(options).then(
+      (data: null | Task) => {
+        if (data !== null) {
+          console.debug({ 'setting cache': data })
+          this.setCache(data, true)
+          return data
+        } else {
+          throw new Error(
+            'update function returned void when Task is needed to continue processing.'
+          )
+        }
+      },
+      (error) => {
+        throw error
       }
-    })
+    )
   }
 
   addAndCache = async (options: CreateTaskOptions) => {

@@ -117,7 +117,6 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
         return result
       }, Utils.handleError('Error updating record'))
   }
-
   /**
    * gets a sorted array of all records of a store, plus optionally all of its related entities.
    * @param sort - a sorting function (a, b) => number
