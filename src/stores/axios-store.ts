@@ -1,4 +1,4 @@
-import axiosMockInstance from 'src/axios-mock'
+// import axiosMockInstance from 'app/test/mock/axios-mock'
 import axios, { AxiosInstance } from 'axios'
 import { defineStore } from 'pinia'
 
@@ -26,7 +26,8 @@ export const useAxiosStore = defineStore('axios', {
       return this.url
     },
     axios(baseURL?: string): AxiosInstance {
-      if (process.env.VITEST) this.api = axiosMockInstance
+      // fixme: need to decouple test and prod dependencies
+      // if (process.env.VITEST) this.api = axiosMockInstance
       if (typeof baseURL !== 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
       if (typeof this.api === 'undefined') this.api = axios.create({ baseURL: this.URL(baseURL) })
       return this.api
