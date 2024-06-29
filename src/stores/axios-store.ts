@@ -1,4 +1,4 @@
-import axiosMockInstance from 'app/test/mock/axios-mock'
+import axiosMockInstance from 'src/axios-mock'
 import axios, { AxiosInstance } from 'axios'
 import { defineStore } from 'pinia'
 
