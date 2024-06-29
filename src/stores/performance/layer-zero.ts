@@ -38,10 +38,14 @@ export const useLayerZeroStore = defineStore('layer-zero', {
      * - If the task was just removed, checkAndSet all its incomplete postreqs
      * @param task The task to check
      */
-    checkAndSet(task: Task) {
+    checkAndSet(task: Task, retrieve = false) {
+      task = retrieve ? useRepo(TaskRepo).withAll().find(task.id) ?? task : task
       const index = this.layerZero.findIndex((x) => x.id === task.id)
       const inLZArray = index >= 0
-      const taskShouldBeLayerZero = (x: Task) => !x.completed && !x.hasIncompletePrereqs
+      const taskShouldBeLayerZero = (x: Task) => {
+        if (x.completed) return false
+        return !x.hasIncompletePrereqs
+      }
       const thisTaskShouldBeLayerZero = taskShouldBeLayerZero(task)
       console.debug({
         task,
@@ -54,7 +58,7 @@ export const useLayerZeroStore = defineStore('layer-zero', {
         if (!thisTaskShouldBeLayerZero) {
           this.layerZero.splice(index, 1)
           console.debug('removed task from layer zero cache')
-          task.grabPostreqs(true).forEach((x) => this.checkAndSet(x))
+          task.grabPostreqs(true).forEach((x) => this.checkAndSet(x, true))
         } else {
           this.layerZero[index] = task
           console.debug('UPDATED task in layer zero cache')
@@ -62,14 +66,14 @@ export const useLayerZeroStore = defineStore('layer-zero', {
       } else {
         if (thisTaskShouldBeLayerZero) {
           this.layerZero.push(task)
-          console.debug('ADDED task to layer zero cache')
+          // console.debug('ADDED task to layer zero cache')
           this.layerZero = this.layerZero.filter((x) => !task.hard_postreq_ids.includes(x.id))
         } else {
-          console.debug("wasn't in layer zero, and shouldn't be")
+          // console.debug("wasn't in layer zero, and shouldn't be")
           const postreqs = task.grabPostreqs(true)
           postreqs.forEach((x) => {
             if (taskShouldBeLayerZero(x)) {
-              console.debug({ 'pushed to layer zero': x })
+              // console.debug({ 'pushed to layer zero': x })
               const loadedTask = useRepo(TaskRepo).withAll().find(x.id)
               if (loadedTask !== null) this.layerZero.push(loadedTask)
             }

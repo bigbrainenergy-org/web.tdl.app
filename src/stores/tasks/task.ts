@@ -14,6 +14,7 @@ import { Queue } from 'src/types'
 import { useAllTasksStore } from '../performance/all-tasks'
 import { timeThisABAsync, timeThisB } from 'src/perf'
 import { useLayerZeroStore } from '../performance/layer-zero'
+import { useCompletedTasksStore } from '../diagnostics/completed-tasks'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -464,10 +465,27 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
    * await useRepo(TaskRepo).addPre(task, pre.id)
    */
   addPre = async (task: Task, id_of_prereq: number) => {
+    // notes 06/29/2024
+    // 1. retrieve all records { pres_of_pre, pre, post, posts_of_post }
+    // 2. validate new rule (recursion or redundancy, dupe, etc)
+
+    try {
+      useCompletedTasksStore().checkAll(task.grabPrereqs(true))
+    } catch (error) {
+      console.warn({ location: 'pres of post', error })
+      throw error
+    }
     const pre = Utils.hardCheck(
       useAllTasksStore().allTasks.get(id_of_prereq),
       'Prerequisite was not found in this list.'
     ) as Task
+    const pres_of_pre = pre.grabPrereqs(true)
+    try {
+      useCompletedTasksStore().checkAll(pres_of_pre)
+    } catch (error) {
+      console.warn({ location: 'pres of pre', error })
+      throw error
+    }
     if (task.hard_prereq_ids.includes(id_of_prereq))
       throw new Error('addPre: id provided is already in prereqs list')
     const options: UpdateTaskOptions = {
@@ -528,14 +546,12 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
   }
 
   updateAndCache = async (options: UpdateTaskOptions): Promise<Task> => {
-    // check if any hard prereq ids are in the recursive postreqs
-    // check if any hard postreq ids are in the recursive prereqs
+    // todo: when a task is marked complete which triggers quickSort dialog, the task stays visible on the page (agenda or Tasks)
     const currentTask = useAllTasksStore().allTasks.get(options.id)
-    if (!exists(currentTask))
-      throw new Error('Task sent for updating was not found on the local repository')
-    const incompletePrereqIDs = exists(currentTask.hard_prereqs)
-      ? currentTask.hard_prereqs.filter((x) => !x.completed).map((x) => x.id)
-      : []
+    if (!exists(currentTask)) throw new Error('Task was not found on the local repository')
+    const incompletePrereqIDs = (currentTask.hard_prereqs ?? [])
+      .filter((x) => !x.completed)
+      .map((x) => x.id)
     const anyPrereqsBelow = currentTask.anyIDsBelow(incompletePrereqIDs, {
       incompleteOnly: true,
       useStore: false
@@ -572,9 +588,11 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       (data: null | Task) => {
         if (data !== null) {
           console.debug({ 'setting cache': data })
+          useCompletedTasksStore().set(data)
           this.setCache(data, true)
           return data
         } else {
+          console.warn('repo update function returned null')
           throw new Error(
             'update function returned void when Task is needed to continue processing.'
           )
@@ -599,7 +617,8 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     console.log({ method: 'setCache', t })
     if (t === null) throw new Error('Task not found in the repository, so it cannot be cached.')
     useAllTasksStore().allTasks.set(t.id, t)
-    useLayerZeroStore().checkAndSet(t)
+    useLayerZeroStore().checkAndSet(t, true)
+    useCompletedTasksStore().checkAll(useLayerZeroStore().layerZero as Task[])
     return t
   }
 
@@ -607,6 +626,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     this.withAll()
       .get()
       .filter((x) => !x.completed)
+
   layerZero = (): Task[] =>
     timeThisB(
       () => this.incompleteOnly().filter((x) => !x.hard_prereqs.some((y) => !y.completed)),

@@ -121,6 +121,7 @@
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useElementSize } from '@vueuse/core'
   import { AxiosError } from 'axios'
+  import { useCompletedTasksStore } from 'src/stores/diagnostics/completed-tasks'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -173,7 +174,16 @@
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
-    return useLayerZeroStore().get().map(postWeightedTask)
+    const layerZeroTasks = useLayerZeroStore().get()
+    useCompletedTasksStore().checkAll(layerZeroTasks)
+    const layerZeroOG = useRepo(TaskRepo)
+      .withAll()
+      .get()
+      .filter((x) => x.completed === false)
+    useCompletedTasksStore().checkAll(layerZeroOG)
+    const layerZeroFromRepo = useRepo(TaskRepo).where('completed', false).withAll().get()
+    useCompletedTasksStore().checkAll(layerZeroFromRepo)
+    return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
     layerZero.value.filter((x) => !x.t.hasIncompletePostreqs)

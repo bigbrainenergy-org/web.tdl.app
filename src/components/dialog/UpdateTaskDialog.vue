@@ -239,13 +239,11 @@
   const editNotes = ref(currentTask.value.notes)
   const editRemindMeAt = ref(currentTask.value.remind_me_at)
 
-  const { expandEnergyStats } = storeToRefs(usr)
-
-  const incompleteOnly = ref(usr.hideCompleted)
+  const { expandEnergyStats, hideCompleted } = storeToRefs(usr)
 
   const lists = computed(() => listsRepo.all())
-  const allPres = computed(() => currentTask.value.grabPrereqs(incompleteOnly.value))
-  const allPosts = computed(() => currentTask.value.grabPostreqs(incompleteOnly.value))
+  const allPres = computed(() => currentTask.value.grabPrereqs(hideCompleted.value))
+  const allPosts = computed(() => currentTask.value.grabPostreqs(hideCompleted.value))
 
   const updateTaskCompletedStatus = async (task: Task) => {
     const newStatus = task.completed

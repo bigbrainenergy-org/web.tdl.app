@@ -53,16 +53,16 @@
                     </q-avatar>
                   </q-item-section>
 
-                  <q-item-section v-if="currentTask.grabPostreqs(incompleteOnly).length" side>
+                  <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
                     <q-chip
-                      v-if="currentTask.grabPostreqs(incompleteOnly).length"
+                      v-if="currentTask.grabPostreqs(hideCompleted).length"
                       :style="
-                        currentTask.grabPostreqs(incompleteOnly).length > sortQty
+                        currentTask.grabPostreqs(hideCompleted).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
                       "
                     >
-                      {{ currentTask.grabPostreqs(incompleteOnly).length }}
+                      {{ currentTask.grabPostreqs(hideCompleted).length }}
                     </q-chip>
                   </q-item-section>
                   <q-item-section side>
@@ -108,59 +108,53 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { storeToRefs } from 'pinia'
+  import { useCompletedTasksStore } from 'src/stores/diagnostics/completed-tasks'
 
   const $q = useQuasar()
 
   const open = (task: Task) => TDLAPP.openTask(task)
 
-  const pageTasks = defineComponent({
-    name: 'PageTasks'
-  })
   const tasksRepo = useRepo(TaskRepo)
-  const usr = useLocalSettingsStore()
 
-  const layerZeroOnly = ref(usr.layerZeroOnly)
-  const incompleteOnly = ref(usr.hideCompleted)
+  const localSettingsStore = useLocalSettingsStore()
+
+  const { layerZeroOnly, hideCompleted, disableQuickSort, enableQuickSortOnLayerZeroQTY } =
+    storeToRefs(localSettingsStore)
   const sortQty = computed(() => {
     const len0 = useLayerZeroStore().get().length
-    if (usr.disableQuickSort) return len0
-    return Math.max(1, usr.enableQuickSortOnLayerZeroQTY - len0)
+    if (disableQuickSort.value) return len0
+    return Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
-    'Incomplete Only': incompleteOnly
-  })
-
-  watch(layerZeroOnly, () => {
-    usr.layerZeroOnly = layerZeroOnly.value
-  })
-
-  watch(incompleteOnly, () => {
-    usr.hideCompleted = incompleteOnly.value
+    'Incomplete Only': hideCompleted
   })
 
   const notCompleted = (x: Task) => x.completed === false
-  const notBlocked = (x: Task) =>
-    x.hard_prereq_ids.length === 0 || x.hard_prereqs.filter(notCompleted).length === 0
+  const notBlocked = (x: Task) => x.hard_prereqs.filter(notCompleted).length === 0
   const qtyPostreqsSort = (a: Task, b: Task) =>
-    b.grabPostreqs(incompleteOnly.value).length - a.grabPostreqs(incompleteOnly.value).length
+    b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length
 
   const tasks = computed(() => {
-    if (useLoadingStateStore().busy || useLoadingStateStore().quickSortDialogActive) {
-      if (useLoadingStateStore().quickSortDialogActive)
-        console.log('quick sort dialog active is TRUE, so skipping agenda recalc')
-      if (useLoadingStateStore().busy) console.log('busy signal is TRUE, so skipping agenda recalc')
+    const { busy, quickSortDialogActive } = useLoadingStateStore()
+    if (busy) {
+      console.log('busy signal; skipping agenda recalc.')
+      return []
+    }
+    if (quickSortDialogActive) {
+      console.log('quick sort dialog is active; skipping agenda recalc')
       return []
     }
     console.log('recalculating agenda.')
-    let baseMap = new Map(
-      useRepo(TaskRepo)
-        .where('completed', false)
-        .withAll()
-        .get()
-        .map((x) => [x.id, x])
+    const allIncompleteTasks = useRepo(TaskRepo).where('completed', false).withAll().get()
+    console.log(
+      'INCOMPLETE TASKS: ',
+      allIncompleteTasks.filter((x) => x.completed === true).map((x) => x.title)
     )
+    useCompletedTasksStore().checkAll(allIncompleteTasks)
+    let baseMap = new Map(allIncompleteTasks.map((x) => [x.id, x]))
     let traversed = new Set<number>() // ids
     let finalList: Array<Task> = []
     const notBlockedByTraversed = (k: number, x: Task) =>
@@ -205,12 +199,14 @@
       if (typeof nextUp.id === 'undefined') {
         console.debug(`pushing remaining ${layer.size} tasks to list`)
         finalList.push(...layer.values())
+        useCompletedTasksStore().checkAll(finalList)
         return finalList
       }
       finalList.push(layer.get(nextUp.id)!)
       layer.delete(nextUp.id)
       traversed.add(nextUp.id)
     }
+    useCompletedTasksStore().checkAll(finalList)
     return finalList
   })
 
@@ -218,7 +214,9 @@
     const newStatus = task.completed
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
       if (result.completed !== newStatus) throw new Error('error saving completed status of task')
+      useAllTasksStore().completion(task.id, newStatus)
       TDLAPP.notifyUpdatedCompletionStatus(result)
+      console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
     }, Utils.handleError('Error updating completion status of a task.'))
   }
 

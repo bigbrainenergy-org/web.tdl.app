@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { mockTaskList } from './tasks'
-import { λ } from 'src/types'
+import { ripped, λ } from 'src/types'
 
 const mockServerState = {
   tasks: mockTaskList
@@ -13,7 +13,8 @@ const fetchState = (entity: string) => {
   return mockServerState[entity as keyof typeof mockServerState]
 }
 
-const mock = new MockAdapter(axios)
+const axiosMockInstance = axios.create()
+const mock = new MockAdapter(axiosMockInstance)
 type CallbackResponseSpecFunc = (config: AxiosRequestConfig) => any[] | Promise<any[]>
 const mockResponse = (code: number) => (message: unknown) => [code, { message }]
 const error400 = mockResponse(400)
@@ -115,10 +116,25 @@ mock.onPost(/\/(\w+)/).reply(
   withAuth(
     tryIt((config) => {
       const state = fetchStateFromConfig(config)
-      // type recordType =
-      const data = fetchDataFromConfig(config)
-      // state.push(data)
+      type recordType = ripped<typeof state>
+      const data = fetchDataFromConfig(config) as recordType
+      state.push(data)
       return [200, { data }]
     })
   )
 )
+mock.onPatch(/\/(\w+)\/\d+/).reply(
+  withAuth(
+    tryIt((config) => {
+      const state = fetchStateFromConfig(config)
+      type recordType = ripped<typeof state>
+      const data = fetchDataFromConfig(config) as recordType
+      const id = getIdFromConfig(config)
+      const index = state.findIndex((x) => x.id === id)
+      if (index < 0) throw new Error('Task not found')
+      state[index] = data
+      return [200, { data }]
+    })
+  )
+)
+export default axiosMockInstance

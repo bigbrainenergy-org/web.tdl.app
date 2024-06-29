@@ -144,6 +144,7 @@
   const updateTaskCompletedStatus = async (task: Task) => {
     const newStatus = task.completed
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((t) => {
+      console.debug({ 'Tasks updateTaskCompletedStatus': t })
       if (t.completed !== newStatus)
         throw new Error('updated value and value meant to update do not match')
       TDLAPP.notifyUpdatedCompletionStatus(task)
