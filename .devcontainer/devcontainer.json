@@ -20,14 +20,22 @@
   },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [8080],
+  "forwardPorts": [8080, 6080],
+
+  // Expose the VNC for the desktop, so that you can interact with Cypress via their electron app interface (thanks, I hate it)
+  "portsAttributes": {
+    "6080": {
+      "label": "desktop"
+    }
+  },
 
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "yarn && yarn dev",
 
   // Set `remoteUser` to `root` to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-  "remoteUser": "node"
-  // "features": {
-  // 	"ghcr.io/devcontainers-contrib/features/quasar-cli:2": {}
-  // }
+  "remoteUser": "node",
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {}
+    // "ghcr.io/devcontainers-contrib/features/quasar-cli:2": {}
+  }
 }

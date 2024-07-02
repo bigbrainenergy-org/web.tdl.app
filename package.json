@@ -21,7 +21,11 @@
     "build": "yarn exec quasar build -m spa",
     "test:unit": "vitest",
     "test:unit:ci": "vitest run",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:e2e": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://127.0.0.1:8080 \"cypress open --e2e\"",
+    "test:e2e:ci": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://127.0.0.1:8080 \"cypress run --e2e\"",
+    "test:component": "cross-env NODE_ENV=test cypress open --component",
+    "test:component:ci": "cross-env NODE_ENV=test cypress run --component"
   },
   "dependencies": {
     "@capacitor/core": "^5.0.0",
@@ -47,6 +51,7 @@
   },
   "devDependencies": {
     "@quasar/app-vite": "2.0.0-beta.14",
+    "@quasar/quasar-app-extension-testing-e2e-cypress": "^6.1.0",
     "@quasar/quasar-app-extension-testing-unit-vitest": "^1",
     "@types/body-parser": "^1.19.5",
     "@types/d3": "^7.4.3",
@@ -67,7 +72,9 @@
     "workbox-expiration": "^7.0.0",
     "workbox-precaching": "^7.0.0",
     "workbox-routing": "^7.0.0",
-    "workbox-strategies": "^7.0.0"
+    "workbox-strategies": "^7.0.0",
+    "cypress": "^13.6.6",
+    "eslint-plugin-cypress": "^2.15.1"
   },
   "engines": {
     "node": "^20",

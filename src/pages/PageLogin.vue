@@ -20,7 +20,7 @@
             </template>
           </q-input>
 
-          <q-input v-model="username" filled :label="$t('username')">
+          <q-input v-model="username" filled :label="$t('username')" data-cy="username">
             <template #prepend>
               <q-icon name="account_circle" />
             </template>
@@ -31,6 +31,7 @@
             filled
             :label="$t('password')"
             type="password"
+            data-cy="password"
             @keyup.enter="login"
           >
             <template #prepend>
