@@ -8,6 +8,6 @@ installQuasarPlugin()
 describe('Password Change Form Component', () => {
   it('should mount component with language switcher input', () => {
     const wrapper = mount(LanguageSwitcher)
-    expect(wrapper.find('[name="language_switcher"]').exists()).toBeTruthy()
+    expect(wrapper.find('[data-cy="language_switcher"]').exists()).toBeTruthy()
   })
 })
