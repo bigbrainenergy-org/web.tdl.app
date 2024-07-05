@@ -21,8 +21,24 @@ jobs:
       - name: Run yarn audit
         run: yarn audit
 
-  # TODO: Also run integration tests
   vitest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'yarn'
+      # FIXME: Because the setup-node action is dumb, we have to manually
+      #        install the dependencies ourselves. See: https://github.com/actions/setup-node/issues/182
+      - name: Install dependencies
+        run: yarn install
+      - name: Run tests
+        run: yarn test:unit:ci
+
+  cypress-e2e:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +53,24 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: Run tests
-        run: yarn test:unit:ci
+        run: yarn test:e2e:ci
+
+  cypress-component:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'yarn'
+      # FIXME: Because the setup-node action is dumb, we have to manually
+      #        Install the dependencies ourselves. See: https://github.com/actions/setup-node/issues/182
+      - name: Install dependencies
+        run: yarn install
+      - name: Run tests
+        run: yarn test:component:ci
 
   linter:
     runs-on: ubuntu-latest
@@ -58,7 +91,7 @@ jobs:
 
   finish:
     runs-on: ubuntu-latest
-    needs: [yarn-audit, vitest, linter]
+    needs: [yarn-audit, vitest, cypress-e2e, cypress-component, linter]
     steps:
       - name: Wait for status checks
         run: echo "All Green!"
