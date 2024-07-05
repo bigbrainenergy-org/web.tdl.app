@@ -41,3 +41,31 @@ quasar build
 ### Customize the configuration
 
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+
+### Run test suites with live reloading
+
+#### Integration
+
+For Cypress, view the live GUI via https://localhost:6080
+
+You can also switch between e2e and component testing in the Cypress GUI without stopping the command and rerunning the other.
+
+Cypress e2e
+
+```
+yarn test:e2e
+```
+
+Cypress Components
+
+```
+yarn test:component
+```
+
+#### Unit
+
+Results will be displayed in CLI directly
+
+```
+yarn test:unit
+```
