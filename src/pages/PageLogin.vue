@@ -42,7 +42,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat @click="login">{{ $t('login') }}</q-btn>
+        <q-btn flat data-cy="login" @click="login">{{ $t('login') }}</q-btn>
       </q-card-actions>
     </q-card>
   </q-page>

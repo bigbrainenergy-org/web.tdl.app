@@ -18,7 +18,7 @@
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
               <div class="col">
-                <div class="text-h6 text-pain">Tasks</div>
+                <div class="text-h6 text-pain" data-cy="tasks-title">Tasks</div>
               </div>
             </div>
           </q-card-section>
