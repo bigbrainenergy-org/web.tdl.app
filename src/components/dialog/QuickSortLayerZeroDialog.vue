@@ -118,10 +118,10 @@
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisAABAsync } from 'src/perf'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useElementSize } from '@vueuse/core'
   import { AxiosError } from 'axios'
-  import { useCompletedTasksStore } from 'src/stores/diagnostics/completed-tasks'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { TaskCache } from 'src/stores/performance/task-go-fast'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -174,15 +174,8 @@
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
-    const layerZeroTasks = useLayerZeroStore().get()
-    useCompletedTasksStore().checkAll(layerZeroTasks)
-    const layerZeroOG = useRepo(TaskRepo)
-      .withAll()
-      .get()
-      .filter((x) => x.completed === false)
-    useCompletedTasksStore().checkAll(layerZeroOG)
-    const layerZeroFromRepo = useRepo(TaskRepo).where('completed', false).withAll().get()
-    useCompletedTasksStore().checkAll(layerZeroFromRepo)
+    const layerZeroTasks = useLayerZeroStore().typed
+    TaskCache.checkAgainstKnownCompletedTasks(...layerZeroTasks)
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>

@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <q-page class="q-pa-lg">
     <div class="row items-stretch justify-evenly">
       <div class="col-grow">
@@ -79,17 +79,15 @@
 <script lang="ts">
   import { useQuasar } from 'quasar'
   import { computed, defineComponent, ref } from 'vue'
-
-  import Task from '../models/task'
-  import { ITask as TaskInterface } from 'components/models'
   import UpdateTaskDialog from 'components/UpdateTaskDialog.vue'
   import { useRepo } from 'pinia-orm'
+import { TaskRepo } from 'src/stores/tasks/task'
 
   export default defineComponent({
     name: 'PageTask',
 
     setup() {
-      const tasksRepo = useRepo(Task)
+      const tasksRepo = useRepo(TaskRepo)
       const tasks = computed(() => tasksRepo.all())
 
       const $q = useQuasar()
@@ -113,4 +111,4 @@
       }
     }
   })
-</script>
+</script> -->

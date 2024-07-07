@@ -113,9 +113,13 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
       .patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
       .then((response) => {
         const result = this.save(response.data as T)
-        console.log(result)
+        console.debug({'generic repo update result': result })
         return result
       }, Utils.handleError('Error updating record'))
+  }
+
+  localUpdate = (itemOptions: iUpdateT) => {
+    this.update(itemOptions)
   }
   /**
    * gets a sorted array of all records of a store, plus optionally all of its related entities.

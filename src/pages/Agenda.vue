@@ -96,20 +96,19 @@
 
 <script setup lang="ts">
   import { useMeta, useQuasar } from 'quasar'
-  import { computed, defineComponent, ref, watch } from 'vue'
+  import { computed, ref } from 'vue'
 
   import { useRepo } from 'pinia-orm'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Utils, computedWithPrev, exists } from 'src/util'
+  import { Utils, exists } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-  import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   import { storeToRefs } from 'pinia'
-  import { useCompletedTasksStore } from 'src/stores/diagnostics/completed-tasks'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { TaskCache } from 'src/stores/performance/task-go-fast'
 
   const $q = useQuasar()
 
@@ -122,7 +121,7 @@
   const { layerZeroOnly, hideCompleted, disableQuickSort, enableQuickSortOnLayerZeroQTY } =
     storeToRefs(localSettingsStore)
   const sortQty = computed(() => {
-    const len0 = useLayerZeroStore().get().length
+    const len0 = useLayerZeroStore().layerZero.length
     if (disableQuickSort.value) return len0
     return Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
@@ -153,7 +152,7 @@
       'INCOMPLETE TASKS: ',
       allIncompleteTasks.filter((x) => x.completed === true).map((x) => x.title)
     )
-    useCompletedTasksStore().checkAll(allIncompleteTasks)
+    TaskCache.checkAgainstKnownCompletedTasks(...allIncompleteTasks)
     let baseMap = new Map(allIncompleteTasks.map((x) => [x.id, x]))
     let traversed = new Set<number>() // ids
     let finalList: Array<Task> = []
@@ -199,14 +198,14 @@
       if (typeof nextUp.id === 'undefined') {
         console.debug(`pushing remaining ${layer.size} tasks to list`)
         finalList.push(...layer.values())
-        useCompletedTasksStore().checkAll(finalList)
+        TaskCache.checkAgainstKnownCompletedTasks(...finalList)
         return finalList
       }
       finalList.push(layer.get(nextUp.id)!)
       layer.delete(nextUp.id)
       traversed.add(nextUp.id)
     }
-    useCompletedTasksStore().checkAll(finalList)
+    TaskCache.checkAgainstKnownCompletedTasks(...finalList)
     return finalList
   })
 
@@ -214,7 +213,7 @@
     const newStatus = task.completed
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
       if (result.completed !== newStatus) throw new Error('error saving completed status of task')
-      useAllTasksStore().completion(task.id, newStatus)
+      // useAllTasksStore().completion(task.id, newStatus)
       TDLAPP.notifyUpdatedCompletionStatus(result)
       console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
     }, Utils.handleError('Error updating completion status of a task.'))

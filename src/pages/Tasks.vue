@@ -101,8 +101,9 @@
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import SettingsButton from 'src/components/SettingsButton.vue'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 
   useMeta(() => {
     return {
@@ -121,30 +122,35 @@
   const localSettingsStore = useLocalSettingsStore()
   const { layerZeroOnly, hideCompleted, selectedList } = storeToRefs(localSettingsStore)
 
+  const loadingStateStore = useLoadingStateStore()
+  const { busy } = storeToRefs(loadingStateStore)
+
+  const { layerZero } = storeToRefs(useLayerZeroStore())
+
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
     'Incomplete Only': hideCompleted
   })
 
-  const notCompleted = (x: Task) => x.completed === false
-  const filterByList = (x: Task) => x.list?.title === selectedList.value
+  // const notCompleted = (x: Task) => x.completed === false
 
   const tasks = computed(() => {
-    console.warn('updating tasks on Task page')
-    let baseQuery = useLayerZeroStore().layerZero as Task[]
+    if(busy.value) return []
+    console.debug('updating tasks on Task page')
+    let baseQuery = layerZero.value as Task[]
+    // console.debug({ baseQuery })
+    const filterByList = (x: Task) => x.list?.title === selectedList.value
     if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
-    const results = baseQuery.sort(
-      (a, b) =>
-        b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length
-    )
-    console.debug({ page: 'Tasks', results })
+    const postreqs = (t: Task) => hideCompleted.value ? t.hard_postreqs.filter(x => !x.completed) : t.hard_postreqs
+    const results = baseQuery.sort( (a, b) => postreqs(b).length - postreqs(a).length )
+    // console.debug({ page: 'Tasks', results })
     return results
   })
 
   const updateTaskCompletedStatus = async (task: Task) => {
     const newStatus = task.completed
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((t) => {
-      console.debug({ 'Tasks updateTaskCompletedStatus': t })
+      // console.debug({ 'Tasks updateTaskCompletedStatus': t })
       if (t.completed !== newStatus)
         throw new Error('updated value and value meant to update do not match')
       TDLAPP.notifyUpdatedCompletionStatus(task)
