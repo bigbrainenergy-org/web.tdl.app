@@ -1,7 +1,7 @@
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import UpdateTaskDialog from 'src/components/dialog/UpdateTaskDialog.vue'
+import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 
 installQuasarPlugin()
 

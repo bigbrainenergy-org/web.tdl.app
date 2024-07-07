@@ -49,11 +49,4 @@
   const focusPassword = () => {
     passwordInput.value?.focus()
   }
-  // defineProps<{
-  //   server: string
-  //   username: string
-  //   password: string
-  // }>()
-
-  // defineEmits(['update:server', 'update:username', 'update:password', 'login'])
 </script>

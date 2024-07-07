@@ -1,7 +1,7 @@
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
+import LanguageSwitcher from 'src/components/inputs/LanguageSwitcher.vue'
 
 installQuasarPlugin()
 

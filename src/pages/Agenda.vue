@@ -104,7 +104,7 @@
   import { Utils, computedWithPrev, exists } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useAllTasksStore } from 'src/stores/performance/all-tasks'

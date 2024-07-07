@@ -39,7 +39,7 @@
   import { useAxiosStore } from 'src/stores/axios-store'
   import { syncWithBackend } from 'src/hackerman/sync'
 
-  import LoginForm from 'src/components/LoginForm.vue'
+  import LoginForm from 'src/components/forms/LoginForm.vue'
 
   const authenticationStore = useAuthenticationStore()
   const $q = useQuasar()

@@ -1,7 +1,7 @@
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import LoginForm from 'src/components/LoginForm.vue'
+import LoginForm from 'src/components/forms/LoginForm.vue'
 import { nextTick } from 'process'
 
 installQuasarPlugin()

@@ -49,11 +49,11 @@
   import { useQuasar } from 'quasar'
   import { useRouter } from 'vue-router'
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-  import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
-  import TimeZoneSwitcher from 'src/components/TimeZoneSwitcher.vue'
-  import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
-  import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
-  import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
+  import FocusModeSettingsDialog from 'src/components/dialogs/FocusModeSettingsDialog.vue'
+  import TimeZoneSwitcher from 'src/components/inputs/TimeZoneSwitcher.vue'
+  import LanguageSwitcher from 'src/components/inputs/LanguageSwitcher.vue'
+  import BackgroundSwitcher from 'src/components/inputs/BackgroundSwitcher.vue'
+  import PasswordChangeForm from 'src/components/forms/PasswordChangeForm.vue'
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
 
   defineComponent({ name: 'SettingsPage' })

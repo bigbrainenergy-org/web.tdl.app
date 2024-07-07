@@ -100,7 +100,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
-  import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import SettingsButton from 'src/components/SettingsButton.vue'
 

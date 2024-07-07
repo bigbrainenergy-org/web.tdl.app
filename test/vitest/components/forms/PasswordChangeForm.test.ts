@@ -1,7 +1,7 @@
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
+import PasswordChangeForm from 'src/components/forms/PasswordChangeForm.vue'
 
 installQuasarPlugin()
 
