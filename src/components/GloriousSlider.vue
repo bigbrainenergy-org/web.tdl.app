@@ -15,7 +15,8 @@
           label-always
           :label-value="label"
           :color="props.color"
-          @change="emit('change', val)" />
+          @change="emit('change', val)"
+        />
       </div>
     </q-item-section>
 
@@ -27,7 +28,7 @@
 <script setup lang="ts">
   import { GloriousSliderProp } from 'src/glorious'
   import { computed } from 'vue'
-  import { withDefaults, defineProps } from 'vue'
+  import { withDefaults } from 'vue'
 
   const props = withDefaults(defineProps<GloriousSliderProp>(), {
     beginIcon: undefined,
