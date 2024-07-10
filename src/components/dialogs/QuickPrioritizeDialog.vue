@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { Task } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
   import { ref } from 'vue'
@@ -54,8 +54,7 @@
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-  const layerZero = useLayerZeroStore()
-    .get()
+  const layerZero = useLayerZeroStore().typed
     .filter((x) => {
       if (x.id === prop.task.id) return false
       if (prop.task.hard_postreq_ids.includes(x.id)) return false

@@ -71,9 +71,6 @@
 
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
-  // import { useRepo } from 'pinia-orm'
-  // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import TaskSearchResults from '../search/TaskSearchResults.vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import { λ } from 'src/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -81,10 +78,9 @@
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
-  import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   import Fuse, { FuseResult } from 'fuse.js'
-  import { brushY } from 'd3'
   import { useElementSize } from '@vueuse/core'
+import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
   interface Props {
     dialogTitle: string
@@ -265,11 +261,12 @@
     busy.value = true
     if (typeof searchString.value === 'undefined') return
     const toCreate: CreateTaskOptions = { title: searchString.value }
-    const newTask = await timeThisABAsync<CreateTaskOptions, Task>(
+    const newTask = await timeThisABAsync<CreateTaskOptions, Task | undefined>(
       tr.addAndCache,
       'addAndCache',
       400
     )(toCreate)
+    if(typeof newTask === 'undefined') throw new Error('createTask: addAndCache did not work')
     if (typeof props.taskID !== 'undefined') selectTask(newTask)
     busy.value = false
   }

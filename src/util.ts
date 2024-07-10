@@ -15,6 +15,7 @@ export class Utils {
 
   static handleError(memo: string): λ<Error | AxiosError, null> {
     return (error: Error | AxiosError) => {
+      console.warn(error)
       errorNotification(error, memo)
       return null
     }
@@ -48,9 +49,18 @@ export class Utils {
     else console.warn('arrayDelete will not delete any elements because they were not found.')
     return arr
   }
-  static onlyInLeftArray(leftArr: NodeKey[], rightArr: NodeKey[]) {
-    return leftArr.filter((x) => !rightArr.some((y) => y.key === x.key))
+  static arrayUpdate<T>(arr: Array<T>, element: T, key: keyof T) {
+    const i = arr.findIndex((x) => x[key] === element[key])
+    if (i < 0) {
+      console.warn('arrayUpdate will not update any element because it was not found')
+      throw new Error('arrayUpdate will not update any element because it was not found')
+    }
+    else arr[i] = element
   }
+  static onlyInLeftArray<T>(A: T[], B: T[], key: keyof T) {
+    return A.filter((x) => !B.some((y) => y[key] === x[key]))
+  }
+
   /**
    * @param a an array
    * @param b an array of the same type
@@ -61,7 +71,16 @@ export class Utils {
     return a.filter((x) => setB.has(x))
   }
   static combineArrays(a: NodeKey[], b: NodeKey[]) {
-    return [...a, ...this.onlyInLeftArray(b, a)]
+    return [...a, ...this.onlyInLeftArray(b, a, 'key')]
+  }
+  static venn<T extends { id: number }>(a: T[], b: T[]) {
+    const setB = new Set<number>(b.map(x => x.id))
+    const left = a.filter((x) => !setB.has(x.id))
+    const center = a.filter((x) => setB.has(x.id))
+    const setCenter = new Set<number>(center.map(x => x.id))
+    const right = b.filter((x) => !setCenter.has(x.id))
+    // todo: optimize
+    return { left, center, right }
   }
 
   static filterMap<K, V>(map: Map<K, V>, predicate: (key: K, value: V) => boolean) {

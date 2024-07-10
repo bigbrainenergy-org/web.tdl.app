@@ -170,7 +170,7 @@
     if (typeof props.search === 'undefined') return
     const toCreate: CreateTaskOptions = { title: props.search }
     const newTask = await timeThisABAsync(tr.addAndCache, 'addAndCache', 400)(toCreate)
-    if (typeof props.taskID !== 'undefined') selectTask(newTask)
+    if (typeof props.taskID !== 'undefined') selectTask(newTask as Task)
   }
 
   const selectTask = (task: Task) => {

@@ -11,10 +11,9 @@ import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
 import { Utils, exists } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
 import { Queue } from 'src/types'
-import { useAllTasksStore } from '../performance/all-tasks'
 import { timeThisABAsync, timeThisB } from 'src/perf'
-import { useLayerZeroStore } from '../performance/layer-zero'
-import { useCompletedTasksStore } from '../diagnostics/completed-tasks'
+import { useAllTasksStore } from '../performance/all-tasks'
+import { TaskCache } from '../performance/task-go-fast'
 
 export interface CreateTaskOptions {
   list_id?: number | null
@@ -114,11 +113,13 @@ export class Task extends Model implements iRecord {
       return node
     }
     if (reverse) {
-      ;(node.expandable = this.hasPrereqs), (node.lazy = this.hasPrereqs)
+      node.expandable = this.hasPrereqs
+      node.lazy = this.hasPrereqs
       return node
     }
     if (hideCompleted) {
-      ;(node.expandable = this.hasIncompletePostreqs), (node.lazy = this.hasIncompletePostreqs)
+      node.expandable = this.hasIncompletePostreqs
+      node.lazy = this.hasIncompletePostreqs
       return node
     }
     node.expandable = this.hasPostreqs
@@ -428,7 +429,6 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       const pre: Task = Utils.hardCheck(this.find(id_of_prereq))
       Utils.arrayDelete(pre.hard_postreq_ids, task.id)
       this.save(pre)
-      this.setCache(pre)
       Utils.notifySuccess('Removed prerequisite')
     }, Utils.handleError('Error removing prerequisite'))
   }
@@ -452,7 +452,6 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       Utils.arrayDelete(post.hard_prereq_ids, task.id)
       console.log(`after arrayDelete (pre ids): ${post.hard_prereq_ids}`)
       this.save(post)
-      this.setCache(post)
       Utils.notifySuccess('Removed postrequisite')
     }, Utils.handleError('Error removing postrequisite'))
   }
@@ -470,35 +469,56 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     // 2. validate new rule (recursion or redundancy, dupe, etc)
 
     try {
-      useCompletedTasksStore().checkAll(task.grabPrereqs(true))
+      TaskCache.checkAgainstKnownCompletedTasks(...task.grabPrereqs(true))
     } catch (error) {
       console.warn({ location: 'pres of post', error })
       throw error
     }
-    const pre = Utils.hardCheck(
-      useAllTasksStore().allTasks.get(id_of_prereq),
-      'Prerequisite was not found in this list.'
-    ) as Task
+    const pre = useAllTasksStore().hardGet(id_of_prereq)
     const pres_of_pre = pre.grabPrereqs(true)
     try {
-      useCompletedTasksStore().checkAll(pres_of_pre)
+      TaskCache.checkAgainstKnownCompletedTasks(...pres_of_pre)
     } catch (error) {
       console.warn({ location: 'pres of pre', error })
       throw error
     }
     if (task.hard_prereq_ids.includes(id_of_prereq))
       throw new Error('addPre: id provided is already in prereqs list')
+
+    const payload = {
+      task: {
+        list_id: task.list_id,
+        title: task.title,
+        notes: task.notes,
+        completed: task.completed,
+        deadline_at: task.deadline_at,
+        prioritize_at: task.prioritize_at,
+        remind_me_at: task.remind_me_at,
+        review_at: task.review_at,
+        hard_prereq_ids: task.hard_prereq_ids,
+        hard_postreq_ids: task.hard_postreq_ids,
+        mental_energy_required: task.mental_energy_required,
+        physical_energy_required: task.physical_energy_required
+      }
+    }
+
+    // previously, payload was assigned as payload: { task: Object.assign( {}, task )}
     const options: UpdateTaskOptions = {
       id: task.id,
-      payload: { task: Object.assign({}, task) }
+      payload
     }
+
     if (typeof options.payload.task.hard_prereq_ids === 'undefined')
       options.payload.task.hard_prereq_ids = [id_of_prereq]
     else options.payload.task.hard_prereq_ids.push(id_of_prereq)
-    await this.updateAndCache(options) // we should only need one api call in order for the rails api to generate the hard_requisite record that joins two Tasks.
-    if (!pre.hard_postreq_ids.includes(task.id)) pre.hard_postreq_ids.push(task.id)
-    this.save(pre)
-    this.setCache(pre, true)
+    try {
+      console.debug({options})
+      await this.updateAndCache(options) // we should only need one api call in order for the rails api to generate the hard_requisite record that joins two Tasks.
+    } catch(error) {
+      console.warn('error updating task to add a prerequisite.', error)
+    }
+    if(!pre.hard_postreq_ids.includes(task.id)) pre.hard_postreq_ids.push(task.id)
+    useRepo(TaskRepo).where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
   }
 
   /**
@@ -513,17 +533,8 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       this.withAll().find(id_of_postreq),
       'Postreq was not found in this list.'
     )
-    if (task.hard_postreq_ids.includes(id_of_postreq))
-      throw new Error('addPost: id provided is already in postreqs list')
-    const options: UpdateTaskOptions = {
-      id: task.id,
-      payload: { task: Object.assign({}, task) }
-    }
-    options.payload.task.hard_postreq_ids!.push(id_of_postreq)
-    await this.updateAndCache(options)
-    if (!post.hard_prereq_ids.includes(task.id)) post.hard_prereq_ids.push(task.id)
-    this.save(post)
-    this.setCache(post, true)
+    // todo: write a real version of this function 
+    return await this.addPre(post, task.id)
   }
 
   deleteTask = async (task: Task) => {
@@ -541,14 +552,14 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       await this.removePre(posts[i], task.id).catch(debugError)
     }
     useRawExpandedStateStore().forgetTask(task.id)
-    useAllTasksStore().allTasks.delete(task.id)
+    TaskCache.delete(task)
     return this.delete(task.id)
   }
 
   updateAndCache = async (options: UpdateTaskOptions): Promise<Task> => {
     // todo: when a task is marked complete which triggers quickSort dialog, the task stays visible on the page (agenda or Tasks)
-    const currentTask = useAllTasksStore().allTasks.get(options.id)
-    if (!exists(currentTask)) throw new Error('Task was not found on the local repository')
+    const ats = useAllTasksStore()
+    const currentTask = ats.hardGet(options.id)
     const incompletePrereqIDs = (currentTask.hard_prereqs ?? [])
       .filter((x) => !x.completed)
       .map((x) => x.id)
@@ -558,7 +569,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     })
     const anyPrereqsBelowResult: Task[] = []
     anyPrereqsBelow.forEach((val, key) => {
-      if (val) anyPrereqsBelowResult.push(Utils.hardCheck(this.find(key)) as Task)
+      if (val) anyPrereqsBelowResult.push(ats.hardGet(key))
     })
     if (anyPrereqsBelowResult.length > 0) {
       anyPrereqsBelowResult.forEach((x) =>
@@ -576,7 +587,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     })
     const anyPostreqsAboveResult: Task[] = []
     anyPostreqsAbove.forEach((val, key) => {
-      if (val) anyPostreqsAboveResult.push(Utils.hardCheck(this.find(key)) as Task)
+      if (val) anyPostreqsAboveResult.push(ats.hardGet(key))
     })
     if (anyPostreqsAboveResult.length > 0) {
       anyPostreqsAboveResult.forEach((x) =>
@@ -584,15 +595,14 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       )
       throw new Error('There is a postreq that is already supposed to be BEFORE the current task')
     }
+    console.debug({options})
     return this.update(options).then(
       (data: null | Task) => {
         if (data !== null) {
           console.debug({ 'setting cache': data })
-          useCompletedTasksStore().set(data)
-          this.setCache(data, true)
-          return data
+          return TaskCache.update(data)
         } else {
-          console.warn('repo update function returned null')
+          console.warn('update function returned void when Task is needed to continue processing.')
           throw new Error(
             'update function returned void when Task is needed to continue processing.'
           )
@@ -609,17 +619,9 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       this.add,
       'this.add',
       500
-    )(options).then((data: Task) => this.setCache(data))
-  }
-
-  setCache = (task: Task, getAll = false) => {
-    const t = getAll ? this.withAll().find(task.id) : task
-    console.log({ method: 'setCache', t })
-    if (t === null) throw new Error('Task not found in the repository, so it cannot be cached.')
-    useAllTasksStore().allTasks.set(t.id, t)
-    useLayerZeroStore().checkAndSet(t, true)
-    useCompletedTasksStore().checkAll(useLayerZeroStore().layerZero as Task[])
-    return t
+    )(options).then((data: Task) => {
+      return TaskCache.update(data)
+    })
   }
 
   incompleteOnly = (): Task[] =>

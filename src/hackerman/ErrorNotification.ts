@@ -4,6 +4,7 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
 export default function errorNotification(error: Error | AxiosError, fallbackMessage: string) {
   const errorMessage = `${fallbackMessage}: ${error.message}`
+  console.warn(errorMessage, error)
 
   Notify.create({
     color: 'negative',

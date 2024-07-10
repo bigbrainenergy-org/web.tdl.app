@@ -26,6 +26,7 @@ export class List extends Model implements iRecord {
   @Str('') declare title: string
   @Str('') declare color: string
   @Num(0) declare order: number
+  @Str('') declare notes: string
 
   @HasMany(() => Task, 'list_id') declare tasks: Task[]
 

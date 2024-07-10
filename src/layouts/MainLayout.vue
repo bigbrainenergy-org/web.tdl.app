@@ -151,15 +151,15 @@
   import { UserRepo } from 'src/stores/users/user'
   import { useRepo } from 'pinia-orm'
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-  import { Utils, computedWithPrev } from 'src/util'
+  import { Utils } from 'src/util'
   import { syncWithBackend } from 'src/hackerman/sync'
   import { AxiosError } from 'axios'
   import { useAxiosStore } from 'src/stores/axios-store'
   import { ComponentPublicInstance } from 'vue'
   import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+  import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
   const $q = useQuasar()
@@ -339,7 +339,7 @@
       addTaskOpen: lss.createTaskDialogActive,
       addDependencyOpen: lss.addDependencyDialogActive,
       layerZeroLength: layerZero.value.length,
-      tasksWithoutPosts: layerZero.value.filter((x) => x.grabPostreqs(true).length === 0).length,
+      tasksWithoutPosts: layerZero.value.filter((x) => x.hasIncompletePostreqs).length,
       shouldSort: shouldSort.value
     }
     console.debug(payload)
@@ -352,8 +352,7 @@
       return
     }
     Utils.updateLuxonTimeZone(user.time_zone)
-    useAllTasksStore().regenerate()
-    useLayerZeroStore().regenerate()
+    TaskCache.regenerate()
   })
 
   const backgroundModeSetting = computed<BackgroundMode>(
@@ -421,19 +420,17 @@
     }, 10)
   })
 
-  const layerZero = computed(() => {
-    // no longer need to worry about busy signal because we are using cache that is updated by child components.
-    return useLayerZeroStore().get()
-  })
+  const layerZero = computed((): Task[] => useLayerZeroStore().typed)
 
   // todo: storeToRefs
   const hasTooManyInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0
       ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
       : false
+  // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
-      ? layerZero.value.filter((x) => x.grabPostreqs(true).length === 0).length > 0
+      ? layerZero.value.filter((x: Task) => x.grabPostreqs(true).length === 0).length > 0
       : false
   const quickSortEnabled = () =>
     !useLocalSettingsStore().disableQuickSort &&
