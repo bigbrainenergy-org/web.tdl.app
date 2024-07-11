@@ -1,6 +1,6 @@
 describe('Login', () => {
   beforeEach(() => {
-    cy.visit('/')
+    cy.visit('/login')
   })
 
   it('should allow logging in the user with good credentials', () => {

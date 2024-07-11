@@ -37,7 +37,13 @@
 
         <p>
           This app is open source! Check out the code on
-          <a href="https://github.com/bigbrainenergy-org/web.tdl.app" target="_blank">Github</a>.
+          <!-- FIXME: The linter formatting is screwing this up heavily -->
+          <a
+            href="https://github.com/bigbrainenergy-org/web.tdl.app"
+            target="_blank"
+            data-cy="source-code-link"
+            >Github</a
+          >.
         </p>
       </q-card-section>
     </q-card>

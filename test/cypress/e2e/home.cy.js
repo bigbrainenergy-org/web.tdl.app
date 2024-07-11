@@ -8,9 +8,13 @@ describe('Landing', () => {
   beforeEach(() => {
     cy.visit('/')
   })
-  it('.should() - assert that <title> is correct', () => {
+
+  it('should assert that <title> is correct', () => {
     cy.title().should('include', 'TDL App')
   })
+
+  it('should take you to the login page when not logged in')
+  it('should take you to the tasks page when logged in')
 })
 
 // ** The following code is an example to show you how to write some tests for your home page **
