@@ -20,7 +20,7 @@ describe('Login', () => {
     // Click login
     cy.dataCy('login').click()
     // Expect to have logged in successfully
-    cy.dataCy('tasks-title').should('exist')
+    cy.dataCy('tasks_title').should('exist')
   })
 
   it('should reject invalid credentials')

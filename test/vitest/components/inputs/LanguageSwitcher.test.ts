@@ -10,4 +10,6 @@ describe('Password Change Form Component', () => {
     const wrapper = mount(LanguageSwitcher)
     expect(wrapper.find('[data-cy="language_switcher"]').exists()).toBeTruthy()
   })
+
+  it('should change the language when switched to Japanese')
 })

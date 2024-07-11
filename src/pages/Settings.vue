@@ -7,7 +7,7 @@
             <q-icon name="settings" />
           </q-item-section>
           <q-item-section>
-            <div class="text-h5">{{ $t('settings') }}</div>
+            <div class="text-h5" data-cy="settings_title">{{ $t('settings') }}</div>
           </q-item-section>
         </q-item>
       </q-card-section>
@@ -41,7 +41,7 @@
           <a
             href="https://github.com/bigbrainenergy-org/web.tdl.app"
             target="_blank"
-            data-cy="source-code-link"
+            data-cy="source_code_link"
             >Github</a
           >.
         </p>
