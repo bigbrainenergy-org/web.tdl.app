@@ -107,8 +107,8 @@
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-import { TaskCache } from 'src/stores/performance/task-go-fast'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { TaskCache } from 'src/stores/performance/task-go-fast'
 
   const $q = useQuasar()
 
