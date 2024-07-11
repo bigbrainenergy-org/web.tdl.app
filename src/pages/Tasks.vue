@@ -24,66 +24,13 @@
           </q-card-section>
 
           <q-card-section>
-            <q-list class="text-primary">
-              <q-intersection
-                v-for="(currentTask, index) in tasks"
-                :key="index"
-                once
-                style="min-height: 48px"
-              >
-                <q-item v-ripple clickable @click="open(currentTask)">
-                  <q-checkbox
-                    v-model:model-value="currentTask.completed"
-                    color="primary"
-                    keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
-                  />
-
-                  <q-item-section>
-                    <q-item-label lines="2">
-                      {{ currentTask.title }}
-                    </q-item-label>
-                  </q-item-section>
-
-                  <q-item-section v-if="currentTask.notes" side>
-                    <q-avatar icon="description">
-                      <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
-                        Has additional notes! Click to view.
-                      </q-tooltip>
-                    </q-avatar>
-                  </q-item-section>
-
-                  <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
-                    <q-chip
-                      v-if="currentTask.grabPostreqs(hideCompleted).length"
-                      :style="
-                        currentTask.grabPostreqs(hideCompleted).length > 5
-                          ? 'background-color: red;'
-                          : 'background-color: gray;'
-                      "
-                    >
-                      {{ currentTask.grabPostreqs(hideCompleted).length }}
-                    </q-chip>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-btn
-                      v-if="!currentTask.completed"
-                      outline
-                      rounded
-                      label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)"
-                    />
-                  </q-item-section>
-                </q-item>
-              </q-intersection>
-              <template v-if="tasks.length === 0">
-                <q-item v-ripple clickable>
-                  <q-item-section>
-                    <strong>Nothing yet!</strong>
-                  </q-item-section>
-                </q-item>
-              </template>
-            </q-list>
+            <TaskList
+              :tasks="tasks"
+              :unblocked-only="layerZeroOnly"
+              :incomplete-only="hideCompleted"
+              @task-completion-toggled="updateTaskCompletedStatus"
+              @task-clicked="openTask"
+            />
           </q-card-section>
         </q-card>
       </div>
@@ -104,6 +51,7 @@
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+  import TaskList from 'src/components/TaskList.vue'
 
   useMeta(() => {
     return {
@@ -113,7 +61,7 @@
 
   const $q = useQuasar()
 
-  const open = (task: Task) => TDLAPP.openTask(task)
+  const openTask = (_event, task: Task) => TDLAPP.openTask(task)
 
   const pageTasks = defineComponent({
     name: 'PageTasks'
