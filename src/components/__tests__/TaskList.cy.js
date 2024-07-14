@@ -22,6 +22,6 @@ describe('Password Change Form Component', () => {
         ]
       }
     })
-    cy.get('.q-item').should('have.length', 3)
+    cy.dataCy('task_item').should('have.length', 3)
   })
 })
