@@ -1,7 +1,13 @@
 <template>
-  <q-list class="text-primary" data-cy="task_list">
-    <p v-for="(task, index) in tasks" :key="index">{{ index }}</p>
-    <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
+  <q-list ref="task_list" class="text-primary" data-cy="task_list">
+    <!-- <p v-for="(task, index) in tasks" :key="index">{{ index }}</p> -->
+    <q-intersection
+      v-for="(task, index) in tasks"
+      :key="index"
+      once
+      style="min-height: 48px"
+      root="task_list"
+    >
       <q-item v-ripple clickable @click="$emit('task-clicked', $event, task)">
         <q-checkbox
           v-model:model-value="task.completed"
@@ -80,4 +86,5 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const tasks = ref(props.tasks)
+  const task_list = ref(null)
 </script>
