@@ -120,8 +120,9 @@
   import { timeThis, timeThisAABAsync } from 'src/perf'
   import { useElementSize } from '@vueuse/core'
   import { AxiosError } from 'axios'
+  import { TaskCache } from 'src/stores/performance/task-go-fast'
+  import { useAllTasksStore, cachedTask } from 'src/stores/performance/all-tasks'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-import { TaskCache } from 'src/stores/performance/task-go-fast'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -171,11 +172,12 @@ import { TaskCache } from 'src/stores/performance/task-go-fast'
     useLocalSettingsStore().enableQuickSortOnNewTask = quickSortNew.value
   })
 
-  const postWeightedTask = (x: Task) => new PostWeightedTask(x)
+  const postWeightedTask = (x: cachedTask) => new PostWeightedTask(x.t)
+  const postWeightedTask2 = (x: Task) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
     const layerZeroTasks = useLayerZeroStore().typed
-    TaskCache.checkAgainstKnownCompletedTasks(...layerZeroTasks)
+    TaskCache.checkAgainstKnownCompletedTasks(...layerZeroTasks.map(x => x.t))
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
@@ -194,7 +196,7 @@ import { TaskCache } from 'src/stores/performance/task-go-fast'
           .filter((x) => x.t.grabPostreqs(true).length > 1)
           .map((x) => ({
             id: x.t.id,
-            data: x.t.grabPostreqs(true).map(postWeightedTask)
+            data: x.t.grabPostreqs(true).map(postWeightedTask2)
           }))
       : null
   )
@@ -495,6 +497,7 @@ import { TaskCache } from 'src/stores/performance/task-go-fast'
   }
 
   const addRule = async (first: Task, second: Task) => {
+    console.debug({ first, second })
     loading.value = true
     await timeThisAABAsync(
       TDLAPP.addPre,

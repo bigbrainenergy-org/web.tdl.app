@@ -107,8 +107,8 @@
   import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
+  import { TaskCache } from 'src/stores/performance/task-go-fast'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-import { TaskCache } from 'src/stores/performance/task-go-fast'
 
   const $q = useQuasar()
 
@@ -121,7 +121,7 @@ import { TaskCache } from 'src/stores/performance/task-go-fast'
   const { layerZeroOnly, hideCompleted, disableQuickSort, enableQuickSortOnLayerZeroQTY } =
     storeToRefs(localSettingsStore)
   const sortQty = computed(() => {
-    const len0 = useLayerZeroStore().layerZero.length
+    const len0 = useLayerZeroStore().tasks.length
     if (disableQuickSort.value) return len0
     return Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
@@ -148,10 +148,6 @@ import { TaskCache } from 'src/stores/performance/task-go-fast'
     }
     console.log('recalculating agenda.')
     const allIncompleteTasks = useRepo(TaskRepo).where('completed', false).withAll().get()
-    console.log(
-      'INCOMPLETE TASKS: ',
-      allIncompleteTasks.filter((x) => x.completed === true).map((x) => x.title)
-    )
     TaskCache.checkAgainstKnownCompletedTasks(...allIncompleteTasks)
     let baseMap = new Map(allIncompleteTasks.map((x) => [x.id, x]))
     let traversed = new Set<number>() // ids

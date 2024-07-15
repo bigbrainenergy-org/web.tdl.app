@@ -31,12 +31,12 @@
                 once
                 style="min-height: 48px"
               >
-                <q-item v-ripple clickable @click="open(currentTask)">
+                <q-item v-ripple clickable @click="open(currentTask.t)">
                   <q-checkbox
                     v-model:model-value="currentTask.completed"
                     color="primary"
                     keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
+                    @update:model-value="updateTaskCompletedStatus(currentTask.t)"
                   />
 
                   <q-item-section>
@@ -45,7 +45,7 @@
                     </q-item-label>
                   </q-item-section>
 
-                  <q-item-section v-if="currentTask.notes" side>
+                  <q-item-section v-if="currentTask.t.notes" side>
                     <q-avatar icon="description">
                       <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
                         Has additional notes! Click to view.
@@ -71,7 +71,7 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)"
+                      @click.stop="addTaskPre(currentTask.t)"
                     />
                   </q-item-section>
                 </q-item>
@@ -102,8 +102,9 @@
   import { TDLAPP } from 'src/TDLAPP'
   import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
   import SettingsButton from 'src/components/SettingsButton.vue'
+  import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 
   useMeta(() => {
     return {
@@ -125,8 +126,6 @@ import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   const loadingStateStore = useLoadingStateStore()
   const { busy } = storeToRefs(loadingStateStore)
 
-  const { layerZero } = storeToRefs(useLayerZeroStore())
-
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
     'Incomplete Only': hideCompleted
@@ -135,20 +134,20 @@ import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   // const notCompleted = (x: Task) => x.completed === false
 
   const tasks = computed(() => {
-    if(busy.value) return []
+    if (busy.value) return []
     console.debug('updating tasks on Task page')
-    let baseQuery = layerZero.value as Task[]
-    // console.debug({ baseQuery })
-    const filterByList = (x: Task) => x.list?.title === selectedList.value
+    let baseQuery = useLayerZeroStore().typed
+    console.debug({ baseQuery })
+    const filterByList = (x: cachedTask) => x.t.list?.title === selectedList.value
     if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
-    const postreqs = (t: Task) => hideCompleted.value ? t.hard_postreqs.filter(x => !x.completed) : t.hard_postreqs
-    const results = baseQuery.sort( (a, b) => postreqs(b).length - postreqs(a).length )
-    // console.debug({ page: 'Tasks', results })
-    return results
+    const postreqs = hideCompleted.value ? (t: cachedTask) => t.hard_postreqs.filter((x) => !x.completed) : (t: cachedTask) => t.hard_postreqs
+    baseQuery.sort((a, b) => postreqs(b).length - postreqs(a).length)
+    return baseQuery
   })
 
   const updateTaskCompletedStatus = async (task: Task) => {
     const newStatus = task.completed
+    // TODO: strip payload object of everything except necessary
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((t) => {
       // console.debug({ 'Tasks updateTaskCompletedStatus': t })
       if (t.completed !== newStatus)

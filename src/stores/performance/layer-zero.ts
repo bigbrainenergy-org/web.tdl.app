@@ -1,27 +1,49 @@
 import { defineStore } from 'pinia'
-import { Task } from '../tasks/task'
+import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
 import { useIncompleteTasksStore } from './incomplete-tasks'
 
 interface LayerZeroState {
-  layerZero: Array<Task>
+  tasks: cachedTask[]
 }
 export const useLayerZeroStore = defineStore('layer-zero', {
   state: (): LayerZeroState => ({
-    layerZero: new Array<Task>()
+    tasks: Array<cachedTask>()
   }),
   persist: false,
   getters: {
-    typed: (state) => state.layerZero as Task[]
+    typed: (state) => state.tasks as cachedTask[]
   },
   actions: {
-    /**
-     * NOTE: ensure incomplete tasks store was regenerated before this one.
-     */
+    // MUST HAVE INCOMPLETE TASKS REGENERATED FIRST
     regenerate() {
-      this.layerZero = []
-      useIncompleteTasksStore().incompleteTasks.forEach(x => {
-        if(!x.hasIncompletePrereqs) this.layerZero.push(x)
+      this.tasks = []
+      useIncompleteTasksStore().typed.forEach(x => {
+        if(!x.hard_prereqs.some(y => !y.completed)) {
+          this.tasks.push(x)
+        }
       })
+    },
+    loadAll(task: cachedTask, ats = useAllTasksStore()) {
+      const H = (x: number) => ats.hardGet(x).t
+      task.hard_prereqs = task.hard_prereq_ids.map(H)
+      task.hard_postreqs = task.hard_postreq_ids.map(H)
+      return task
+    },
+    withAll(id: number) {
+      const ats = useAllTasksStore()
+      return this.loadAll(ats.hardGet(id), ats)
+    },
+    all(withAll = false) {
+      const ats = useAllTasksStore()
+      const allTasks: cachedTask[] = []
+      if (withAll) this.typed.forEach((x: cachedTask) => allTasks.push(this.loadAll(x, ats)))
+      return allTasks
+    },
+    delete(id: number) {
+      const index = this.tasks.findIndex(x => x.id === id)
+      if(index >= 0) {
+        this.tasks.splice(index, 1)
+      }
     }
   }
 })

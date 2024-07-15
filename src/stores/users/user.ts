@@ -51,8 +51,8 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
   getUser = () => {
     const userId = useAuthenticationStore().userId
     const user = this.withAll().find(userId)
-    console.debug({ userId, user })
-    console.debug({ 'all users': this.all() })
+    // console.debug({ userId, user })
+    // console.debug({ 'all users': this.all() })
     return user
   }
 

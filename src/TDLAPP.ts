@@ -47,7 +47,7 @@ export class TDLAPP {
       'repo add pre function',
       1000
     )(task, newPreID).then(() => {
-      console.log('successfully added pre.')
+      // console.log('successfully added pre.')
       Utils.notifySuccess('Added Prerequisite', 'fa-solid fa-link')
     }, Utils.handleError('Failed to add prereq'))
   }
