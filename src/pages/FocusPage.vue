@@ -100,7 +100,7 @@
 <script setup lang="ts">
   import { useRepo } from 'pinia-orm'
   import { TDLAPP } from 'src/TDLAPP'
-  // import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+  // import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed } from 'vue'

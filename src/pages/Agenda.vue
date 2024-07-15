@@ -104,7 +104,7 @@
   import { Utils, exists } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
   import { TaskCache } from 'src/stores/performance/task-go-fast'

@@ -114,7 +114,7 @@
   import { useQuasar } from 'quasar'
   import { List, ListRepo } from 'src/stores/lists/list'
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-  import CreateTaskDialog from 'src/components/dialog/CreateTaskDialog.vue'
+  import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'

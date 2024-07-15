@@ -6,6 +6,7 @@
     type="password"
     label="Current Password"
     name="current_password"
+    data-cy="current_password"
   />
   <q-input
     v-model="newPassword"
@@ -14,6 +15,7 @@
     type="password"
     label="New Password"
     name="new_password"
+    data-cy="new_password"
   />
   <q-input
     v-model="confirmPassword"
@@ -22,6 +24,7 @@
     type="password"
     label="Confirm Password"
     name="confirm_password"
+    data-cy="confirm_password"
   />
   <q-btn
     class="full-width"

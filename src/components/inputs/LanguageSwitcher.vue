@@ -7,7 +7,7 @@
     borderless
     emit-value
     map-options
-    name="language_switcher"
+    data-cy="language_switcher"
   >
     <template #prepend>
       <q-icon name="fa fa-language" />

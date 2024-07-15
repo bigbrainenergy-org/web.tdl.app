@@ -18,7 +18,7 @@ describe('example Component', () => {
           { id: 2, content: 'Hoi' }
         ]
       }
-    })
+    }) as any
     expect(wrapper.vm.clickCount).toBe(0)
     wrapper.find('.q-item').trigger('click')
     expect(wrapper.vm.clickCount).toBe(1)

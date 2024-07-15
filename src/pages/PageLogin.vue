@@ -13,35 +13,16 @@
       </q-card-section>
 
       <q-card-section>
-        <q-form class="q-gutter-md" autofocus>
-          <q-input v-model="server" filled :label="$t('server')">
-            <template #prepend>
-              <q-icon name="fas fa-network-wired" />
-            </template>
-          </q-input>
-
-          <q-input v-model="username" filled :label="$t('username')">
-            <template #prepend>
-              <q-icon name="account_circle" />
-            </template>
-          </q-input>
-
-          <q-input
-            v-model="password"
-            filled
-            :label="$t('password')"
-            type="password"
-            @keyup.enter="login"
-          >
-            <template #prepend>
-              <q-icon name="lock" />
-            </template>
-          </q-input>
-        </q-form>
+        <LoginForm
+          v-model:server="server"
+          v-model:username="username"
+          v-model:password="password"
+          @login="login"
+        />
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat @click="login">{{ $t('login') }}</q-btn>
+        <q-btn flat data-cy="login" @click="login">{{ $t('login') }}</q-btn>
       </q-card-actions>
     </q-card>
   </q-page>
@@ -57,6 +38,9 @@
   import { Utils } from 'src/util'
   import { useAxiosStore } from 'src/stores/axios-store'
   import { syncWithBackend } from 'src/hackerman/sync'
+
+  import LoginForm from 'src/components/forms/LoginForm.vue'
+
   const authenticationStore = useAuthenticationStore()
   const $q = useQuasar()
   const $router = useRouter()

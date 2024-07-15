@@ -18,7 +18,7 @@
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
               <div class="col">
-                <div class="text-h6 text-pain">Tasks</div>
+                <div class="text-h6 text-pain" data-cy="tasks-title">Tasks</div>
               </div>
             </div>
           </q-card-section>
@@ -100,7 +100,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
-  import QuickSortLayerZeroDialog from 'src/components/dialog/QuickSortLayerZeroDialog.vue'
+  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'

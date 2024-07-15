@@ -7,7 +7,7 @@
             <q-icon name="settings" />
           </q-item-section>
           <q-item-section>
-            <div class="text-h5">{{ $t('settings') }}</div>
+            <div class="text-h5" data-cy="settings_title">{{ $t('settings') }}</div>
           </q-item-section>
         </q-item>
       </q-card-section>
@@ -37,7 +37,13 @@
 
         <p>
           This app is open source! Check out the code on
-          <a href="https://github.com/bigbrainenergy-org/web.tdl.app" target="_blank">Github</a>.
+          <!-- FIXME: The linter formatting is screwing this up heavily -->
+          <a
+            href="https://github.com/bigbrainenergy-org/web.tdl.app"
+            target="_blank"
+            data-cy="source_code_link"
+            >Github</a
+          >.
         </p>
       </q-card-section>
     </q-card>
@@ -49,11 +55,11 @@
   import { useQuasar } from 'quasar'
   import { useRouter } from 'vue-router'
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-  import FocusModeSettingsDialog from 'src/components/dialog/FocusModeSettingsDialog.vue'
-  import TimeZoneSwitcher from 'src/components/TimeZoneSwitcher.vue'
-  import LanguageSwitcher from 'src/components/LanguageSwitcher.vue'
-  import BackgroundSwitcher from 'src/components/BackgroundSwitcher.vue'
-  import PasswordChangeForm from 'src/components/PasswordChangeForm.vue'
+  import FocusModeSettingsDialog from 'src/components/dialogs/FocusModeSettingsDialog.vue'
+  import TimeZoneSwitcher from 'src/components/inputs/TimeZoneSwitcher.vue'
+  import LanguageSwitcher from 'src/components/inputs/LanguageSwitcher.vue'
+  import BackgroundSwitcher from 'src/components/inputs/BackgroundSwitcher.vue'
+  import PasswordChangeForm from 'src/components/forms/PasswordChangeForm.vue'
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
 
   defineComponent({ name: 'SettingsPage' })
