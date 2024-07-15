@@ -147,6 +147,9 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
       return []
     }
     console.log('recalculating agenda.')
+    // todo: think about why using the incompleteTasksStore and refactoring to use cachedTask slows this down...
+    // maybe because the cache gets rattled while loading the page.
+    // perhaps using the cache, there would be an entirely easier way to get this done?
     const allIncompleteTasks = useRepo(TaskRepo).where('completed', false).withAll().get()
     TaskCache.checkAgainstKnownCompletedTasks(...allIncompleteTasks)
     let baseMap = new Map(allIncompleteTasks.map((x) => [x.id, x]))
