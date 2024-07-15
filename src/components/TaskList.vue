@@ -1,6 +1,12 @@
 <template>
   <q-list ref="task_list" class="text-primary" data-cy="task_list">
-    <!-- <p v-for="(task, index) in tasks" :key="index">{{ index }}</p> -->
+    <!-- If no tasks, render empty list item -->
+    <q-item v-if="!tasks.length" v-ripple clickable data-cy="empty_list_message">
+      <q-item-section>
+        <strong>{{ props.emptyListMessage }}</strong>
+      </q-item-section>
+    </q-item>
+    <!-- Otherwise, lazy render tasks -->
     <q-intersection
       v-for="(task, index) in tasks"
       :key="index"
@@ -9,15 +15,7 @@
       :root="list_root"
     >
       <TaskItem :task="task" />
-      <!-- <p>{{ task.title }}</p> -->
     </q-intersection>
-    <template v-if="props.tasks?.length === 0">
-      <q-item v-ripple clickable data-cy="no_tasks_item">
-        <q-item-section>
-          <strong>Nothing yet!</strong>
-        </q-item-section>
-      </q-item>
-    </template>
   </q-list>
 </template>
 
@@ -34,11 +32,13 @@
       tasks?: Array<Task>
       unblockedOnly?: boolean
       incompleteOnly?: boolean
+      emptyListMessage?: string
     }>(),
     {
-      tasks: () => [], // Reasons I hate JavaScript++ (needs factory function)
+      tasks: () => [], // Reasons I hate JavaScript++ (needs factory function on only specific types)
       unblockedOnly: false,
-      incompleteOnly: false
+      incompleteOnly: false,
+      emptyListMessage: 'Nothing yet!'
     }
   )
 
