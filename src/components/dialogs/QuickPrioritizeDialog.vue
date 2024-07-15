@@ -44,7 +44,8 @@
   import { Task } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
   import { ref } from 'vue'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
   interface Props {
     task: Task
@@ -54,25 +55,22 @@
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-  const layerZero: { selected: boolean; obj: cachedTask }[] = useAllTasksStore()
-    .layerZero()
+  const layerZero: { selected: boolean; obj: cachedTask }[] = useLayerZeroStore().typed
     .filter((x: cachedTask) => {
       if (x.id === prop.task.id) return false
-      if (prop.task.isIdBelow(x.id, { incompleteOnly: true, useStore: false })) return false
+      if (prop.task.isIDBelow(x.id, { incompleteOnly: true, useStore: false })) return false
       return true
     })
     .map((x: cachedTask) => ({ selected: false, obj: x }))
   const saveNewRules = async () => {
-    // const selectedTasks = layerZero.filter((x) => x.selected)
+    const selectedTasks = layerZero.filter((x) => x.selected)
     saveProgress.value = 0
     // TODO: batch update this!
-    for (let i = 0; i < layerZero.length; i++) {
+    for (let i = 0; i < selectedTasks.length; i++) {
       const element = layerZero[i]
-      if (element.selected) {
-        await TDLAPP.addPost(prop.task, element.obj.id).then(
-          () => (saveProgress.value = (i + 1) / selectedTasks.length)
-        )
-      }
+      await TDLAPP.addPost(prop.task, element.obj.id).then(
+        () => (saveProgress.value = (i + 1) / selectedTasks.length)
+      )
     }
     onDialogCancel()
   }

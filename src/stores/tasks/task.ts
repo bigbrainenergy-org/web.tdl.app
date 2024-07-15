@@ -642,7 +642,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
 
   addAndCache = async (options: CreateTaskOptions) => {
     const data: Task = await this.add(options)
-    TaskCache.update(data)
+    return TaskCache.update(data)
   }
 
   incompleteOnly = (): Task[] =>
