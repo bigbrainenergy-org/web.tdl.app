@@ -23,6 +23,7 @@ interface LocalSettingsState {
   enableDeeperQuickSort: boolean
   omitRedundantSearchResults: boolean
   notificationSpeed: 1 | 2 | 3
+  autoScalePriority: boolean
 }
 
 export const useLocalSettingsStore = defineStore('local-settings', {
@@ -45,7 +46,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       backgroundMode: 'image',
       enableDeeperQuickSort: false,
       omitRedundantSearchResults: false,
-      notificationSpeed: 3
+      notificationSpeed: 3,
+      autoScalePriority: false
     }
   },
   persist: true

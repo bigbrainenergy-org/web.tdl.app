@@ -43,21 +43,30 @@ export class Utils {
     }
     return t
   }
-  static arrayDelete<T>(arr: Array<T>, element: T) {
-    const i = arr.indexOf(element)
+  static arrayDelete<T>(arr: Array<T>, element: T, key?: keyof T) {
+    if(arr.length === 0) {
+      console.trace('arrayDelete: array is empty')
+      throw new Error('arrayDelete: array is empty')
+    }
+    if(typeof element === 'object' && typeof key === 'undefined') {
+      console.trace('arrayUpdate: key is required for object arrays.')
+    }
+    const i = typeof key === 'undefined' ? arr.indexOf(element) : arr.findIndex((x) => x[key] === element[key])
     if (i >= 0) arr.splice(i, 1)
-    else console.warn('arrayDelete will not delete any elements because they were not found.')
+    else {
+      console.trace('arrayDelete will not delete any elements because they were not found.')
+    }
     return arr
   }
   static arrayUpdate<T>(arr: Array<T>, element: T, key: keyof T) {
     if (arr.length === 0) {
-      console.warn('arrayUpdate: array is empty')
+      console.trace('arrayUpdate: array is empty')
       throw new Error('arrayUpdate: array is empty')
     }
     const i = arr.findIndex((x) => x[key] === element[key])
     // console.debug({ method: 'arrayUpdate', arr, element, key })
     if (i < 0) {
-      console.warn('arrayUpdate will not update any element because it was not found')
+      console.trace('arrayUpdate will not update any element because it was not found')
       throw new Error('arrayUpdate will not update any element because it was not found')
     } else arr[i] = element
   }

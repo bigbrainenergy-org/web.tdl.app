@@ -51,7 +51,7 @@ export class TaskCache {
     // right: tasks that are being added to the dependencies
     vennPres.left.forEach((x) => {
       const t = ATHardGet(x.id)
-      Utils.arrayDelete(t.hard_postreqs, task)
+      Utils.arrayDelete(t.hard_postreqs, task, 'id')
       console.log({ 'postreqs before delete': t.hard_postreq_ids})
       Utils.arrayDelete(t.hard_postreq_ids, task.id)
       console.log({ 'postreqs after delete': t.hard_postreq_ids})
@@ -67,7 +67,7 @@ export class TaskCache {
     })
     vennPosts.left.forEach((x) => {
       const t = ATHardGet(x.id)
-      Utils.arrayDelete(t.hard_prereqs, task)
+      Utils.arrayDelete(t.hard_prereqs, task, 'id')
       console.log({ 'prereqs before delete': t.hard_prereq_ids})
       Utils.arrayDelete(t.hard_prereq_ids, task.id)
       console.log({ 'prereqs after delete': t.hard_prereq_ids})

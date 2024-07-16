@@ -57,7 +57,7 @@
                     <q-chip
                       v-if="currentTask.grabPostreqs(hideCompleted).length"
                       :style="
-                        currentTask.grabPostreqs(hideCompleted).length > 5
+                        currentTask.grabPostreqs(hideCompleted).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
                       "
@@ -121,14 +121,15 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   })
   const tasksRepo = useRepo(TaskRepo)
   const localSettingsStore = useLocalSettingsStore()
-  const { layerZeroOnly, hideCompleted, selectedList } = storeToRefs(localSettingsStore)
+  const { layerZeroOnly, hideCompleted, selectedList, disableQuickSort, enableQuickSortOnLayerZeroQTY, autoScalePriority } = storeToRefs(localSettingsStore)
 
   const loadingStateStore = useLoadingStateStore()
   const { busy } = storeToRefs(loadingStateStore)
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
-    'Incomplete Only': hideCompleted
+    'Incomplete Only': hideCompleted,
+    'Auto Scale Priority': autoScalePriority
   })
 
   // const notCompleted = (x: Task) => x.completed === false
@@ -163,4 +164,19 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
     $q.dialog({
       component: QuickSortLayerZeroDialog
     })
+
+  const autoThreshold = computed(() => {
+    const sampleSize = Math.min(tasks.value.length, 10)
+    let sumPriorities = 0
+    for(let i = 0; i < sampleSize; i++) {
+      sumPriorities += tasks.value[i].hard_postreqs.filter(x => !x.completed).length
+    }
+    return Math.floor(sumPriorities / sampleSize)
+  })
+
+  const sortQty = computed(() => {
+    const len0 = useLayerZeroStore().tasks.length
+    if (disableQuickSort.value) return len0
+    return autoScalePriority.value ? autoThreshold.value : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
+  })
 </script>

@@ -15,6 +15,29 @@ import { timeThisABAsync, timeThisB } from 'src/perf'
 import { cachedTask, useAllTasksStore } from '../performance/all-tasks'
 import { TaskCache } from '../performance/task-go-fast'
 
+const createPayload = (task: Task): UpdateTaskOptions => {
+  const payload = {
+    task: {
+      list_id: task.list_id,
+      title: task.title,
+      notes: task.notes,
+      completed: task.completed,
+      deadline_at: task.deadline_at,
+      prioritize_at: task.prioritize_at,
+      remind_me_at: task.remind_me_at,
+      review_at: task.review_at,
+      hard_prereq_ids: task.hard_prereq_ids,
+      hard_postreq_ids: task.hard_postreq_ids,
+      mental_energy_required: task.mental_energy_required,
+      physical_energy_required: task.physical_energy_required
+    }
+  }
+  return {
+    id: task.id,
+    payload
+  }
+}
+
 export interface CreateTaskOptions {
   list_id?: number | null
   title: string
@@ -447,18 +470,15 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     return taskWithKey[0]
   }
 
-  removePre = async (task: Task, id_of_prereq: number) => {
+  removePre = (task: Task, id_of_prereq: number) => {
     const position = task.hard_prereq_ids.indexOf(id_of_prereq)
     if (position < 0) throw new Error('removePre: id provided was not found in prereqs list')
-    const options: UpdateTaskOptions = {
-      id: task.id,
-      payload: { task: Object.assign({}, task) }
-    }
+    const options = createPayload(task)
     options.payload.task.hard_prereq_ids!.splice(position, 1)
-    await this.updateAndCache(options).then(() => {
+    this.updateAndCache(options).then(() => {
       const pre: Task = Utils.hardCheck(this.find(id_of_prereq))
       Utils.arrayDelete(pre.hard_postreq_ids, task.id)
-      this.save(pre)
+      this.where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
       Utils.notifySuccess('Removed prerequisite')
     }, Utils.handleError('Error removing prerequisite'))
   }
@@ -468,20 +488,17 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
    * @param task - the Task that is getting one fewer postrequisite
    * @param id_of_postreq - the id of the postrequisite to unlink
    */
-  removePost = async (task: Task, id_of_postreq: number) => {
+  removePost = (task: Task, id_of_postreq: number) => {
     const position = task.hard_postreq_ids.indexOf(id_of_postreq)
     if (position < 0) throw new Error('removePost: id provided was not found in postreqs list')
-    const options: UpdateTaskOptions = {
-      id: task.id,
-      payload: { task: Object.assign({}, task) }
-    }
+    const options = createPayload(task)
     options.payload.task.hard_postreq_ids!.splice(position, 1)
-    await this.updateAndCache(options).then(() => {
-      const post = Utils.hardCheck(this.withAll().find(id_of_postreq))
-      console.log(`before arrayDelete (pre ids): ${post.hard_prereq_ids}`)
+    this.updateAndCache(options).then(() => {
+      const post: Task = Utils.hardCheck(this.find(id_of_postreq))
+      // console.log(`before arrayDelete (pre ids): ${post.hard_prereq_ids}`)
       Utils.arrayDelete(post.hard_prereq_ids, task.id)
       console.log(`after arrayDelete (pre ids): ${post.hard_prereq_ids}`)
-      this.save(post)
+      this.where('id', post.id).update({ hard_prereq_ids: post.hard_prereq_ids })
       Utils.notifySuccess('Removed postrequisite')
     }, Utils.handleError('Error removing postrequisite'))
   }
@@ -515,28 +532,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if (task.hard_prereq_ids.includes(id_of_prereq))
       throw new Error('addPre: id provided is already in prereqs list')
 
-    const payload = {
-      task: {
-        list_id: task.list_id,
-        title: task.title,
-        notes: task.notes,
-        completed: task.completed,
-        deadline_at: task.deadline_at,
-        prioritize_at: task.prioritize_at,
-        remind_me_at: task.remind_me_at,
-        review_at: task.review_at,
-        hard_prereq_ids: task.hard_prereq_ids,
-        hard_postreq_ids: task.hard_postreq_ids,
-        mental_energy_required: task.mental_energy_required,
-        physical_energy_required: task.physical_energy_required
-      }
-    }
-
-    // previously, payload was assigned as payload: { task: Object.assign( {}, task )}
-    const options: UpdateTaskOptions = {
-      id: task.id,
-      payload
-    }
+    const options = createPayload(task)
 
     if (typeof options.payload.task.hard_prereq_ids === 'undefined')
       options.payload.task.hard_prereq_ids = [id_of_prereq]
@@ -548,7 +544,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
       console.warn('error updating task to add a prerequisite.', error)
     }
     if (!pre.hard_postreq_ids.includes(task.id)) pre.hard_postreq_ids.push(task.id)
-    useRepo(TaskRepo).where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
+    this.where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
   }
 
   /**

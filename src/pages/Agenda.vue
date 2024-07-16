@@ -118,17 +118,13 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
   const localSettingsStore = useLocalSettingsStore()
 
-  const { layerZeroOnly, hideCompleted, disableQuickSort, enableQuickSortOnLayerZeroQTY } =
+  const { layerZeroOnly, hideCompleted, disableQuickSort, enableQuickSortOnLayerZeroQTY, autoScalePriority } =
     storeToRefs(localSettingsStore)
-  const sortQty = computed(() => {
-    const len0 = useLayerZeroStore().tasks.length
-    if (disableQuickSort.value) return len0
-    return Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
-  })
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
-    'Incomplete Only': hideCompleted
+    'Incomplete Only': hideCompleted,
+    'Auto Scale Priority': autoScalePriority
   })
 
   const notCompleted = (x: Task) => x.completed === false
@@ -206,6 +202,23 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
     }
     TaskCache.checkAgainstKnownCompletedTasks(...finalList)
     return finalList
+  })
+
+  const autoThreshold = computed(() => {
+    const sampleSize = Math.min(tasks.value.length, 10)
+    const samplePriorities = []
+    for(let i = 0; i < sampleSize; i++) {
+      samplePriorities.push(tasks.value[i].hard_postreqs.filter(notCompleted).length)
+    }
+    samplePriorities.sort((a, b) => a - b)
+    const sampleIndex = Math.max(Math.floor(sampleSize / 2), 1)
+    return samplePriorities[sampleIndex]
+  })
+
+  const sortQty = computed(() => {
+    const len0 = useLayerZeroStore().tasks.length
+    if (disableQuickSort.value) return len0
+    return autoScalePriority.value ? autoThreshold.value : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
 
   const updateTaskCompletedStatus = async (task: Task) => {
