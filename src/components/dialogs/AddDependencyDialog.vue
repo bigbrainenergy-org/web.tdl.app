@@ -257,17 +257,17 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
   const busy = ref(false)
 
-  const createTask = async () => {
+  const createTask = () => {
     busy.value = true
     if (typeof searchString.value === 'undefined') return
     const toCreate: CreateTaskOptions = { title: searchString.value }
-    const newTask = await timeThisABAsync<CreateTaskOptions, Task | undefined>(
-      tr.addAndCache,
-      'addAndCache',
-      400
-    )(toCreate)
-    if(typeof newTask === 'undefined') throw new Error('createTask: addAndCache did not work')
-    if (typeof props.taskID !== 'undefined') selectTask(newTask)
+    const start = performance.now()
+    const target = 400
+    tr.addAndCache(toCreate).then((result: Task) => {
+      if(typeof props.taskID !== 'undefined') selectTask(result)
+      const duration = Math.floor(performance.now() - start)
+      if(duration > target) console.warn(`createTask took ${duration} ms - target is ${target} ms`)
+    }, Utils.handleError('Error creating task.'))
     busy.value = false
   }
 
@@ -294,7 +294,7 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
       ) ?? new Map()
   }
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? useAllTasksStore().allTasks.get(props.taskID) : null
+    typeof props.taskID !== 'undefined' ? useAllTasksStore().allTasks.get(props.taskID)?.task : null
   )
   const debounceAmount = ref(100)
   fuse.value

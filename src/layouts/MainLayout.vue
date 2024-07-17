@@ -24,6 +24,13 @@
         />
         <q-btn class="q-ma-md" color="yellow" icon="fa-solid fa-refresh" @click="pullFresh" />
         <q-btn class="q-ma-md" color="red" icon="fa-solid fa-refresh" @click="dumpDebug" />
+        <q-btn
+          class="q-ma-md"
+          color="white"
+          text-color="black"
+          icon="fa-solid fa-explosion"
+          @click="wreak"
+        />
 
         <q-space />
 
@@ -160,7 +167,9 @@
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
+import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+import { storeToRefs } from 'pinia'
 
   const $q = useQuasar()
   const $route = useRoute()
@@ -338,11 +347,19 @@
       quickSortOpen: lss.quickSortDialogActive,
       addTaskOpen: lss.createTaskDialogActive,
       addDependencyOpen: lss.addDependencyDialogActive,
-      layerZeroLength: layerZero.value.length,
-      tasksWithoutPosts: layerZero.value.filter((x) => x.hasIncompletePostreqs).length,
+      layerZeroLength: tasks.value.length,
+      tasksWithoutPosts: tasks.value.filter((x) => x.hard_postreqs.filter(y => !y.completed).length > 0).length,
       shouldSort: shouldSort.value
     }
     console.debug(payload)
+  }
+
+  const wreak = async () => {
+    const tr = useRepo(TaskRepo)
+    const autoTaskName = 'auto task for testing purposes'
+    for (let i = 1; i < 10; i++) {
+      await tr.addAndCache({ title: `${autoTaskName} ${i}` })
+    }
   }
 
   onMounted(() => {
@@ -420,17 +437,16 @@
     }, 10)
   })
 
-  const layerZero = computed((): Task[] => useLayerZeroStore().typed)
-
+  const { tasks } = storeToRefs(useLayerZeroStore())
   // todo: storeToRefs
   const hasTooManyInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0
-      ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+      ? tasks.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
       : false
   // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
-      ? layerZero.value.filter((x: Task) => x.grabPostreqs(true).length === 0).length > 0
+      ? (tasks.value as cachedTask[]).filter((x: cachedTask) => x.hard_postreqs.filter(y => !y.completed).length === 0).length > 0
       : false
   const quickSortEnabled = () =>
     !useLocalSettingsStore().disableQuickSort &&
@@ -438,7 +454,7 @@
     !useLoadingStateStore().dialogOpenExclQuickSort
   const shouldSort = computed<{ l0len: number; shouldSort: boolean }>({
     get: () => ({
-      l0len: layerZero.value.length,
+      l0len: tasks.value.length,
       shouldSort: quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero())
     }),
     set: (x) => {
@@ -468,7 +484,7 @@
     })
   }
   watch(shouldSort, () => {
-    console.log(`layer zero length is ${layerZero.value.length}`)
+    // console.log(`layer zero length is ${tasks.value.length}`)
     if (shouldSort.value.shouldSort) {
       openQuickSortDialog()
     }

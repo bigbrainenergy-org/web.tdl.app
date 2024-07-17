@@ -14,7 +14,7 @@ describe('Task List Component', () => {
 
   it('should say nothing yet when no passed tasks', () => {
     const wrapper = mount(TaskList)
-    expect(wrapper.find('[data-cy="no_tasks_item"]').exists()).toBeTruthy()
+    expect(wrapper.find('[data-cy="empty_list_message"]').exists()).toBeTruthy()
   })
 
   // TODO: Fails due to IntersectionObserver mock not working properly

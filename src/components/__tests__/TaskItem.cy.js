@@ -1,7 +1,7 @@
 import { Task } from 'src/stores/tasks/task'
 import TaskItem from '../TaskItem.vue'
 
-describe('Password Change Form Component', () => {
+describe('TaskItem Component', () => {
   it('should mount component with task item', () => {
     cy.mount(TaskItem, {
       props: {

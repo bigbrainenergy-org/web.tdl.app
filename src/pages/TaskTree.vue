@@ -223,7 +223,7 @@
           continue
         } else if (typeof t.value?.getNodeByKey(tmp.key) === 'undefined') {
           msgqueue.lazySkipped.push(tmp.key)
-          Utils.arrayDelete(queueExpand, tmp)
+          Utils.arrayDelete(queueExpand, tmp, 'key')
           continue
         } else {
           msgqueue.triedToExpand.push(tmp.key)

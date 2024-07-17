@@ -1,4 +1,4 @@
-import LanguageSwitcher from '../inputs/LanguageSwitcher.vue'
+import LanguageSwitcher from '../../inputs/LanguageSwitcher.vue'
 
 describe('Language Switcher', () => {
   before(() => {

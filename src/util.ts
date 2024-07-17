@@ -43,19 +43,32 @@ export class Utils {
     }
     return t
   }
-  static arrayDelete<T>(arr: Array<T>, element: T) {
-    const i = arr.indexOf(element)
+  static arrayDelete<T>(arr: Array<T>, element: T, key?: keyof T) {
+    if(arr.length === 0) {
+      console.trace('arrayDelete: array is empty')
+      throw new Error('arrayDelete: array is empty')
+    }
+    if(typeof element === 'object' && typeof key === 'undefined') {
+      console.trace('arrayUpdate: key is required for object arrays.')
+    }
+    const i = typeof key === 'undefined' ? arr.indexOf(element) : arr.findIndex((x) => x[key] === element[key])
     if (i >= 0) arr.splice(i, 1)
-    else console.warn('arrayDelete will not delete any elements because they were not found.')
+    else {
+      console.trace('arrayDelete will not delete any elements because they were not found.')
+    }
     return arr
   }
   static arrayUpdate<T>(arr: Array<T>, element: T, key: keyof T) {
-    const i = arr.findIndex((x) => x[key] === element[key])
-    if (i < 0) {
-      console.warn('arrayUpdate will not update any element because it was not found')
-      throw new Error('arrayUpdate will not update any element because it was not found')
+    if (arr.length === 0) {
+      console.trace('arrayUpdate: array is empty')
+      throw new Error('arrayUpdate: array is empty')
     }
-    else arr[i] = element
+    const i = arr.findIndex((x) => x[key] === element[key])
+    // console.debug({ method: 'arrayUpdate', arr, element, key })
+    if (i < 0) {
+      console.trace('arrayUpdate will not update any element because it was not found')
+      throw new Error('arrayUpdate will not update any element because it was not found')
+    } else arr[i] = element
   }
   static onlyInLeftArray<T>(A: T[], B: T[], key: keyof T) {
     return A.filter((x) => !B.some((y) => y[key] === x[key]))
@@ -74,10 +87,10 @@ export class Utils {
     return [...a, ...this.onlyInLeftArray(b, a, 'key')]
   }
   static venn<T extends { id: number }>(a: T[], b: T[]) {
-    const setB = new Set<number>(b.map(x => x.id))
+    const setB = new Set<number>(b.map((x) => x.id))
     const left = a.filter((x) => !setB.has(x.id))
     const center = a.filter((x) => setB.has(x.id))
-    const setCenter = new Set<number>(center.map(x => x.id))
+    const setCenter = new Set<number>(center.map((x) => x.id))
     const right = b.filter((x) => !setCenter.has(x.id))
     // todo: optimize
     return { left, center, right }

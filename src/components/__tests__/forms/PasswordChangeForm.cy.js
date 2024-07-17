@@ -1,4 +1,4 @@
-import PasswordChangeForm from '../forms/PasswordChangeForm.vue'
+import PasswordChangeForm from '../../forms/PasswordChangeForm.vue'
 
 describe('Password Change Form Component', () => {
   it('should mount component with current password input', () => {

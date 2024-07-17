@@ -108,12 +108,18 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   }
 
   update = async (itemOptions: iUpdateT) => {
+    const start = performance.now()
     // console.debug(`${this.apidir} UPDATE`, { itemOptions })
     return this.api()
       .patch(`/${this.apidir}/${itemOptions.id}`, itemOptions.payload, this.commonHeader())
       .then((response) => {
         const result = this.save(response.data as T)
-        console.debug({'generic repo update result': result })
+        // console.debug({'generic repo update result': result })
+        const duration = performance.now() - start
+        if (duration > 400)
+          console.warn(
+            `Patching server took longer than target of 400ms - it took ${Math.floor(duration)}ms`
+          )
         return result
       }, Utils.handleError('Error updating record'))
   }

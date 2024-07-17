@@ -18,14 +18,14 @@
           <q-card-section class="bg-primary text-white">
             <div class="row items-center">
               <div class="col">
-                <div class="text-h6 text-pain" data-cy="tasks-title">Tasks</div>
+                <div class="text-h6 text-pain" data-cy="tasks_title">Tasks</div>
               </div>
             </div>
           </q-card-section>
 
           <q-card-section>
             <TaskList
-              :tasks="tasks"
+              :tasks="tasks.map((task) => task.t)"
               :unblocked-only="layerZeroOnly"
               :incomplete-only="hideCompleted"
               @task-completion-toggled="updateTaskCompletedStatus"
@@ -49,9 +49,10 @@
   import { TDLAPP } from 'src/TDLAPP'
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import TaskList from 'src/components/TaskList.vue'
+  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
   useMeta(() => {
     return {
@@ -61,23 +62,29 @@
 
   const $q = useQuasar()
 
-  const openTask = (_event, task: Task) => TDLAPP.openTask(task)
+  const openTask = (_event: any, task: Task) => TDLAPP.openTask(task)
 
   const pageTasks = defineComponent({
     name: 'PageTasks'
   })
   const tasksRepo = useRepo(TaskRepo)
   const localSettingsStore = useLocalSettingsStore()
-  const { layerZeroOnly, hideCompleted, selectedList } = storeToRefs(localSettingsStore)
+  const {
+    layerZeroOnly,
+    hideCompleted,
+    selectedList,
+    disableQuickSort,
+    enableQuickSortOnLayerZeroQTY,
+    autoScalePriority
+  } = storeToRefs(localSettingsStore)
 
   const loadingStateStore = useLoadingStateStore()
   const { busy } = storeToRefs(loadingStateStore)
 
-  const { layerZero } = storeToRefs(useLayerZeroStore())
-
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
-    'Incomplete Only': hideCompleted
+    'Incomplete Only': hideCompleted,
+    'Auto Scale Priority': autoScalePriority
   })
 
   // const notCompleted = (x: Task) => x.completed === false
@@ -85,19 +92,20 @@
   const tasks = computed(() => {
     if (busy.value) return []
     console.debug('updating tasks on Task page')
-    let baseQuery = layerZero.value as Task[]
-    // console.debug({ baseQuery })
-    const filterByList = (x: Task) => x.list?.title === selectedList.value
+    let baseQuery = useLayerZeroStore().typed
+    console.debug({ baseQuery })
+    const filterByList = (x: cachedTask) => x.t.list?.title === selectedList.value
     if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
-    const postreqs = (t: Task) =>
-      hideCompleted.value ? t.hard_postreqs.filter((x) => !x.completed) : t.hard_postreqs
-    const results = baseQuery.sort((a, b) => postreqs(b).length - postreqs(a).length)
-    // console.debug({ page: 'Tasks', results })
-    return results
+    const postreqs = hideCompleted.value
+      ? (t: cachedTask) => t.hard_postreqs.filter((x) => !x.completed)
+      : (t: cachedTask) => t.hard_postreqs
+    baseQuery.sort((a, b) => postreqs(b).length - postreqs(a).length)
+    return baseQuery
   })
 
   const updateTaskCompletedStatus = async (task: Task) => {
     const newStatus = task.completed
+    // TODO: strip payload object of everything except necessary
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((t) => {
       // console.debug({ 'Tasks updateTaskCompletedStatus': t })
       if (t.completed !== newStatus)
@@ -106,11 +114,27 @@
     }, Utils.handleError('Error updating completion status of a task.'))
   }
 
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
   const openSearchDialog = () => TDLAPP.searchDialog()
 
   const openQuickSortDialog = () =>
     $q.dialog({
       component: QuickSortLayerZeroDialog
     })
+
+  const autoThreshold = computed(() => {
+    const sampleSize = Math.min(tasks.value.length, 10)
+    let sumPriorities = 0
+    for (let i = 0; i < sampleSize; i++) {
+      sumPriorities += tasks.value[i].hard_postreqs.filter((x) => !x.completed).length
+    }
+    return Math.floor(sumPriorities / sampleSize)
+  })
+
+  const sortQty = computed(() => {
+    const len0 = useLayerZeroStore().tasks.length
+    if (disableQuickSort.value) return len0
+    return autoScalePriority.value
+      ? autoThreshold.value
+      : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
+  })
 </script>
