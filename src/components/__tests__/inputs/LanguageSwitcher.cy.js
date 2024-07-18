@@ -4,6 +4,7 @@ describe('Language Switcher', () => {
   before(() => {
     cy.mount(LanguageSwitcher)
   })
+
   it('should have language switcher input', () => {
     cy.dataCy('language_switcher').should('exist')
   })

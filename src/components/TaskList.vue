@@ -1,5 +1,5 @@
 <template>
-  <q-list ref="task_list" class="text-primary" data-cy="task_list">
+  <q-list class="text-primary" data-cy="task_list">
     <!-- If no tasks, render empty list item -->
     <q-item v-if="!tasks.length" v-ripple clickable data-cy="empty_list_message">
       <q-item-section>
@@ -7,20 +7,14 @@
       </q-item-section>
     </q-item>
     <!-- Otherwise, lazy render tasks -->
-    <q-intersection
-      v-for="(task, index) in tasks"
-      :key="index"
-      once
-      style="min-height: 48px"
-      :root="list_root"
-    >
+    <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
       <TaskItem :task="task" />
     </q-intersection>
   </q-list>
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { toRef } from 'vue'
   import { Task } from 'src/stores/tasks/task'
   import TaskItem from 'src/components/TaskItem.vue'
 
@@ -44,9 +38,5 @@
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
-  const tasks = ref(props.tasks)
-  const task_list = ref(null)
-  const list_root = computed(() => {
-    return task_list.value?.$el
-  })
+  const tasks = toRef(props, 'tasks')
 </script>
