@@ -10,7 +10,13 @@
       </div>
     </div>
     <div class="col-grow">
-      <!-- <TaskList :tasks="items" /> -->
+      <!-- <TaskList
+        ref="el"
+        class="q-my-md"
+        style="width: 100%"
+        :tasks="items"
+        :emptyListMessage="`No ${dependencyType?.plural}`"
+      /> -->
       <q-list ref="el" class="q-my-md" style="width: 100%">
         <q-item v-if="!items.length" v-ripple>
           <q-item-section>No {{ dependencyType.plural }}</q-item-section>

@@ -22,13 +22,15 @@ describe('Password Change Form Component', () => {
 
   context('when passed three tasks', () => {
     beforeEach(() => {
+      const onTaskClickedSpy = cy.spy().as('onTaskClickedSpy')
       cy.mount(TaskList, {
         props: {
           tasks: [
             new Task({ title: 'Task 1' }),
             new Task({ title: 'Task 2' }),
             new Task({ title: 'Task 3' })
-          ]
+          ],
+          onTaskClicked: onTaskClickedSpy
         }
       })
     })
@@ -43,6 +45,11 @@ describe('Password Change Form Component', () => {
 
     it('should have 3 task items', () => {
       cy.dataCy('task_item').should('have.length', 3)
+    })
+
+    it('should emit task-selected when task clicked', () => {
+      cy.dataCy('task_item').first().click()
+      cy.get('@onTaskClickedSpy').should('have.been.called')
     })
   })
 })
