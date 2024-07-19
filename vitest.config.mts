@@ -1,7 +1,8 @@
-import { defineConfig } from 'vitest/config';
-import vue from '@vitejs/plugin-vue';
-import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
+import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
+import tsconfigPaths from 'vite-tsconfig-paths'
+// import { UserConfig } from 'vitest'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,16 +13,23 @@ export default defineConfig({
       // Matches vitest tests in any subfolder of 'src' or into 'test/vitest/__tests__'
       // Matches all files with extension 'js', 'jsx', 'ts' and 'tsx'
       'src/**/*.vitest.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-      'test/vitest/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-    ],
+      'src/**/*.vitest.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+      'test/vitest/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'
+    ]
+    // browser: {
+    //   provider: 'playwright',
+    //   name: 'firefox',
+    //   enabled: true,
+    //   headless: true
+    // }
   },
   plugins: [
     vue({
-      template: { transformAssetUrls },
+      template: { transformAssetUrls }
     }),
     quasar({
-      sassVariables: 'src/quasar-variables.scss',
+      sassVariables: 'src/quasar-variables.scss'
     }),
-    tsconfigPaths(),
-  ] as any[], // TODO: I hate TypeScript
-});
+    tsconfigPaths()
+  ]
+}) // satisfies UserConfig
