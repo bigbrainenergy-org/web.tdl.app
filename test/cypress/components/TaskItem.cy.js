@@ -1,5 +1,5 @@
 import { Task } from 'src/stores/tasks/task'
-import TaskItem from '../TaskItem.vue'
+import TaskItem from 'src/components/TaskItem.vue'
 
 describe('TaskItem Component', () => {
   context('when using task with only title', () => {

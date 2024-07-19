@@ -1,5 +1,5 @@
 import { Task } from 'src/stores/tasks/task'
-import TaskList from '../TaskList.vue'
+import TaskList from 'src/components/TaskList.vue'
 
 describe('Password Change Form Component', () => {
   context('when passed no tasks', () => {

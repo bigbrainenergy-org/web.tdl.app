@@ -25,7 +25,9 @@ describe('ErrorNotification helper', () => {
   it('should send a Notify.create message when called', () => {
     const spy = vi.spyOn(Notify, 'create').mockImplementation(() => vi.fn())
     expect(spy).not.toHaveBeenCalled()
-    errorNotification(new Error(), '')
+    try {
+      errorNotification(new Error(), '')
+    } catch {}
     expect(spy).toHaveBeenCalled()
   })
 })

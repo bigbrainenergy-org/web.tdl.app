@@ -22,7 +22,8 @@ module.exports = defineConfig({
       return config
     },
     supportFile: 'test/cypress/support/component.js',
-    specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
+    // specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
+    specPattern: 'test/cypress/components/**/*.cy.{js,jsx,ts,tsx}',
     indexHtmlFile: 'test/cypress/support/component-index.html',
     devServer: injectQuasarDevServerConfig()
   }

@@ -1,5 +1,5 @@
 import { Task } from 'src/stores/tasks/task'
-import DependencyList from '../DependencyList.vue'
+import DependencyList from 'src/components/DependencyList.vue'
 
 describe('DependencyList Component', () => {
   beforeEach(() => {
