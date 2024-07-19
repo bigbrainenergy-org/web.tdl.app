@@ -205,38 +205,22 @@ export class Task extends Model implements iRecord {
   hasPrereq = (id: number) => this.hard_prereq_ids.includes(id)
 
   grabPrereqs(incompleteOnly = false): Task[] {
-    const repo = useRepo(TaskRepo)
-    const pres = this.hard_prereqs ?? repo.where((x) => x.hard_postreq_ids.includes(this.id)).get()
-    // console.debug({ incompleteOnly, pres_before_filtering: pres })
+    const pres =
+      useAllTasksStore().typed.get(this.id)?.hard_prereqs ??
+      useRepo(TaskRepo)
+        .where((x) => x.hard_postreq_ids.includes(this.id))
+        .get()
     return incompleteOnly ? pres.filter((x) => !x.completed) : pres
   }
 
   grabPostreqs(incompleteOnly = false): Task[] {
-    const repo = useRepo(TaskRepo)
-    // if(typeof this.hard_postreqs === 'undefined') console.log('have to call repo to fetch postreqs')
-    const posts = this.hard_postreqs ?? repo.where((x) => x.hard_prereq_ids.includes(this.id)).get()
+    const posts =
+      useAllTasksStore().typed.get(this.id)?.hard_postreqs ??
+      useRepo(TaskRepo)
+        .where((x) => x.hard_prereq_ids.includes(this.id))
+        .get()
     return incompleteOnly ? posts.filter((x) => !x.completed) : posts
   }
-
-  // FIXME: Breaks tests with something about getActivePinia()
-
-  // grabPrereqs(incompleteOnly = false): Task[] {
-  //   const pres =
-  //     useAllTasksStore().typed.get(this.id)?.hard_prereqs ??
-  //     useRepo(TaskRepo)
-  //       .where((x) => x.hard_postreq_ids.includes(this.id))
-  //       .get()
-  //   return incompleteOnly ? pres.filter((x) => !x.completed) : pres
-  // }
-
-  // grabPostreqs(incompleteOnly = false): Task[] {
-  //   const posts =
-  //     useAllTasksStore().typed.get(this.id)?.hard_postreqs ??
-  //     useRepo(TaskRepo)
-  //       .where((x) => x.hard_prereq_ids.includes(this.id))
-  //       .get()
-  //   return incompleteOnly ? posts.filter((x) => !x.completed) : posts
-  // }
 
   hardPostreqTreeNodes(
     reverse = false,

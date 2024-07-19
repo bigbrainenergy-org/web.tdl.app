@@ -120,8 +120,7 @@
   const busySignal = computed(() => useLoadingStateStore().busy)
 
   const updateRedundants = () => {
-    // FIXME: Causes getActivePinia() error in tests
-    // if (busySignal.value) return
+    if (busySignal.value) return
     const start = performance.now()
     aboves.value.clear()
     belows.value.clear()
