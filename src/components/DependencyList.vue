@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div data-cy="dependency_list">
     <div class="row">
       <div class="col">
         <div class="text-h5">{{ dependencyType.plural }}</div>
@@ -82,13 +82,18 @@
   }
 
   interface Props {
-    items: Array<Task>
-    dependencyType: EntityType // eg. Prerequisites (capitalize)
-    menuItems: Array<SimpleMenuItem<Task>>
-    showPrune: boolean
+    items?: Array<Task>
+    dependencyType?: EntityType // eg. Prerequisites (capitalize)
+    menuItems?: Array<SimpleMenuItem<Task>>
+    showPrune?: boolean
   }
 
-  const prop = defineProps<Props>()
+  const prop = withDefaults(defineProps<Props>(), {
+    items: () => [],
+    dependencyType: { plural: 'Requisites', singular: 'Requisite' } as const,
+    menuItems: () => [],
+    showPrune: false
+  })
 
   // can do something like this to limit recalculations, especially when setting a task as MVP
   // const act = (action: (inputArgument: Task) => void | Promise<void | Task>, inputArgument: Task) => {
@@ -109,7 +114,8 @@
   const busySignal = computed(() => useLoadingStateStore().busy)
 
   const updateRedundants = () => {
-    if (busySignal.value) return
+    // FIXME: Causes getActivePinia() error in tests
+    // if (busySignal.value) return
     const start = performance.now()
     aboves.value.clear()
     belows.value.clear()
