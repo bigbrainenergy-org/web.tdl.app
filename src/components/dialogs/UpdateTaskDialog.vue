@@ -537,31 +537,27 @@
     }
   ]
 
-  const prunePosts = TDLAPP.blockingFunc(
-    async (payload: { above: Set<number>; below: Set<number> }) => {
-      useLoadingStateStore().busy = true
-      const toRemove = allPosts.value.filter(
-        (x) => payload.below.has(x.id) && !payload.above.has(x.id)
-      )
-      for (let i = 0; i < toRemove.length; i++) {
-        await tr.removePost(currentTask.value, toRemove[i].id)
-      }
-      useLoadingStateStore().busy = false
+  const prunePosts = TDLAPP.blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
+    useLoadingStateStore().busy = true
+    const toRemove = allPosts.value.filter(
+      (x) => payload.below.has(x.id) && !payload.above.has(x.id)
+    )
+    for (let i = 0; i < toRemove.length; i++) {
+      tr.removePost(currentTask.value, toRemove[i].id)
     }
-  )
+    useLoadingStateStore().busy = false
+  })
 
-  const prunePres = TDLAPP.blockingFunc(
-    async (payload: { above: Set<number>; below: Set<number> }) => {
-      const toRemove = allPres.value.filter((x) => {
-        const hasRelationsAbove = payload.above.has(x.id)
-        const hasRelationsBelow = payload.below.has(x.id)
-        console.log({ hasRelationsAbove, hasRelationsBelow, x })
-        return hasRelationsAbove && !hasRelationsBelow
-      })
-      console.log('pruning prerequisites', { payload, toRemove })
-      for (let i = 0; i < toRemove.length; i++) {
-        await tr.removePre(currentTask.value, toRemove[i].id)
-      }
+  const prunePres = TDLAPP.blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
+    const toRemove = allPres.value.filter((x) => {
+      const hasRelationsAbove = payload.above.has(x.id)
+      const hasRelationsBelow = payload.below.has(x.id)
+      console.log({ hasRelationsAbove, hasRelationsBelow, x })
+      return hasRelationsAbove && !hasRelationsBelow
+    })
+    console.log('pruning prerequisites', { payload, toRemove })
+    for (let i = 0; i < toRemove.length; i++) {
+      tr.removePre(currentTask.value, toRemove[i].id)
     }
-  )
+  })
 </script>
