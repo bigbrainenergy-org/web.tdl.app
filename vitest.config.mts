@@ -7,6 +7,7 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 // https://vitejs.dev/config/
 export default defineConfig({
   test: {
+    silent: true, // Disable console.log in tests (noisy)
     environment: 'happy-dom',
     setupFiles: 'test/vitest/setup-file.ts',
     include: [
