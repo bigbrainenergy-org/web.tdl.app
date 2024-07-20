@@ -1,7 +1,7 @@
 import { Task } from 'src/stores/tasks/task'
 import TaskItem from 'src/components/TaskItem.vue'
 
-describe('TaskItem Component', () => {
+describe('<TaskItem/>', () => {
   context('when using task with only title', () => {
     beforeEach(() => {
       const onTaskClickedSpy = cy.spy().as('onTaskClickedSpy')

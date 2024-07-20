@@ -1,7 +1,7 @@
 import { Task } from 'src/stores/tasks/task'
 import DependencyList from 'src/components/DependencyList.vue'
 
-describe('DependencyList Component', () => {
+describe('<DependencyList/>', () => {
   beforeEach(() => {
     cy.mount(DependencyList)
   })
