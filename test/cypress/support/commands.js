@@ -36,7 +36,7 @@ Cypress.Commands.add('login', () => {
   cy.intercept('POST', '/login', { fixture: 'login_success.json' })
   cy.intercept('GET', '/users/*', { fixture: 'user.json' }).as('fetchUser')
   // cy.intercept('GET', '/users', { fixture: 'users.json' })
-  cy.intercept('GET', '/tasks', { fixture: 'tasks.json' })
+  cy.intercept('GET', 'http://localhost:3000/tasks', { fixture: 'tasks.json' })
   cy.intercept('GET', '/lists', { fixture: 'lists.json' })
   cy.intercept('GET', '/time-zones', { fixture: 'time-zones.json' })
   cy.visit('/login')

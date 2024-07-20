@@ -1,6 +1,7 @@
 describe('Tasks page', () => {
   beforeEach(() => {
     cy.login()
+    cy.visit('/tasks')
   })
 
   it('should allow creating a task', () => {
