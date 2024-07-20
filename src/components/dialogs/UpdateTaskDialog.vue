@@ -1,6 +1,6 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
+  <q-dialog ref="dialogRef" maximized data-cy="update_task_dialog" @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Task Details</div>
@@ -19,6 +19,7 @@
               v-model="editTitle"
               label="Task Title"
               :placeholder="currentTask.title"
+              data-cy="task_title_input"
               @enter-key="updateTask({ title: editTitle })"
             />
             <q-select
@@ -166,21 +167,25 @@
     const positiveColorButton = (label: string, action: unknownishλ<Task>) => ({
       color: 'positive',
       label,
+      dataCy: 'why_are_you_like_this',
       action
     })
     const deleteButton = {
       color: 'negative',
       label: 'Delete',
+      dataCy: 'delete_task_button',
       action: deleteTask
     }
     const markIncompleteButton = {
       color: 'primary',
       label: 'Mark Incomplete',
+      dataCy: 'mark_incomplete_button',
       action
     }
     const closeButton = {
       color: 'grey',
       label: 'Close',
+      dataCy: 'close_dialog',
       action: onDialogCancel
     }
     const markCompleteButton = positiveColorButton('Mark Complete', action)

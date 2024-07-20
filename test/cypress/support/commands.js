@@ -48,3 +48,11 @@ Cypress.Commands.add('login', () => {
     assert.isNotNull(interception.response.body, 'User has data')
   })
 })
+
+Cypress.Commands.add('createTask', () => {
+  cy.intercept('POST', '/tasks', { fixture: 'create_task_success.json' })
+  cy.dataCy('create_task_button').click()
+  cy.dataCy('task_title_input').type('Task 1')
+  cy.dataCy('create_task_submit').click()
+  cy.dataCy('close_dialog').click()
+})
