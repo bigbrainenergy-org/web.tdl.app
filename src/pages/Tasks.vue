@@ -25,7 +25,7 @@
 
           <q-card-section>
             <TaskList
-              :tasks="tasks.map((task) => task.t)"
+              :tasks="tasks"
               :unblocked-only="layerZeroOnly"
               :incomplete-only="hideCompleted"
               @task-completion-toggled="updateTaskCompletedStatus"

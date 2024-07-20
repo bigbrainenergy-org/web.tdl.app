@@ -1,5 +1,5 @@
-import { Task } from 'src/stores/tasks/task'
 import TaskList from 'src/components/TaskList.vue'
+import { cachedTask } from 'src/stores/performance/all-tasks'
 
 describe('Password Change Form Component', () => {
   context('when passed no tasks', () => {
@@ -26,9 +26,9 @@ describe('Password Change Form Component', () => {
       cy.mount(TaskList, {
         props: {
           tasks: [
-            new Task({ title: 'Task 1' }),
-            new Task({ title: 'Task 2' }),
-            new Task({ title: 'Task 3' })
+            new cachedTask({ title: 'Task 1' }),
+            new cachedTask({ title: 'Task 2' }),
+            new cachedTask({ title: 'Task 3' })
           ],
           onTaskClicked: onTaskClickedSpy
         }

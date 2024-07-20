@@ -1,5 +1,5 @@
-import { Task } from 'src/stores/tasks/task'
 import TaskItem from 'src/components/TaskItem.vue'
+import { cachedTask } from 'src/stores/performance/all-tasks'
 
 describe('<TaskItem/>', () => {
   context('when using task with only title', () => {
@@ -7,7 +7,7 @@ describe('<TaskItem/>', () => {
       const onTaskClickedSpy = cy.spy().as('onTaskClickedSpy')
       cy.mount(TaskItem, {
         props: {
-          task: new Task({ title: 'Example Task' }),
+          task: new cachedTask({ title: 'Example Task' }),
           onTaskClicked: onTaskClickedSpy
         }
       })
@@ -35,7 +35,7 @@ describe('<TaskItem/>', () => {
     beforeEach(() => {
       cy.mount(TaskItem, {
         props: {
-          task: new Task({ title: 'Example Task', notes: 'Some notes' })
+          task: new cachedTask({ title: 'Example Task', notes: 'Some notes' })
         }
       })
     })

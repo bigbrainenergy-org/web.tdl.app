@@ -8,22 +8,22 @@
     </q-item>
     <!-- Otherwise, lazy render tasks -->
     <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
-      <TaskItem :task="task" @task-clicked="$emit('task-clicked', $event, task)" />
+      <TaskItem :task="task" @task-clicked="$emit('task-clicked', $event, task.t)" />
     </q-intersection>
   </q-list>
 </template>
 
 <script setup lang="ts">
   import { toRef } from 'vue'
-  import { Task } from 'src/stores/tasks/task'
   import TaskItem from 'src/components/TaskItem.vue'
+  import { cachedTask } from 'src/stores/performance/all-tasks'
 
   console.log('loaded task list')
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
     defineProps<{
-      tasks?: Array<Task>
+      tasks?: Array<cachedTask>
       unblockedOnly?: boolean
       incompleteOnly?: boolean
       emptyListMessage?: string
