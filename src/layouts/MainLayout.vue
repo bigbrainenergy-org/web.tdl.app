@@ -7,6 +7,7 @@
           v-if="pagesWithNewTaskButton.includes(currentPath)"
           color="green"
           icon="fa-solid fa-plus"
+          data-cy="create_task_button"
           @click="openCreateTaskDialog"
         />
         <q-btn
@@ -168,8 +169,8 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-import { storeToRefs } from 'pinia'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { storeToRefs } from 'pinia'
 
   const $q = useQuasar()
   const $route = useRoute()
@@ -348,7 +349,9 @@ import { storeToRefs } from 'pinia'
       addTaskOpen: lss.createTaskDialogActive,
       addDependencyOpen: lss.addDependencyDialogActive,
       layerZeroLength: tasks.value.length,
-      tasksWithoutPosts: tasks.value.filter((x) => x.hard_postreqs.filter(y => !y.completed).length > 0).length,
+      tasksWithoutPosts: tasks.value.filter(
+        (x) => x.hard_postreqs.filter((y) => !y.completed).length > 0
+      ).length,
       shouldSort: shouldSort.value
     }
     console.debug(payload)
@@ -446,7 +449,9 @@ import { storeToRefs } from 'pinia'
   // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
-      ? (tasks.value as cachedTask[]).filter((x: cachedTask) => x.hard_postreqs.filter(y => !y.completed).length === 0).length > 0
+      ? (tasks.value as cachedTask[]).filter(
+          (x: cachedTask) => x.hard_postreqs.filter((y) => !y.completed).length === 0
+        ).length > 0
       : false
   const quickSortEnabled = () =>
     !useLocalSettingsStore().disableQuickSort &&

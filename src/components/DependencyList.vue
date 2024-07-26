@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div data-cy="dependency_list">
     <div class="row">
       <div class="col">
         <div class="text-h5">{{ dependencyType.plural }}</div>
@@ -10,6 +10,13 @@
       </div>
     </div>
     <div class="col-grow">
+      <!-- <TaskList
+        ref="el"
+        class="q-my-md"
+        style="width: 100%"
+        :tasks="items"
+        :emptyListMessage="`No ${dependencyType?.plural}`"
+      /> -->
       <q-list ref="el" class="q-my-md" style="width: 100%">
         <q-item v-if="!items.length" v-ripple>
           <q-item-section>No {{ dependencyType.plural }}</q-item-section>
@@ -20,22 +27,26 @@
             split
             auto-close
             dropdown-icon="more_vert"
-            @click.stop="emit('selectItem', item)">
+            @click.stop="emit('selectItem', item)"
+          >
             <template #label>
               <q-item-section avatar style="width: 9%; max-width: 9%">
                 <q-checkbox
                   v-model:model-value="item.completed"
-                  @update:model-value="emit('toggleCompletedItem', item)" />
+                  @update:model-value="emit('toggleCompletedItem', item)"
+                />
               </q-item-section>
               <q-item-section class="vertical-top wrapped" :style="style">
                 <q-icon
                   v-if="isNearRedundant(item.id)"
                   name="fas fa-triangle-exclamation"
-                  color="green" />
+                  color="green"
+                />
                 <q-icon
                   v-if="isFarRedundant(item.id)"
                   name="fas fa-triangle-exclamation"
-                  color="red" />
+                  color="red"
+                />
                 <q-item-label lines="2">
                   {{ item.title }}
                 </q-item-label>
@@ -47,7 +58,8 @@
                 :key="index"
                 v-close-popup
                 clickable
-                @click.stop="menuitem.action(item)">
+                @click.stop="menuitem.action(item)"
+              >
                 <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
                 <q-space />
                 <q-icon :name="menuitem.icon" />
@@ -76,13 +88,18 @@
   }
 
   interface Props {
-    items: Array<Task>
-    dependencyType: EntityType // eg. Prerequisites (capitalize)
-    menuItems: Array<SimpleMenuItem<Task>>
-    showPrune: boolean
+    items?: Array<Task>
+    dependencyType?: EntityType // eg. Prerequisites (capitalize)
+    menuItems?: Array<SimpleMenuItem<Task>>
+    showPrune?: boolean
   }
 
-  const prop = defineProps<Props>()
+  const prop = withDefaults(defineProps<Props>(), {
+    items: () => [],
+    dependencyType: { plural: 'Requisites', singular: 'Requisite' } as const,
+    menuItems: () => [],
+    showPrune: false
+  })
 
   // can do something like this to limit recalculations, especially when setting a task as MVP
   // const act = (action: (inputArgument: Task) => void | Promise<void | Task>, inputArgument: Task) => {

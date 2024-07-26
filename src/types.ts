@@ -67,6 +67,7 @@ export type unknownishλ<T> = λ<T, unknown | Promise<unknown>>
 export type Button<T> = {
   color: string
   label: string
+  dataCy: string
   action: unknownishλ<T>
 }
 

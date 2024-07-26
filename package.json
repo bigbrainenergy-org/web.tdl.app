@@ -25,7 +25,8 @@
     "test:e2e": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://127.0.0.1:8080 \"cypress open --e2e\"",
     "test:e2e:ci": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://127.0.0.1:8080 \"cypress run --e2e\"",
     "test:component": "cross-env NODE_ENV=test cypress open --component",
-    "test:component:ci": "cross-env NODE_ENV=test cypress run --component"
+    "test:component:ci": "cross-env NODE_ENV=test cypress run --component",
+    "test:everything": "yarn audit && yarn lint && yarn test:unit:ci && yarn test:component:ci && yarn test:e2e:ci"
   },
   "dependencies": {
     "@capacitor/core": "^5.0.0",
@@ -60,8 +61,10 @@
     "@typescript-eslint/parser": "^5.10.0",
     "@vue/test-utils": "^2.4.1",
     "autoprefixer": "^10.4.2",
+    "cypress": "^13.6.6",
     "eslint": "^8.10.0",
     "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-cypress": "^2.15.1",
     "eslint-plugin-vue": "^9.0.0",
     "prettier": "^2.5.1",
     "typescript": "^4.5.4",
@@ -72,13 +75,11 @@
     "workbox-expiration": "^7.0.0",
     "workbox-precaching": "^7.0.0",
     "workbox-routing": "^7.0.0",
-    "workbox-strategies": "^7.0.0",
-    "cypress": "^13.6.6",
-    "eslint-plugin-cypress": "^2.15.1"
+    "workbox-strategies": "^7.0.0"
   },
   "engines": {
     "node": "^20",
-    "npm": ">= 6.13.4",
-    "yarn": ">= 1.21.1"
+    "npm": "^9",
+    "yarn": "^1"
   }
 }

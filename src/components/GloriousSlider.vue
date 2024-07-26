@@ -28,7 +28,6 @@
 <script setup lang="ts">
   import { GloriousSliderProp } from 'src/glorious'
   import { computed } from 'vue'
-  import { withDefaults } from 'vue'
 
   const props = withDefaults(defineProps<GloriousSliderProp>(), {
     beginIcon: undefined,

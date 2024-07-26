@@ -55,7 +55,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'login',
         name: 'Login',
-        component: () => import('src/pages/PageLogin.vue')
+        component: () => import('src/pages/Login.vue')
       },
       {
         path: 'request-access',

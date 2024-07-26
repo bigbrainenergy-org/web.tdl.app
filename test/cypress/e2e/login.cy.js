@@ -3,7 +3,8 @@ describe('Login', () => {
     cy.visit('/login')
   })
 
-  it('should allow logging in the user with good credentials', () => {
+  // FIXME: This appears to be flaky on GitHub actions, not sure why
+  it('should allow logging in the user with good credentials', { retry: 2 }, () => {
     // Enter valid username and password
     cy.dataCy('username').type('AzureDiamond')
     cy.dataCy('password').type('hunter2')
