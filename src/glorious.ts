@@ -9,6 +9,7 @@ export interface GloriousSliderProp {
   step?: number
   cuteName?: string
   color?: string
+  unit?: string
 }
 /**
  * @abstract to fully configure Glorious Slider. Especially useful for lists of slider components.

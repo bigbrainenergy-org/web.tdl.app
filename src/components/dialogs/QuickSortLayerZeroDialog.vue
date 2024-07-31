@@ -12,11 +12,29 @@
         <div class="text-h6">{{ layerZero.length }} Layer Zero Tasks</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
-          <SettingsButton
-            v-model:settings="quickSortSettings"
-            name="Quick Sort Settings"
-            color="white"
-          />
+          <q-btn icon="fa-solid fa-gear" class="text-white">
+            <q-popup-proxy class="q-pa-md">
+              <q-item-section>
+                <q-item-label lines="2">{{ 'Settings' }}</q-item-label>
+              </q-item-section>
+              <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+              <GloriousToggle
+                v-model:model-value="enableDeeperQuickSort"
+                label="Deeper Quick Sort"
+              />
+              <GloriousSlider
+                v-model:model-value="enableQuickSortOnLayerZeroQTY"
+                :min="1"
+                :max="15"
+                :step="1"
+                cute-name="Max Layer Zero Tasks"
+              />
+              <GloriousToggle
+                v-model:model-value="enableQuickSortOnNewTask"
+                label="Quick Sort on Any Task w/o Postreqs"
+              />
+            </q-popup-proxy>
+          </q-btn>
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
         </p>
       </q-card-section>
@@ -115,14 +133,15 @@
   import { Utils } from 'src/util'
   import { onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
-  import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisAABAsync } from 'src/perf'
   import { useElementSize } from '@vueuse/core'
-  import { AxiosError } from 'axios'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { useAllTasksStore, cachedTask } from 'src/stores/performance/all-tasks'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import GloriousSlider from '../GloriousSlider.vue'
+  import GloriousToggle from '../GloriousToggle.vue'
+  import { storeToRefs } from 'pinia'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -149,35 +168,19 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   }
 
   // todo: storeToRefs
-  const disableQuickSort = ref<boolean>(useLocalSettingsStore().disableQuickSort)
-  const deepQuickSort = ref<boolean>(useLocalSettingsStore().enableDeeperQuickSort)
-  const maxLayerZero = ref<number>(useLocalSettingsStore().enableQuickSortOnLayerZeroQTY)
-  const quickSortNew = ref<boolean>(useLocalSettingsStore().enableQuickSortOnNewTask)
-  const quickSortSettings = ref({
-    'Disable Quick Sort': disableQuickSort,
-    'Deeper Quick Sort': deepQuickSort,
-    'Max Quantity of Next-Up Tasks': maxLayerZero,
-    'Quick Sort on Any Task w/o Postreqs': quickSortNew
-  })
-  watch(disableQuickSort, () => {
-    useLocalSettingsStore().disableQuickSort = disableQuickSort.value
-  })
-  watch(deepQuickSort, () => {
-    useLocalSettingsStore().enableDeeperQuickSort = deepQuickSort.value
-  })
-  watch(maxLayerZero, () => {
-    useLocalSettingsStore().enableQuickSortOnLayerZeroQTY = maxLayerZero.value + 0 // bug where this randomly gets cast as a boolean and can't be coerced back to number type on mobile. this might not work, idk. throwing stuff at the wall.
-  })
-  watch(quickSortNew, () => {
-    useLocalSettingsStore().enableQuickSortOnNewTask = quickSortNew.value
-  })
+  const {
+    disableQuickSort,
+    enableDeeperQuickSort,
+    enableQuickSortOnLayerZeroQTY,
+    enableQuickSortOnNewTask
+  } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: cachedTask) => new PostWeightedTask(x.t)
   const postWeightedTask2 = (x: Task) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
     const layerZeroTasks = useLayerZeroStore().typed
-    TaskCache.checkAgainstKnownCompletedTasks(...layerZeroTasks.map(x => x.t))
+    TaskCache.checkAgainstKnownCompletedTasks(...layerZeroTasks.map((x) => x.t))
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
@@ -191,7 +194,7 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   })
 
   const layerOne = computed(() =>
-    deepQuickSort.value
+    enableDeeperQuickSort.value
       ? layerZero.value
           .filter((x) => x.t.grabPostreqs(true).length > 1)
           .map((x) => ({
@@ -416,7 +419,8 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
     console.log(`layer zero length is ${l0len.value}; objective is ${props.objective}`)
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     const metNewTaskObjective =
-      (tasksWithoutPostreqs.value.length === 0 && quickSortNew.value) || !quickSortNew.value
+      (tasksWithoutPostreqs.value.length === 0 && enableQuickSortOnNewTask.value) ||
+      !enableQuickSortOnNewTask.value
     if (metLayerZeroLengthObjective && metNewTaskObjective) {
       throw new Error('reached layer zero length objective.')
     }

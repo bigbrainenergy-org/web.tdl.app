@@ -17,7 +17,12 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <q-input v-model="title" filled clearable label="Title" />
+            <TaskSearchInput
+              v-model:model-value="title"
+              search-label="Task Title"
+              :debounce="debounceAmount"
+              @do-a-search="searchForTasks"
+            />
             <br />
             <q-input v-model="notes" filled autogrow clearable label="Notes" />
 
@@ -31,14 +36,48 @@
           </div>
         </div>
       </q-card-section>
+      <q-card-section>
+        <div class="row q-gutter-md q-pa-sm">
+          <div class="col-12">
+            <template v-if="title">
+              <q-separator class="q-my-md" />
+              <div class="text-h4 q-mb-md">Possibly Related Tasks</div>
+              <q-list>
+                <q-item v-if="!results.length" v-ripple clickable>
+                  <q-item-section>No results found</q-item-section>
+                </q-item>
+                <q-item
+                  v-for="task in results"
+                  :key="task.id ?? -1"
+                  v-ripple
+                  clickable
+                  @click="openTask(task as Task)"
+                >
+                  <q-item-section>
+                    <q-item-label lines="2">
+                      {{ task.title }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </template>
+          </div>
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
+  import Fuse, { FuseResult } from 'fuse.js'
+  import { useRepo } from 'pinia-orm'
   import { useDialogPluginComponent } from 'quasar'
+  import { timeThisB } from 'src/perf'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { onMounted, ref } from 'vue'
+  import { Task, TaskRepo } from 'src/stores/tasks/task'
+  import { TDLAPP } from 'src/TDLAPP'
+  import { computed, onMounted, ref } from 'vue'
+  import TaskSearchInput from '../search/TaskSearchInput.vue'
 
   const emit = defineEmits([
     // REQUIRED; need to specify some events that your
@@ -59,6 +98,9 @@
   const title = ref('')
   const notes = ref('')
 
+  const debounceAmount = ref(100)
+  const results = ref<Task[]>([])
+
   const createTask = () => {
     emit('create', {
       options: {
@@ -67,6 +109,38 @@
       },
       callback: clearFields
     })
+  }
+
+  const openTask = TDLAPP.openTask
+
+  const tasks = computed(() => useRepo(TaskRepo).where('completed', false).get())
+
+  const searchOptions = {
+    isCaseSensitive: false,
+    ignoreLocation: true,
+    keys: ['title']
+  }
+
+  const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+
+  const searchForTasks = () => {
+    const start = performance.now()
+    const str = title.value ?? ''
+
+    // unsanitized user input being fed into a library? what could go wrong.
+    // FIXME: AKA this is a vuln waiting to happen, fix it.
+    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+
+    console.log({ run })
+
+    results.value = run.slice(0, 3).map((x) => x.item)
+    const duration = Math.floor(performance.now() - start)
+    console.log(`task search took ${Math.floor(duration)}ms`)
+    if (duration * 2 > debounceAmount.value) {
+      const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+      console.warn(`rolling back debounce to ${newDebounce}`)
+      debounceAmount.value = newDebounce
+    }
   }
 
   const clearFields = () => {
