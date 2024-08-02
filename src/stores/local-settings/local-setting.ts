@@ -18,12 +18,33 @@ interface LocalSettingsState {
   reverseTreeView: boolean
   disableQuickSort: boolean
   enableQuickSortOnNewTask: boolean
-  enableQuickSortOnLayerZeroQTY: number
+  enableQuickSortOnLayerZeroQTY:
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18
+    | 19
+    | 20
   backgroundMode: BackgroundMode
   enableDeeperQuickSort: boolean
   omitRedundantSearchResults: boolean
   notificationSpeed: 1 | 2 | 3
   autoScalePriority: boolean
+  quickSortDialogMaxToShow: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
 }
 
 export const useLocalSettingsStore = defineStore('local-settings', {
@@ -42,12 +63,13 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       reverseTreeView: false,
       disableQuickSort: true,
       enableQuickSortOnNewTask: false,
-      enableQuickSortOnLayerZeroQTY: 0,
+      enableQuickSortOnLayerZeroQTY: 1,
       backgroundMode: 'image',
       enableDeeperQuickSort: false,
       omitRedundantSearchResults: false,
       notificationSpeed: 3,
-      autoScalePriority: false
+      autoScalePriority: false,
+      quickSortDialogMaxToShow: 2
     }
   },
   persist: true
