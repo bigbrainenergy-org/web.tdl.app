@@ -449,7 +449,7 @@
   // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
-      ? (tasks.value as cachedTask[]).filter(
+      ? tasks.value.filter(
           (x: cachedTask) => x.hard_postreqs.filter((y) => !y.completed).length === 0
         ).length > 0
       : false
