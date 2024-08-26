@@ -7,7 +7,7 @@ interface LayerZeroState {
 }
 export const useLayerZeroStore = defineStore('layer-zero', {
   state: (): LayerZeroState => ({
-    tasks: Array<cachedTask>()
+    tasks: []
   }),
   persist: false,
   getters: {
@@ -17,8 +17,8 @@ export const useLayerZeroStore = defineStore('layer-zero', {
     // MUST HAVE INCOMPLETE TASKS REGENERATED FIRST
     regenerate() {
       this.tasks = []
-      useIncompleteTasksStore().typed.forEach(x => {
-        if(!x.hard_prereqs.some(y => !y.completed)) {
+      useIncompleteTasksStore().typed.forEach((x) => {
+        if (!x.hard_prereqs.some((y) => !y.completed)) {
           this.tasks.push(x)
         }
       })
@@ -40,8 +40,8 @@ export const useLayerZeroStore = defineStore('layer-zero', {
       return allTasks
     },
     delete(id: number) {
-      const index = this.tasks.findIndex(x => x.id === id)
-      if(index >= 0) {
+      const index = this.tasks.findIndex((x) => x.id === id)
+      if (index >= 0) {
         this.tasks.splice(index, 1)
       }
     }

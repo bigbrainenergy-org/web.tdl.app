@@ -87,7 +87,7 @@ export class TaskCache {
   static checkAgainstKnownCompletedTasks(...tasks: Task[] | cachedTask[]) {
     const ct = useCompletedTasksStore().tasks
     tasks
-      .filter((x) => ct.has(x.id as number))
+      .filter((x) => ct.has(x.id))
       .map((x) => {
         console.warn(`COMPLETED TASK DETECTED: ${x.id} - ${x.title}`)
         throw new Error(`COMPLETED TASK DETECTED: ${x.id} - ${x.title}`)
