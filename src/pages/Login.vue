@@ -37,7 +37,7 @@
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import { Utils } from 'src/util'
   import { useAxiosStore } from 'src/stores/axios-store'
-  import { syncWithBackend } from 'src/hackerman/sync'
+  import { syncWithBackend } from 'src/utils/sync-utils'
 
   import LoginForm from 'src/components/forms/LoginForm.vue'
 

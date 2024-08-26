@@ -22,11 +22,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('src/pages/TaskTree.vue')
       },
       {
-        path: 'lists',
-        name: 'Lists',
-        component: () => import('src/pages/Lists.vue')
-      },
-      {
         path: 'settings',
         name: 'Settings',
         component: () => import('src/pages/Settings.vue')
@@ -35,11 +30,6 @@ const routes: RouteRecordRaw[] = [
         path: 'graph',
         name: 'Graph',
         component: () => import('src/pages/GraphAll.vue')
-      },
-      {
-        path: 'josh-page',
-        name: 'JoshPage',
-        component: () => import('src/pages/JoshPage.vue')
       },
       {
         path: 'agenda',

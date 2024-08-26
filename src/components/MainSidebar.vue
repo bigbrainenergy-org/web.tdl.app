@@ -1,5 +1,5 @@
 <template>
-  <q-drawer v-model="model" side="left" elevated dark show-if-above :width="200" :breakpoint="500">
+  <q-drawer v-model="drawer" side="left" elevated dark show-if-above :width="200" :breakpoint="500">
     <q-list padding>
       <q-item v-ripple clickable @click="openCreateTaskDialog">
         <q-item-section avatar>
@@ -119,10 +119,11 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
-  import { textColor } from 'src/hackerman/TextColor'
+  import { autoContrastTextColor } from 'src/utils/color-utils'
+  import { openCreateTaskDialog } from 'src/utils/dialog-utils'
 
   const $q = useQuasar()
-  const model = defineModel<boolean>({ default: false })
+  const drawer = defineModel<boolean>('drawer', { default: false })
   const listsRepo = useRepo(ListRepo)
   const localSettingsStore = useLocalSettingsStore()
   const { selectedList } = storeToRefs(localSettingsStore)
@@ -135,25 +136,8 @@
 
   const openSearchDialog = () => TDLAPP.searchDialog()
 
-  const createTask = (payload: CreateTaskOptions) => {
-    const tr = useRepo(TaskRepo)
-    tr.addAndCache(payload).then(() => {
-      Utils.notifySuccess('Successfully created a task')
-    }, Utils.handleError('Failed to create task.'))
-  }
-
-  const openCreateTaskDialog = () => {
-    $q.dialog({
-      component: CreateTaskDialog,
-      componentProps: {
-        onCreate: (payload: { options: CreateTaskOptions; callback: () => void }) => {
-          const newTask = payload.options
-          newTask.hard_prereq_ids = []
-          newTask.hard_postreq_ids = []
-          createTask(newTask)
-        }
-      }
-    })
+  const openCreateListDialog = () => {
+    Utils.notifySuccess('Coming soon')
   }
 
   type HasTitle = { title: string }
@@ -168,16 +152,16 @@
 
   // TODO: These can all be DRY'd up.
   const listCountStyle = (list: List) => {
-    return `color: ${textColor(list.color)};`
+    return `color: ${autoContrastTextColor(list.color)};`
   }
 
   const listColorStyle = (list: { color: string }) => {
-    return `color: ${textColor(list.color)}; background-color: ${list.color};`
+    return `color: ${autoContrastTextColor(list.color)}; background-color: ${list.color};`
   }
 
   const listIconColor = (list: List) => {
     if (listSelected(list)) {
-      return `color: ${textColor(list.color)};`
+      return `color: ${autoContrastTextColor(list.color)};`
     } else {
       return `color: ${list.color};`
     }

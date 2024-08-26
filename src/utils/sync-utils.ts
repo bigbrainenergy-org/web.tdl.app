@@ -6,10 +6,20 @@ import { TaskRepo } from 'src/stores/tasks/task'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { Utils } from 'src/util'
+import errorNotification from './notification-utils'
 
 interface verySpecial {
   modelname: string
   repo: any
+}
+
+const pullFresh = async () => {
+  const syncResult = await syncWithBackend()
+  if (syncResult === 1)
+    errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+  else {
+    Utils.notifySuccess('Refreshed All')
+  }
 }
 
 export async function syncWithBackend(): Promise<number> {

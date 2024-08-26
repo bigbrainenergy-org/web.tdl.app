@@ -1,4 +1,4 @@
-export function textColor(backgroundColor: string) {
+export function autoContrastTextColor(backgroundColor: string) {
   if (!backgroundColor || 0 === backgroundColor.length) {
     // console.debug('No backgroundColor provided, returning default')
     return '#000000'

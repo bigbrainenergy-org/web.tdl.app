@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios'
-import errorNotification from './hackerman/ErrorNotification'
+import errorNotification from './utils/notification-utils'
 import { Notify } from 'quasar'
 import { NodeKey, λ } from './types'
 import { useRepo } from 'pinia-orm'
@@ -44,14 +44,17 @@ export class Utils {
     return t
   }
   static arrayDelete<T>(arr: Array<T>, element: T, key?: keyof T) {
-    if(arr.length === 0) {
+    if (arr.length === 0) {
       console.trace('arrayDelete: array is empty')
       throw new Error('arrayDelete: array is empty')
     }
-    if(typeof element === 'object' && typeof key === 'undefined') {
+    if (typeof element === 'object' && typeof key === 'undefined') {
       console.trace('arrayUpdate: key is required for object arrays.')
     }
-    const i = typeof key === 'undefined' ? arr.indexOf(element) : arr.findIndex((x) => x[key] === element[key])
+    const i =
+      typeof key === 'undefined'
+        ? arr.indexOf(element)
+        : arr.findIndex((x) => x[key] === element[key])
     if (i >= 0) arr.splice(i, 1)
     else {
       console.trace('arrayDelete will not delete any elements because they were not found.')

@@ -1,5 +1,5 @@
 <template>
-  <CenteredPage>
+  <centered-page>
     <q-card>
       <q-card-section class="bg-grey-8 text-white">
         <q-item>
@@ -25,7 +25,7 @@
         <q-btn flat data-cy="login" @click="login">{{ $t('login') }}</q-btn>
       </q-card-actions>
     </q-card>
-  </CenteredPage>
+  </centered-page>
 </template>
 
 <script setup lang="ts">
@@ -37,7 +37,7 @@
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import { Utils } from 'src/util'
   import { useAxiosStore } from 'src/stores/axios-store'
-  import { syncWithBackend } from 'src/hackerman/sync'
+  import { syncWithBackend } from 'src/utils/sync-utils'
 
   import LoginForm from 'src/components/forms/LoginForm.vue'
 
