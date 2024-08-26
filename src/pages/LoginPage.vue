@@ -29,17 +29,20 @@
 </template>
 
 <script setup lang="ts">
-  import { useQuasar } from 'quasar'
-
+  import { useQuasar, useMeta } from 'quasar'
   import { useRouter } from 'vue-router'
   import { ref } from 'vue'
-
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import { Utils } from 'src/util'
   import { useAxiosStore } from 'src/stores/axios-store'
   import { syncWithBackend } from 'src/utils/sync-utils'
-
   import LoginForm from 'src/components/forms/LoginForm.vue'
+
+  useMeta(() => {
+    return {
+      title: 'Login | TDL App'
+    }
+  })
 
   const authenticationStore = useAuthenticationStore()
   const $q = useQuasar()

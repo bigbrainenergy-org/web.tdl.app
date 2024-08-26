@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'tasks',
         name: 'Tasks',
-        component: () => import('src/pages/Tasks.vue')
+        component: () => import('src/pages/TasksPage.vue')
       },
       {
         path: 'tasks-tree',
@@ -45,12 +45,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'login',
         name: 'Login',
-        component: () => import('src/pages/Login.vue')
-      },
-      {
-        path: 'request-access',
-        name: 'Request Access',
-        component: () => import('src/pages/RequestAccess.vue')
+        component: () => import('src/pages/LoginPage.vue')
       }
     ]
   },
