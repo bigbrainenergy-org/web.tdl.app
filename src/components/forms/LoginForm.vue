@@ -1,6 +1,12 @@
 <template>
   <q-form class="q-gutter-md" autofocus>
-    <q-input v-model="server" filled :label="$t('server')" data-cy="server">
+    <q-input
+      v-model="server"
+      filled
+      :label="$t('server')"
+      placeholder="https://api.tdl.app"
+      data-cy="server"
+    >
       <template #prepend>
         <q-icon name="fas fa-network-wired" />
       </template>

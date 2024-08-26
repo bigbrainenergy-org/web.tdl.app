@@ -1,7 +1,7 @@
 <template>
   <q-header elevated>
     <q-toolbar>
-      <header-buttons />
+      <header-buttons v-model:drawer="drawer" />
 
       <q-space />
 
@@ -13,4 +13,6 @@
 <script setup lang="ts">
   import HeaderButtons from 'src/components/HeaderButtons.vue'
   import HeaderUserMenu from 'src/components/HeaderUserMenu.vue'
+
+  const drawer = defineModel<boolean>('drawer')
 </script>

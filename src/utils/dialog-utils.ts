@@ -1,5 +1,5 @@
 import { Dialog } from 'quasar'
-import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+import { CreateTaskOptions } from 'src/stores/tasks/task'
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
 import { createTask } from './task-utils'
@@ -13,11 +13,16 @@ export function openCreateTaskDialog(onClose: () => void) {
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
         createTask(newTask)
-        onClose() // REVIEW: Why do I call this on create? I don't think it closes the dialog??
+        // REVIEW: Why do I call this in onCreate? I don't think it closes the dialog??
+        if (onClose) {
+          onClose()
+        }
       }
     }
   }).onDismiss(() => {
-    onClose()
+    if (onClose) {
+      onClose()
+    }
   })
 }
 
@@ -33,6 +38,8 @@ export function openSearchDialog(onClose: () => void) {
       batchFilter: []
     }
   }).onDismiss(() => {
-    onClose()
+    if (onClose) {
+      onClose()
+    }
   })
 }

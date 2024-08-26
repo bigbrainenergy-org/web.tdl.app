@@ -123,7 +123,7 @@
   import { openCreateTaskDialog } from 'src/utils/dialog-utils'
 
   const $q = useQuasar()
-  const drawer = defineModel<boolean>('drawer', { default: false })
+  const drawer = defineModel<boolean>('drawer')
   const listsRepo = useRepo(ListRepo)
   const localSettingsStore = useLocalSettingsStore()
   const { selectedList } = storeToRefs(localSettingsStore)

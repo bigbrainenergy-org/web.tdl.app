@@ -13,7 +13,7 @@ interface verySpecial {
   repo: any
 }
 
-const pullFresh = async () => {
+export async function pullFresh() {
   const syncResult = await syncWithBackend()
   if (syncResult === 1)
     errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')

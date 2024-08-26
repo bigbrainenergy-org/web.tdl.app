@@ -5,7 +5,7 @@
     color="green"
     icon="fa-solid fa-plus"
     data-cy="create_task_button"
-    @click="openCreateTaskDialog"
+    @click="openCreateTaskDialog()"
   />
   <q-btn
     v-if="currentPath === '/settings'"
@@ -36,13 +36,14 @@
   import { useQuasar, Dialog } from 'quasar'
   import { useRoute, useRouter } from 'vue-router'
   import { openCreateTaskDialog } from 'src/utils/dialog-utils'
+  import { pullFresh } from 'src/utils/sync-utils'
 
   const $q = useQuasar()
   const $route = useRoute()
   const $router = useRouter()
   const routedComponent = ref<ComponentPublicInstance | null>(null)
   const routedKey = ref(0)
-  const drawer = defineModel<boolean>('drawer', { default: false })
+  const drawer = defineModel<boolean>('drawer')
 
   const pagesWithNewTaskButton = [
     '/focus',

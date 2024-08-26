@@ -8,6 +8,22 @@
 </template>
 
 <script setup lang="ts">
+  import { useQuasar, useMeta } from 'quasar'
+  import { computed, defineComponent, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { useRepo } from 'pinia-orm'
+  import { Task, TaskRepo } from 'src/stores/tasks/task'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { Utils } from 'src/util'
+  import { TDLAPP } from 'src/TDLAPP'
+  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
+  import SettingsButton from 'src/components/SettingsButton.vue'
+  import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+  import TaskList from 'src/components/TaskList.vue'
+  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import TaskPage from 'src/components/TaskPage.vue'
+
   const openQuickSortDialog = () => {
     if (useLoadingStateStore().quickSortDialogActive) return
     // todo fixme this is BAD.

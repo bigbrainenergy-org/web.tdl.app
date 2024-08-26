@@ -24,15 +24,19 @@ export function useTaskShortcuts() {
   }
 
   function openTaskCreateEvent(event: KeyboardEvent) {
-    if (!isTextInputFocused && !isDialogOpen.value) {
+    if (!isTextInputFocused() && !isDialogOpen.value) {
+      isDialogOpen.value = true
       openCreateTaskDialog(() => (isDialogOpen.value = false))
       event.preventDefault()
     }
   }
 
   function openTaskSearchEvent(event: KeyboardEvent) {
-    if (!isTextInputFocused && !isDialogOpen.value) {
+    if (!isTextInputFocused() && !isDialogOpen.value) {
+      isDialogOpen.value = true
       openSearchDialog(() => (isDialogOpen.value = false))
+      event.preventDefault()
+    } else if (!isTextInputFocused()) {
       event.preventDefault()
     }
   }

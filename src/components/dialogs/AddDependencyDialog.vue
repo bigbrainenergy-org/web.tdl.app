@@ -4,14 +4,16 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
-    @hide="hideDialog">
+    @hide="hideDialog"
+  >
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton
           v-model:settings="taskSearchSettings"
           name="Task Search Settings"
-          color="white" />
+          color="white"
+        />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -22,7 +24,8 @@
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
         :debounce="debounceAmount"
-        @do-a-search="searchForTasks" />
+        @do-a-search="searchForTasks"
+      />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm text-white">
@@ -35,7 +38,8 @@
                   icon="fas fa-plus"
                   label="Create A New Task"
                   color="primary"
-                  @click="createTask" />
+                  @click="createTask"
+                />
               </q-item>
               <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
@@ -47,7 +51,8 @@
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="selectTask(task as Task)">
+                  @click="selectTask(task as Task)"
+                >
                   <q-item-section :style="colorize(task.id)">
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -80,7 +85,7 @@
   import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
   import Fuse, { FuseResult } from 'fuse.js'
   import { useElementSize } from '@vueuse/core'
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
   interface Props {
     dialogTitle: string
@@ -264,9 +269,9 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
     const start = performance.now()
     const target = 400
     tr.addAndCache(toCreate).then((result: Task) => {
-      if(typeof props.taskID !== 'undefined') selectTask(result)
+      if (typeof props.taskID !== 'undefined') selectTask(result)
       const duration = Math.floor(performance.now() - start)
-      if(duration > target) console.warn(`createTask took ${duration} ms - target is ${target} ms`)
+      if (duration > target) console.warn(`createTask took ${duration} ms - target is ${target} ms`)
     }, Utils.handleError('Error creating task.'))
     busy.value = false
   }
@@ -297,7 +302,7 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
     typeof props.taskID !== 'undefined' ? useAllTasksStore().allTasks.get(props.taskID)?.task : null
   )
   const debounceAmount = ref(100)
-  fuse.value
+  // fuse.value
 
   const el = ref()
   const { width } = useElementSize(el)
