@@ -1,26 +1,21 @@
 <template>
   <FullPage>
     <TransparentCard>
-      <template #actions>
-        <TaskListActions :tasks="tasks" />
-      </template>
-
       <template #header>
-        <PainHeader data-cy="tasks_title">Tasks</PainHeader>
+        <PainHeader>Tasks</PainHeader>
       </template>
 
-      <template #body>
-        <slot></slot>
-      </template>
+      <template #body>Calendar goes here</template>
     </TransparentCard>
   </FullPage>
 </template>
 
 <script setup lang="ts">
+  import { useMeta } from 'quasar'
+
   import FullPage from 'src/components/FullPage.vue'
   import TransparentCard from 'src/components/TransparentCard.vue'
-  import TaskListActions from 'src/components/TaskListActions.vue'
   import PainHeader from 'src/components/PainHeader.vue'
 
-  const tasks = defineModel<Array<Task>>('tasks')
+  useMeta(() => ({ title: 'Calendar | TDL App' }))
 </script>

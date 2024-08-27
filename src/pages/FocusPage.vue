@@ -98,12 +98,15 @@
 </template>
 
 <script setup lang="ts">
+  import { useMeta } from 'quasar'
   import { useRepo } from 'pinia-orm'
   import { TDLAPP } from 'src/TDLAPP'
   // import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed } from 'vue'
+
+  useMeta(() => ({ title: 'Focus | TDL App' }))
 
   const open = (task: Task) => TDLAPP.openTask(task)
 

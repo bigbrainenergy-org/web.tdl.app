@@ -25,9 +25,28 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <q-input v-model="title" filled clearable label="Title" data-cy="task_title_input" />
+            <q-input
+              ref="titleInput"
+              v-model="title"
+              filled
+              clearable
+              label="Title"
+              autofocus
+              data-cy="task_title_input"
+              @keyup.enter="focusNotes"
+              @keydown.tab.exact.prevent="focusNotes"
+            />
             <br />
-            <q-input v-model="notes" filled autogrow clearable label="Notes" />
+            <q-input
+              ref="notesInput"
+              v-model="notes"
+              filled
+              autogrow
+              clearable
+              label="Notes"
+              @keydown.shift.tab.exact.prevent="focusTitle"
+              @keydown.ctrl.enter.exact.prevent="createTask"
+            />
 
             <br />
 
@@ -72,6 +91,17 @@
 
   const title = ref('')
   const notes = ref('')
+
+  const titleInput = ref(null)
+  const notesInput = ref(null)
+
+  const focusTitle = () => {
+    titleInput.value?.focus()
+  }
+
+  const focusNotes = () => {
+    notesInput.value?.focus()
+  }
 
   const createTask = () => {
     emit('create', {

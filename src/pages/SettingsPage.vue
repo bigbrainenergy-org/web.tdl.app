@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
   import { defineComponent } from 'vue'
-  import { useQuasar } from 'quasar'
+  import { useQuasar, useMeta } from 'quasar'
   import { useRouter } from 'vue-router'
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import FocusModeSettingsDialog from 'src/components/dialogs/FocusModeSettingsDialog.vue'
@@ -61,6 +61,8 @@
   import BackgroundSwitcher from 'src/components/inputs/BackgroundSwitcher.vue'
   import PasswordChangeForm from 'src/components/forms/PasswordChangeForm.vue'
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
+
+  useMeta(() => ({ title: 'Settings | TDL App' }))
 
   defineComponent({ name: 'SettingsPage' })
 

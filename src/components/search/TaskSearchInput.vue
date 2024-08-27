@@ -5,6 +5,7 @@
     clearable
     :debounce="debounce"
     :label="searchLabel"
+    autofocus
     @update:model-value="emit('doASearch')"
     @keyup.enter="emit('doASearch')"
   >

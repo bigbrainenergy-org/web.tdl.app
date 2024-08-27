@@ -1542,6 +1542,13 @@
   resolved "https://registry.yarnpkg.com/@quasar/extras/-/extras-1.16.12.tgz#2dac82eac8bb6b069a677d2817e479261d51f234"
   integrity sha512-hLlb3Buxo38Xg/2w0BTkz98RBh/VH8apZ2r6Fl8YpPgrVQ0diHyN/BVTvIOk5Kch2y38L2kvwOIddsB2UcCuIg==
 
+"@quasar/quasar-app-extension-qcalendar@^4.0.0-beta.15":
+  version "4.0.0-beta.15"
+  resolved "https://registry.yarnpkg.com/@quasar/quasar-app-extension-qcalendar/-/quasar-app-extension-qcalendar-4.0.0-beta.15.tgz#1e85626a104c3a33083b7237f50ccf5f9048926a"
+  integrity sha512-i6hQkcP70LXLfVMPZMKQjSg3681gjZmASV3vq6ULzc0LhtBiPneLdVNNtH2itkWxAmaUj+1heQDI5Pa0F7VKLQ==
+  dependencies:
+    "@quasar/quasar-ui-qcalendar" "^4.0.0-beta.15"
+
 "@quasar/quasar-app-extension-testing-e2e-cypress@latest":
   version "6.1.0"
   resolved "https://registry.yarnpkg.com/@quasar/quasar-app-extension-testing-e2e-cypress/-/quasar-app-extension-testing-e2e-cypress-6.1.0.tgz#fa6568ae1e3474cb6cd62feb619221d849947c30"
@@ -1563,6 +1570,11 @@
     lodash-es "^4.17.21"
     vite-jsconfig-paths "^2.0.1"
     vite-tsconfig-paths "^4.3.1"
+
+"@quasar/quasar-ui-qcalendar@^4.0.0-beta.15":
+  version "4.0.0-beta.16"
+  resolved "https://registry.yarnpkg.com/@quasar/quasar-ui-qcalendar/-/quasar-ui-qcalendar-4.0.0-beta.16.tgz#90dca0962f1fe1068361f387893df6c5da7522e2"
+  integrity sha512-KVbFJD1HQp91tiklv+6XsG7bq8FKK6mhhnoVzmjgoyhUAEb9csfbDPbpegy1/FzXy3o0wITe6mmRZ8nbaiMEZg==
 
 "@quasar/render-ssr-error@^1.0.2":
   version "1.0.3"

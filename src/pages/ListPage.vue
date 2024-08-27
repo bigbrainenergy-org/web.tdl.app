@@ -1,13 +1,13 @@
 <template>
-  <task-page :tasks="tasks">
-    <task-list
+  <TaskPage :tasks="tasks">
+    <TaskList
       :tasks="tasks"
       :unblocked-only="layerZeroOnly"
       :incomplete-only="hideCompleted"
       @task-completion-toggled="updateTaskCompletedStatus"
       @task-clicked="openTask"
     />
-  </task-page>
+  </TaskPage>
 </template>
 
 <script setup lang="ts">
@@ -27,11 +27,7 @@
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import TaskPage from 'src/components/TaskPage.vue'
 
-  useMeta(() => {
-    return {
-      title: 'Tasks | TDL App'
-    }
-  })
+  useMeta(() => ({ title: 'List | TDL App' }))
 
   const $q = useQuasar()
 

@@ -1,11 +1,11 @@
 <template>
   <q-header elevated>
     <q-toolbar>
-      <header-buttons v-model:drawer="drawer" />
+      <HeaderButtons v-model:drawer="drawer" v-model:tasks="tasks" />
 
       <q-space />
 
-      <header-user-menu />
+      <HeaderUserMenu />
     </q-toolbar>
   </q-header>
 </template>
@@ -15,4 +15,5 @@
   import HeaderUserMenu from 'src/components/HeaderUserMenu.vue'
 
   const drawer = defineModel<boolean>('drawer')
+  const tasks = defineModel<Array<Task>>('tasks')
 </script>

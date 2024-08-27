@@ -1,8 +1,12 @@
 import { Dialog } from 'quasar'
 import { CreateTaskOptions } from 'src/stores/tasks/task'
+import { createTask } from './task-utils'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
-import { createTask } from './task-utils'
+import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
 
 export function openCreateTaskDialog(onClose: () => void) {
   Dialog.create({
@@ -14,13 +18,13 @@ export function openCreateTaskDialog(onClose: () => void) {
         newTask.hard_postreq_ids = []
         createTask(newTask)
         // REVIEW: Why do I call this in onCreate? I don't think it closes the dialog??
-        if (onClose) {
+        if (typeof onClose === 'function') {
           onClose()
         }
       }
     }
   }).onDismiss(() => {
-    if (onClose) {
+    if (typeof onClose === 'function') {
       onClose()
     }
   })
@@ -38,8 +42,22 @@ export function openSearchDialog(onClose: () => void) {
       batchFilter: []
     }
   }).onDismiss(() => {
-    if (onClose) {
+    if (typeof onClose === 'function') {
       onClose()
+    }
+  })
+}
+
+// FIXME: Do not use state (pinia repos) directly on this util, jam it on the calling component like we do for the others
+export function openQuickSortDialog() {
+  if (useLoadingStateStore().quickSortDialogActive) return
+  // todo fixme this is BAD.
+  useLoadingStateStore().quickSortDialogActive = true
+  console.log('OPENING QUICK SORT')
+  Dialog.create({
+    component: QuickSortLayerZeroDialog,
+    componentProps: {
+      objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
     }
   })
 }

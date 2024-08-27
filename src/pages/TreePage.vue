@@ -70,7 +70,7 @@
   import { useRepo } from 'pinia-orm'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-  import { useQuasar } from 'quasar'
+  import { useQuasar, useMeta } from 'quasar'
   import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
   import { Utils } from 'src/util'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -80,6 +80,8 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
+
+  useMeta(() => ({ title: 'Tree | TDL App' }))
 
   const tr = computed(() => useRepo(TaskRepo))
   // const esr = computed(() => useRepo(ExpandedStateRepo))
@@ -256,7 +258,7 @@
   const { hasKey } = storeToRefs(rawExpandedStateStore)
 
   // const shouldBeExpanded = <T>(x: SimpleTreeNode<T>) => esr.value.isExpanded(x.id)
-  const toNodeKey = <T>(x: SimpleTreeNode<T>) => ({ id: x.id, key: x.key })
+  const toNodeKey = <T,>(x: SimpleTreeNode<T>) => ({ id: x.id, key: x.key })
 
   const childNodeLoader =
     (getter: λ<details<Task>, SimpleTreeNode<Task>[]>) => (d: details<Task>) => {

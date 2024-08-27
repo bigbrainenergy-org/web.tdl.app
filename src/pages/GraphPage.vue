@@ -1,4 +1,8 @@
 <template>
+  <TaskPage :tasks="tasks">
+    <TaskGraph :tasks="tasks" />
+  </TaskPage>
+
   <q-page class="q-pa-lg">
     <div class="row items-stretch justify-evenly">
       <div class="full-height">
@@ -28,11 +32,7 @@
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
 
-  useMeta(() => {
-    return {
-      title: 'Graph | TDL App'
-    }
-  })
+  useMeta(() => ({ title: 'Graph | TDL App' }))
 
   const tr = computed(() => useRepo(TaskRepo))
   const usr = useLocalSettingsStore()
@@ -98,7 +98,7 @@
                 slopeY: 1,
                 normalXoffset: 1,
                 normalYoffset: 1
-              } as d3Link<Task>)
+              }) as d3Link<Task>
           )
       )
     )
@@ -120,7 +120,7 @@
           slopeY: 1,
           normalXoffset: 1,
           normalYoffset: 1
-        } as d3Link<Task>)
+        }) as d3Link<Task>
 
     const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (
       currentTaskNode: d3Node<Task>

@@ -5,31 +5,36 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('src/layouts/MainLayout.vue'),
     children: [
-      { path: '', name: 'Empty', redirect: 'tasks' },
+      { path: '', name: 'Empty', redirect: 'list' },
+      {
+        path: 'list',
+        name: 'List',
+        component: () => import('src/pages/ListPage.vue')
+      },
+      {
+        path: 'calendar',
+        name: 'Calendar',
+        component: () => import('src/pages/CalendarPage.vue')
+      },
       {
         path: 'focus',
         name: 'Focus',
         component: () => import('src/pages/FocusPage.vue')
       },
       {
-        path: 'tasks',
-        name: 'Tasks',
-        component: () => import('src/pages/TasksPage.vue')
-      },
-      {
-        path: 'tasks-tree',
+        path: 'tree',
         name: 'Tree',
-        component: () => import('src/pages/TaskTree.vue')
+        component: () => import('src/pages/TreePage.vue')
       },
       {
         path: 'settings',
         name: 'Settings',
-        component: () => import('src/pages/Settings.vue')
+        component: () => import('src/pages/SettingsPage.vue')
       },
       {
         path: 'graph',
         name: 'Graph',
-        component: () => import('src/pages/GraphAll.vue')
+        component: () => import('src/pages/GraphPage.vue')
       },
       {
         path: 'agenda',

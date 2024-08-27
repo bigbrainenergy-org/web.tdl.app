@@ -1,10 +1,10 @@
 <template>
   <q-layout view="hHh LpR fFf" :style="backgroundStyle">
-    <main-header v-model:drawer="drawer" />
+    <MainHeader v-model:drawer="drawer" v-model:tasks="tasks" />
 
-    <main-sidebar v-model:drawer="drawer" />
+    <MainSidebar v-model:drawer="drawer" />
 
-    <main-footer />
+    <MainFooter />
 
     <q-page-container>
       <router-view v-slot="{ Component, route }">
@@ -28,11 +28,15 @@
   import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
   import { useBackgroundMode } from 'src/composables/use-background-mode'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { storeToRefs } from 'pinia'
 
   const drawer = ref(false)
   const { backgroundStyle } = useBackgroundMode()
 
   useTaskShortcuts()
+
+  const { tasks } = storeToRefs(useLayerZeroStore())
 
   // REVIEW: Sus
   onMounted(() => {
