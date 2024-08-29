@@ -1,11 +1,6 @@
-import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
 import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 
-installQuasarPlugin()
-
-describe('Update Task Dialog Component', () => {
+describe('UpdateTaskDialog', () => {
   it('should allow editing title')
   it('should allow editing notes')
   it('should allow editing order')

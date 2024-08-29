@@ -4,12 +4,20 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
+    data-cy="create_task_dialog"
     @hide="hideDialog"
   >
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Create Task</div>
-        <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onCancelClick" />
+        <q-btn
+          class="q-ma-sm"
+          size="md"
+          color="grey"
+          label="close"
+          data-cy="close_dialog"
+          @click="onCancelClick"
+        />
       </q-card-section>
 
       <q-separator />
@@ -30,7 +38,13 @@
 
             <div class="row">
               <div class="col-grow">
-                <q-btn icon="fas fa-plus" label="Create Task" color="primary" @click="createTask" />
+                <q-btn
+                  icon="fas fa-plus"
+                  label="Create Task"
+                  color="primary"
+                  data-cy="create_task_submit"
+                  @click="createTask"
+                />
               </div>
             </div>
           </div>

@@ -6,7 +6,9 @@
     size="md"
     :color="button.color"
     :label="button.label"
-    @click.stop="button.action(target as G)" />
+    :data-cy="button.dataCy"
+    @click.stop="button.action(target as G)"
+  />
 </template>
 <script setup lang="ts" generic="G">
   import { Button } from 'src/types'

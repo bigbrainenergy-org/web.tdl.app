@@ -1,8 +1,8 @@
 # [Choice] Node.js version (use -bullseye variants on local arm64/Apple Silicon): 18, 16, 14, 18-bullseye, 16-bullseye, 14-bullseye, 18-buster, 16-buster, 14-buster
 ARG VARIANT=20
-FROM mcr.microsoft.com/devcontainers/javascript-node:0-${VARIANT}
+FROM mcr.microsoft.com/devcontainers/javascript-node:${VARIANT}
 
-RUN su node -c "umask 0002 && npm install -g http-server @vue/cli @vue/cli-service-global cypress"
+RUN su node -c "umask 0002 && npm install -g cypress npm@latest yarn@latest"
 WORKDIR /app
 
 EXPOSE 8080

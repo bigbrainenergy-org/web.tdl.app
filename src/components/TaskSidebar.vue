@@ -6,7 +6,7 @@
           <q-icon name="add" />
         </q-item-section>
 
-        <q-item-section> Add Task </q-item-section>
+        <q-item-section>Add Task</q-item-section>
       </q-item>
 
       <q-item v-ripple clickable @click="openSearchDialog">
@@ -14,7 +14,7 @@
           <q-icon name="search" />
         </q-item-section>
 
-        <q-item-section> Search </q-item-section>
+        <q-item-section>Search</q-item-section>
       </q-item>
 
       <q-item v-ripple clickable>
@@ -22,7 +22,7 @@
           <q-icon name="inbox" />
         </q-item-section>
 
-        <q-item-section> Inbox </q-item-section>
+        <q-item-section>Inbox</q-item-section>
       </q-item>
 
       <q-item v-ripple clickable>
@@ -30,7 +30,7 @@
           <q-icon name="today" />
         </q-item-section>
 
-        <q-item-section> Today </q-item-section>
+        <q-item-section>Today</q-item-section>
       </q-item>
 
       <q-item v-ripple clickable>
@@ -38,7 +38,7 @@
           <q-icon name="calendar_month" />
         </q-item-section>
 
-        <q-item-section> Upcoming </q-item-section>
+        <q-item-section>Upcoming</q-item-section>
       </q-item>
 
       <q-item
@@ -52,7 +52,7 @@
           <q-icon name="checklist" />
         </q-item-section>
 
-        <q-item-section> All Tasks </q-item-section>
+        <q-item-section>All Tasks</q-item-section>
       </q-item>
     </q-list>
 

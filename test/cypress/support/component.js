@@ -49,3 +49,10 @@ config.global.mocks = {
 config.global.stubs = {}
 
 installQuasarPlugin({ plugins: { Dialog } })
+
+// Allow mocking pinia for all specs
+import { createPinia, setActivePinia } from 'pinia'
+
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
