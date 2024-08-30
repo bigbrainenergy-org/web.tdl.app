@@ -23,6 +23,12 @@
           icon="fa-solid fa-plus"
           @click="openCreateListDialog"
         />
+        <q-btn
+          v-if="currentPath === '/procedures'"
+          color="green"
+          icon="fa-solid fa-plus"
+          @click="openCreateProcedureDialog"
+        />
         <q-btn class="q-ma-md" color="yellow" icon="fa-solid fa-refresh" @click="pullFresh" />
         <q-btn class="q-ma-md" color="red" icon="fa-solid fa-refresh" @click="dumpDebug" />
         <q-btn
@@ -154,6 +160,7 @@
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import errorNotification from 'src/hackerman/ErrorNotification'
   import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
+  import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
   import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
   import TaskSidebar from 'src/components/TaskSidebar.vue'
   import { UserRepo } from 'src/stores/users/user'
@@ -171,6 +178,7 @@
   import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { storeToRefs } from 'pinia'
+  import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
 
   const $q = useQuasar()
   const $route = useRoute()
@@ -288,6 +296,14 @@
     }, Utils.handleError('Failed to create task.'))
   }
 
+  const createProcedure = (payload: CreateProcedureOptions) => {
+    const pr = useRepo(ProcedureRepo)
+    pr.add(payload).then(() => {
+      Utils.notifySuccess('Successfully created a procedure')
+      refreshRoutedComponent()
+    }, Utils.handleError('Failed to create a procedure.'))
+  }
+
   // HACK: This is super fragile and dumb atm
   const isDialogOpen = ref(false)
 
@@ -301,6 +317,21 @@
           newTask.hard_prereq_ids = []
           newTask.hard_postreq_ids = []
           createTask(newTask)
+          isDialogOpen.value = false
+        }
+      }
+    }).onDismiss(() => {
+      isDialogOpen.value = false
+    })
+  }
+
+  const openCreateProcedureDialog = () => {
+    isDialogOpen.value = true
+    $q.dialog({
+      component: CreateProcedureDialog,
+      componentProps: {
+        onCreate: (payload: { options: CreateProcedureOptions; callback: () => void }) => {
+          createProcedure(payload.options)
           isDialogOpen.value = false
         }
       }
@@ -449,7 +480,7 @@
   // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
-      ? tasks.value.filter(
+      ? (tasks.value as cachedTask[]).filter(
           (x: cachedTask) => x.hard_postreqs.filter((y) => !y.completed).length === 0
         ).length > 0
       : false

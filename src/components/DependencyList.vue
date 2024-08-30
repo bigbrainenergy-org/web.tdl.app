@@ -83,8 +83,8 @@
   import { ref } from 'vue'
 
   export interface EntityType {
-    singular: 'Prerequisite' | 'Postrequisite'
-    plural: 'Prerequisites' | 'Postrequisites'
+    singular: string
+    plural: string
   }
 
   interface Props {

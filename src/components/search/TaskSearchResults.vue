@@ -44,7 +44,6 @@
   import { computed, ref } from 'vue'
   import type { λ } from '../../types'
   import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
-  import { Utils } from 'src/util'
 
   interface Prop {
     search: string | undefined

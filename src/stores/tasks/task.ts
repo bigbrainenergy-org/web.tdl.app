@@ -14,6 +14,8 @@ import { Queue } from 'src/types'
 import { timeThisABAsync, timeThisB } from 'src/perf'
 import { cachedTask, useAllTasksStore } from '../performance/all-tasks'
 import { TaskCache } from '../performance/task-go-fast'
+import { AxiosError } from 'axios'
+import { Procedure } from '../procedures/procedure'
 
 const createPayload = (task: Task): UpdateTaskOptions => {
   const payload = {
@@ -28,6 +30,7 @@ const createPayload = (task: Task): UpdateTaskOptions => {
       review_at: task.review_at,
       hard_prereq_ids: task.hard_prereq_ids,
       hard_postreq_ids: task.hard_postreq_ids,
+      procedure_ids: task.procedure_ids,
       mental_energy_required: task.mental_energy_required,
       physical_energy_required: task.physical_energy_required
     }
@@ -48,6 +51,7 @@ export interface CreateTaskOptions {
   review_at?: string
   hard_prereq_ids?: number[]
   hard_postreq_ids?: number[]
+  procedure_ids?: number[]
   mental_energy_required?: number
   physical_energy_required?: number
 }
@@ -63,6 +67,7 @@ export interface AllOptionalTaskProperties {
   review_at?: string
   hard_prereq_ids?: number[]
   hard_postreq_ids?: number[]
+  procedure_ids?: number[]
   mental_energy_required?: number
   physical_energy_required?: number
 }
@@ -103,11 +108,13 @@ export class Task extends Model implements iRecord {
   @Num(0) declare physical_energy_required: number
   @Attr([]) declare hard_prereq_ids: number[]
   @Attr([]) declare hard_postreq_ids: number[]
+  @Attr([]) declare procedure_ids: number[]
   @Attr([]) declare tag_ids: number[]
 
   @BelongsTo(() => List, 'list_id') declare list: List | null
   @HasManyBy(() => Task, 'hard_prereq_ids') declare hard_prereqs: Task[]
   @HasManyBy(() => Task, 'hard_postreq_ids') declare hard_postreqs: Task[]
+  @HasManyBy(() => Procedure, 'procedure_ids') declare procedures: Procedure[]
   @HasOne(() => ExpandedState, 'id') declare expanded_state: ExpandedState
 
   get hasPostreqs() {
@@ -491,12 +498,19 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if (position < 0) throw new Error('removePre: id provided was not found in prereqs list')
     const options = createPayload(task)
     options.payload.task.hard_prereq_ids!.splice(position, 1)
-    this.updateAndCache(options).then(() => {
-      const pre: Task = Utils.hardCheck(this.find(id_of_prereq))
-      Utils.arrayDelete(pre.hard_postreq_ids, task.id)
-      this.where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
-      Utils.notifySuccess('Removed prerequisite')
-    }, Utils.handleError('Error removing prerequisite'))
+    return this.updateAndCache(options).then(
+      () => {
+        const pre: Task = Utils.hardCheck(this.find(id_of_prereq))
+        Utils.arrayDelete(pre.hard_postreq_ids, task.id)
+        this.where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
+        Utils.notifySuccess('Removed prerequisite')
+        return true
+      },
+      (error: Error | AxiosError) => {
+        Utils.handleError('Error removing prerequisite')(error)
+        return false
+      }
+    )
   }
 
   /**
@@ -509,14 +523,21 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if (position < 0) throw new Error('removePost: id provided was not found in postreqs list')
     const options = createPayload(task)
     options.payload.task.hard_postreq_ids!.splice(position, 1)
-    this.updateAndCache(options).then(() => {
-      const post: Task = Utils.hardCheck(this.find(id_of_postreq))
-      // console.log(`before arrayDelete (pre ids): ${post.hard_prereq_ids}`)
-      Utils.arrayDelete(post.hard_prereq_ids, task.id)
-      console.log(`after arrayDelete (pre ids): ${post.hard_prereq_ids}`)
-      this.where('id', post.id).update({ hard_prereq_ids: post.hard_prereq_ids })
-      Utils.notifySuccess('Removed postrequisite')
-    }, Utils.handleError('Error removing postrequisite'))
+    return this.updateAndCache(options).then(
+      () => {
+        const post: Task = Utils.hardCheck(this.find(id_of_postreq))
+        // console.log(`before arrayDelete (pre ids): ${post.hard_prereq_ids}`)
+        Utils.arrayDelete(post.hard_prereq_ids, task.id)
+        console.log(`after arrayDelete (pre ids): ${post.hard_prereq_ids}`)
+        this.where('id', post.id).update({ hard_prereq_ids: post.hard_prereq_ids })
+        Utils.notifySuccess('Removed postrequisite')
+        return true
+      },
+      (error: Error | AxiosError) => {
+        Utils.handleError('Error removing postrequisite')(error)
+        return false
+      }
+    )
   }
 
   /**
@@ -634,7 +655,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     return this.update(options).then(
       (data: null | Task) => {
         if (data !== null) {
-          // console.debug({ 'setting cache': data })
+          console.debug({ 'setting cache': data })
           const duration = Math.floor(performance.now() - start)
           if (duration > 900)
             console.warn(`UpdateAndCache took longer than target of 900ms - it took ${duration}ms`)

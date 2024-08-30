@@ -29,6 +29,7 @@
               fill-input
               input-debounce="20"
               :options="lists"
+              use-chips
               option-label="title"
               map-options
               emit-value
@@ -38,6 +39,22 @@
               class="q-my-md text-primary"
               @filter="filterSelection"
               @update:model-value="updateList"
+            />
+            <q-select
+              v-model="selectedProcedures"
+              multiple
+              filled
+              fill-input
+              input-debounce="20"
+              :options="procedures"
+              use-chips
+              option-label="title"
+              map-options
+              emit-value
+              label="Procedures"
+              use-input
+              class="q-my-md text-primary"
+              @update:model-value="updateProcedures"
             />
             <q-datetime-input
               v-model="editRemindMeAt"
@@ -140,6 +157,7 @@
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import GloriousSlider from '../GloriousSlider.vue'
   import { storeToRefs } from 'pinia'
+  import { ProcedureRepo } from 'src/stores/procedures/procedure'
 
   const cts = useCurrentTaskStore()
   const currentTaskID = computed(() => cts.id)
@@ -149,6 +167,7 @@
     const t = useRepo(TaskRepo).withAll().find(id)
     if (typeof t === 'undefined' || t === null)
       throw new Error('id does not match a task in the repo')
+    console.log({ t })
     return t
   })
 
@@ -247,6 +266,7 @@
   const { expandEnergyStats, hideCompleted } = storeToRefs(usr)
 
   const lists = computed(() => listsRepo.all())
+  const procedures = computed(() => useRepo(ProcedureRepo).all())
   const allPres = computed(() => currentTask.value.grabPrereqs(hideCompleted.value))
   const allPosts = computed(() => currentTask.value.grabPostreqs(hideCompleted.value))
 
@@ -259,6 +279,10 @@
   }
 
   const updateList = () => updateTask({ list_id: selectedList.value?.id })
+
+  const updateProcedures = () => {
+    updateTask({ procedure_ids: selectedProcedures.value.map((x) => x.id) })
+  }
 
   const allLists = listsRepo.all()
   const listOptions = ref(allLists)
@@ -285,6 +309,7 @@
   }
 
   const selectedList = ref(getSelectedList(currentTask.value))
+  const selectedProcedures = ref(currentTask.value.procedures)
 
   function setCurrentTask(newTask: Task) {
     console.debug('setCurrentTask')
@@ -295,6 +320,7 @@
     editMentalEnergyRequired.value = currentTask.value.mental_energy_required
     editPhysicalEnergyRequired.value = currentTask.value.physical_energy_required
     selectedList.value = getSelectedList(currentTask.value)
+    selectedProcedures.value = currentTask.value.procedures
   }
 
   function deleteTask(task: Task) {
@@ -334,12 +360,7 @@
     console.debug(post)
     const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)
     for (let i = 0; i < allOtherPosts.length; i++) {
-      await tr
-        .removePre(allOtherPosts[i], currentTask.value.id)
-        .then(
-          Utils.handleSuccess('removed redundant prerequisite'),
-          Utils.handleError('error removing redundant prerequisite')
-        )
+      tr.removePre(allOtherPosts[i], currentTask.value.id)
       await tr
         .addPre(allOtherPosts[i], post.id)
         .then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
@@ -356,30 +377,25 @@
     // desired end state: A --> B --> C
     // 2. remove rule A --> C
     console.debug('removing the old (now redundant) postrequisite from the current task')
-    await tr.removePost(currentTask.value, oldPost.id).then(() => {
-      const ct = useRepo(TaskRepo).find(currentTaskID.value)
-      if (ct === null) throw new Error('current task was not found by id')
-      if (ct.hard_postreq_ids.includes(oldPost.id)) throw new Error('postreq was not removed!')
-      const op = useRepo(TaskRepo).find(oldPost.id)
-      if (op === null) throw new Error('old post was not found by id')
-      if (op.hard_prereq_ids.includes(currentTaskID.value))
-        throw new Error('prereq was not removed!')
-    }, Utils.handleError('error moving postrequisite!'))
+    await tr.removePost(currentTask.value, oldPost.id)
+    const ct = useRepo(TaskRepo).find(currentTaskID.value)
+    if (ct === null) throw new Error('current task was not found by id')
+    if (ct.hard_postreq_ids.includes(oldPost.id)) throw new Error('postreq was not removed!')
+    const op = useRepo(TaskRepo).find(oldPost.id)
+    if (op === null) throw new Error('old post was not found by id')
+    if (op.hard_prereq_ids.includes(currentTaskID.value)) throw new Error('prereq was not removed!')
     // FIXME: if these steps are done in 1->2->3 order, currentTask somehow ends up with no postrequisite.
     // FIXME: I'm sure there is the same error for insertbetweenPre.
     // 3. add rule B --> C
     console.debug('adding the old postrequisite to the new postrequisite of the current task')
-    await tr.addPost(payload.task, oldPost.id).then(() => {
-      const pt = useRepo(TaskRepo).find(payload.task.id)
-      if (pt === null) throw new Error('new task was not found by id')
-      if (!pt.hard_postreq_ids.includes(oldPost.id)) {
-        throw new Error('postreq was not added to new postreq!')
-      }
-      const op = useRepo(TaskRepo).find(oldPost.id)
-      if (op === null) throw new Error('old post was not found by id')
-      if (!op.hard_prereq_ids.includes(payload.task.id))
-        throw new Error('prereq was not added to old postreq!')
-    }, Utils.handleError('error moving postrequisite!'))
+    await tr.addPost(payload.task, oldPost.id)
+    const pt = useRepo(TaskRepo).find(payload.task.id)
+    if (pt === null) throw new Error('new task was not found by id')
+    if (!pt.hard_postreq_ids.includes(oldPost.id)) {
+      throw new Error('postreq was not added to new postreq!')
+    }
+    if (!op.hard_prereq_ids.includes(payload.task.id))
+      throw new Error('prereq was not added to old postreq!')
     // 1. add rule A --> B
     console.debug('adding selected postrequisite to current task')
     if (!currentTask.value.hard_postreq_ids.includes(payload.task.id)) {
@@ -405,9 +421,7 @@
 
   const insertBetweenPre = async (payload: { task: Task }) => {
     const oldPre = Utils.hardCheck(currentPre)
-    await tr
-      .removePre(currentTask.value, oldPre.id)
-      .then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
+    await tr.removePre(currentTask.value, oldPre.id)
     await tr
       .addPre(payload.task, oldPre.id)
       .then(
@@ -542,27 +556,31 @@
     }
   ]
 
-  const prunePosts = TDLAPP.blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
-    useLoadingStateStore().busy = true
-    const toRemove = allPosts.value.filter(
-      (x) => payload.below.has(x.id) && !payload.above.has(x.id)
-    )
-    for (let i = 0; i < toRemove.length; i++) {
-      tr.removePost(currentTask.value, toRemove[i].id)
+  const prunePosts = TDLAPP.blockingFunc(
+    async (payload: { above: Set<number>; below: Set<number> }) => {
+      useLoadingStateStore().busy = true
+      const toRemove = allPosts.value.filter(
+        (x) => payload.below.has(x.id) && !payload.above.has(x.id)
+      )
+      for (let i = 0; i < toRemove.length; i++) {
+        await tr.removePost(currentTask.value, toRemove[i].id)
+      }
+      useLoadingStateStore().busy = false
     }
-    useLoadingStateStore().busy = false
-  })
+  )
 
-  const prunePres = TDLAPP.blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
-    const toRemove = allPres.value.filter((x) => {
-      const hasRelationsAbove = payload.above.has(x.id)
-      const hasRelationsBelow = payload.below.has(x.id)
-      console.log({ hasRelationsAbove, hasRelationsBelow, x })
-      return hasRelationsAbove && !hasRelationsBelow
-    })
-    console.log('pruning prerequisites', { payload, toRemove })
-    for (let i = 0; i < toRemove.length; i++) {
-      tr.removePre(currentTask.value, toRemove[i].id)
+  const prunePres = TDLAPP.blockingFunc(
+    async (payload: { above: Set<number>; below: Set<number> }) => {
+      const toRemove = allPres.value.filter((x) => {
+        const hasRelationsAbove = payload.above.has(x.id)
+        const hasRelationsBelow = payload.below.has(x.id)
+        console.log({ hasRelationsAbove, hasRelationsBelow, x })
+        return hasRelationsAbove && !hasRelationsBelow
+      })
+      console.log('pruning prerequisites', { payload, toRemove })
+      for (let i = 0; i < toRemove.length; i++) {
+        await tr.removePre(currentTask.value, toRemove[i].id)
+      }
     }
-  })
+  )
 </script>

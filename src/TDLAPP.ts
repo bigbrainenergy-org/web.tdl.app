@@ -3,15 +3,16 @@ import { Task, TaskRepo } from './stores/tasks/task'
 import { Utils } from './util'
 import { useCurrentTaskStore } from './stores/task-meta/current-task'
 import UpdateTaskDialog from './components/dialogs/UpdateTaskDialog.vue'
+import UpdateProcedureDialog from './components/dialogs/UpdateProcedureDialog.vue'
 import TaskSearchDialog from './components/dialogs/TaskSearchDialog.vue'
 import { useRepo } from 'pinia-orm'
-import { unknownishλ, λ } from './types'
+import { λ } from './types'
 import TaskSlicerDialog from './components/dialogs/TaskSlicerDialog.vue'
 import AddDependencyDialog from './components/dialogs/AddDependencyDialog.vue'
 import { timeThisAABAsync } from './perf'
 import { useLocalSettingsStore } from './stores/local-settings/local-setting'
-import { T } from 'vitest/dist/reporters-yx5ZTtEV'
 import { useLoadingStateStore } from './stores/performance/loading-state'
+import { Procedure } from './stores/procedures/procedure'
 
 export class TDLAPP {
   static openTask = (currentTask: Task | number) => {
@@ -26,8 +27,17 @@ export class TDLAPP {
     }
     return Dialog.create({ component: UpdateTaskDialog })
   }
+  static openProcedure = (procedure: Procedure) => {
+    return Dialog.create({
+      component: UpdateProcedureDialog,
+      componentProps: {
+        procedure
+      }
+    })
+  }
   static searchDialog = (
-    onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task)
+    onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task),
+    initialFilter?: λ<number | undefined, λ<Task[], Task[]>> | undefined
   ) => {
     return Dialog.create({
       component: TaskSearchDialog,
@@ -36,7 +46,8 @@ export class TDLAPP {
         taskID: undefined,
         showCreateButton: true,
         onSelect,
-        closeOnSelect: true
+        closeOnSelect: true,
+        initialFilter
       }
     })
   }

@@ -24,7 +24,7 @@ export class TaskCache {
   }
   static update = (task: Task) => {
     // todo: might need to rewrite.
-    // 
+    //
     const tr = useRepo(TaskRepo)
     tr.withAll().load([task])
     const newCachedTask = new cachedTask(task)
@@ -52,9 +52,9 @@ export class TaskCache {
     vennPres.left.forEach((x) => {
       const t = ATHardGet(x.id)
       Utils.arrayDelete(t.hard_postreqs, task, 'id')
-      console.log({ 'postreqs before delete': t.hard_postreq_ids})
+      console.log({ 'postreqs before delete': t.hard_postreq_ids })
       Utils.arrayDelete(t.hard_postreq_ids, task.id)
-      console.log({ 'postreqs after delete': t.hard_postreq_ids})
+      console.log({ 'postreqs after delete': t.hard_postreq_ids })
     })
     vennPres.center.forEach((x) => {
       const t = ATHardGet(x.id)
@@ -68,9 +68,9 @@ export class TaskCache {
     vennPosts.left.forEach((x) => {
       const t = ATHardGet(x.id)
       Utils.arrayDelete(t.hard_prereqs, task, 'id')
-      console.log({ 'prereqs before delete': t.hard_prereq_ids})
+      console.log({ 'prereqs before delete': t.hard_prereq_ids })
       Utils.arrayDelete(t.hard_prereq_ids, task.id)
-      console.log({ 'prereqs after delete': t.hard_prereq_ids})
+      console.log({ 'prereqs after delete': t.hard_prereq_ids })
     })
     vennPosts.center.forEach((x) => {
       const t = ATHardGet(x.id)
@@ -87,7 +87,9 @@ export class TaskCache {
   static checkAgainstKnownCompletedTasks(...tasks: Task[] | cachedTask[]) {
     const ct = useCompletedTasksStore().tasks
     tasks
-      .filter((x) => ct.has(x.id))
+      .filter((x) => {
+        ct.has(x.id as number) // FIXME: why is ts breaking here?
+      })
       .map((x) => {
         console.warn(`COMPLETED TASK DETECTED: ${x.id} - ${x.title}`)
         throw new Error(`COMPLETED TASK DETECTED: ${x.id} - ${x.title}`)

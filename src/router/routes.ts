@@ -45,6 +45,11 @@ const routes: RouteRecordRaw[] = [
         path: 'agenda',
         name: 'Agenda',
         component: () => import('src/pages/Agenda.vue')
+      },
+      {
+        path: 'procedures',
+        name: 'Procedures',
+        component: () => import('src/pages/Procedures.vue')
       }
     ]
   },

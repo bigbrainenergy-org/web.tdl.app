@@ -2,6 +2,7 @@ import { Settings } from 'luxon'
 import { useRepo } from 'pinia-orm'
 import { ListRepo } from 'src/stores/lists/list'
 import { TaskCache } from 'src/stores/performance/task-go-fast'
+import { ProcedureRepo } from 'src/stores/procedures/procedure'
 import { TaskRepo } from 'src/stores/tasks/task'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
@@ -30,6 +31,10 @@ export async function syncWithBackend(): Promise<number> {
     {
       modelname: 'Time Zone',
       repo: TimeZoneRepo
+    },
+    {
+      modelname: 'Procedure',
+      repo: ProcedureRepo
     }
   ]
 

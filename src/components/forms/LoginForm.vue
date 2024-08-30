@@ -44,7 +44,7 @@
 
   defineEmits(['login'])
 
-  const passwordInput = ref(null)
+  const passwordInput = ref()
 
   const focusPassword = () => {
     passwordInput.value?.focus()
