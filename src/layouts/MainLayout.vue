@@ -138,6 +138,12 @@
           label="Graph"
           :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
         />
+        <q-route-tab
+          icon="fa-solid fa-star"
+          to="/procedures"
+          label="Procedures"
+          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
+        />
       </q-tabs>
     </q-footer>
 
