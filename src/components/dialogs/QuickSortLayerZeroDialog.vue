@@ -18,10 +18,10 @@
                 <q-item-label lines="2">{{ 'Settings' }}</q-item-label>
               </q-item-section>
               <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
-              <GloriousToggle
+              <!-- <GloriousToggle
                 v-model:model-value="enableDeeperQuickSort"
                 label="Deeper Quick Sort"
-              />
+              /> -->
               <GloriousSlider
                 v-model:model-value="enableQuickSortOnLayerZeroQTY"
                 :min="1"
@@ -29,9 +29,17 @@
                 :step="1"
                 cute-name="Max Layer Zero Tasks"
               />
-              <GloriousToggle
+              <!-- <GloriousToggle
                 v-model:model-value="enableQuickSortOnNewTask"
                 label="Quick Sort on Any Task w/o Postreqs"
+              /> -->
+              <GloriousSlider
+                v-model:model-value="quickSortDialogMaxToShow"
+                :min="2"
+                :max="10"
+                :step="1"
+                cute-name="Max Tasks to Select at a Time"
+                @update:model-value="tryNewPair"
               />
             </q-popup-proxy>
           </q-btn>
@@ -39,7 +47,7 @@
         </p>
       </q-card-section>
       <q-linear-progress v-if="loading" query stripe size="10px" />
-      <q-card-section class="q-ma-lg vertical-top">
+      <q-card-section v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-top">
         <q-btn-dropdown
           :disable="loading"
           size="lg"
@@ -48,14 +56,14 @@
           split
           auto-close
           dropdown-icon="more_vert"
-          @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)"
+          @click.stop="makeSelection(t as Task)"
           @touchstart.stop
           @mousedown.stop
         >
           <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped" :style="style">
-                {{ currentPair.data.a.title }}
+                {{ t.title }}
               </q-item-label>
             </q-item-section>
           </template>
@@ -65,42 +73,7 @@
               :key="index"
               v-close-popup
               clickable
-              @click.stop="menuitem.action(currentPair.data.a as Task)"
-            >
-              <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-              <q-space />
-              <q-icon :name="menuitem.icon" />
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
-      </q-card-section>
-      <q-card-section class="q-ma-lg vertical-top">
-        <q-btn-dropdown
-          :disable="loading"
-          size="lg"
-          color="positive"
-          style="width: 100%"
-          split
-          auto-close
-          dropdown-icon="more_vert"
-          @click.stop="addRule(currentPair.data.b as Task, currentPair.data.a as Task)"
-          @touchstart.stop
-          @mousedown.stop
-        >
-          <template #label>
-            <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped" :style="style">
-                {{ currentPair.data.b.title }}
-              </q-item-label>
-            </q-item-section>
-          </template>
-          <q-list>
-            <q-item
-              v-for="(menuitem, index) in menuItems"
-              :key="index"
-              v-close-popup
-              clickable
-              @click.stop="menuitem.action(currentPair.data.b as Task)"
+              @click.stop="menuitem.action(t as Task)"
             >
               <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
               <q-space />
@@ -167,12 +140,12 @@
     shouldReroll = () => Math.random() - this.weight() > 0
   }
 
-  // todo: storeToRefs
   const {
     disableQuickSort,
-    enableDeeperQuickSort,
+    // enableDeeperQuickSort,
     enableQuickSortOnLayerZeroQTY,
-    enableQuickSortOnNewTask
+    // enableQuickSortOnNewTask,
+    quickSortDialogMaxToShow
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: cachedTask) => new PostWeightedTask(x.t)
@@ -193,16 +166,16 @@
     }
   })
 
-  const layerOne = computed(() =>
-    enableDeeperQuickSort.value
-      ? layerZero.value
-          .filter((x) => x.t.grabPostreqs(true).length > 1)
-          .map((x) => ({
-            id: x.t.id,
-            data: x.t.grabPostreqs(true).map(postWeightedTask2)
-          }))
-      : null
-  )
+  //  const layerOne = computed(() =>
+  //     enableDeeperQuickSort.value
+  //       ? layerZero.value
+  //           .filter((x) => x.t.grabPostreqs(true).length > 1)
+  //           .map((x) => ({
+  //             id: x.t.id,
+  //             data: x.t.grabPostreqs(true).map(postWeightedTask2)
+  //           }))
+  //       : null
+  //   )
 
   const eq = (pairA: pair<Task>, pairB: pair<PostWeightedTask>): boolean => {
     if (pairA.a.id === pairB.a.t.id) {
@@ -321,154 +294,16 @@
 
   const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
 
-  const selectPair = (arr: withID<PostWeightedTask[]>): withID<pair<Task>> | null => {
-    if (arr.data.length < 2) return null
-    // todo: revamp the forget() function
-    if (arr.data.length === 2) {
-      const lastPair: pair<PostWeightedTask> = { a: arr.data[0], b: arr.data[1] }
-      if (isSkipped({ id: arr.id, data: lastPair })) {
-        console.warn('the last available pair in the array was already skipped. bailing out.')
-        return null
-      }
-      if (lastPair.a.t.hasRelationTo(lastPair.b.t.id)) {
-        console.warn('the last available pair in the array is redundant. bailing out.')
-        return null
-      }
-      return { id: arr.id, data: { a: lastPair.a.t, b: lastPair.b.t } }
-    }
-    let ints: pair<number> = {
-      a: Utils.getRandomInt(arr.data.length),
-      b: Utils.getRandomInt(arr.data.length)
-    }
-    let totalPermutations = permutations(arr.data)
-    let tmp: pair<PostWeightedTask> = {
-      a: arr.data[ints.a],
-      b: arr.data[ints.b]
-    }
-    const remakeTMP = () => {
-      tmp = {
-        a: arr.data[ints.a],
-        b: arr.data[ints.b]
-      }
-    }
-    const rotate = (x: number, reverse = false) => {
-      reverse ? x-- : x++
-      if (x >= arr.data.length) x = 0
-      else if (x < 0) x = arr.data.length - 1
-      return x
-    }
-    let maxRolls = 10
-    let permutationDecrementor = totalPermutations
-    const wompwomp = (mode: 'rolls' | 'permutations') => {
-      remakeTMP()
-      if (mode === 'rolls') maxRolls--
-      else permutationDecrementor--
-    }
-    const sameElements = (p: pair<number>) => p.a === p.b
-    const redundant = (p: pair<PostWeightedTask>) =>
-      tmp.a.t.hasRelationTo(tmp.b.t.id, { incompleteOnly: true, useStore: true })
-    const loopConditions = () => {
-      const se = sameElements(ints)
-      const sk = isSkipped({ id: arr.id, data: tmp })
-      const rd = redundant(tmp)
-      return se || sk || rd
-    }
-
-    while (loopConditions() && permutationDecrementor > 0) {
-      console.debug('in main loop of selectPair')
-      while (sameElements(ints) && permutationDecrementor > 0) {
-        console.log('accidentally made a pair where a and b are the same!')
-        ints.b = rotate(ints.b)
-        wompwomp('permutations')
-      }
-      while (isSkipped({ id: arr.id, data: tmp }) && permutationDecrementor > 0) {
-        console.log('skipping skipped pair!')
-        ints.a = rotate(ints.a, true)
-        wompwomp('permutations')
-      }
-      while (maxRolls > 0 && tmp.a.shouldReroll()) {
-        console.log('rerolling a!')
-        ints.a = rotate(ints.a, true)
-        wompwomp('rolls')
-      }
-      while (maxRolls > 0 && tmp.b.shouldReroll()) {
-        console.log('rerolling b!')
-        ints.b = rotate(ints.b)
-        wompwomp('rolls')
-      }
-      console.debug({ tmp })
-      while (redundant(tmp) && permutationDecrementor > 0) {
-        console.log('found a redundant pair!', { tmp })
-        ints.a = rotate(ints.a, true)
-        wompwomp('permutations')
-      }
-    }
-
-    if (permutationDecrementor <= 0) return null
-    console.debug({
-      permutationDecrementor,
-      maxRolls,
-      tmp,
-      redundant: redundant(tmp)
-    })
-    return { id: arr.id, data: { a: tmp.a.t, b: tmp.b.t } }
-  }
-
-  const generateNewPair = (): withID<pair<Task>> => {
-    // todo: if selecting a layer one task, cannot currently fallback to layer zero when all are skipped, and vice versa.
-    console.log(`layer zero length is ${l0len.value}; objective is ${props.objective}`)
+  /**
+   * generateNewPair:
+   * - throw an error if sorting is done
+   * - select a new pair (or trio or quartet or n-tet)
+   */
+  const generateNewPair = (): Task[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
-    const metNewTaskObjective =
-      (tasksWithoutPostreqs.value.length === 0 && enableQuickSortOnNewTask.value) ||
-      !enableQuickSortOnNewTask.value
-    if (metLayerZeroLengthObjective && metNewTaskObjective) {
-      throw new Error('reached layer zero length objective.')
-    }
-    let tmp: withID<pair<Task>> | null = null
-    const tryGetLayerOnePair = () => {
-      if (layerOne.value === null || layerOne.value.length === 0) return null
-      let randomindex = Utils.getRandomInt(layerOne.value.length)
-      console.debug({ randomindex })
-      let randomlySelectedPostsList = layerOne.value[randomindex]
-      console.debug({ randomlySelectedPostsList })
-      let attemptsRemaining = layerOne.value.length
-      console.debug({ attemptsRemaining })
-      while (
-        permutations(randomlySelectedPostsList.data) -
-          getSkippedPairsForID(randomlySelectedPostsList.id).length <
-          1 &&
-        attemptsRemaining > 0
-      ) {
-        console.log('all posts pairs are skipped now, moving to a new posts array.')
-        console.debug({
-          permutations: permutations(randomlySelectedPostsList.data),
-          skippedPairs: getSkippedPairsForID(randomlySelectedPostsList.id),
-          attemptsRemaining,
-          randomindex
-        })
-        randomindex++
-        attemptsRemaining--
-        if (randomindex >= layerOne.value.length) randomindex = 0
-        randomlySelectedPostsList = layerOne.value[randomindex]
-      }
-      if (attemptsRemaining < 1) {
-        console.warn('selecting a layer one task pair did not work.')
-        return null
-      }
-      return selectPair(randomlySelectedPostsList)
-    }
-    if (layerOne.value !== null && Math.random() > 0.4 && layerOne.value.length > 0) {
-      console.debug('generating layer one pair!')
-      tmp = tryGetLayerOnePair()
-      if (tmp !== null) {
-        return tmp
-      }
-      console.warn('falling back to selecting a layer zero task pair.')
-    }
-    console.debug('generating a layer zero pair!')
-    tmp = selectPair({ id: null, data: layerZero.value })
-    if (tmp !== null) return tmp
-    throw new Error('Could not generate a new pair')
+    if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
+    const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
+    return layerZero.value.slice(0, howManyToSelect).map((x) => x.t)
   }
 
   let firstPair
@@ -480,7 +315,7 @@
   }
   if (firstPair === null || typeof firstPair === 'undefined')
     throw new Error('Could not generate first pair')
-  const currentPair = ref<withID<pair<Task>>>(firstPair)
+  const currentPair = ref(firstPair)
 
   const forget = (id: number) => {
     const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
@@ -500,26 +335,20 @@
     }
   }
 
-  const addRule = async (first: Task, second: Task) => {
-    console.debug({ first, second })
+  const makeSelection = async (mvp: Task) => {
     loading.value = true
-    await timeThisAABAsync(
-      TDLAPP.addPre,
-      'add rule on quick sort dialog',
-      1000
-    )(second, first.id).then(() => {
-      forget(second.id)
-      timeThis(tryNewPair, 'tryNewPair', 100)()
-      loading.value = false
-    })
+
+    for (let t of currentPair.value) {
+      if (t.id === mvp.id) continue
+      await TDLAPP.addPre(t as Task, mvp.id).then(() => {
+        tryNewPair()
+        loading.value = false
+      })
+    }
   }
 
   const skip = () => {
-    getSkippedPairsForID(currentPair.value.id).push({
-      a: currentPair.value.data.a as Task,
-      b: currentPair.value.data.b as Task
-    })
-    tryNewPair()
+    Utils.handleError('TODO')
   }
 
   const onCancelClick = () => {
