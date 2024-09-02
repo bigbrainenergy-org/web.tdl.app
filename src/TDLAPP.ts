@@ -10,7 +10,6 @@ import TaskSlicerDialog from './components/dialogs/TaskSlicerDialog.vue'
 import AddDependencyDialog from './components/dialogs/AddDependencyDialog.vue'
 import { timeThisAABAsync } from './perf'
 import { useLocalSettingsStore } from './stores/local-settings/local-setting'
-import { T } from 'vitest/dist/reporters-yx5ZTtEV'
 import { useLoadingStateStore } from './stores/performance/loading-state'
 
 export class TDLAPP {

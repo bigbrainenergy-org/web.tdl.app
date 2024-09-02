@@ -12,9 +12,9 @@
       // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
         "Vue.volar",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "mxsdev.typescript-explorer"
       ]
     }
   },

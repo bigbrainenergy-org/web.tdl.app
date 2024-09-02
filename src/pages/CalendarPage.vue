@@ -18,4 +18,6 @@
   import PainHeader from 'src/components/PainHeader.vue'
 
   useMeta(() => ({ title: 'Calendar | TDL App' }))
+
+  // Consider https://fullcalendar.io/
 </script>

@@ -12,6 +12,7 @@ export function useTaskShortcuts() {
   useKeyboardEvents(keyDownActions, keyUpActions)
 
   const isDialogOpen = ref(false)
+  const onClose = () => (isDialogOpen.value = false)
 
   function isTextInputFocused() {
     const activeElement = document.activeElement
@@ -26,7 +27,7 @@ export function useTaskShortcuts() {
   function openTaskCreateEvent(event: KeyboardEvent) {
     if (!isTextInputFocused() && !isDialogOpen.value) {
       isDialogOpen.value = true
-      openCreateTaskDialog(() => (isDialogOpen.value = false))
+      openCreateTaskDialog().onDismiss(onClose)
       event.preventDefault()
     }
   }
@@ -34,7 +35,7 @@ export function useTaskShortcuts() {
   function openTaskSearchEvent(event: KeyboardEvent) {
     if (!isTextInputFocused() && !isDialogOpen.value) {
       isDialogOpen.value = true
-      openSearchDialog(() => (isDialogOpen.value = false))
+      openSearchDialog().onDismiss(onClose)
       event.preventDefault()
     } else if (!isTextInputFocused()) {
       event.preventDefault()

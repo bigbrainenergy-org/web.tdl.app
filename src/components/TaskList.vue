@@ -24,14 +24,10 @@
   const props = withDefaults(
     defineProps<{
       tasks?: Array<cachedTask>
-      unblockedOnly?: boolean
-      incompleteOnly?: boolean
       emptyListMessage?: string
     }>(),
     {
-      tasks: () => [], // Reasons I hate JavaScript++ (needs factory function on only specific types)
-      unblockedOnly: false,
-      incompleteOnly: false,
+      tasks: () => [],
       emptyListMessage: 'Nothing yet!'
     }
   )

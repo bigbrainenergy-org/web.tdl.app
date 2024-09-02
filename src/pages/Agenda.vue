@@ -8,11 +8,7 @@
             <q-space />
             <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
-            <q-btn
-              icon="fa-solid fa-signs-post"
-              class="text-primary"
-              @click="openQuickSortDialog"
-            />
+            <q-btn icon="fa-solid fa-signs-post" class="text-primary" @click="openQuickSortDialog" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
@@ -25,19 +21,10 @@
 
           <q-card-section>
             <q-list class="text-primary">
-              <q-intersection
-                v-for="(currentTask, index) in tasks"
-                :key="index"
-                once
-                style="min-height: 48px"
-              >
+              <q-intersection v-for="(currentTask, index) in tasks" :key="index" once style="min-height: 48px">
                 <q-item v-ripple clickable @click="open(currentTask)">
-                  <q-checkbox
-                    v-model:model-value="currentTask.completed"
-                    color="primary"
-                    keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
-                  />
+                  <q-checkbox v-model:model-value="currentTask.completed" color="primary" keep-color
+                    @update:model-value="updateTaskCompletedStatus(currentTask)" />
 
                   <q-item-section>
                     <q-item-label lines="2">
@@ -54,25 +41,16 @@
                   </q-item-section>
 
                   <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
-                    <q-chip
-                      v-if="currentTask.grabPostreqs(hideCompleted).length"
-                      :style="
-                        currentTask.grabPostreqs(hideCompleted).length > sortQty
-                          ? 'background-color: red;'
-                          : 'background-color: gray;'
-                      "
-                    >
+                    <q-chip v-if="currentTask.grabPostreqs(hideCompleted).length" :style="currentTask.grabPostreqs(hideCompleted).length > sortQty
+                        ? 'background-color: red;'
+                        : 'background-color: gray;'
+                      ">
                       {{ currentTask.grabPostreqs(hideCompleted).length }}
                     </q-chip>
                   </q-item-section>
                   <q-item-section side>
-                    <q-btn
-                      v-if="!currentTask.completed"
-                      outline
-                      rounded
-                      label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)"
-                    />
+                    <q-btn v-if="!currentTask.completed" outline rounded label="ADD PRE"
+                      @click.stop="addTaskPre(currentTask)" />
                   </q-item-section>
                 </q-item>
               </q-intersection>
@@ -108,7 +86,7 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
   const $q = useQuasar()
 
@@ -207,7 +185,7 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   const autoThreshold = computed(() => {
     const sampleSize = Math.min(tasks.value.length, 10)
     const samplePriorities = []
-    for(let i = 0; i < sampleSize; i++) {
+    for (let i = 0; i < sampleSize; i++) {
       samplePriorities.push(tasks.value[i].hard_postreqs.filter(notCompleted).length)
     }
     samplePriorities.sort((a, b) => a - b)

@@ -1,15 +1,17 @@
 import { Dialog } from 'quasar'
-import { CreateTaskOptions } from 'src/stores/tasks/task'
+import { CreateTaskOptions, Task } from 'src/stores/tasks/task'
 import { createTask } from './task-utils'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 
+import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
 import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
 
-export function openCreateTaskDialog(onClose: () => void) {
-  Dialog.create({
+export function openCreateTaskDialog() {
+  return Dialog.create({
     component: CreateTaskDialog,
     componentProps: {
       onCreate: (payload: { options: CreateTaskOptions; callback: () => void }) => {
@@ -17,33 +19,19 @@ export function openCreateTaskDialog(onClose: () => void) {
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
         createTask(newTask)
-        // REVIEW: Why do I call this in onCreate? I don't think it closes the dialog??
-        if (typeof onClose === 'function') {
-          onClose()
-        }
       }
-    }
-  }).onDismiss(() => {
-    if (typeof onClose === 'function') {
-      onClose()
     }
   })
 }
 
-export function openSearchDialog(onClose: () => void) {
-  Dialog.create({
+export function openSearchDialog() {
+  return Dialog.create({
     component: TaskSearchDialog,
     componentProps: {
       dialogTitle: 'Search For A Task',
       taskID: undefined,
       showCreateButton: true,
-      closeOnSelect: true,
-      initialFilter: [],
-      batchFilter: []
-    }
-  }).onDismiss(() => {
-    if (typeof onClose === 'function') {
-      onClose()
+      closeOnSelect: true
     }
   })
 }
@@ -54,10 +42,20 @@ export function openQuickSortDialog() {
   // todo fixme this is BAD.
   useLoadingStateStore().quickSortDialogActive = true
   console.log('OPENING QUICK SORT')
-  Dialog.create({
+  return Dialog.create({
     component: QuickSortLayerZeroDialog,
     componentProps: {
       objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
     }
   })
+}
+
+export function openUpdateTaskDialog(currentTask: Task | number) {
+  const cts = useCurrentTaskStore()
+  if (currentTask instanceof Task) {
+    cts.id = currentTask.id
+  } else {
+    cts.id = currentTask
+  }
+  return Dialog.create({ component: UpdateTaskDialog })
 }

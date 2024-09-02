@@ -13,12 +13,7 @@
       </q-card-section>
 
       <q-card-section>
-        <LoginForm
-          v-model:server="server"
-          v-model:username="username"
-          v-model:password="password"
-          @login="login"
-        />
+        <LoginForm v-model:server="server" v-model:username="username" v-model:password="password" @login="login" />
       </q-card-section>
 
       <q-card-actions align="right">
@@ -37,12 +32,9 @@
   import { useAxiosStore } from 'src/stores/axios-store'
   import { syncWithBackend } from 'src/utils/sync-utils'
   import LoginForm from 'src/components/forms/LoginForm.vue'
+  import CenteredPage from 'src/components/CenteredPage.vue'
 
-  useMeta(() => {
-    return {
-      title: 'Login | TDL App'
-    }
-  })
+  useMeta(() => ({ title: 'Login | TDL App' }))
 
   const authenticationStore = useAuthenticationStore()
   const $q = useQuasar()
