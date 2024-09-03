@@ -8,6 +8,7 @@ import { TaskCache } from '../performance/task-go-fast'
 import { Utils } from 'src/util'
 import { useAllTasksStore } from '../performance/all-tasks'
 import { useLayerZeroStore } from '../performance/layer-zero'
+import { syncWithBackend } from 'src/hackerman/sync'
 
 export interface CreateProcedureOptions {
   title: string
@@ -31,7 +32,7 @@ export interface UpdateProcedureOptions extends iOptions {
 }
 
 export class Procedure extends Model implements iRecord {
-  static entity = 'procedures'
+  static override entity = 'procedures'
 
   @Num(-1) declare id: number
   @Str('') declare title: string
@@ -41,7 +42,7 @@ export class Procedure extends Model implements iRecord {
 
   @HasManyBy(() => Task, 'task_ids') declare tasks: Task[]
 
-  static piniaOptions = {
+  static override piniaOptions = {
     persist: true
   }
 
@@ -58,8 +59,8 @@ export class ProcedureRepo extends GenericRepo<
   UpdateProcedureOptions,
   Procedure
 > {
-  use = Procedure
-  apidir = Procedure.entity
+  override use = Procedure
+  override apidir = Procedure.entity
 
   resetProcedure = (id: number) => {
     const url = `/${this.apidir}/reset/${id}`
@@ -74,6 +75,7 @@ export class ProcedureRepo extends GenericRepo<
           x.completed = false
           TaskCache.update(x)
           console.log(`layer zero length: ${useLayerZeroStore().typed.length}`)
+          syncWithBackend()
         })
         console.debug({ tasks: tmp.grabTasks() })
         return tmp

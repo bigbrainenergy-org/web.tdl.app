@@ -50,10 +50,13 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
   fetch = async () => {
     await this.api()
       .get(`/${this.apidir}`, this.commonHeader())
-      .then((response: AxiosResponse) => {
-        // console.debug(`${this.apidir} fetched: `, { response })
-        this.fresh(response.data as T[])
-      }, Utils.handleError(`Could not fetch all ${this.apidir}`))
+      .then(
+        (response: AxiosResponse) => {
+          // console.debug(`${this.apidir} fetched: `, { response })
+          this.fresh(response.data as T[])
+        },
+        Utils.handleError(`Could not fetch all ${this.apidir}`)
+      )
   }
 
   getId = async (id: number): Promise<T | null> => {
