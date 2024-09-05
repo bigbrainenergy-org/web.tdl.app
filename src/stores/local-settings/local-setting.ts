@@ -56,6 +56,65 @@ interface LocalSettingsState {
   toolbarButtons: RouteTab[]
 }
 
+const originalToolbarButtons: RouteTab[] = [
+  {
+    icon: 'fa-solid fa-circle-dot',
+    to: '/focus',
+    label: 'Focus',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-inbox',
+    to: '/tasks',
+    label: 'Tasks',
+    enabled: true,
+    default: true
+  },
+  {
+    icon: 'fa-solid fa-inbox',
+    to: '/josh-page',
+    label: 'Josh',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-inbox',
+    to: '/agenda',
+    label: 'Agenda',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-project-diagram',
+    to: '/lists',
+    label: 'Lists',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-project-diagram',
+    to: '/tasks-tree',
+    label: 'Tree',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-project-diagram',
+    to: '/graph',
+    label: 'Graph',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-star',
+    to: '/routines',
+    label: 'Routines',
+    enabled: true,
+    default: false
+  }
+]
+
 export const useLocalSettingsStore = defineStore('local-settings', {
   state: (): LocalSettingsState => {
     return {
@@ -79,65 +138,14 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       notificationSpeed: 3,
       autoScalePriority: false,
       quickSortDialogMaxToShow: 2,
-      toolbarButtons: [
-        {
-          icon: 'fa-solid fa-circle-dot',
-          to: '/focus',
-          label: 'Focus',
-          enabled: true,
-          default: false
-        },
-        {
-          icon: 'fa-solid fa-inbox',
-          to: '/tasks',
-          label: 'Tasks',
-          enabled: true,
-          default: true
-        },
-        {
-          icon: 'fa-solid fa-inbox',
-          to: '/josh-page',
-          label: 'Josh',
-          enabled: true,
-          default: false
-        },
-        {
-          icon: 'fa-solid fa-inbox',
-          to: '/agenda',
-          label: 'Agenda',
-          enabled: true,
-          default: false
-        },
-        {
-          icon: 'fa-solid fa-project-diagram',
-          to: '/lists',
-          label: 'Lists',
-          enabled: true,
-          default: false
-        },
-        {
-          icon: 'fa-solid fa-project-diagram',
-          to: '/tasks-tree',
-          label: 'Tree',
-          enabled: true,
-          default: false
-        },
-        {
-          icon: 'fa-solid fa-project-diagram',
-          to: '/graph',
-          label: 'Graph',
-          enabled: true,
-          default: false
-        },
-        {
-          icon: 'fa-solid fa-star',
-          to: '/routines',
-          label: 'Routines',
-          enabled: true,
-          default: false
-        }
-      ]
+      toolbarButtons: originalToolbarButtons
     }
   },
-  persist: true
+  persist: true,
+  actions: {
+    resetToolbarButtons() {
+      // because Firefox for Android is unusually difficult
+      this.toolbarButtons = originalToolbarButtons
+    }
+  }
 })

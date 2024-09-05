@@ -11,6 +11,13 @@
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Toolbar Settings</div>
+        <q-btn
+          class="q-ma-sm"
+          size="md"
+          color="yellow"
+          label="refresh"
+          @click="useLocalSettingsStore().resetToolbarButtons()"
+        />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onDialogCancel" />
       </q-card-section>
       <q-separator />
