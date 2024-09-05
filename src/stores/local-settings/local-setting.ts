@@ -4,6 +4,14 @@ import { defineStore } from 'pinia'
 
 export type BackgroundMode = 'image' | '#000000' | '#220000'
 
+export type RouteTab = {
+  icon: string
+  to: string
+  label: string
+  enabled: boolean
+  default: boolean
+}
+
 interface LocalSettingsState {
   id: number | null
   taskSearch: string
@@ -45,6 +53,7 @@ interface LocalSettingsState {
   notificationSpeed: 1 | 2 | 3
   autoScalePriority: boolean
   quickSortDialogMaxToShow: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
+  toolbarButtons: RouteTab[]
 }
 
 export const useLocalSettingsStore = defineStore('local-settings', {
@@ -69,7 +78,65 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       omitRedundantSearchResults: false,
       notificationSpeed: 3,
       autoScalePriority: false,
-      quickSortDialogMaxToShow: 2
+      quickSortDialogMaxToShow: 2,
+      toolbarButtons: [
+        {
+          icon: 'fa-solid fa-circle-dot',
+          to: '/focus',
+          label: 'Focus',
+          enabled: true,
+          default: false
+        },
+        {
+          icon: 'fa-solid fa-inbox',
+          to: '/tasks',
+          label: 'Tasks',
+          enabled: true,
+          default: true
+        },
+        {
+          icon: 'fa-solid fa-inbox',
+          to: '/josh-page',
+          label: 'Josh',
+          enabled: true,
+          default: false
+        },
+        {
+          icon: 'fa-solid fa-inbox',
+          to: '/agenda',
+          label: 'Agenda',
+          enabled: true,
+          default: false
+        },
+        {
+          icon: 'fa-solid fa-project-diagram',
+          to: '/lists',
+          label: 'Lists',
+          enabled: true,
+          default: false
+        },
+        {
+          icon: 'fa-solid fa-project-diagram',
+          to: '/tasks-tree',
+          label: 'Tree',
+          enabled: true,
+          default: false
+        },
+        {
+          icon: 'fa-solid fa-project-diagram',
+          to: '/graph',
+          label: 'Graph',
+          enabled: true,
+          default: false
+        },
+        {
+          icon: 'fa-solid fa-star',
+          to: '/procedures',
+          label: 'Procedures',
+          enabled: true,
+          default: false
+        }
+      ]
     }
   },
   persist: true

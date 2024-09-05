@@ -16,6 +16,7 @@
         <div>
           <TimeZoneSwitcher />
           <LanguageSwitcher />
+          <DefaultPageSwitcher />
           <BackgroundSwitcher />
           <NotificationTimeSetting />
         </div>
@@ -27,6 +28,14 @@
           color="indigo"
           label="Focus Mode Settings"
           @click="openFocusModeSettingsDialog"
+        />
+
+        <q-btn
+          class="q-ma-md"
+          icon="settings"
+          color="indigo"
+          label="Toolbar Settings"
+          @click="openToolbarSettingsDialog"
         />
 
         <q-separator class="q-my-md" />
@@ -56,11 +65,13 @@
   import { useRouter } from 'vue-router'
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import FocusModeSettingsDialog from 'src/components/dialogs/FocusModeSettingsDialog.vue'
+  import ToolbarSettingsDialog from 'src/components/dialogs/ToolbarSettingsDialog.vue'
   import TimeZoneSwitcher from 'src/components/inputs/TimeZoneSwitcher.vue'
   import LanguageSwitcher from 'src/components/inputs/LanguageSwitcher.vue'
   import BackgroundSwitcher from 'src/components/inputs/BackgroundSwitcher.vue'
   import PasswordChangeForm from 'src/components/forms/PasswordChangeForm.vue'
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
+  import DefaultPageSwitcher from 'src/components/inputs/DefaultPageSwitcher.vue'
 
   defineComponent({ name: 'SettingsPage' })
 
@@ -76,6 +87,12 @@
   const openFocusModeSettingsDialog = () => {
     $q.dialog({
       component: FocusModeSettingsDialog
+    })
+  }
+
+  const openToolbarSettingsDialog = () => {
+    $q.dialog({
+      component: ToolbarSettingsDialog
     })
   }
 </script>

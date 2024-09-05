@@ -96,54 +96,7 @@
 
     <q-footer elevated class="bg-grey-8 text-white">
       <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
-        <q-route-tab
-          icon="fa-solid fa-circle-dot"
-          to="/focus"
-          label="Focus"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-inbox"
-          to="/tasks"
-          label="Tasks"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-inbox"
-          to="/josh-page"
-          label="Josh"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-inbox"
-          to="/agenda"
-          label="Agenda"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-project-diagram"
-          to="/lists"
-          label="Lists"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-project-diagram"
-          to="/tasks-tree"
-          label="Tree"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-project-diagram"
-          to="/graph"
-          label="Graph"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
-        <q-route-tab
-          icon="fa-solid fa-star"
-          to="/procedures"
-          label="Procedures"
-          :class="$q.screen.lt.sm ? 'q-pt-sm' : null"
-        />
+        <q-route-tab v-for="button in enabledToolbarButtons" :key="button.to" v-bind="button" />
       </q-tabs>
     </q-footer>
 
@@ -192,6 +145,10 @@
   const routedComponent = ref<ComponentPublicInstance | null>(null)
   const routedKey = ref(0)
   const drawer = ref(false)
+
+  const enabledToolbarButtons = computed(() =>
+    useLocalSettingsStore().toolbarButtons.filter((x) => x.enabled)
+  )
 
   const refreshRoutedComponent = () => {
     console.warn('refreshing routed component')
