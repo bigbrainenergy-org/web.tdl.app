@@ -95,8 +95,13 @@
     <task-sidebar v-model="drawer" />
 
     <q-footer elevated class="bg-grey-8 text-white">
-      <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm">
-        <q-route-tab v-for="button in enabledToolbarButtons" :key="button.to" v-bind="button" />
+      <q-tabs shrink :inline-label="!$q.screen.lt.sm" :dense="$q.screen.lt.sm" align="justify">
+        <q-route-tab
+          v-for="button in enabledToolbarButtons"
+          :key="button.to"
+          v-bind="button"
+          style="width: 95px"
+        />
       </q-tabs>
     </q-footer>
 

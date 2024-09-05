@@ -131,8 +131,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
         },
         {
           icon: 'fa-solid fa-star',
-          to: '/procedures',
-          label: 'Procedures',
+          to: '/routines',
+          label: 'Routines',
           enabled: true,
           default: false
         }
