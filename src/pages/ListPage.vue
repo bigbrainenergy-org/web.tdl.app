@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/first-attribute-linebreak -->
 <template>
   <TaskPage :tasks="tasks">
     <TaskList :tasks="tasks" :unblocked-only="layerZeroOnly" :incomplete-only="hideCompleted"
@@ -19,6 +20,7 @@
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import TaskPage from 'src/components/TaskPage.vue'
   import { useTasks } from 'src/composables/use-tasks'
+  import { updateTaskCompletedStatus } from 'src/utils/task-utils'
 
   useMeta(() => ({ title: 'List | TDL App' }))
 
@@ -39,34 +41,7 @@
     autoScalePriority
   } = storeToRefs(localSettingsStore)
 
-
-
-
-  const tasksPageSettings = ref({
-    'Unblocked Only': layerZeroOnly,
-    'Incomplete Only': hideCompleted,
-    'Auto Scale Priority': autoScalePriority
-  })
-
   // const notCompleted = (x: Task) => x.completed === false
-
-  const updateTaskCompletedStatus = async (task: Task) => {
-    const newStatus = task.completed
-    // TODO: strip payload object of everything except necessary
-    await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((t) => {
-      // console.debug({ 'Tasks updateTaskCompletedStatus': t })
-      if (t.completed !== newStatus)
-        throw new Error('updated value and value meant to update do not match')
-      TDLAPP.notifyUpdatedCompletionStatus(task)
-    }, Utils.handleError('Error updating completion status of a task.'))
-  }
-
-  const openSearchDialog = () => TDLAPP.searchDialog()
-
-  const openQuickSortDialog = () =>
-    $q.dialog({
-      component: QuickSortLayerZeroDialog
-    })
 
   const autoThreshold = computed(() => {
     const sampleSize = Math.min(tasks.value.length, 10)

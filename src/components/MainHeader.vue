@@ -16,5 +16,5 @@
   import { Task } from 'src/stores/tasks/task';
 
   const drawer = defineModel<boolean>('drawer')
-  const tasks = defineModel<Array<Task>>('tasks')
+  const tasks = defineModel<Array<Task>>('tasks', { required: true })
 </script>

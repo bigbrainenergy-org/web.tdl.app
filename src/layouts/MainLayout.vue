@@ -28,15 +28,14 @@
   import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
   import { useBackgroundMode } from 'src/composables/use-background-mode'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-  import { storeToRefs } from 'pinia'
+  import { useTasks } from 'src/composables/use-tasks'
 
   const drawer = ref(false)
   const { backgroundStyle } = useBackgroundMode()
 
   useTaskShortcuts()
 
-  const { tasks } = storeToRefs(useLayerZeroStore())
+  const { tasks } = useTasks()
 
   // REVIEW: Sus
   onMounted(() => {

@@ -42,8 +42,8 @@
 
                   <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
                     <q-chip v-if="currentTask.grabPostreqs(hideCompleted).length" :style="currentTask.grabPostreqs(hideCompleted).length > sortQty
-                        ? 'background-color: red;'
-                        : 'background-color: gray;'
+                      ? 'background-color: red;'
+                      : 'background-color: gray;'
                       ">
                       {{ currentTask.grabPostreqs(hideCompleted).length }}
                     </q-chip>
@@ -87,6 +87,7 @@
   import { storeToRefs } from 'pinia'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { openQuickSortDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
   const $q = useQuasar()
 
@@ -210,8 +211,5 @@
   }
 
   const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
-  const openSearchDialog = () => TDLAPP.searchDialog()
-
-  const openQuickSortDialog = () => $q.dialog({ component: QuickSortLayerZeroDialog })
   useMeta(() => ({ title: 'Agenda | TDL App' }))
 </script>

@@ -4,7 +4,7 @@
       <slot name="actions"></slot>
     </q-card-actions>
 
-    <q-card-section class="bg-primary text-white">
+    <q-card-section v-if="$slots.header" class="bg-primary text-white">
       <div class="row items-center">
         <div class="col">
           <slot name="header"></slot>

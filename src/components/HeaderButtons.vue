@@ -1,41 +1,20 @@
 <template>
   <q-btn flat round dense icon="menu" size="lg" class="q-mr-sm" @click="drawer = !drawer" />
-  <q-btn
-    v-if="pagesWithNewTaskButton.includes(currentPath)"
-    color="green"
-    icon="fa-solid fa-plus"
-    data-cy="create_task_button"
-    @click="openCreateTaskDialog()"
-  />
-  <q-btn
-    v-if="currentPath === '/settings'"
-    color="green"
-    label="Go Back"
-    icon="fa-solid fa-arrow-left"
-    @click="$router.go(-1)"
-  />
-  <q-btn
-    v-if="currentPath === '/lists'"
-    color="green"
-    icon="fa-solid fa-plus"
-    @click="openCreateListDialog"
-  />
+  <q-btn v-if="pagesWithNewTaskButton.includes(currentPath)" color="green" icon="fa-solid fa-plus"
+    data-cy="create_task_button" @click="openCreateTaskDialog()" />
+  <q-btn v-if="currentPath === '/settings'" color="green" label="Go Back" icon="fa-solid fa-arrow-left"
+    @click="$router.go(-1)" />
+  <q-btn v-if="currentPath === '/lists'" color="green" icon="fa-solid fa-plus" @click="openCreateListDialog" />
   <q-btn class="q-ma-md" color="yellow" icon="fa-solid fa-refresh" @click="pullFresh" />
   <q-btn class="q-ma-md" color="red" icon="fa-solid fa-refresh" @click="dumpDebug" />
-  <q-btn
-    class="q-ma-md"
-    color="white"
-    text-color="black"
-    icon="fa-solid fa-explosion"
-    @click="wreak"
-  />
+  <q-btn class="q-ma-md" color="white" text-color="black" icon="fa-solid fa-explosion" @click="wreak" />
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
   import { useQuasar, Dialog } from 'quasar'
   import { useRoute, useRouter } from 'vue-router'
-  import { openCreateTaskDialog } from 'src/utils/dialog-utils'
+  import { openCreateTaskDialog, openQuickSortDialog } from 'src/utils/dialog-utils'
   import { pullFresh } from 'src/utils/sync-utils'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -85,8 +64,8 @@
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
       ? tasks.value.filter(
-          (x: cachedTask) => x.hard_postreqs.filter((y) => !y.completed).length === 0
-        ).length > 0
+        (x: cachedTask) => x.hard_postreqs.filter((y) => !y.completed).length === 0
+      ).length > 0
       : false
   const quickSortEnabled = () =>
     !useLocalSettingsStore().disableQuickSort &&

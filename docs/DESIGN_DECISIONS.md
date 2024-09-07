@@ -29,3 +29,29 @@ It seems the standard practice (according to ChatGPT anyway) for stateless utili
 Anything that requires state and/or lifecycle hooks should be a `composable` instead.
 
 Seems reasonable, and much better than `src/hackerman`. Struggling to find any official documentation on this though.
+
+## Task Filtering
+
+We need a way to allow for dynamic and modular filtering of tasks to account for mixing and matching different filtering and sorting algorithms.
+
+For example, filtering by task, or sorting by priority, etc.
+
+This should allow for pluggin in separately:
+- Filtering
+- Sorting
+
+It should also allow combining sorting options, by using lower ranked sorting options as the tiebreaker for higher sorting options.
+
+Similar to Airtable
+
+Preset filters:
+Inbox
+Today
+Upcoming
+Agenda
+By list
+
+Preset sorting:
+- By datetime
+- By priority
+- By task name

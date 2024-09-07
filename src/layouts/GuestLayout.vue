@@ -10,6 +10,4 @@
   </q-layout>
 </template>
 
-<script setup lang="ts">
-  // console.warn('In Guest Layout')
-</script>
+<script setup lang="ts"></script>
