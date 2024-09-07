@@ -7,7 +7,7 @@
       flat
       bordered
     >
-      <q-bar style="background-color: #333333">
+      <q-bar v-if="currentTask" style="background-color: #333333">
         <div>IN FOCUS</div>
         <q-space />
         <q-btn
@@ -15,7 +15,7 @@
           flat
           icon="fa fa-scissors"
           class="q-pr-sm"
-          @click="slice(currentTask as Task)"
+          @click="slice(currentTask)"
           @touchstart.stop
           @mousedown.stop
         />
@@ -24,7 +24,7 @@
           flat
           icon="fa fa-info"
           class="q-pr-sm"
-          @click="open(currentTask as Task)"
+          @click="open(currentTask)"
           @touchstart.stop
           @mousedown.stop
         />
@@ -33,7 +33,7 @@
           flat
           icon="fa fa-plus"
           class="q-pr-sm"
-          @click="addTaskPre(currentTask as Task)"
+          @click="addTaskPre(currentTask)"
           @touchstart.stop
           @mousedown.stop
         >
@@ -41,7 +41,7 @@
             Add Prerequisites
           </q-tooltip>
         </q-btn>
-        <q-btn dense flat icon="fa fa-check" @click=";(currentTask as Task).toggleCompleted()" />
+        <q-btn dense flat icon="fa fa-check" @click="currentTask.toggleCompleted()" />
       </q-bar>
       <q-card-section v-if="currentTask" class="text-h4">
         {{ currentTask.title }}
@@ -55,7 +55,7 @@
       flat
       bordered
     >
-      <q-bar style="background-color: #333333">
+      <q-bar v-if="nextUp" style="background-color: #333333">
         <div>UP NEXT</div>
         <q-space />
         <q-btn
@@ -63,7 +63,7 @@
           flat
           icon="fa fa-info"
           class="q-pr-sm"
-          @click="open(nextUp as Task)"
+          @click="open(nextUp)"
           @touchstart.stop
           @mousedown.stop
         />
@@ -72,7 +72,7 @@
           flat
           icon="fa fa-plus"
           class="q-pr-sm"
-          @click="addTaskPre(nextUp as Task)"
+          @click="addTaskPre(nextUp)"
           @touchstart.stop
           @mousedown.stop
         >
@@ -84,7 +84,7 @@
           dense
           flat
           icon="fa fa-check"
-          @click=";(nextUp as Task).toggleCompleted()"
+          @click="nextUp.toggleCompleted()"
           @touchstart.stop
           @mousedown.stop
         />
@@ -102,23 +102,20 @@
   import { TDLAPP } from 'src/TDLAPP'
   // import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { T2, TaskLike, useTasksStore } from 'src/stores/taskNoORM'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed } from 'vue'
 
-  const open = (task: Task) => TDLAPP.openTask(task)
+  const open = (task: T2) => TDLAPP.openTask(task.id)
 
   const addTaskPre = TDLAPP.addPrerequisitesDialog
 
   const slice = TDLAPP.sliceTask
 
   const layerZero = computed(() => {
-    const incomplete = (x: Task) => !x.completed
-    return useRepo(TaskRepo)
-      .layerZero()
-      .sort(
-        (a, b) =>
-          b.hard_postreqs.filter(incomplete).length - a.hard_postreqs.filter(incomplete).length
-      )
+    return useTasksStore().layerZero.sort(
+      (a, b) => b.incomplete_postreqs.length - a.incomplete_postreqs.length
+    )
   })
 
   const hasTooManyInLayerZero = () =>
@@ -137,9 +134,11 @@
     }
   })
 
-  const currentTask = computed(() => (layerZero.value.length ? layerZero.value[0] : null))
-  const nextUp = computed(() => {
-    let arr: Array<Task> = Array.from(layerZero.value)
+  const currentTask = computed((): T2 | null =>
+    layerZero.value.length ? layerZero.value[0] : null
+  )
+  const nextUp = computed((): T2 | null => {
+    let arr: Array<T2> = Array.from(layerZero.value)
     if (currentTask.value !== null) {
       let posts = currentTask.value.grabPostreqs(true)
       posts = posts.filter((x) => x.grabPrereqs(true).length === 1)

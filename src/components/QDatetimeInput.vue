@@ -17,13 +17,13 @@
 
 <script lang="ts">
   import QDatetime from 'components/QDatetime.vue'
-  import { defineComponent, computed, watch, ref, toRef, Ref } from 'vue'
+  import { defineComponent, computed, watch, ref } from 'vue'
   import { DateTime } from 'luxon'
 
   const DEFAULT_DATE_FORMAT = 'LLLL d, yyyy -'
   const DEFAULT_TIME_FORMAT = 'h:mm a ZZZZ'
   const DEFAULT_DATETIME_FORMAT = DEFAULT_DATE_FORMAT + ' ' + DEFAULT_TIME_FORMAT
-  const DEFAULT_CURRENT_DATE = DateTime.local().toISODate()
+  // const DEFAULT_CURRENT_DATE = DateTime.local().toISODate()
 
   export default defineComponent({
     name: 'QDatetimeInput',

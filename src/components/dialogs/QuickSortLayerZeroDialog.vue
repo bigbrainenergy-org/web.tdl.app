@@ -56,7 +56,7 @@
           split
           auto-close
           dropdown-icon="more_vert"
-          @click.stop="makeSelection(t as Task)"
+          @click.stop="makeSelection(t as T2)"
           @touchstart.stop
           @mousedown.stop
         >
@@ -73,7 +73,7 @@
               :key="index"
               v-close-popup
               clickable
-              @click.stop="menuitem.action(t as Task)"
+              @click.stop="menuitem.action(t as T2)"
             >
               <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
               <q-space />
@@ -97,24 +97,19 @@
 </template>
 
 <script setup lang="ts">
-  import { useRepo } from 'pinia-orm'
   import { Notify, useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
   import { SimpleMenuItem } from 'src/types'
   import { Utils } from 'src/util'
   import { onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { timeThis, timeThisAABAsync } from 'src/perf'
   import { useElementSize } from '@vueuse/core'
-  import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -123,7 +118,6 @@
   const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
   const emit = defineEmits([...useDialogPluginComponent.emits])
 
-  const tr = useRepo(TaskRepo)
   onMounted(() => {
     console.log('busy for quick sort')
     useLoadingStateStore().busy = true
@@ -132,11 +126,11 @@
   })
 
   class PostWeightedTask {
-    t: Task
-    constructor(t: Task) {
+    t: T2
+    constructor(t: T2) {
       this.t = t
     }
-    weight = () => 1 / Math.min(Math.max(1, this.t.grabPostreqs(true).length), 10)
+    weight = () => 1 / Math.min(Math.max(1, this.t.incomplete_postreqs.length), 10)
     shouldReroll = () => Math.random() - this.weight() > 0
   }
 
@@ -148,16 +142,14 @@
     quickSortDialogMaxToShow
   } = storeToRefs(useLocalSettingsStore())
 
-  const postWeightedTask = (x: cachedTask) => new PostWeightedTask(x.t)
-  const postWeightedTask2 = (x: Task) => new PostWeightedTask(x)
+  const postWeightedTask = (x: T2) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
-    const layerZeroTasks = useLayerZeroStore().typed
-    TaskCache.checkAgainstKnownCompletedTasks(...layerZeroTasks.map((x) => x.t))
+    const layerZeroTasks = useTasksStore().layerZero as T2[]
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
-    layerZero.value.filter((x) => !x.t.hasIncompletePostreqs)
+    layerZero.value.filter((x) => !(x.t.incomplete_postreqs.length > 0))
   )
   const l0len = computed(() => layerZero.value.length)
   watch(l0len, (value: number) => {
@@ -177,22 +169,22 @@
   //       : null
   //   )
 
-  const eq = (pairA: pair<Task>, pairB: pair<PostWeightedTask>): boolean => {
-    if (pairA.a.id === pairB.a.t.id) {
-      if (pairA.b.id === pairB.b.t.id) return true
-    }
-    if (pairA.a.id === pairB.b.t.id) {
-      if (pairA.b.id === pairB.a.t.id) return true
-    }
-    return false
-  }
+  // const eq = (pairA: pair<Task>, pairB: pair<PostWeightedTask>): boolean => {
+  //   if (pairA.a.id === pairB.a.t.id) {
+  //     if (pairA.b.id === pairB.b.t.id) return true
+  //   }
+  //   if (pairA.a.id === pairB.b.t.id) {
+  //     if (pairA.b.id === pairB.a.t.id) return true
+  //   }
+  //   return false
+  // }
 
   const loading = ref(false)
 
-  type pair<T> = { a: T; b: T }
-  let skippedPairs: pair<Task>[] = []
+  // type pair<T> = { a: T; b: T }
+  // let skippedPairs: pair<Task>[] = []
 
-  const addPres = (x: Task) => {
+  const addPres = (x: T2) => {
     TDLAPP.addPrerequisitesDialog(x)
       .onOk(() => {
         console.log('getting a new pair now')
@@ -208,7 +200,7 @@
       })
   }
 
-  const sliceTask = (x: Task) => {
+  const sliceTask = (x: T2) => {
     TDLAPP.sliceTask(x)
       .onOk(() => {
         console.log('getting a new pair now')
@@ -228,9 +220,10 @@
     tryNewPair()
   }
 
-  const complete = async (x: Task) => {
+  const complete = async (x: T2) => {
     try {
       const result = await x.toggleCompleted()
+      if (result === null) throw new Error('error during toggling task complete.')
       if (result.completed === false) throw new Error('somehow task was not marked as complete.')
       reloadTasks()
       return result
@@ -239,12 +232,12 @@
       console.error(error)
     }
   }
-  const taskDetails = (x: Task) => {
+  const taskDetails = (x: T2) => {
     console.debug(`opening details for task ID ${x.id}`)
-    TDLAPP.openTask(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
+    TDLAPP.openTask(x.id).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
-  const menuItems: SimpleMenuItem<Task>[] = [
+  const menuItems: SimpleMenuItem<T2>[] = [
     {
       label: 'Mark Complete',
       icon: 'fa-solid fa-clipboard-check',
@@ -275,31 +268,31 @@
     if (dialogRef !== null) onDialogHide()
   }
 
-  type withID<T> = { id: number | null; data: T }
+  // type withID<T> = { id: number | null; data: T }
 
-  let skippedLayerOnePairs: withID<pair<Task>[]>[] = []
+  // let skippedLayerOnePairs: withID<pair<Task>[]>[] = []
 
-  const getSkippedPairsForID = (id: number | null): pair<Task>[] => {
-    if (id === null) return skippedPairs
-    let tmp: withID<pair<Task>[]> | undefined = skippedLayerOnePairs.find((x) => x.id === id)
-    if (typeof tmp === 'undefined') {
-      tmp = { id, data: [] }
-      skippedLayerOnePairs.push(tmp)
-    }
-    return tmp.data
-  }
+  // const getSkippedPairsForID = (id: number | null): pair<Task>[] => {
+  //   if (id === null) return skippedPairs
+  //   let tmp: withID<pair<Task>[]> | undefined = skippedLayerOnePairs.find((x) => x.id === id)
+  //   if (typeof tmp === 'undefined') {
+  //     tmp = { id, data: [] }
+  //     skippedLayerOnePairs.push(tmp)
+  //   }
+  //   return tmp.data
+  // }
 
-  const isSkipped = (item: withID<pair<PostWeightedTask>>) =>
-    getSkippedPairsForID(item.id).some((x) => eq(x, item.data))
+  // const isSkipped = (item: withID<pair<PostWeightedTask>>) =>
+  //   getSkippedPairsForID(item.id).some((x) => eq(x, item.data))
 
-  const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
+  // const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
 
   /**
    * generateNewPair:
    * - throw an error if sorting is done
    * - select a new pair (or trio or quartet or n-tet)
    */
-  const generateNewPair = (): Task[] => {
+  const generateNewPair = (): T2[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
@@ -317,14 +310,14 @@
     throw new Error('Could not generate first pair')
   const currentPair = ref(firstPair)
 
-  const forget = (id: number) => {
-    const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
-    skippedLayerOnePairs = skippedLayerOnePairs.map((x) => ({
-      id: x.id,
-      data: x.data.filter(idInSkippedPair)
-    }))
-    skippedPairs = skippedPairs.filter(idInSkippedPair)
-  }
+  // const forget = (id: number) => {
+  //   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
+  //   skippedLayerOnePairs = skippedLayerOnePairs.map((x) => ({
+  //     id: x.id,
+  //     data: x.data.filter(idInSkippedPair)
+  //   }))
+  //   skippedPairs = skippedPairs.filter(idInSkippedPair)
+  // }
 
   const tryNewPair = () => {
     try {
@@ -335,12 +328,12 @@
     }
   }
 
-  const makeSelection = async (mvp: Task) => {
+  const makeSelection = (mvp: T2) => {
     loading.value = true
 
     for (let t of currentPair.value) {
       if (t.id === mvp.id) continue
-      await TDLAPP.addPre(t as Task, mvp.id).then(() => {
+      TDLAPP.addPre(t as T2, mvp.id).then(() => {
         tryNewPair()
         loading.value = false
       })

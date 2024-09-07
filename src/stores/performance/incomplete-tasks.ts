@@ -5,7 +5,7 @@ import { cachedTask, useAllTasksStore } from './all-tasks'
 interface IncompleteTasksState {
   tasks: Map<number, cachedTask>
 }
-export const useIncompleteTasksStore = defineStore('incomplete-tasks', {
+const useIncompleteTasksStore = defineStore('incomplete-tasks', {
   state: (): IncompleteTasksState => ({
     tasks: new Map<number, cachedTask>()
   }),

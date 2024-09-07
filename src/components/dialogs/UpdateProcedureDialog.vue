@@ -35,7 +35,7 @@
               :dependency-type="procedureDepType"
               :menu-items="procedureDependencyMenuItems"
               @add-item="openAddProcedureTaskDialog"
-              @remove-item="tr.removePre"
+              @remove-item="removeTaskFromProcedure"
               @select-item="openTask"
               @toggle-completed-item="updateTaskCompletedStatus"
             />
@@ -61,46 +61,42 @@
   import { Button, λ } from 'src/types'
   import GloriousTextInput from '../GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)
   Utils.hardCheck(procedureRef.value)
   const pr = computed(() => useRepo(ProcedureRepo))
 
-  const currentProcedure = computed(() => {
-    const id = props.procedure.id
-    if (id === null) throw new Error('no id')
-    const t = useRepo(ProcedureRepo).withAll().find(id)
-    if (typeof t === 'undefined' || t === null) {
-      throw new Error('id does not match a procedure in the repo')
-    }
-    console.log({ t })
-    return t
-  })
+  // const currentProcedure = computed(() => {
+  //   const id = props.procedure.id
+  //   if (id === null) throw new Error('no id')
+  //   const t = useRepo(ProcedureRepo).withAll().find(id)
+  //   if (typeof t === 'undefined' || t === null) {
+  //     throw new Error('id does not match a procedure in the repo')
+  //   }
+  //   console.log({ t })
+  //   return t
+  // })
 
-  const procedureTasks = computed<Task[]>(() => {
+  const procedureTasks = computed<T2[]>(() => {
     console.log('fetching proceduretasks again!!')
-    const tr_tasks = useRepo(TaskRepo)
-      .where((x) => x.procedure_ids.includes(props.procedure.id))
-      .get()
+    const tasksArr = (useTasksStore().array as T2[]).filter((x) =>
+      x.procedure_ids?.includes(props.procedure.id)
+    )
     const prm_tasks = props.procedure.grabTasks()
     const tmp = props.procedure
     useRepo(ProcedureRepo).withAll().load([tmp])
     const tmp_tasks = tmp.tasks
-    console.debug({ tr_tasks, prm_tasks, tmp_tasks })
-    return tr_tasks
+    console.debug({ tr_tasks: tasksArr, prm_tasks, tmp_tasks })
+    return tasksArr
   })
 
   const incompleteOnly = ref(false)
 
   const resetProcedure = (x: Procedure) => {
-    useRepo(ProcedureRepo)
-      .resetProcedure(x.id)
-      .then(() => {
-        procedureTasks.effect
-      })
+    useRepo(ProcedureRepo).resetProcedure(x.id)
   }
 
   const topButtonBar = computed((): Button<Procedure>[] => {
@@ -130,7 +126,7 @@
 
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
-  const tr = useRepo(TaskRepo)
+  // const tr = useRepo(TaskRepo)
 
   // TODO: sort procedure tasks using the Agenda Sort algorithm
   // onMounted(() => {
@@ -143,7 +139,7 @@
 
   const editTitle = ref(procedureRef.value.title)
 
-  const allTasks = computed<Task[]>(() =>
+  const allTasks = computed<T2[]>(() =>
     incompleteOnly.value ? procedureTasks.value.filter((x) => !x.completed) : procedureTasks.value
   )
 
@@ -160,10 +156,12 @@
       }
     }).onOk(() => {
       console.debug('deleting procedure')
-      tr.deleteProcedure(procedure).then(
-        Utils.handleSuccess('Deleted procedure', 'fa-solid fa-tasks'),
-        Utils.handleError('Failed to delete procedure.')
-      )
+      useRepo(ProcedureRepo)
+        .delete(procedure.id)
+        .then(
+          Utils.handleSuccess('Deleted procedure', 'fa-solid fa-tasks'),
+          Utils.handleError('Failed to delete procedure.')
+        )
     })
   }
 
@@ -187,7 +185,7 @@
     {
       label: 'Unlink this Task',
       icon: 'fas fa-unlink',
-      action: (x: Task) => {
+      action: (x: T2) => {
         const options: UpdateProcedureOptions = {
           id: procedureRef.value.id,
           payload: {
@@ -210,7 +208,7 @@
   ]
 
   const openAddProcedureTaskDialog = () => {
-    const assignTaskToProcedure = (payload: { task: Task }) => {
+    const assignTaskToProcedure = (payload: { task: T2 }) => {
       const options: UpdateProcedureOptions = {
         id: procedureRef.value.id,
         payload: {
@@ -225,19 +223,23 @@
         .update(options)
         .then(Utils.handleSuccess('Linked a task.'), Utils.handleError('Error linking a task.'))
     }
-    const initialFilter: λ<number | undefined, λ<Task[], Task[]>> = () => {
-      return (tasks: Task[]) => tasks.filter((x) => !procedureRef.value.task_ids.includes(x.id))
+    const initialFilter: λ<number | undefined, λ<T2[], T2[]>> = () => {
+      return (tasks: T2[]) => tasks.filter((x) => !procedureRef.value.task_ids.includes(x.id))
     }
     TDLAPP.searchDialog(assignTaskToProcedure, initialFilter)
   }
 
   const openTask = TDLAPP.openTask
 
-  const updateTaskCompletedStatus = async (task: Task) => {
+  const updateTaskCompletedStatus = async (task: T2) => {
     const newStatus = task.completed
     console.debug(`marking ${task.id} ${newStatus ? 'completed' : 'incomplete'}.`)
-    const result = await tr.updateAndCache({ id: task.id, payload: { task } })
-    if (result.completed !== newStatus)
+    const result = await useTasksStore().apiUpdate(task)
+    if (result !== null && result.completed !== newStatus)
       throw new Error('result from update request is not the same as the status marked on UI')
+  }
+
+  const removeTaskFromProcedure = () => {
+    throw new Error('not implemented yet')
   }
 </script>

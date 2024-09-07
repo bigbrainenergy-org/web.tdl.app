@@ -9,27 +9,51 @@ export class cachedTask {
   hard_postreqs: Task[]
   t: Task
   constructor(data: Task) {
-    this.hard_prereqs = [...data.hard_prereqs ?? []]
-    this.hard_postreqs = [...data.hard_postreqs ?? []]
+    this.hard_prereqs = [...(data.hard_prereqs ?? [])]
+    this.hard_postreqs = [...(data.hard_postreqs ?? [])]
     this.t = data
   }
-  get hard_prereq_ids() { return this.t.hard_prereq_ids }
-  set hard_prereq_ids(ids: number[]) { this.t.hard_prereq_ids = ids }
-  get hard_postreq_ids() { return this.t.hard_postreq_ids }
-  set hard_postreq_ids(ids: number[]) { this.t.hard_postreq_ids = ids }
-  get completed() { return this.t.completed }
-  set completed(completed: boolean) { this.t.completed = completed }
-  get id(): number { return this.t.id }
-  get title() { return this.t.title }
-  get incompletePostreqs() { return this.hard_postreqs.filter(incomplete) }
-  get incompletePrereqs() { return this.hard_prereqs.filter(incomplete) }
-  get task() { 
+  get hard_prereq_ids() {
+    return this.t.hard_prereq_ids
+  }
+  set hard_prereq_ids(ids: number[]) {
+    this.t.hard_prereq_ids = ids
+  }
+  get hard_postreq_ids() {
+    return this.t.hard_postreq_ids
+  }
+  set hard_postreq_ids(ids: number[]) {
+    this.t.hard_postreq_ids = ids
+  }
+  get completed() {
+    return this.t.completed
+  }
+  set completed(completed: boolean) {
+    this.t.completed = completed
+  }
+  get id(): number {
+    return this.t.id
+  }
+  get title() {
+    return this.t.title
+  }
+  get incompletePostreqs() {
+    return this.hard_postreqs.filter(incomplete)
+  }
+  get incompletePrereqs() {
+    return this.hard_prereqs.filter(incomplete)
+  }
+  get task() {
     this.t.hard_prereqs = this.hard_prereqs
     this.t.hard_postreqs = this.hard_postreqs
     return this.t
   }
-  grabPostreqs(hideCompleted: boolean) { return hideCompleted ? this.incompletePostreqs : this.hard_postreqs }
-  grabPrereqs(hideCompleted: boolean) { return hideCompleted ? this.incompletePrereqs : this.hard_prereqs }
+  grabPostreqs(hideCompleted: boolean) {
+    return hideCompleted ? this.incompletePostreqs : this.hard_postreqs
+  }
+  grabPrereqs(hideCompleted: boolean) {
+    return hideCompleted ? this.incompletePrereqs : this.hard_prereqs
+  }
 }
 
 interface AllTasksState {
@@ -47,10 +71,11 @@ export const useAllTasksStore = defineStore('all-tasks', {
     regenerate() {
       console.log('regenerating all tasks store.')
       this.allTasks = new Map<number, cachedTask>(
-      useRepo(TaskRepo)
-        .withAll()
-        .get()
-        .map((x: Task) => [x.id, new cachedTask(x)]))
+        useRepo(TaskRepo)
+          .withAll()
+          .get()
+          .map((x: Task) => [x.id, new cachedTask(x)])
+      )
     },
     hardGet(id: number) {
       const result = this.typed.get(id)

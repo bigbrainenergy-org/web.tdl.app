@@ -41,38 +41,35 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { Task } from 'src/stores/tasks/task'
-  import { TDLAPP } from 'src/TDLAPP'
   import { ref } from 'vue'
-  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   interface Props {
-    task: Task
+    task: T2
   }
 
   const saveProgress = ref<number | undefined>(undefined)
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-  const layerZero = ref<{ selected: boolean; obj: cachedTask }[]>(
-    useLayerZeroStore()
-      .typed.filter((x: cachedTask) => {
+  const layerZero = ref<{ selected: boolean; obj: T2 }[]>(
+    (useTasksStore().layerZero as T2[])
+      .filter((x: T2) => {
         if (x.id === prop.task.id) return false
-        if (prop.task.isIDBelow(x.id, { incompleteOnly: true, useStore: false })) return false
+        if (prop.task.anyIDsBelow([x.id])) return false
         return true
       })
-      .map((x: cachedTask) => ({ selected: false, obj: x }))
+      .map((x: T2) => ({ selected: false, obj: x }))
   )
-  const saveNewRules = async () => {
+  const saveNewRules = () => {
     const selectedTasks = layerZero.value.filter((x) => x.selected)
     saveProgress.value = 0
     // TODO: batch update this!
     for (let i = 0; i < selectedTasks.length; i++) {
       const element = layerZero.value[i]
-      await TDLAPP.addPost(prop.task, element.obj.id).then(
-        () => (saveProgress.value = (i + 1) / selectedTasks.length)
-      )
+      useTasksStore()
+        .addRule(prop.task.id, element.obj.id)
+        .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))
     }
     onDialogCancel()
   }

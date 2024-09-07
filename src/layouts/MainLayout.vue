@@ -129,7 +129,7 @@
   import TaskSidebar from 'src/components/TaskSidebar.vue'
   import { UserRepo } from 'src/stores/users/user'
   import { useRepo } from 'pinia-orm'
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   import { syncWithBackend } from 'src/hackerman/sync'
   import { AxiosError } from 'axios'
@@ -138,11 +138,9 @@
   import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { storeToRefs } from 'pinia'
   import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   const $q = useQuasar()
   const $route = useRoute()
@@ -257,11 +255,13 @@
   }
 
   const createTask = (payload: CreateTaskOptions) => {
-    const tr = useRepo(TaskRepo)
-    tr.addAndCache(payload).then(() => {
-      Utils.notifySuccess('Successfully created a task')
-      refreshRoutedComponent()
-    }, Utils.handleError('Failed to create task.'))
+    // const tr = useRepo(TaskRepo)
+    useTasksStore()
+      .apiCreate(payload)
+      .then(() => {
+        Utils.notifySuccess('Successfully created a task')
+        refreshRoutedComponent()
+      }, Utils.handleError('Failed to create task.'))
   }
 
   const createProcedure = (payload: CreateProcedureOptions) => {
@@ -347,8 +347,8 @@
       quickSortOpen: lss.quickSortDialogActive,
       addTaskOpen: lss.createTaskDialogActive,
       addDependencyOpen: lss.addDependencyDialogActive,
-      layerZeroLength: tasks.value.length,
-      tasksWithoutPosts: tasks.value.filter(
+      layerZeroLength: layerZero.value.length,
+      tasksWithoutPosts: layerZero.value.filter(
         (x) => x.hard_postreqs.filter((y) => !y.completed).length > 0
       ).length,
       shouldSort: shouldSort.value
@@ -357,10 +357,10 @@
   }
 
   const wreak = async () => {
-    const tr = useRepo(TaskRepo)
+    // const tr = useRepo(TaskRepo)
     const autoTaskName = 'auto task for testing purposes'
     for (let i = 1; i < 10; i++) {
-      await tr.addAndCache({ title: `${autoTaskName} ${i}` })
+      await useTasksStore().apiCreate({ title: `${autoTaskName} ${i}` })
     }
   }
 
@@ -371,7 +371,6 @@
       return
     }
     Utils.updateLuxonTimeZone(user.time_zone)
-    TaskCache.regenerate()
   })
 
   const backgroundModeSetting = computed<BackgroundMode>(
@@ -439,17 +438,18 @@
     }, 10)
   })
 
-  const { tasks } = storeToRefs(useLayerZeroStore())
+  const { layerZero } = storeToRefs(useTasksStore())
+
   // todo: storeToRefs
   const hasTooManyInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0
-      ? tasks.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+      ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
       : false
   // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
-      ? (tasks.value as cachedTask[]).filter(
-          (x: cachedTask) => x.hard_postreqs.filter((y) => !y.completed).length === 0
+      ? (layerZero.value as T2[]).filter(
+          (x: T2) => x.hard_postreqs.filter((y) => !y.completed).length === 0
         ).length > 0
       : false
   const quickSortEnabled = () =>
@@ -458,7 +458,7 @@
     !useLoadingStateStore().dialogOpenExclQuickSort
   const shouldSort = computed<{ l0len: number; shouldSort: boolean }>({
     get: () => ({
-      l0len: tasks.value.length,
+      l0len: layerZero.value.length,
       shouldSort: quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero())
     }),
     set: (x) => {
@@ -466,14 +466,14 @@
     }
   })
 
-  const unbusy = () => {
-    console.log('unbusy.')
-    if (shouldSort.value.shouldSort === false) {
-      useLoadingStateStore().busy = false
-    }
-    console.log('setting quick sort active to FALSE')
-    useLoadingStateStore().quickSortDialogActive = false
-  }
+  // const unbusy = () => {
+  //   console.log('unbusy.')
+  //   if (shouldSort.value.shouldSort === false) {
+  //     useLoadingStateStore().busy = false
+  //   }
+  //   console.log('setting quick sort active to FALSE')
+  //   useLoadingStateStore().quickSortDialogActive = false
+  // }
 
   const openQuickSortDialog = () => {
     if (useLoadingStateStore().quickSortDialogActive) return

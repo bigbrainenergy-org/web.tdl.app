@@ -1,10 +1,10 @@
 <template>
-  <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task.t)">
+  <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task)">
     <q-checkbox
       v-model:model-value="task.completed"
       color="primary"
       keep-color
-      @update:model-value="$emit('task-completion-toggled', $event, task.t)"
+      @update:model-value="$emit('task-completion-toggled', $event, task)"
     />
 
     <q-item-section>
@@ -13,7 +13,7 @@
       </q-item-label>
     </q-item-section>
 
-    <q-item-section v-if="task.t.notes" side data-cy="notes_indicator">
+    <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
           Has additional notes! Click to view.
@@ -39,21 +39,20 @@
         outline
         rounded
         label="ADD PRE"
-        @click.stop="addTaskPre(task.t)"
+        @click.stop="addTaskPre(task)"
       />
     </q-item-section>
   </q-item>
 </template>
 
 <script setup lang="ts">
-  import { ref, toRef } from 'vue'
-  import { Task } from 'stores/tasks/task'
+  import { toRef } from 'vue'
   import { TDLAPP } from 'src/TDLAPP'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { T2 } from 'src/stores/taskNoORM'
 
   const props = withDefaults(
     defineProps<{
-      task: cachedTask
+      task: T2
       incompleteOnly?: boolean
     }>(),
     {
@@ -64,5 +63,5 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const addTaskPre = (currentTask: T2) => TDLAPP.addPrerequisitesDialog(currentTask)
 </script>

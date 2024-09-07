@@ -4,14 +4,16 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
-    @hide="hideDialog">
+    @hide="hideDialog"
+  >
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton
           v-model:settings="taskSearchSettings"
           name="Task Search Settings"
-          color="white" />
+          color="white"
+        />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -22,7 +24,8 @@
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
         :debounce="debounceAmount"
-        @do-a-search="searchForTasks" />
+        @do-a-search="searchForTasks"
+      />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
@@ -39,14 +42,16 @@
                     icon="fas fa-plus"
                     label="Create A New Task"
                     color="primary"
-                    @click="createTask" />
+                    @click="createTask"
+                  />
                 </q-item>
                 <q-item
                   v-for="task in results"
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="selectTask(task as Task)">
+                  @click="selectTask(task as T2)"
+                >
                   <q-item-section>
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -67,20 +72,18 @@
 
   import { computed, ref, watch } from 'vue'
 
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   // import { useRepo } from 'pinia-orm'
   // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import TaskSearchResults from '../search/TaskSearchResults.vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import { λ } from 'src/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { useRepo } from 'pinia-orm'
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { brushY, filter } from 'd3'
   import Fuse, { FuseResult } from 'fuse.js'
-  import { timeThis, timeThisB } from 'src/perf'
+  import { timeThisB } from 'src/perf'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   interface Props {
     dialogTitle: string
@@ -89,8 +92,8 @@
     taskID: number | undefined
     closeOnSelect?: boolean
     showCreateButton?: boolean
-    initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
-    batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
+    initialFilter: λ<number | undefined, λ<T2, boolean>> | undefined
+    batchFilter: λ<number | undefined, λ<T2[], T2[]>> | undefined
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -104,7 +107,7 @@
   })
 
   const debounceAmount = ref(100)
-  const results = ref<Task[]>([])
+  const results = ref<T2[]>([])
 
   const searchString = ref<string | undefined>(undefined)
 
@@ -138,7 +141,7 @@
   //   keys: ['title']
   // }
 
-  const tr = useRepo(TaskRepo)
+  // const tr = useRepo(TaskRepo)
   // const usr = useLocalSettingsStore()
 
   const usr = useLocalSettingsStore()
@@ -152,30 +155,30 @@
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
    */
-  const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
-    if (typeof props.batchFilter !== 'undefined') {
-      return props.batchFilter(taskID)(tasks)
-    }
-    return tasks
-  }
+  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: T2[]) => {
+  //   if (typeof props.batchFilter !== 'undefined') {
+  //     return props.batchFilter(taskID)(tasks)
+  //   }
+  //   return tasks
+  // }
 
-  const selectTask = (task: Task) => {
-    emit('select', { task: task })
+  const selectTask = (task: T2) => {
+    emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
   }
-  const onCancelClick = () => {
-    useLoadingStateStore().busy = false
-    onDialogCancel()
-  }
+  // const onCancelClick = () => {
+  //   useLoadingStateStore().busy = false
+  //   onDialogCancel()
+  // }
 
   const createTask = async () => {
     if (typeof searchString.value === 'undefined') return
     const toCreate: CreateTaskOptions = {
       title: searchString.value
     }
-    const newTask = await tr.add(toCreate)
-    selectTask(newTask)
+    const newTask = await useTasksStore().apiCreate(toCreate)
+    if (newTask !== null) selectTask(newTask)
   }
 
   const hideDialog = () => {
@@ -188,12 +191,12 @@
   const defaultFilter = (currentTaskID: number | undefined) => {
     const filterCompleted = useLocalSettingsStore().hideCompleted
     if (filterCompleted) {
-      return (x: Task) => {
+      return (x: T2) => {
         if (x.completed) return false
         return true
       }
     }
-    return (x: Task) => true
+    return (x: T2) => true
   }
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
@@ -201,7 +204,7 @@
   const getTasks = () => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+    const allTasks = (useTasksStore().array as T2[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
@@ -229,7 +232,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
     console.log({ run })
 

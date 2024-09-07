@@ -84,7 +84,6 @@
   import { defineComponent, ref, computed } from 'vue'
   import { useRepo } from 'pinia-orm'
   import { List, ListRepo } from 'src/stores/lists/list'
-  import { Utils } from 'src/util'
 
   defineComponent({
     name: 'PageLists'

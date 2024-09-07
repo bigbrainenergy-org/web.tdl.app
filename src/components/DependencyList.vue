@@ -74,11 +74,10 @@
 
 <script setup lang="ts">
   import { useElementSize } from '@vueuse/core'
-  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task } from 'src/stores/tasks/task'
-  import { SimpleMenuItem, λ } from 'src/types'
-  import { Ref, computed, onMounted } from 'vue'
+  import { T2 } from 'src/stores/taskNoORM'
+  import { SimpleMenuItem } from 'src/types'
+  import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
   import { ref } from 'vue'
 
@@ -88,15 +87,15 @@
   }
 
   interface Props {
-    items?: Array<Task>
+    items?: Array<T2>
     dependencyType?: EntityType // eg. Prerequisites (capitalize)
-    menuItems?: Array<SimpleMenuItem<Task>>
+    menuItems?: Array<SimpleMenuItem<T2>>
     showPrune?: boolean
   }
 
   const prop = withDefaults(defineProps<Props>(), {
     items: () => [],
-    dependencyType: { plural: 'Requisites', singular: 'Requisite' } as const,
+    dependencyType: () => ({ plural: 'Requisites', singular: 'Requisite' }),
     menuItems: () => [],
     showPrune: false
   })
@@ -127,16 +126,12 @@
     if (prop.items.length === 0) return
     // console.warn(`updating redundant check for ${prop.items.length} dependents`)
     const arr = prop.items.map((x) => x.id)
-    const options = {
-      incompleteOnly: useLocalSettingsStore().hideCompleted,
-      useStore: true
-    }
     prop.items.forEach((x) => {
       const arrExcludingX = arr.filter(
         (y) => y !== x.id && !belows.value.has(y) && !aboves.value.has(y)
       )
-      const aboveX = x.anyIDsAbove(arrExcludingX, options)
-      const belowX = x.anyIDsBelow(arrExcludingX, options)
+      const aboveX = x.anyIDsAbove(arrExcludingX)
+      const belowX = x.anyIDsBelow(arrExcludingX)
       aboveX.forEach((val, key) => {
         if (val) aboves.value.add(key)
       })
@@ -171,7 +166,7 @@
   }
 
   const el = ref()
-  const setEl = (x: any) => (el.value = x)
+  // const setEl = (x: any) => (el.value = x)
   const { width } = useElementSize(el)
 
   const style = computed(() => {

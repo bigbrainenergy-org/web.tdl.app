@@ -4,14 +4,16 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
-    @hide="hideDialog">
+    @hide="hideDialog"
+  >
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton
           v-model:settings="taskSearchSettings"
           name="Task Search Settings"
-          color="white" />
+          color="white"
+        />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -22,7 +24,8 @@
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
         :debounce="debounceAmount"
-        @do-a-search="searchForTasks" />
+        @do-a-search="searchForTasks"
+      />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm text-white">
@@ -35,7 +38,8 @@
                   icon="fas fa-plus"
                   label="Create A New Task"
                   color="primary"
-                  @click="createTask" />
+                  @click="createTask"
+                />
               </q-item>
               <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
@@ -47,7 +51,8 @@
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="selectTask(task as Task)">
+                  @click="selectTask(task as T2)"
+                >
                   <q-item-section :style="colorize(task.id)">
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -69,18 +74,17 @@
 
   import { computed, onMounted, ref, watch } from 'vue'
 
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import { λ } from 'src/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { useRepo } from 'pinia-orm'
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
+  import { timeThis, timeThisB } from 'src/perf'
   import Fuse, { FuseResult } from 'fuse.js'
-  import { useElementSize } from '@vueuse/core'
-import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+  // import { useElementSize } from '@vueuse/core'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   interface Props {
     dialogTitle: string
@@ -89,8 +93,8 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
     taskID: number | undefined
     closeOnSelect?: boolean
     showCreateButton?: boolean
-    initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
-    batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
+    initialFilter: λ<number | undefined, λ<T2, boolean>> | undefined
+    batchFilter: λ<number | undefined, λ<T2[], T2[]>> | undefined
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -139,7 +143,6 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   //   keys: ['title']
   // }
 
-  const tr = useRepo(TaskRepo)
   // const usr = useLocalSettingsStore()
 
   const usr = useLocalSettingsStore()
@@ -153,13 +156,13 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   // can't set this in withDefaults... don't even try
   // DON'T
   const defaultFilter = (currentTaskID: number | undefined) => {
-    const simplestFilter = (x: Task) => !x.completed
+    const simplestFilter = (x: T2) => !x.completed
     if (typeof currentTaskID === 'undefined') return simplestFilter
-    const ct = useRepo(TaskRepo).find(currentTaskID)
-    if (ct === null) {
+    const ct = useTasksStore().mapp.get(currentTaskID)
+    if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
-      return (x: Task) => {
+      return (x: T2) => {
         if (x.completed) return false
         if (ct.hard_prereq_ids.includes(x.id)) return false
         if (ct.hard_postreq_ids.includes(x.id)) return false
@@ -170,10 +173,10 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
 
-  const getTasks = () => {
+  const getTasks = (): T2[] => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+    const allTasks = (useTasksStore().array as T2[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
@@ -190,24 +193,21 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
    */
-  const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
-    if (omitRedundant.value) {
-      if (typeof taskID !== 'undefined') {
-        const ct = useRepo(TaskRepo).find(taskID)
-        if (ct !== null) {
-          const relationInfo = ct.BulkHasRelationTo(
-            tasks.map((x) => x.id),
-            { incompleteOnly: true, useStore: true }
-          )
-          tasks = tasks.filter((x) => relationInfo.get(x.id) !== true)
-        }
-      }
-    }
-    if (typeof props.batchFilter !== 'undefined') {
-      return props.batchFilter(taskID)(tasks)
-    }
-    return tasks
-  }
+  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: T2[]) => {
+  //   if (omitRedundant.value) {
+  //     if (typeof taskID !== 'undefined') {
+  //       const ct = useTasksStore().mapp.get(taskID)
+  //       if (typeof ct !== 'undefined') {
+  //         const relationInfo = ct.hasRelationToAny(tasks.map((x) => x.id))
+  //         tasks = tasks.filter((x) => relationInfo.get(x.id) !== true)
+  //       }
+  //     }
+  //   }
+  //   if (typeof props.batchFilter !== 'undefined') {
+  //     return props.batchFilter(taskID)(tasks)
+  //   }
+  //   return tasks
+  // }
 
   const searchOptions = {
     isCaseSensitive: false,
@@ -227,7 +227,7 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
     // console.log({ run })
 
@@ -243,17 +243,17 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
     }
   }
 
-  const selectTask = (task: Task) => {
-    emit('select', { task: task })
+  const selectTask = (task: T2) => {
+    emit('select', { task })
     searchForTasks()
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
   }
-  const onCancelClick = () => {
-    useLoadingStateStore().busy = false
-    useLoadingStateStore().addDependencyDialogActive = false
-    onDialogCancel()
-  }
+  // const onCancelClick = () => {
+  //   useLoadingStateStore().busy = false
+  //   useLoadingStateStore().addDependencyDialogActive = false
+  //   onDialogCancel()
+  // }
 
   const busy = ref(false)
 
@@ -263,11 +263,15 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
     const toCreate: CreateTaskOptions = { title: searchString.value }
     const start = performance.now()
     const target = 400
-    tr.addAndCache(toCreate).then((result: Task) => {
-      if(typeof props.taskID !== 'undefined') selectTask(result)
-      const duration = Math.floor(performance.now() - start)
-      if(duration > target) console.warn(`createTask took ${duration} ms - target is ${target} ms`)
-    }, Utils.handleError('Error creating task.'))
+    useTasksStore()
+      .apiCreate(toCreate)
+      .then((result) => {
+        if (result === null) return
+        if (typeof props.taskID !== 'undefined') selectTask(result)
+        const duration = Math.floor(performance.now() - start)
+        if (duration > target)
+          console.warn(`createTask took ${duration} ms - target is ${target} ms`)
+      }, Utils.handleError('Error creating task.'))
     busy.value = false
   }
 
@@ -277,29 +281,26 @@ import { useAllTasksStore } from 'src/stores/performance/all-tasks'
     onDialogHide()
   }
 
-  const results = ref<Task[]>([])
+  const results = ref<T2[]>([])
   const redundantTasks = ref<Map<number, boolean>>(new Map())
   const colorize = (id: number) =>
     redundantTasks.value.get(id) ? "color: 'warning'" : "color: 'primary'"
-  type HasID = { id: number }
-  const byRedundancy = (a: HasID, b: HasID) =>
-    redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
+  // type HasID = { id: number }
+  // const byRedundancy = (a: HasID, b: HasID) =>
+  //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
   const kickOffRedundancyCheck = () => {
     // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
     // note: I tried storing the traversed Set in pinia but it was running into lockups.
     redundantTasks.value =
-      currentTask.value?.BulkHasRelationTo(
-        results.value.map((x) => x.id),
-        { incompleteOnly: true, useStore: true }
-      ) ?? new Map()
+      currentTask.value?.hasRelationToAny(results.value.map((x) => x.id)) ?? new Map()
   }
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? useAllTasksStore().allTasks.get(props.taskID)?.task : null
+    typeof props.taskID !== 'undefined' ? useTasksStore().hardGet(props.taskID) : null
   )
   const debounceAmount = ref(100)
   fuse.value
 
   const el = ref()
-  const { width } = useElementSize(el)
-  const widthHack = computed(() => ({ width: `${width.value}px`, 'max-width': `${width.value}px` }))
+  // const { width } = useElementSize(el)
+  // const widthHack = computed(() => ({ width: `${width.value}px`, 'max-width': `${width.value}px` }))
 </script>

@@ -15,7 +15,7 @@
           class="q-ma-sm"
           size="md"
           color="yellow"
-          label="refresh"
+          label="Reset"
           @click="useLocalSettingsStore().resetToolbarButtons()"
         />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="onDialogCancel" />

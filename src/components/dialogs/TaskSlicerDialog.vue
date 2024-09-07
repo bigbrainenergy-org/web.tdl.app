@@ -33,10 +33,10 @@
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
-  import { Task } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
+  import { T2 } from 'src/stores/taskNoORM'
 
-  const props = defineProps<{ task: Task }>()
+  const props = defineProps<{ task: T2 }>()
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
 

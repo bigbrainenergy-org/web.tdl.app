@@ -6,7 +6,7 @@ interface CompleteTasksState {
   tasks: Map<number, cachedTask>
 }
 
-export const useCompletedTasksStore = defineStore('completed-tasks', {
+const useCompletedTasksStore = defineStore('completed-tasks', {
   state: () => ({
     tasks: new Map<number, cachedTask>()
   }),

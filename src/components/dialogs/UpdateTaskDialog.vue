@@ -158,13 +158,14 @@
   import GloriousSlider from '../GloriousSlider.vue'
   import { storeToRefs } from 'pinia'
   import { ProcedureRepo } from 'src/stores/procedures/procedure'
+  import { useTasksStore } from 'src/stores/taskNoORM'
 
   const cts = useCurrentTaskStore()
   const currentTaskID = computed(() => cts.id)
   const currentTask = computed(() => {
     const id = currentTaskID.value
     if (id === null) throw new Error('no id')
-    const t = useRepo(TaskRepo).withAll().find(id)
+    const t = useTasksStore().hardGet(id)
     if (typeof t === 'undefined' || t === null)
       throw new Error('id does not match a task in the repo')
     console.log({ t })

@@ -27,6 +27,7 @@
   import { λ } from 'src/types'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
+  import { T2 } from 'src/stores/taskNoORM'
 
   useMeta(() => {
     return {
@@ -98,7 +99,7 @@
                 slopeY: 1,
                 normalXoffset: 1,
                 normalYoffset: 1
-              } as d3Link<Task>)
+              }) as d3Link<Task>
           )
       )
     )
@@ -120,7 +121,7 @@
           slopeY: 1,
           normalXoffset: 1,
           normalYoffset: 1
-        } as d3Link<Task>)
+        }) as d3Link<Task>
 
     const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (
       currentTaskNode: d3Node<Task>
@@ -278,7 +279,7 @@
     node.call(CustomForceGraph.d3DragDefaults(simulation))
 
     node.on('click', (event) => {
-      TDLAPP.openTask(event.target.__data__.obj as Task)
+      TDLAPP.openTask((event.target.__data__.obj as T2).id)
         .onOk(reInitializeGraph)
         .onCancel(reInitializeGraph)
         .onDismiss(reInitializeGraph)
@@ -295,12 +296,12 @@
     usr.hideCompleted = incompleteOnly.value
   }
 
-  const toggleIncompleteOnly = () => {
-    incompleteOnly.value = !incompleteOnly.value
-    reInitializeGraph()
-  }
+  // const toggleIncompleteOnly = () => {
+  //   incompleteOnly.value = !incompleteOnly.value
+  //   reInitializeGraph()
+  // }
 
-  const refresh = reInitializeGraph
+  // const refresh = reInitializeGraph
 
   onMounted(initializeGraph)
 
@@ -308,7 +309,7 @@
   const biggest = (prev: d3Node<Task>, curr: d3Node<Task>) =>
     curr.radius > prev.radius ? curr : prev
   const openLargest = () =>
-    TDLAPP.openTask(allTaskNodes.reduce(biggest).obj)
+    TDLAPP.openTask(allTaskNodes.reduce(biggest).obj.id)
       .onOk(reInitializeGraph)
       .onCancel(reInitializeGraph)
       .onDismiss(reInitializeGraph)

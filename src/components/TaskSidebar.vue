@@ -113,13 +113,14 @@
   import { useRepo } from 'pinia-orm'
   import { useQuasar } from 'quasar'
   import { List, ListRepo } from 'src/stores/lists/list'
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
+  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { textColor } from 'src/hackerman/TextColor'
+  import { useTasksStore } from 'src/stores/taskNoORM'
 
   const $q = useQuasar()
   const model = defineModel<boolean>({ default: false })
@@ -136,10 +137,13 @@
   const openSearchDialog = () => TDLAPP.searchDialog()
 
   const createTask = (payload: CreateTaskOptions) => {
-    const tr = useRepo(TaskRepo)
-    tr.addAndCache(payload).then(() => {
-      Utils.notifySuccess('Successfully created a task')
-    }, Utils.handleError('Failed to create task.'))
+    // const tr = useRepo(TaskRepo)
+    useTasksStore()
+      .apiCreate(payload)
+      .then(
+        Utils.handleSuccess('Successfully created a task'),
+        Utils.handleError('Failed to create a task')
+      )
   }
 
   const openCreateTaskDialog = () => {

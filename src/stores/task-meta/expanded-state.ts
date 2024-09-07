@@ -2,18 +2,18 @@ import { Model, Repository } from 'pinia-orm'
 import { Num, Bool } from 'pinia-orm/dist/decorators'
 
 export default class ExpandedState extends Model {
-  static entity = 'expanded-state'
+  static override entity = 'expanded-state'
 
   @Num(-1) declare id: number
   @Bool(false) declare expanded: boolean
 
-  static piniaOptions = {
+  static override piniaOptions = {
     persist: true
   }
 }
 
 export class ExpandedStateRepo extends Repository<ExpandedState> {
-  use = ExpandedState
+  override use = ExpandedState
 
   getByTaskID = (task_id: number) => {
     return this.find(task_id) ?? this.save({ id: task_id, expanded: false })

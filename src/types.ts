@@ -1,5 +1,4 @@
 import { AxiosError } from 'axios'
-import { Model, PrimaryKey } from 'pinia-orm'
 
 // hahaha.... started as a joke but I kindof like it.
 export type λ<inputType = void | unknown, returnType = void> = (
@@ -74,9 +73,9 @@ export type Button<T> = {
 export type ripped<T> = T extends readonly (infer U)[]
   ? U
   : T extends (infer U)[]
-  ? U
-  : T extends (...args: any[]) => infer U
-  ? U
-  : T extends Promise<infer U>
-  ? U
-  : T
+    ? U
+    : T extends (...args: any[]) => infer U
+      ? U
+      : T extends Promise<infer U>
+        ? U
+        : T

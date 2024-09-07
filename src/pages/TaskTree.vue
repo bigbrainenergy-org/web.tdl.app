@@ -67,10 +67,7 @@
 </template>
 
 <script setup lang="ts">
-  import { useRepo } from 'pinia-orm'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-  import { useQuasar } from 'quasar'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
   import { Utils } from 'src/util'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -80,8 +77,9 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
-  const tr = computed(() => useRepo(TaskRepo))
+  // const tr = computed(() => useRepo(TaskRepo))
   // const esr = computed(() => useRepo(ExpandedStateRepo))
   const usr = useLocalSettingsStore()
 
@@ -124,17 +122,19 @@
     console.log({ expandedReverse })
   })
 
-  const style = (task: Task) => ({
+  const style = (task: T2) => ({
     backgroundColor: toggleRGB.value ? task.hashColor() : undefined,
     innerWidth: '100%'
   })
 
-  const allTasks = computed(() => tr.value.withAll().get())
+  const { array } = storeToRefs(useTasksStore())
 
   const layerZero = computed(() =>
-    allTasks.value
+    array.value
       .filter((x) => (incompleteOnly.value ? !x.completed : true))
-      .filter((x) => (reverseOrder.value ? !x.hasIncompletePostreqs : !x.hasIncompletePrereqs))
+      .filter((x) =>
+        reverseOrder.value ? x.incomplete_postreqs.length === 0 : x.incomplete_prereqs.length === 0
+      )
       .map((x) => x.treeNode(reverseOrder.value, incompleteOnly.value))
   )
 
@@ -143,8 +143,8 @@
 
   // console.log({ allTaskNodes })
 
-  const theTree = ref<QTreeComponent<Task> | undefined>()
-  const theReverseTree = ref<QTreeComponent<Task> | undefined>()
+  const theTree = ref<QTreeComponent<T2> | undefined>()
+  const theReverseTree = ref<QTreeComponent<T2> | undefined>()
 
   // forgive me
   // let queueCollapse: NodeKey[] = []
@@ -238,17 +238,17 @@
     else busy = false
   }
 
-  const $q = useQuasar()
+  // const $q = useQuasar()
 
-  const openTask = (currentTask: Task) => {
-    TDLAPP.openTask(currentTask)
+  const openTask = (currentTask: T2) => {
+    TDLAPP.openTask(currentTask.id)
       .onDismiss(() => initializeQueues())
       .onCancel(() => initializeQueues())
       .onOk(() => initializeQueues())
   }
 
-  const updateTaskCompletedStatus = (task: Task) => {
-    tr.value.updateAndCache({ id: task.id, payload: { task } })
+  const updateTaskCompletedStatus = (task: T2) => {
+    useTasksStore().apiUpdate(task)
     if (incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
   }
 
@@ -256,39 +256,38 @@
   const { hasKey } = storeToRefs(rawExpandedStateStore)
 
   // const shouldBeExpanded = <T>(x: SimpleTreeNode<T>) => esr.value.isExpanded(x.id)
-  const toNodeKey = <T>(x: SimpleTreeNode<T>) => ({ id: x.id, key: x.key })
+  const toNodeKey = <T,>(x: SimpleTreeNode<T>) => ({ id: x.id, key: x.key })
 
-  const childNodeLoader =
-    (getter: λ<details<Task>, SimpleTreeNode<Task>[]>) => (d: details<Task>) => {
-      // esrc.setExpanded(d.node.id, true)
-      queueExpand.push(toNodeKey(d.node))
-      const childNodes = getter(d)
-      d.done(childNodes)
-      if (childNodes.length) {
-        allTaskNodes.push(...childNodes)
-        // approach A
-        // queueExpand.push(...childNodes.filter(x => hasKey.value(x.key, reverseOrder.value)).map(toNodeKey))
-        // approach B
-        childNodes
-          .filter((x) => hasKey.value(x.key, reverseOrder.value))
-          .map((x) => x.key)
-          .forEach((x) => t.value?.setExpanded(x, true))
-        if (expandAllWithSameID.value) {
-          // queueExpand.push(...childNodes.filter(shouldBeExpanded).map(toNodeKey))
-          // console.log({ queueExpand })
-        }
+  const childNodeLoader = (getter: λ<details<T2>, SimpleTreeNode<T2>[]>) => (d: details<T2>) => {
+    // esrc.setExpanded(d.node.id, true)
+    queueExpand.push(toNodeKey(d.node))
+    const childNodes = getter(d)
+    d.done(childNodes)
+    if (childNodes.length) {
+      allTaskNodes.push(...childNodes)
+      // approach A
+      // queueExpand.push(...childNodes.filter(x => hasKey.value(x.key, reverseOrder.value)).map(toNodeKey))
+      // approach B
+      childNodes
+        .filter((x) => hasKey.value(x.key, reverseOrder.value))
+        .map((x) => x.key)
+        .forEach((x) => t.value?.setExpanded(x, true))
+      if (expandAllWithSameID.value) {
+        // queueExpand.push(...childNodes.filter(shouldBeExpanded).map(toNodeKey))
+        // console.log({ queueExpand })
       }
-      console.log('calling handleExpandAndCollapse from childNodeLoader')
-      handleExpandAndCollapse()
     }
+    console.log('calling handleExpandAndCollapse from childNodeLoader')
+    handleExpandAndCollapse()
+  }
 
-  const prenodes = (x: details<Task>) => {
+  const prenodes = (x: details<T2>) => {
     return x.node.obj.hardPrereqTreeNodes(reverseOrder.value, incompleteOnly.value, x.node.key)
   }
-  const postnodes = (x: details<Task>) => {
+  const postnodes = (x: details<T2>) => {
     return x.node.obj.hardPostreqTreeNodes(reverseOrder.value, incompleteOnly.value, x.node.key)
   }
-  const loadChildren: λ<details<Task>, void> = (d) =>
+  const loadChildren: λ<details<T2>, void> = (d) =>
     childNodeLoader(reverseOrder.value ? prenodes : postnodes)(d)
 
   // let previousExpanded: string[] = []

@@ -65,7 +65,7 @@
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="openTask(task as Task)"
+                  @click="openTask(task.id)"
                 >
                   <q-item-section>
                     <q-item-label lines="2">
@@ -84,14 +84,14 @@
 
 <script setup lang="ts">
   import Fuse, { FuseResult } from 'fuse.js'
-  import { useRepo } from 'pinia-orm'
+
   import { useDialogPluginComponent } from 'quasar'
   import { timeThisB } from 'src/perf'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
   import { computed, onMounted, ref } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
+  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   const emit = defineEmits([
     // REQUIRED; need to specify some events that your
@@ -113,7 +113,7 @@
   const notes = ref('')
 
   const debounceAmount = ref(100)
-  const results = ref<Task[]>([])
+  const results = ref<T2[]>([])
 
   const createTask = () => {
     emit('create', {
@@ -127,7 +127,7 @@
 
   const openTask = TDLAPP.openTask
 
-  const tasks = computed(() => useRepo(TaskRepo).where('completed', false).get())
+  const tasks = computed(() => useTasksStore().incompleteOnly)
 
   const searchOptions = {
     isCaseSensitive: false,
@@ -143,7 +143,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
     console.log({ run })
 

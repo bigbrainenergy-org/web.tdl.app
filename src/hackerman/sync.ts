@@ -1,9 +1,8 @@
 import { Settings } from 'luxon'
 import { useRepo } from 'pinia-orm'
 import { ListRepo } from 'src/stores/lists/list'
-import { TaskCache } from 'src/stores/performance/task-go-fast'
 import { ProcedureRepo } from 'src/stores/procedures/procedure'
-import { TaskRepo } from 'src/stores/tasks/task'
+import { useTasksStore } from 'src/stores/taskNoORM'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { Utils } from 'src/util'
@@ -19,10 +18,6 @@ export async function syncWithBackend(): Promise<number> {
     {
       modelname: 'User',
       repo: UserRepo
-    },
-    {
-      modelname: 'Task',
-      repo: TaskRepo
     },
     {
       modelname: 'List',
@@ -60,7 +55,7 @@ export async function syncWithBackend(): Promise<number> {
       currentUserSetting: currentUser.time_zone,
       obj: currentUser.timeZoneObj
     })
-    TaskCache.regenerate()
+    useTasksStore().apiGetAll()
     return 0
   }
   return 1

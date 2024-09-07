@@ -2,10 +2,7 @@ import { AxiosError } from 'axios'
 import errorNotification from './hackerman/ErrorNotification'
 import { Notify } from 'quasar'
 import { NodeKey, λ } from './types'
-import { useRepo } from 'pinia-orm'
-import { UserRepo } from './stores/users/user'
 import { Settings } from 'luxon'
-import { trace } from 'console'
 import { DebuggerOptions, computed } from 'vue'
 import { useLocalSettingsStore } from './stores/local-settings/local-setting'
 
@@ -44,20 +41,30 @@ export class Utils {
     return t
   }
   static arrayDelete<T>(arr: Array<T>, element: T, key?: keyof T) {
-    if(arr.length === 0) {
+    if (arr.length === 0) {
       console.trace('arrayDelete: array is empty')
       throw new Error('arrayDelete: array is empty')
     }
-    if(typeof element === 'object' && typeof key === 'undefined') {
+    if (typeof element === 'object' && typeof key === 'undefined') {
       console.trace('arrayUpdate: key is required for object arrays.')
     }
-    const i = typeof key === 'undefined' ? arr.indexOf(element) : arr.findIndex((x) => x[key] === element[key])
+    const i =
+      typeof key === 'undefined'
+        ? arr.indexOf(element)
+        : arr.findIndex((x) => x[key] === element[key])
     if (i >= 0) arr.splice(i, 1)
     else {
       console.trace('arrayDelete will not delete any elements because they were not found.')
     }
     return arr
   }
+  /**
+   *
+   * @param arr the array to do the update
+   * @param element element of the array
+   * @param key object key to compare
+   * Will add the element instead if the element is not found.
+   */
   static arrayUpdate<T>(arr: Array<T>, element: T, key: keyof T) {
     if (arr.length === 0) {
       console.trace('arrayUpdate: array is empty')
@@ -65,10 +72,8 @@ export class Utils {
     }
     const i = arr.findIndex((x) => x[key] === element[key])
     // console.debug({ method: 'arrayUpdate', arr, element, key })
-    if (i < 0) {
-      console.trace('arrayUpdate will not update any element because it was not found')
-      throw new Error('arrayUpdate will not update any element because it was not found')
-    } else arr[i] = element
+    if (i < 0) arr.push(element)
+    else arr[i] = element
   }
   static onlyInLeftArray<T>(A: T[], B: T[], key: keyof T) {
     return A.filter((x) => !B.some((y) => y[key] === x[key]))

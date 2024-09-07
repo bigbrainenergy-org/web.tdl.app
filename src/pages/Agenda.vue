@@ -31,7 +31,7 @@
                 once
                 style="min-height: 48px"
               >
-                <q-item v-ripple clickable @click="open(currentTask)">
+                <q-item v-ripple clickable @click="open(currentTask.id)">
                   <q-checkbox
                     v-model:model-value="currentTask.completed"
                     color="primary"
@@ -108,18 +108,24 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { incompleteOnly, T2, TaskLike, useTasksStore } from 'src/stores/taskNoORM'
 
   const $q = useQuasar()
 
-  const open = (task: Task) => TDLAPP.openTask(task)
+  const open = (id: number) => TDLAPP.openTask(id)
 
   const tasksRepo = useRepo(TaskRepo)
 
   const localSettingsStore = useLocalSettingsStore()
 
-  const { layerZeroOnly, hideCompleted, disableQuickSort, enableQuickSortOnLayerZeroQTY, autoScalePriority } =
-    storeToRefs(localSettingsStore)
+  const {
+    layerZeroOnly,
+    hideCompleted,
+    disableQuickSort,
+    enableQuickSortOnLayerZeroQTY,
+    autoScalePriority
+  } = storeToRefs(localSettingsStore)
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
@@ -127,8 +133,8 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
     'Auto Scale Priority': autoScalePriority
   })
 
-  const notCompleted = (x: Task) => x.completed === false
-  const notBlocked = (x: Task) => x.hard_prereqs.filter(notCompleted).length === 0
+  const notCompleted = (x: TaskLike) => x.completed === false
+  const notBlocked = (x: TaskLike) => x.hard_prereqs.filter(notCompleted).length === 0
   const qtyPostreqsSort = (a: Task, b: Task) =>
     b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length
 
@@ -146,12 +152,13 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
     // todo: think about why using the incompleteTasksStore and refactoring to use cachedTask slows this down...
     // maybe because the cache gets rattled while loading the page.
     // perhaps using the cache, there would be an entirely easier way to get this done?
-    const allIncompleteTasks = useRepo(TaskRepo).where('completed', false).withAll().get()
-    TaskCache.checkAgainstKnownCompletedTasks(...allIncompleteTasks)
+    // const allIncompleteTasks = useRepo(TaskRepo).where('completed', false).withAll().get()
+    const allIncompleteTasks = useTasksStore().array.filter(incompleteOnly) as T2[]
+    // TaskCache.checkAgainstKnownCompletedTasks(...allIncompleteTasks)
     let baseMap = new Map(allIncompleteTasks.map((x) => [x.id, x]))
     let traversed = new Set<number>() // ids
-    let finalList: Array<Task> = []
-    const notBlockedByTraversed = (k: number, x: Task) =>
+    let finalList: Array<T2> = []
+    const notBlockedByTraversed = (k: number, x: TaskLike) =>
       x.hard_prereqs.filter(notCompleted).every((y) => traversed.has(y.id))
     const filterMap = <K, V>(
       map: Map<K, V>,
@@ -166,13 +173,13 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
         }
       }
     }
-    let layer = new Map<number, Task>()
+    let layer = new Map<number, T2>()
     while (baseMap.size || layer.size) {
       // console.debug({ size: baseMap.size, traversed: traversed.size, layer: layer.size })
-      if (baseMap.size) filterMap<number, Task>(baseMap, layer, notBlockedByTraversed)
+      if (baseMap.size) filterMap<number, T2>(baseMap, layer, notBlockedByTraversed)
       let nextUp: { id?: number; p: number } = { p: 0 }
       // todo: SortedMap? That a thing?
-      layer.forEach((val: Task, key: number) => {
+      layer.forEach((val: TaskLike, key: number) => {
         const p = val.hard_postreqs.filter(notCompleted).length
         if (p > nextUp.p) {
           nextUp.id = key
@@ -193,21 +200,19 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
       if (typeof nextUp.id === 'undefined') {
         console.debug(`pushing remaining ${layer.size} tasks to list`)
         finalList.push(...layer.values())
-        TaskCache.checkAgainstKnownCompletedTasks(...finalList)
         return finalList
       }
       finalList.push(layer.get(nextUp.id)!)
       layer.delete(nextUp.id)
       traversed.add(nextUp.id)
     }
-    TaskCache.checkAgainstKnownCompletedTasks(...finalList)
     return finalList
   })
 
   const autoThreshold = computed(() => {
     const sampleSize = Math.min(tasks.value.length, 10)
     const samplePriorities = []
-    for(let i = 0; i < sampleSize; i++) {
+    for (let i = 0; i < sampleSize; i++) {
       samplePriorities.push(tasks.value[i].hard_postreqs.filter(notCompleted).length)
     }
     samplePriorities.sort((a, b) => a - b)
@@ -218,20 +223,23 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   const sortQty = computed(() => {
     const len0 = useLayerZeroStore().tasks.length
     if (disableQuickSort.value) return len0
-    return autoScalePriority.value ? autoThreshold.value : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
+    return autoScalePriority.value
+      ? autoThreshold.value
+      : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
 
-  const updateTaskCompletedStatus = async (task: Task) => {
+  const updateTaskCompletedStatus = (task: T2) => {
     const newStatus = task.completed
-    await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
-      if (result.completed !== newStatus) throw new Error('error saving completed status of task')
-      // useAllTasksStore().completion(task.id, newStatus)
-      TDLAPP.notifyUpdatedCompletionStatus(result)
-      console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
-    }, Utils.handleError('Error updating completion status of a task.'))
+    useTasksStore()
+      .apiUpdate(task)
+      .then((result) => {
+        const r = Utils.hardCheck(result)
+        console.assert(r.completed === newStatus)
+        TDLAPP.notifyUpdatedCompletionStatus(r)
+      }, Utils.handleError('Error updating completion status of a task.'))
   }
 
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const addTaskPre = (currentTask: T2) => TDLAPP.addPrerequisitesDialog(currentTask)
   const openSearchDialog = () => TDLAPP.searchDialog()
 
   const openQuickSortDialog = () => $q.dialog({ component: QuickSortLayerZeroDialog })

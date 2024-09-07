@@ -1,14 +1,9 @@
-import { Model, useRepo } from 'pinia-orm'
+import { Model } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Num, Str, Attr, HasManyBy } from 'pinia-orm/dist/decorators'
-import { Task, TaskRepo } from '../tasks/task'
+import { Num, Str, Attr } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
-import { AxiosResponse } from 'axios'
-import { TaskCache } from '../performance/task-go-fast'
 import { Utils } from 'src/util'
-import { useAllTasksStore } from '../performance/all-tasks'
-import { useLayerZeroStore } from '../performance/layer-zero'
-import { syncWithBackend } from 'src/hackerman/sync'
+import { T2, useTasksStore } from '../taskNoORM'
 
 export interface CreateProcedureOptions {
   title: string
@@ -40,17 +35,20 @@ export class Procedure extends Model implements iRecord {
   @Str('') declare icon: string
   @Attr([]) declare task_ids: number[]
 
-  @HasManyBy(() => Task, 'task_ids') declare tasks: Task[]
+  // @HasManyBy(() => Task, 'task_ids') declare tasks: Task[]
 
   static override piniaOptions = {
     persist: true
   }
 
-  grabTasks(): Task[] {
-    const tasks = useRepo(TaskRepo)
-      .where((x) => x.procedure_ids.includes(this.id))
-      .get()
+  grabTasks(): T2[] {
+    const tasks = (useTasksStore().array as T2[]).filter((x) => x.procedure_ids?.includes(this.id))
     return tasks
+  }
+
+  get tasks() {
+    const ts = useTasksStore()
+    return this.task_ids.map((x) => ts.hardGet(x))
   }
 }
 
@@ -69,15 +67,9 @@ export class ProcedureRepo extends GenericRepo<
       .post(url, undefined, this.commonHeader())
       .then(() => {
         const tmp = Utils.hardCheck(this.withAll().find(id))
-        tmp.grabTasks().forEach((x) => {
-          console.log(`setting ${x.title} to INCOMPLETE`)
-          useRepo(TaskRepo).save({ id: x.id, completed: false })
-          x.completed = false
-          TaskCache.update(x)
-          console.log(`layer zero length: ${useLayerZeroStore().typed.length}`)
-          syncWithBackend()
-        })
-        console.debug({ tasks: tmp.grabTasks() })
+        const tasks = tmp.grabTasks()
+        tasks.forEach((x) => (x.completed = false))
+        useTasksStore().update(tasks)
         return tmp
       }, Utils.handleError('Error restarting procedure.'))
   }

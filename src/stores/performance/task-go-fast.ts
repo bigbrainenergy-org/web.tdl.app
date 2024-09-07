@@ -6,7 +6,7 @@ import { useIncompleteTasksStore } from './incomplete-tasks'
 import { Utils } from 'src/util'
 import { useLayerZeroStore } from './layer-zero'
 
-export class TaskCache {
+class TaskCache {
   static regenerate = () => {
     const start = performance.now()
     const ats = useAllTasksStore()
@@ -58,6 +58,11 @@ export class TaskCache {
     })
     vennPres.center.forEach((x) => {
       const t = ATHardGet(x.id)
+      if (typeof t.hard_postreqs === 'undefined' || t.hard_postreqs.length === 0) {
+        console.warn({ msg: 'hard postreqs of cached task was not valid', task: t })
+        t.hard_postreqs = t.t.grabPostreqs(false)
+        console.assert(t.hard_postreqs.length > 0)
+      }
       Utils.arrayUpdate(t.hard_postreqs, task, 'id')
     })
     vennPres.right.forEach((x) => {
@@ -87,9 +92,7 @@ export class TaskCache {
   static checkAgainstKnownCompletedTasks(...tasks: Task[] | cachedTask[]) {
     const ct = useCompletedTasksStore().tasks
     tasks
-      .filter((x) => {
-        ct.has(x.id as number) // FIXME: why is ts breaking here?
-      })
+      .filter((x) => ct.has(x.id))
       .map((x) => {
         console.warn(`COMPLETED TASK DETECTED: ${x.id} - ${x.title}`)
         throw new Error(`COMPLETED TASK DETECTED: ${x.id} - ${x.title}`)

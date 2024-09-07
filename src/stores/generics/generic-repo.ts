@@ -2,7 +2,7 @@ import { Repository } from 'pinia-orm'
 import iRecord, { iOptions } from './i-record'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { Utils } from 'src/util'
-import { AxiosError, AxiosResponse } from 'axios'
+import { AxiosResponse } from 'axios'
 import { useAxiosStore } from '../axios-store'
 import { ApiError } from 'src/types'
 
