@@ -1,11 +1,7 @@
 <template>
   <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task.t)">
-    <q-checkbox
-      v-model:model-value="task.completed"
-      color="primary"
-      keep-color
-      @update:model-value="$emit('task-completion-toggled', $event, task.t)"
-    />
+    <q-checkbox v-model:model-value="task.completed" color="primary" keep-color @update:model-value="play"
+      checked-icon="task_alt" unchecked-icon="radio_button_unchecked" class="q-mr-sm" />
 
     <q-item-section>
       <q-item-label data-cy="task_item_title" lines="2">
@@ -22,25 +18,15 @@
     </q-item-section>
 
     <q-item-section v-if="task.grabPostreqs(incompleteOnly).length" side>
-      <q-chip
-        v-if="task.grabPostreqs(incompleteOnly).length"
-        :style="
-          task.grabPostreqs(incompleteOnly).length > 5
-            ? 'background-color: red;'
-            : 'background-color: gray;'
-        "
-      >
+      <q-chip v-if="task.grabPostreqs(incompleteOnly).length" :style="task.grabPostreqs(incompleteOnly).length > postreqQuantityWarningThreshold
+        ? 'background-color: red;'
+        : 'background-color: gray;'
+        ">
         {{ task.grabPostreqs(incompleteOnly).length }}
       </q-chip>
     </q-item-section>
     <q-item-section side>
-      <q-btn
-        v-if="!task.completed"
-        outline
-        rounded
-        label="ADD PRE"
-        @click.stop="addTaskPre(task.t)"
-      />
+      <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addTaskPre(task.t)" />
     </q-item-section>
   </q-item>
 </template>
@@ -50,6 +36,9 @@
   import { Task } from 'stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
   import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { usePostreqWarning } from 'src/composables/use-postreq-warning'
+  import checkboxClickedSfx from 'src/assets/checkbox_clicked.wav'
+  import tuturuSfx from 'src/assets/tuturu.wav'
 
   const props = withDefaults(
     defineProps<{
@@ -63,6 +52,23 @@
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
+  function play() {
+    if (task.value.completed) {
+      const audio = new Audio(tuturuSfx)
+      audio.play()
+    } else {
+      const audio = new Audio(checkboxClickedSfx)
+      audio.play()
+    }
+  }
+
   const task = toRef(props, 'task')
   const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const { postreqQuantityWarningThreshold } = usePostreqWarning()
 </script>
+
+<style>
+  .q-checkbox__icon {
+    font-size: .75em;
+  }
+</style>
