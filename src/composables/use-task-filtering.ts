@@ -10,6 +10,8 @@ export function useTaskFiltering() {
   function filterTasks(tasks: cachedTask[]): cachedTask[] {
     if(currentFilteringMode.value === 'filterByList') {
       return filterByList(tasks, selectedList.value)
+    } else if(currentFilteringMode.value === 'filterByAgenda') {
+      return []
     } else {
       return tasks
     }

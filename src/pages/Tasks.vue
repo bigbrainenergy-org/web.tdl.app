@@ -8,11 +8,7 @@
             <q-space />
             <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
-            <q-btn
-              icon="fa-solid fa-signs-post"
-              class="text-primary"
-              @click="openQuickSortDialog"
-            />
+            <q-btn icon="fa-solid fa-signs-post" class="text-primary" @click="openQuickSortDialog" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
           <q-card-section class="bg-primary text-white">
@@ -24,13 +20,8 @@
           </q-card-section>
 
           <q-card-section>
-            <TaskList
-              :tasks="tasks"
-              :unblocked-only="layerZeroOnly"
-              :incomplete-only="hideCompleted"
-              @task-completion-toggled="updateTaskCompletedStatus"
-              @task-clicked="openTask"
-            />
+            <TaskList :tasks="tasks" :unblocked-only="layerZeroOnly" :incomplete-only="hideCompleted"
+              @task-completion-toggled="updateTaskCompletedStatus" @task-clicked="openTask" />
           </q-card-section>
         </q-card>
       </div>
@@ -120,21 +111,4 @@
     $q.dialog({
       component: QuickSortLayerZeroDialog
     })
-
-  const autoThreshold = computed(() => {
-    const sampleSize = Math.min(tasks.value.length, 10)
-    let sumPriorities = 0
-    for (let i = 0; i < sampleSize; i++) {
-      sumPriorities += tasks.value[i].hard_postreqs.filter((x) => !x.completed).length
-    }
-    return Math.floor(sumPriorities / sampleSize)
-  })
-
-  const sortQty = computed(() => {
-    const len0 = useLayerZeroStore().tasks.length
-    if (disableQuickSort.value) return len0
-    return autoScalePriority.value
-      ? autoThreshold.value
-      : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
-  })
 </script>

@@ -3,22 +3,6 @@
     <div class="row items-stretch justify-evenly">
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
-          <q-card-actions>
-            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
-            <q-space />
-            <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
-            <q-space />
-            <q-btn icon="fa-solid fa-signs-post" class="text-primary" @click="openQuickSortDialog" />
-            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
-          </q-card-actions>
-          <q-card-section class="bg-primary text-white">
-            <div class="row items-center">
-              <div class="col">
-                <div class="text-h6 text-pain">Tasks</div>
-              </div>
-            </div>
-          </q-card-section>
-
           <q-card-section>
             <q-list class="text-primary">
               <q-intersection v-for="(currentTask, index) in tasks" :key="index" once style="min-height: 48px">
@@ -41,7 +25,7 @@
                   </q-item-section>
 
                   <q-item-section v-if="currentTask.grabPostreqs(hideCompleted).length" side>
-                    <q-chip v-if="currentTask.grabPostreqs(hideCompleted).length" :style="currentTask.grabPostreqs(hideCompleted).length > sortQty
+                    <q-chip v-if="currentTask.grabPostreqs(hideCompleted).length" :style="currentTask.grabPostreqs(hideCompleted).length > postreqQuantityWarningThreshold
                       ? 'background-color: red;'
                       : 'background-color: gray;'
                       ">
@@ -181,23 +165,6 @@
     }
     TaskCache.checkAgainstKnownCompletedTasks(...finalList)
     return finalList
-  })
-
-  const autoThreshold = computed(() => {
-    const sampleSize = Math.min(tasks.value.length, 10)
-    const samplePriorities = []
-    for (let i = 0; i < sampleSize; i++) {
-      samplePriorities.push(tasks.value[i].hard_postreqs.filter(notCompleted).length)
-    }
-    samplePriorities.sort((a, b) => a - b)
-    const sampleIndex = Math.max(Math.floor(sampleSize / 2), 1)
-    return samplePriorities[sampleIndex]
-  })
-
-  const sortQty = computed(() => {
-    const len0 = useLayerZeroStore().tasks.length
-    if (disableQuickSort.value) return len0
-    return autoScalePriority.value ? autoThreshold.value : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
 
   const updateTaskCompletedStatus = async (task: Task) => {

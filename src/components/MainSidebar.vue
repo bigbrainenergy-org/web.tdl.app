@@ -41,13 +41,18 @@
         <q-item-section>Upcoming</q-item-section>
       </q-item>
 
-      <q-item
-        v-ripple
-        clickable
-        :active="listSelected({ title: '' })"
+      <q-item v-ripple clickable :active="agendaSelected"
+        :style="agendaSelected ? listColorStyle({ color: '#ffffff' }) : null" @click="setAgenda">
+        <q-item-section avatar>
+          <q-icon name="fa-solid fa-inbox" />
+        </q-item-section>
+
+        <q-item-section>Agenda</q-item-section>
+      </q-item>
+
+      <q-item v-ripple clickable :active="listSelected({ title: '' })"
         :style="listSelected({ title: '' }) ? listColorStyle({ color: '#ffffff' }) : null"
-        @click="setList({ title: '' })"
-      >
+        @click="setList({ title: '' })">
         <q-item-section avatar>
           <q-icon name="checklist" />
         </q-item-section>
@@ -59,18 +64,9 @@
     <p class="q-ma-sm text-bold text-h6">Lists</p>
 
     <q-list padding overflow-hidden full-width>
-      <q-item
-        v-for="(list, index) in lists"
-        :key="index"
-        v-ripple
-        :active="listSelected(list)"
-        clickable
-        full-width
-        :style="listSelected(list) ? listColorStyle(list) : null"
-        @click="setList(list)"
-        @mouseover="hoveredList = index"
-        @mouseleave="hoveredList = -1"
-      >
+      <q-item v-for="(list, index) in lists" :key="index" v-ripple :active="listSelected(list)" clickable full-width
+        :style="listSelected(list) ? listColorStyle(list) : null" @click="setList(list)"
+        @mouseover="hoveredList = index" @mouseleave="hoveredList = -1">
         <q-menu context-menu>
           <q-list>
             <q-item clickable>
@@ -91,11 +87,7 @@
           </q-item-label>
         </q-item-section>
 
-        <q-item-section
-          side
-          :style="listSelected(list) ? listCountStyle(list) : null"
-          class="q-pa-none q-ma-none"
-        >
+        <q-item-section side :style="listSelected(list) ? listCountStyle(list) : null" class="q-pa-none q-ma-none">
           <template v-if="hoveredList === index">
             <q-btn icon="more_horiz" flat padding="xs" size="md" @click.stop="openMenu(index)" />
           </template>
@@ -126,9 +118,9 @@
   const drawer = defineModel<boolean>('drawer')
   const listsRepo = useRepo(ListRepo)
   const localSettingsStore = useLocalSettingsStore()
-  const { selectedList } = storeToRefs(localSettingsStore)
+  const { currentFilteringMode, selectedList } = storeToRefs(localSettingsStore)
 
-  // FIXME: I hate this with every fiber of my being
+  // HACK: I hate this with every fiber of my being
   const hoveredList = ref(-1)
 
   const lists = computed(() => listsRepo.withAll().get())
@@ -143,11 +135,19 @@
   type HasTitle = { title: string }
 
   const setList = (list: HasTitle) => {
+    currentFilteringMode.value = 'filterByList'
     selectedList.value = list.title
   }
 
+  const setAgenda = () => currentFilteringMode.value = 'filterByAgenda'
+
+  const agendaSelected = computed(() => currentFilteringMode.value === 'filterByAgenda')
+
   const listSelected = (list: HasTitle) => {
-    return selectedList.value === list.title
+    return (
+      currentFilteringMode.value === 'filterByList' &&
+      selectedList.value === list.title
+    )
   }
 
   // TODO: These can all be DRY'd up.
