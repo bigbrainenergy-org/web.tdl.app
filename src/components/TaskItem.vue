@@ -37,8 +37,8 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { cachedTask } from 'src/stores/performance/all-tasks'
   import { usePostreqWarning } from 'src/composables/use-postreq-warning'
-  import checkboxClickedSfx from 'src/assets/checkbox_clicked.wav'
-  import tuturuSfx from 'src/assets/tuturu.wav'
+  import checkedSfx from 'src/assets/task_checked.wav'
+  import uncheckedSfx from 'src/assets/task_unchecked.wav'
 
   const props = withDefaults(
     defineProps<{
@@ -54,10 +54,10 @@
 
   function play() {
     if (task.value.completed) {
-      const audio = new Audio(tuturuSfx)
+      const audio = new Audio(checkedSfx)
       audio.play()
     } else {
-      const audio = new Audio(checkboxClickedSfx)
+      const audio = new Audio(uncheckedSfx)
       audio.play()
     }
   }
