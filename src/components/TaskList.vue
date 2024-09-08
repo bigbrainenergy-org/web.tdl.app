@@ -2,11 +2,24 @@
   <q-list class="text-primary" data-cy="task_list">
     <template v-if="loading">
       <q-item v-for="index in 5" :key="index" v-ripple>
+        <q-skeleton type="QRadio" class="q-mr-md" />
         <q-item-section>
           <q-skeleton type="text" />
         </q-item-section>
+
+        <q-item-section v-if="$q.screen.gt.sm" side>
+          <q-skeleton type="QRadio" />
+        </q-item-section>
+
+        <q-item-section v-if="$q.screen.gt.sm" side>
+          <q-skeleton type="QChip" />
+        </q-item-section>
+
+        <q-item-section v-if="$q.screen.gt.sm" side>
+          <q-skeleton type="QBtn" />
+        </q-item-section>
       </q-item>
-      <!-- <q-inner-loading :showing="loading" label="Loading..." label-class="text-teal" label-style="font-size: 1.1em" /> -->
+      <q-inner-loading :showing="loading" label="Loading..." label-class="text-teal" label-style="font-size: 1.1em" />
     </template>
     <template v-else>
       <!-- If no tasks, render empty list item -->
@@ -17,8 +30,7 @@
                https://quasar.dev/vue-components/inner-loading
                https://quasar.dev/vue-components/skeleton
           -->
-          <strong v-if="useLoadingStateStore().busy">Loading...</strong>
-          <strong v-else>{{ props.emptyListMessage }}</strong>
+          <strong>{{ props.emptyListMessage }}</strong>
         </q-item-section>
       </q-item>
       <!-- Otherwise, lazy render tasks -->
@@ -30,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, toRef } from 'vue'
+  import { computed, ref, toRef } from 'vue'
   import TaskItem from 'src/components/TaskItem.vue'
   import { cachedTask } from 'src/stores/performance/all-tasks'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
