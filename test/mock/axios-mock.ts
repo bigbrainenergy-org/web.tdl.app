@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { mockTaskList } from './tasks'
-import { ripped, λ } from 'src/types'
+import { ripped, λ } from 'src/utils/types'
 
 const mockServerState = {
   tasks: mockTaskList

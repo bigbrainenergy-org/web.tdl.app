@@ -4,7 +4,7 @@ import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { Utils } from 'src/util'
 import { AxiosError, AxiosResponse } from 'axios'
 import { useAxiosStore } from '../axios-store'
-import { ApiError } from 'src/types'
+import { ApiError } from 'src/utils/types'
 
 interface SimpleApiBackedRepo {
   // TODO: access T.entity somehow. In the meantime just have a string property.

@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { beforeEach, describe, vi, it } from 'vitest'
 
 vi.mock('axios')

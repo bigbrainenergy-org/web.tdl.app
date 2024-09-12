@@ -41,4 +41,3 @@ export function sortByPostreqs(tasks: cachedTask[], hideCompleted = true): cache
     (a, b) => postreqs(b).length - postreqs(a).length
   )
 }
-

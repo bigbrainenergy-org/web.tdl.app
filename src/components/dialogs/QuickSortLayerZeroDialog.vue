@@ -1,10 +1,5 @@
 <template>
-  <q-dialog
-    ref="dialogRef"
-    :maximized="$q.screen.lt.md"
-    backdrop-filter="blur(4px)"
-    @hide="hideDialog"
-  >
+  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" backdrop-filter="blur(4px)" @hide="hideDialog">
     <q-card ref="el" class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
@@ -12,28 +7,15 @@
         <div class="text-h6">{{ layerZero.length }} Layer Zero Tasks</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
-          <SettingsButton
-            v-model:settings="quickSortSettings"
-            name="Quick Sort Settings"
-            color="white"
-          />
+          <SettingsButton v-model:settings="quickSortSettings" name="Quick Sort Settings" color="white" />
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
         </p>
       </q-card-section>
       <q-linear-progress v-if="loading" query stripe size="10px" />
       <q-card-section class="q-ma-lg vertical-top">
-        <q-btn-dropdown
-          :disable="loading"
-          size="lg"
-          color="positive"
-          style="width: 100%"
-          split
-          auto-close
-          dropdown-icon="more_vert"
-          @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)"
-          @touchstart.stop
-          @mousedown.stop
-        >
+        <q-btn-dropdown :disable="loading" size="lg" color="positive" style="width: 100%" split auto-close
+          dropdown-icon="more_vert" @click.stop="addRule(currentPair.data.a as Task, currentPair.data.b as Task)"
+          @touchstart.stop @mousedown.stop>
           <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped" :style="style">
@@ -42,13 +24,8 @@
             </q-item-section>
           </template>
           <q-list>
-            <q-item
-              v-for="(menuitem, index) in menuItems"
-              :key="index"
-              v-close-popup
-              clickable
-              @click.stop="menuitem.action(currentPair.data.a as Task)"
-            >
+            <q-item v-for="(menuitem, index) in menuItems" :key="index" v-close-popup clickable
+              @click.stop="menuitem.action(currentPair.data.a as Task)">
               <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
               <q-space />
               <q-icon :name="menuitem.icon" />
@@ -57,18 +34,9 @@
         </q-btn-dropdown>
       </q-card-section>
       <q-card-section class="q-ma-lg vertical-top">
-        <q-btn-dropdown
-          :disable="loading"
-          size="lg"
-          color="positive"
-          style="width: 100%"
-          split
-          auto-close
-          dropdown-icon="more_vert"
-          @click.stop="addRule(currentPair.data.b as Task, currentPair.data.a as Task)"
-          @touchstart.stop
-          @mousedown.stop
-        >
+        <q-btn-dropdown :disable="loading" size="lg" color="positive" style="width: 100%" split auto-close
+          dropdown-icon="more_vert" @click.stop="addRule(currentPair.data.b as Task, currentPair.data.a as Task)"
+          @touchstart.stop @mousedown.stop>
           <template #label>
             <q-item-section class="vertical-top">
               <q-item-label lines="2" class="wrapped" :style="style">
@@ -77,13 +45,8 @@
             </q-item-section>
           </template>
           <q-list>
-            <q-item
-              v-for="(menuitem, index) in menuItems"
-              :key="index"
-              v-close-popup
-              clickable
-              @click.stop="menuitem.action(currentPair.data.b as Task)"
-            >
+            <q-item v-for="(menuitem, index) in menuItems" :key="index" v-close-popup clickable
+              @click.stop="menuitem.action(currentPair.data.b as Task)">
               <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
               <q-space />
               <q-icon :name="menuitem.icon" />
@@ -92,14 +55,7 @@
         </q-btn-dropdown>
       </q-card-section>
       <q-card-section class="q-ma-lg vertical-top text-center">
-        <q-btn
-          :disable="loading"
-          class="q-ma-lg"
-          size="lg"
-          color="grey"
-          label="SKIP"
-          @click="skip"
-        />
+        <q-btn :disable="loading" class="q-ma-lg" size="lg" color="grey" label="SKIP" @click="skip" />
       </q-card-section>
     </q-card>
   </q-dialog>
@@ -111,18 +67,17 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
-  import { SimpleMenuItem } from 'src/types'
+  import { SimpleMenuItem } from 'src/utils/types'
   import { Utils } from 'src/util'
   import { onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { timeThis, timeThisAABAsync } from 'src/perf'
+  import { timeThis, timeThisAABAsync } from 'src/utils/performance-utils'
   import { useElementSize } from '@vueuse/core'
-  import { AxiosError } from 'axios'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { useAllTasksStore, cachedTask } from 'src/stores/performance/all-tasks'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -193,11 +148,11 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   const layerOne = computed(() =>
     deepQuickSort.value
       ? layerZero.value
-          .filter((x) => x.t.grabPostreqs(true).length > 1)
-          .map((x) => ({
-            id: x.t.id,
-            data: x.t.grabPostreqs(true).map(postWeightedTask2)
-          }))
+        .filter((x) => x.t.grabPostreqs(true).length > 1)
+        .map((x) => ({
+          id: x.t.id,
+          data: x.t.grabPostreqs(true).map(postWeightedTask2)
+        }))
       : null
   )
 
@@ -431,8 +386,8 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
       console.debug({ attemptsRemaining })
       while (
         permutations(randomlySelectedPostsList.data) -
-          getSkippedPairsForID(randomlySelectedPostsList.id).length <
-          1 &&
+        getSkippedPairsForID(randomlySelectedPostsList.id).length <
+        1 &&
         attemptsRemaining > 0
       ) {
         console.log('all posts pairs are skipped now, moving to a new posts array.')

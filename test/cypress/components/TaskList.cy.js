@@ -1,7 +1,7 @@
 import TaskList from 'src/components/TaskList.vue'
 import { cachedTask } from 'src/stores/performance/all-tasks'
 
-describe('Password Change Form Component', () => {
+describe('<TaskList/>', () => {
   context('when passed no tasks', () => {
     beforeEach(() => {
       cy.mount(TaskList)

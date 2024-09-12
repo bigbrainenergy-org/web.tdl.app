@@ -28,7 +28,7 @@
   import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
   import { useQuasar, useMeta } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { λ } from 'src/types'
+  import { λ } from 'src/utils/types'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
 

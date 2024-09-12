@@ -8,13 +8,20 @@ import { useTaskSorting } from './use-task-sorting'
 // TODO: unblockedOnly is unused, use it
 export function useTasks() {
   const loadingStateStore = useLoadingStateStore()
-  const { busy } = storeToRefs(loadingStateStore)
+  const { busy, quickSortDialogActive } = storeToRefs(loadingStateStore)
   const { filterTasks } = useTaskFiltering()
   const { sortTasks } = useTaskSorting()
 
   const tasks = computed(() => {
-    if (busy.value) return []
-    console.debug('updating tasks on Task page')
+    if (busy.value) {
+      console.debug('busy signal; skipping task recalc.')
+      return []
+    }
+    if (quickSortDialogActive.value) {
+      console.debug('quick sort dialog is active; skipping task recalc')
+      return []
+    }
+    console.debug('recalculating tasks')
     let baseQuery = useLayerZeroStore().typed
     console.debug({ baseQuery })
     baseQuery = filterTasks(baseQuery)

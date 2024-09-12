@@ -35,7 +35,8 @@
       </q-item>
       <!-- Otherwise, lazy render tasks -->
       <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
-        <TaskItem :task="task" @task-clicked="$emit('task-clicked', $event, task.t)" />
+        <TaskItem :task="task" @task-clicked="$emit('task-clicked', $event, task.t)"
+          @task-completion-toggled="$emit('task-completion-toggled', $event, task.t)" />
       </q-intersection>
     </template>
   </q-list>

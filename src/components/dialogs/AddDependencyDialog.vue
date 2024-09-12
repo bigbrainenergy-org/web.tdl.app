@@ -1,31 +1,17 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog
-    ref="dialogRef"
-    :maximized="$q.screen.lt.md"
-    backdrop-filter="blur(4px)"
-    @hide="hideDialog"
-  >
+  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" backdrop-filter="blur(4px)" @hide="hideDialog">
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
-        <SettingsButton
-          v-model:settings="taskSearchSettings"
-          name="Task Search Settings"
-          color="white"
-        />
+        <SettingsButton v-model:settings="taskSearchSettings" name="Task Search Settings" color="white" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
       <q-separator />
 
-      <TaskSearchInput
-        v-model:model-value="searchString"
-        :search-label="searchLabel"
-        :dialog-title="dialogTitle"
-        :debounce="debounceAmount"
-        @do-a-search="searchForTasks"
-      />
+      <TaskSearchInput v-model:model-value="searchString" :search-label="searchLabel" :dialog-title="dialogTitle"
+        :debounce="debounceAmount" @do-a-search="searchForTasks" />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm text-white">
@@ -34,25 +20,15 @@
               <q-separator class="q-my-md" />
               <div class="text-h4 q-mb-md">{{ resultsTitle }} - {{ results.length }}</div>
               <q-item v-if="showCreateButton">
-                <q-btn
-                  icon="fas fa-plus"
-                  label="Create A New Task"
-                  color="primary"
-                  @click="createTask"
-                />
+                <q-btn icon="fas fa-plus" label="Create A New Task" color="primary" @click="createTask" />
               </q-item>
               <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <!-- <q-scroll-area v-else> -->
               <q-list v-else ref="el">
-                <q-item
-                  v-for="task in results"
-                  :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as Task)"
-                >
+                <q-item v-for="task in results" :key="task.id ?? -1" v-ripple clickable
+                  @click="selectTask(task as Task)">
                   <q-item-section :style="colorize(task.id)">
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -77,12 +53,12 @@
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { λ } from 'src/types'
+  import { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useRepo } from 'pinia-orm'
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
+  import { timeThis, timeThisB } from 'src/utils/performance-utils'
   import Fuse, { FuseResult } from 'fuse.js'
   import { useElementSize } from '@vueuse/core'
   import { useAllTasksStore } from 'src/stores/performance/all-tasks'
@@ -183,8 +159,7 @@
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
       console.warn(
-        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
-          allTasks.length / 2
+        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${allTasks.length / 2
         }ms`
       )
     return allTasks

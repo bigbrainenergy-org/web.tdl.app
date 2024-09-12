@@ -10,50 +10,26 @@
             <q-space />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
-          <q-tree
-            v-if="reverseOrder"
-            ref="theReverseTree"
-            v-model:expanded="useRawExpandedStateStore().expandedNodesReverse"
-            :nodes="layerZero"
-            node-key="key"
-            dense
-            class="text-primary"
-            @lazy-load="loadChildren"
-            @update:expanded="onExpanded"
-          >
+          <q-tree v-if="reverseOrder" ref="theReverseTree"
+            v-model:expanded="useRawExpandedStateStore().expandedNodesReverse" :nodes="layerZero" node-key="key" dense
+            class="text-primary" @lazy-load="loadChildren" @update:expanded="onExpanded">
             <template #default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
-                <q-checkbox
-                  v-model:model-value="prop.node.obj.completed"
-                  color="primary"
-                  keep-color
-                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"
-                ></q-checkbox>
+                <q-checkbox v-model:model-value="prop.node.obj.completed" color="primary" keep-color
+                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
                 <q-item-label @click.stop="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
               </q-item>
             </template>
           </q-tree>
-          <q-tree
-            v-else
-            ref="theTree"
-            v-model:expanded="useRawExpandedStateStore().expandedNodesRegular"
-            :nodes="layerZero"
-            node-key="key"
-            dense
-            class="text-primary"
-            @lazy-load="loadChildren"
-            @update:expanded="onExpanded"
-          >
+          <q-tree v-else ref="theTree" v-model:expanded="useRawExpandedStateStore().expandedNodesRegular"
+            :nodes="layerZero" node-key="key" dense class="text-primary" @lazy-load="loadChildren"
+            @update:expanded="onExpanded">
             <template #default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
-                <q-checkbox
-                  v-model:model-value="prop.node.obj.completed"
-                  color="primary"
-                  keep-color
-                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"
-                ></q-checkbox>
+                <q-checkbox v-model:model-value="prop.node.obj.completed" color="primary" keep-color
+                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
@@ -76,7 +52,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   // import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import { NodeKey, λ } from 'src/types'
+  import { NodeKey, λ } from 'src/utils/types'
   import { TDLAPP } from 'src/TDLAPP'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'

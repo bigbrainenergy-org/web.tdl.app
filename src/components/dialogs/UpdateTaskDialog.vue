@@ -15,86 +15,31 @@
             <q-item-label class="text-h4 text-primary" lines="3">{{
               currentTask.title
             }}</q-item-label>
-            <GloriousTextInput
-              v-model="editTitle"
-              label="Task Title"
-              :placeholder="currentTask.title"
-              data-cy="task_title_input"
-              @enter-key="updateTask({ title: editTitle })"
-            />
-            <q-select
-              v-model="selectedList"
-              filled
-              hide-selected
-              fill-input
-              input-debounce="20"
-              :options="lists"
-              option-label="title"
-              map-options
-              emit-value
-              label="List"
-              use-input
-              option-value="id"
-              class="q-my-md text-primary"
-              @filter="filterSelection"
-              @update:model-value="updateList"
-            />
-            <q-datetime-input
-              v-model="editRemindMeAt"
-              label="Remind me at"
-              class="q-my-md"
-              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })"
-            />
-            <q-expansion-item
-              v-model="expandEnergyStats"
-              expand-separator
-              switch-toggle-side
-              icon="fas fa-lightbulb"
-              caption="Metadata"
-            >
+            <GloriousTextInput v-model="editTitle" label="Task Title" :placeholder="currentTask.title"
+              data-cy="task_title_input" @enter-key="updateTask({ title: editTitle })" />
+            <q-select v-model="selectedList" filled hide-selected fill-input input-debounce="20" :options="lists"
+              option-label="title" map-options emit-value label="List" use-input option-value="id"
+              class="q-my-md text-primary" @filter="filterSelection" @update:model-value="updateList" />
+            <q-datetime-input v-model="editRemindMeAt" label="Remind me at" class="q-my-md"
+              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })" />
+            <q-expansion-item v-model="expandEnergyStats" expand-separator switch-toggle-side icon="fas fa-lightbulb"
+              caption="Metadata">
               <br />
-              <GloriousSlider
-                v-for="(s, key) of sliders"
-                :key="key"
-                v-model="s.modelRef.value"
-                v-bind="s"
-                @change="s.updateFunc"
-              />
+              <GloriousSlider v-for="(s, key) of sliders" :key="key" v-model="s.modelRef.value" v-bind="s"
+                @change="s.updateFunc" />
             </q-expansion-item>
             <br />
-            <q-input
-              v-model="editNotes"
-              filled
-              autogrow
-              debounce="1000"
-              label="Notes"
-              @update:model-value="updateTask({ notes: editNotes })"
-            />
+            <q-input v-model="editNotes" filled autogrow debounce="1000" label="Notes"
+              @update:model-value="updateTask({ notes: editNotes })" />
           </div>
           <div class="col-12 col-md">
             <IncompleteOnlyToggle />
-            <DependencyList
-              :items="allPres"
-              :dependency-type="preDepType"
-              :menu-items="prereqMenuItems"
-              show-prune
-              @prune-dependencies="prunePres"
-              @add-item="openPrerequisiteDialog"
-              @remove-item="tr.removePre"
-              @select-item="setCurrentTask"
-              @toggle-completed-item="updateTaskCompletedStatus"
-            />
-            <DependencyList
-              :items="allPosts"
-              :dependency-type="postDepType"
-              :menu-items="postreqMenuItems"
-              show-prune
-              @prune-dependencies="prunePosts"
-              @add-item="openPostrequisiteDialog"
-              @remove-item="tr.removePost"
-              @select-item="setCurrentTask"
-              @toggle-completed-item="updateTaskCompletedStatus"
-            />
+            <DependencyList :items="allPres" :dependency-type="preDepType" :menu-items="prereqMenuItems" show-prune
+              @prune-dependencies="prunePres" @add-item="openPrerequisiteDialog" @remove-item="tr.removePre"
+              @select-item="setCurrentTask" @toggle-completed-item="updateTaskCompletedStatus" />
+            <DependencyList :items="allPosts" :dependency-type="postDepType" :menu-items="postreqMenuItems" show-prune
+              @prune-dependencies="prunePosts" @add-item="openPostrequisiteDialog" @remove-item="tr.removePost"
+              @select-item="setCurrentTask" @toggle-completed-item="updateTaskCompletedStatus" />
             <div class="row">
               <div class="col">
                 <div class="text-h5">Subtasks</div>
@@ -128,9 +73,9 @@
   import { syncWithBackend } from 'src/utils/sync-utils'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
-  import errorNotification from 'src/utils/notification-utils'
+  import { errorNotification } from 'src/utils/notification-utils'
   import TaskSearchDialog from './TaskSearchDialog.vue'
-  import { Button, unknownishλ, λ } from 'src/types'
+  import { Button, unknownishλ, λ } from 'src/utils/types'
   import { onMounted } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import GloriousTextInput from '../GloriousTextInput.vue'

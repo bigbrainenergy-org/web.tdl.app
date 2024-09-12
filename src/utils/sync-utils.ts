@@ -6,7 +6,7 @@ import { TaskRepo } from 'src/stores/tasks/task'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { Utils } from 'src/util'
-import errorNotification from './notification-utils'
+import { errorNotification } from './notification-utils'
 
 interface verySpecial {
   modelname: string

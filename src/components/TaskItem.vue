@@ -1,7 +1,8 @@
 <template>
   <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task.t)">
-    <q-checkbox v-model:model-value="task.completed" color="primary" keep-color @update:model-value="play"
-      checked-icon="task_alt" unchecked-icon="radio_button_unchecked" class="q-mr-sm" />
+    <q-checkbox v-model:model-value="task.completed" color="primary" keep-color
+      @update:model-value="$emit('task-completion-toggled', $event, task.t)" checked-icon="task_alt"
+      unchecked-icon="radio_button_unchecked" class="q-mr-sm" />
 
     <q-item-section>
       <q-item-label data-cy="task_item_title" lines="2">
@@ -33,12 +34,12 @@
 
 <script setup lang="ts">
   import { ref, toRef } from 'vue'
-  import { Task } from 'stores/tasks/task'
+  import { Task, TaskRepo } from 'stores/tasks/task'
   import { TDLAPP } from 'src/TDLAPP'
   import { cachedTask } from 'src/stores/performance/all-tasks'
   import { usePostreqWarning } from 'src/composables/use-postreq-warning'
-  import checkedSfx from 'src/assets/task_checked.wav'
-  import uncheckedSfx from 'src/assets/task_unchecked.wav'
+  import { useRepo } from 'pinia-orm'
+  import { Utils } from 'src/util'
 
   const props = withDefaults(
     defineProps<{
@@ -60,6 +61,18 @@
       const audio = new Audio(uncheckedSfx)
       audio.play()
     }
+  }
+
+  const tasksRepo = useRepo(TaskRepo)
+  const updateTaskCompletedStatus = async (task: Task) => {
+    play()
+    const newStatus = task.completed
+    await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
+      if (result.completed !== newStatus) throw new Error('error saving completed status of task')
+      // useAllTasksStore().completion(task.id, newStatus)
+      TDLAPP.notifyUpdatedCompletionStatus(result)
+      console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
+    }, Utils.handleError('Error updating completion status of a task.'))
   }
 
   const task = toRef(props, 'task')

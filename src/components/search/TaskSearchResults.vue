@@ -11,20 +11,9 @@
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <q-item v-if="showCreateButton">
-                <q-btn
-                  icon="fas fa-plus"
-                  label="Create A New Task"
-                  color="primary"
-                  @click="createTask"
-                />
+                <q-btn icon="fas fa-plus" label="Create A New Task" color="primary" @click="createTask" />
               </q-item>
-              <q-item
-                v-for="task in results"
-                :key="task.id ?? -1"
-                v-ripple
-                clickable
-                @click="selectTask(task as Task)"
-              >
+              <q-item v-for="task in results" :key="task.id ?? -1" v-ripple clickable @click="selectTask(task as Task)">
                 <q-item-section :style="colorize(task.id)">
                   {{ task.title }}
                 </q-item-section>
@@ -42,9 +31,8 @@
   import { useRepo } from 'pinia-orm'
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed, ref } from 'vue'
-  import type { λ } from '../../types'
-  import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
-  import { Utils } from 'src/util'
+  import type { λ } from '../../utils/types'
+  import { timeThis, timeThisABAsync, timeThisB } from 'src/utils/performance-utils'
 
   interface Prop {
     search: string | undefined

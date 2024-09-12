@@ -1,20 +1,20 @@
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-unit-vitest'
 import { Notify } from 'quasar'
 import { describe, expect, it } from 'vitest'
-import { textColor } from 'src/hackerman/TextColor'
+import { autoContrastTextColor } from 'src/utils/color-utils'
 
 installQuasarPlugin({ plugins: { Notify } })
 
-describe('TextColor helper', () => {
+describe('autoContrastTextColor', () => {
   it('should return black text color when given no background color', () => {
-    expect(textColor('')).toBe('#000000')
+    expect(autoContrastTextColor('')).toBe('#000000')
   })
 
   it('should return black text color when given light background color', () => {
-    expect(textColor('#bfb9eb')).toBe('#000000')
+    expect(autoContrastTextColor('#bfb9eb')).toBe('#000000')
   })
 
   it('should return white text color when given dark background color', () => {
-    expect(textColor('#231d4f')).toBe('#ffffff')
+    expect(autoContrastTextColor('#231d4f')).toBe('#ffffff')
   })
 })

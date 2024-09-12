@@ -2,6 +2,8 @@ import { Task } from '../stores/tasks/task'
 import { Notification as NotificationInterface } from 'src/models/Notification'
 import { DateTime } from 'luxon'
 
+// TODO: Merge with notification utils?
+
 let Notifications: any = null
 
 if (process.env.MODE === 'capacitor') {

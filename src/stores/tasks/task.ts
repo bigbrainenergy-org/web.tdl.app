@@ -8,10 +8,10 @@ import { SimpleTreeNode } from 'src/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
-import { Utils, exists } from 'src/util'
+import { Utils } from 'src/util'
 import { TDLAPP } from 'src/TDLAPP'
-import { Queue } from 'src/types'
-import { timeThisABAsync, timeThisB } from 'src/perf'
+import { Queue } from 'src/utils/types'
+import { timeThisB } from 'src/utils/performance-utils'
 import { cachedTask, useAllTasksStore } from '../performance/all-tasks'
 import { TaskCache } from '../performance/task-go-fast'
 
@@ -86,7 +86,7 @@ interface RecursiveGetterOptions {
 }
 
 export class Task extends Model implements iRecord {
-  static entity = 'tasks'
+  static override entity = 'tasks'
 
   // todo: switch to correct decorators
   @Num(-1) declare id: number
@@ -339,7 +339,7 @@ export class Task extends Model implements iRecord {
         }
       : (t: cachedTask) => {
           const pres = t.hard_prereqs
-          return t.hard_prereqs.map((x) => x.id)
+          return pres.map((x) => x.id)
         }
     const thisPres = preIDs(this)
     queue.enqueueAll(thisPres)

@@ -3,7 +3,7 @@ import { useQuasar } from 'quasar'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
 import { useAxiosStore } from 'src/stores/axios-store'
 import { Utils } from 'src/util'
-import errorNotification from 'src/utils/notification-utils'
+import { errorNotification } from 'src/utils/notification-utils'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
