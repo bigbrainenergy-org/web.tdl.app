@@ -66,14 +66,23 @@ export class Utils {
    * Will add the element instead if the element is not found.
    */
   static arrayUpdate<T>(arr: Array<T>, element: T, key: keyof T) {
+    // TODO: this function doesn't work lol.
     if (arr.length === 0) {
       console.trace('arrayUpdate: array is empty')
       throw new Error('arrayUpdate: array is empty')
     }
     const i = arr.findIndex((x) => x[key] === element[key])
     // console.debug({ method: 'arrayUpdate', arr, element, key })
-    if (i < 0) arr.push(element)
-    else arr[i] = element
+    if (i < 0) {
+      console.debug({
+        method: 'arrayUpdate',
+        msg: 'element not found in array. pushing instead.',
+        arr,
+        element,
+        key
+      })
+      arr.push(element)
+    } else arr[i] = element
   }
   static onlyInLeftArray<T>(A: T[], B: T[], key: keyof T) {
     return A.filter((x) => !B.some((y) => y[key] === x[key]))
@@ -130,13 +139,13 @@ export class Utils {
       // if verbose is enabled, this might log hundreds of thousands of things to console.
       onTrack: options.verbose
         ? (event: unknown) => {
-            console.log('Tracked:', event)
+            console.debug('Tracked:', event)
             if (options.debug) debugger // This will pause execution in the debugger
             console.trace('onTrack')
           }
         : undefined,
       onTrigger(event: unknown) {
-        console.log('Triggered:', event)
+        console.debug('Triggered:', event)
         if (options.debug) debugger // This will pause execution in the debugger
         console.trace('onTrigger')
       }

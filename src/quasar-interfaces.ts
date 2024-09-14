@@ -23,7 +23,6 @@ export interface QTreeComponent<T> {
 
 // example lazy loader
 // const loadPostreqs = (d: details<Task>) => {
-//   console.debug(`load postreqs of ${d.node.value.title}`)
 //   setTimeout(() => {
 //     const postreqs = tr.with('hard_postreqs').where((x) => d.node.value.hard_postreq_ids.includes(x.id)).get()
 //     d.done(postreqs.map((x) => {

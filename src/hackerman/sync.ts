@@ -2,7 +2,7 @@ import { Settings } from 'luxon'
 import { useRepo } from 'pinia-orm'
 import { ListRepo } from 'src/stores/lists/list'
 import { ProcedureRepo } from 'src/stores/procedures/procedure'
-import { useTasksStore } from 'src/stores/taskNoORM'
+import { useT2Store } from 'src/stores/t2/t2-store'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { Utils } from 'src/util'
@@ -48,14 +48,13 @@ export async function syncWithBackend(): Promise<number> {
     // this is the good
     const currentUser = useRepo(UserRepo).getUser()
     if (currentUser === null || typeof currentUser === 'undefined') return 2
-    console.log({ user: currentUser })
     Utils.updateLuxonTimeZone(currentUser.time_zone)
-    console.log({
+    console.debug({
       setting: Settings.defaultZone,
       currentUserSetting: currentUser.time_zone,
       obj: currentUser.timeZoneObj
     })
-    useTasksStore().apiGetAll()
+    await useT2Store().apiGetAll()
     return 0
   }
   return 1

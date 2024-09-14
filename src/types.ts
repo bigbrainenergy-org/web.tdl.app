@@ -54,6 +54,11 @@ export class Queue<T> {
   has(value: T): boolean {
     return this.set.has(value)
   }
+  filterDequeue(predicate: (t: T) => boolean): T[] {
+    const result = Array.from(this.set.values()).filter(predicate)
+    result.forEach((x) => this.set.delete(x))
+    return result
+  }
 }
 
 export interface TaskGetterOptions {
@@ -79,3 +84,5 @@ export type ripped<T> = T extends readonly (infer U)[]
       : T extends Promise<infer U>
         ? U
         : T
+
+export type NumericKeysObject<T> = { [key: number]: T }

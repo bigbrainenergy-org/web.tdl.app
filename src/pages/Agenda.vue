@@ -36,7 +36,7 @@
                     v-model:model-value="currentTask.completed"
                     color="primary"
                     keep-color
-                    @update:model-value="updateTaskCompletedStatus(currentTask)"
+                    @update:model-value="() => currentTask.updateTaskCompletionStatus()"
                   />
 
                   <q-item-section>
@@ -98,24 +98,23 @@
   import { useMeta, useQuasar } from 'quasar'
   import { computed, ref } from 'vue'
 
-  import { useRepo } from 'pinia-orm'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Utils, exists } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
-  import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-  import { incompleteOnly, T2, TaskLike, useTasksStore } from 'src/stores/taskNoORM'
+  import { NumericKeysObject } from 'src/types'
+  import { T2 } from 'src/stores/t2/t2-model'
+  import { useT2Store } from 'src/stores/t2/t2-store'
 
   const $q = useQuasar()
 
-  const open = (id: number) => TDLAPP.openTask(id)
-
-  const tasksRepo = useRepo(TaskRepo)
+  const open = (id: number) =>
+    TDLAPP.openTask(id)
+      .onDismiss(() => TDLAPP.considerOpeningQuickSort('agenda'))
+      .onCancel(() => TDLAPP.considerOpeningQuickSort('agenda'))
+      .onOk(TDLAPP.considerOpeningQuickSort)
 
   const localSettingsStore = useLocalSettingsStore()
 
@@ -133,87 +132,74 @@
     'Auto Scale Priority': autoScalePriority
   })
 
-  const notCompleted = (x: TaskLike) => x.completed === false
-  const notBlocked = (x: TaskLike) => x.hard_prereqs.filter(notCompleted).length === 0
-  const qtyPostreqsSort = (a: Task, b: Task) =>
-    b.grabPostreqs(hideCompleted.value).length - a.grabPostreqs(hideCompleted.value).length
-
+  // fancy footwork
   const tasks = computed(() => {
-    const { busy, quickSortDialogActive } = useLoadingStateStore()
-    if (busy) {
-      console.log('busy signal; skipping agenda recalc.')
-      return []
+    console.debug('recalculating agenda.')
+    const layerZero = (useT2Store().array as T2[]).filter(
+      (x: T2) => !x.completed && x.hard_prereqs.filter((y) => !y.completed).length === 0
+    )
+    layerZero.sort((a: T2, b: T2) => b.incomplete_postreqs.length - a.incomplete_postreqs.length)
+    console.debug({ layerZero })
+    const finalList = new Set<T2>()
+    const queue: NumericKeysObject<T2[]> = {}
+    const addedToQueue = new Set<number>()
+    const safeAccess = (q: NumericKeysObject<T2[]>, key: number): T2[] => {
+      if (typeof q[key] === 'undefined') q[key] = []
+      return q[key]
     }
-    if (quickSortDialogActive) {
-      console.log('quick sort dialog is active; skipping agenda recalc')
-      return []
+    const enqueue = (tasks: T2[]) => {
+      tasks.forEach((x) => {
+        safeAccess(queue, x.incomplete_postreqs.length).push(x)
+        addedToQueue.add(x.id)
+      })
     }
-    console.log('recalculating agenda.')
-    // todo: think about why using the incompleteTasksStore and refactoring to use cachedTask slows this down...
-    // maybe because the cache gets rattled while loading the page.
-    // perhaps using the cache, there would be an entirely easier way to get this done?
-    // const allIncompleteTasks = useRepo(TaskRepo).where('completed', false).withAll().get()
-    const allIncompleteTasks = useTasksStore().array.filter(incompleteOnly) as T2[]
-    // TaskCache.checkAgainstKnownCompletedTasks(...allIncompleteTasks)
-    let baseMap = new Map(allIncompleteTasks.map((x) => [x.id, x]))
-    let traversed = new Set<number>() // ids
-    let finalList: Array<T2> = []
-    const notBlockedByTraversed = (k: number, x: TaskLike) =>
-      x.hard_prereqs.filter(notCompleted).every((y) => traversed.has(y.id))
-    const filterMap = <K, V>(
-      map: Map<K, V>,
-      result: Map<K, V>,
-      predicate: (key: K, value: V) => boolean
-    ) => {
-      for (let [key, value] of map) {
-        if (predicate(key, value)) {
-          // could find the task with the most qty incomplete postreqs here and save a few cycles.
-          result.set(key, value)
-          map.delete(key)
-        }
+    enqueue(layerZero)
+    {
+      let qkeys = Object.keys(queue).map(Number)
+      let hundos = 0
+      const hasKeys = () => {
+        qkeys = Object.keys(queue)
+          .map(Number)
+          .sort((a, b) => b - a)
+        hundos++
+        return qkeys.length > 0
       }
-    }
-    let layer = new Map<number, T2>()
-    while (baseMap.size || layer.size) {
-      // console.debug({ size: baseMap.size, traversed: traversed.size, layer: layer.size })
-      if (baseMap.size) filterMap<number, T2>(baseMap, layer, notBlockedByTraversed)
-      let nextUp: { id?: number; p: number } = { p: 0 }
-      // todo: SortedMap? That a thing?
-      layer.forEach((val: TaskLike, key: number) => {
-        const p = val.hard_postreqs.filter(notCompleted).length
-        if (p > nextUp.p) {
-          nextUp.id = key
-          nextUp.p = p
-        } else if (p === nextUp.p) {
-          if (!exists(nextUp.id)) {
-            nextUp.id = key
-            nextUp.p = p
-          } else {
-            // todo: maybe change this to sum the qty postreqs of postreqs - i.e. use withAllRecursive for the baseMap
-            if (nextUp.id > key) {
-              nextUp.id = key
-              nextUp.p = p
+      while (hasKeys()) {
+        if (hundos > 1000 * addedToQueue.size) {
+          console.warn('agenda calc is taking too long. bailing out. Also TODO')
+          break
+        }
+        let bail = false
+        for (let i = 0; i < qkeys.length; i++) {
+          const k = qkeys[i]
+          const qk = queue[k]
+          for (let j = 0; j < qk.length; j++) {
+            const t = qk[j]
+            const ip = t.incomplete_prereqs
+            if (ip.filter((y) => !finalList.has(y)).length === 0) {
+              finalList.add(t)
+              enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
+              qk.splice(j, 1)
+              if (qk.length === 0) {
+                delete queue[k]
+                qkeys.splice(i, 1)
+              }
+              bail = true
+              break
             }
           }
+          if (bail) break
         }
-      })
-      if (typeof nextUp.id === 'undefined') {
-        console.debug(`pushing remaining ${layer.size} tasks to list`)
-        finalList.push(...layer.values())
-        return finalList
       }
-      finalList.push(layer.get(nextUp.id)!)
-      layer.delete(nextUp.id)
-      traversed.add(nextUp.id)
     }
-    return finalList
+    return Array.from(finalList)
   })
 
   const autoThreshold = computed(() => {
-    const sampleSize = Math.min(tasks.value.length, 10)
+    const sampleSize = Math.min(tasks.value.length, 11)
     const samplePriorities = []
     for (let i = 0; i < sampleSize; i++) {
-      samplePriorities.push(tasks.value[i].hard_postreqs.filter(notCompleted).length)
+      samplePriorities.push(tasks.value[i].incomplete_postreqs.length)
     }
     samplePriorities.sort((a, b) => a - b)
     const sampleIndex = Math.max(Math.floor(sampleSize / 2), 1)
@@ -221,23 +207,12 @@
   })
 
   const sortQty = computed(() => {
-    const len0 = useLayerZeroStore().tasks.length
+    const len0 = useT2Store().layerZero.length
     if (disableQuickSort.value) return len0
     return autoScalePriority.value
       ? autoThreshold.value
       : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
-
-  const updateTaskCompletedStatus = (task: T2) => {
-    const newStatus = task.completed
-    useTasksStore()
-      .apiUpdate(task)
-      .then((result) => {
-        const r = Utils.hardCheck(result)
-        console.assert(r.completed === newStatus)
-        TDLAPP.notifyUpdatedCompletionStatus(r)
-      }, Utils.handleError('Error updating completion status of a task.'))
-  }
 
   const addTaskPre = (currentTask: T2) => TDLAPP.addPrerequisitesDialog(currentTask)
   const openSearchDialog = () => TDLAPP.searchDialog()

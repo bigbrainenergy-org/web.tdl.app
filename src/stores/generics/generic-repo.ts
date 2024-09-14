@@ -64,7 +64,6 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
       .get(`/${this.apidir}/${id}`, this.commonHeader())
       .then(
         (response: AxiosResponse) => {
-          // console.log(response.data as T)
           return this.save(response.data as T)
         },
         (error: ApiError) => {

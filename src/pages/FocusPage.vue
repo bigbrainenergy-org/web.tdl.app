@@ -98,12 +98,11 @@
 </template>
 
 <script setup lang="ts">
-  import { useRepo } from 'pinia-orm'
   import { TDLAPP } from 'src/TDLAPP'
   // import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { T2, TaskLike, useTasksStore } from 'src/stores/taskNoORM'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
+  import { T2 } from 'src/stores/t2/t2-model'
+  import { useT2Store } from 'src/stores/t2/t2-store'
   import { computed } from 'vue'
 
   const open = (task: T2) => TDLAPP.openTask(task.id)
@@ -113,7 +112,7 @@
   const slice = TDLAPP.sliceTask
 
   const layerZero = computed(() => {
-    return useTasksStore().layerZero.sort(
+    return useT2Store().layerZero.sort(
       (a, b) => b.incomplete_postreqs.length - a.incomplete_postreqs.length
     )
   })

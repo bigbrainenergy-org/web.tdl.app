@@ -92,7 +92,6 @@
   const listSplitter = ref(50)
 
   function doThing(prop: any) {
-    console.debug('doThing Fired with argument: ', { prop })
     //Utils.todo('fix doThing and rename it')
     if (selectedProcedure.value?.id == prop.node?.id) {
       selectedProcedure.value = null

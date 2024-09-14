@@ -75,7 +75,7 @@
 <script setup lang="ts">
   import { useElementSize } from '@vueuse/core'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { T2 } from 'src/stores/taskNoORM'
+  import { T2 } from 'src/stores/t2/t2-model'
   import { SimpleMenuItem } from 'src/types'
   import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
@@ -161,7 +161,6 @@
   }
 
   const pruneDependencies = () => {
-    console.log(`pruning ${prop.dependencyType.plural}`)
     emit('pruneDependencies', { above: aboves.value, below: belows.value })
   }
 

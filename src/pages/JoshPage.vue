@@ -23,8 +23,4 @@
 
   const selectedItems = ref([{ title: 'poop' }, { title: 'pee' }])
   const items = ref([{ title: 'poop' }, { title: 'pee' }])
-
-  const updateProcedures = () => {
-    console.log(selectedItems.value)
-  }
 </script>

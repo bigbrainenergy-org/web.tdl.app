@@ -77,7 +77,8 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { T2 } from 'src/stores/t2/t2-model'
+  import { useT2Store } from 'src/stores/t2/t2-store'
 
   // const tr = computed(() => useRepo(TaskRepo))
   // const esr = computed(() => useRepo(ExpandedStateRepo))
@@ -112,14 +113,15 @@
     initializeQueues()
   })
 
+  // TODO: storetoref
   const expanded = ref(useRawExpandedStateStore().expandedNodesRegular)
   watch(expanded, () => {
-    console.log({ expanded })
+    console.debug({ expanded })
   })
 
   const expandedReverse = ref(useRawExpandedStateStore().expandedNodesReverse)
   watch(expandedReverse, () => {
-    console.log({ expandedReverse })
+    console.debug({ expandedReverse })
   })
 
   const style = (task: T2) => ({
@@ -127,7 +129,7 @@
     innerWidth: '100%'
   })
 
-  const { array } = storeToRefs(useTasksStore())
+  const { array } = storeToRefs(useT2Store())
 
   const layerZero = computed(() =>
     array.value
@@ -140,8 +142,6 @@
 
   // todo: this could be a problem for reactivity
   let allTaskNodes = Array.from(layerZero.value)
-
-  // console.log({ allTaskNodes })
 
   const theTree = ref<QTreeComponent<T2> | undefined>()
   const theReverseTree = ref<QTreeComponent<T2> | undefined>()
@@ -248,8 +248,9 @@
   }
 
   const updateTaskCompletedStatus = (task: T2) => {
-    useTasksStore().apiUpdate(task)
-    if (incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
+    task.updateTaskCompletionStatus().then(() => {
+      if (incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
+    })
   }
 
   const rawExpandedStateStore = useRawExpandedStateStore()
@@ -274,10 +275,8 @@
         .forEach((x) => t.value?.setExpanded(x, true))
       if (expandAllWithSameID.value) {
         // queueExpand.push(...childNodes.filter(shouldBeExpanded).map(toNodeKey))
-        // console.log({ queueExpand })
       }
     }
-    console.log('calling handleExpandAndCollapse from childNodeLoader')
     handleExpandAndCollapse()
   }
 
@@ -293,10 +292,7 @@
   // let previousExpanded: string[] = []
 
   const onExpanded = (list: readonly any[]) => {
-    // console.debug('onExpanded: ', list)
     // if(!expandAllWithSameID.value) {
-    //   console.log('expand all with same id setting is disabled, skipping custom behavior')
-    //   console.debug({ previousExpanded, list })
     //   return
     // }
     // const delta = previousExpanded.length - list.length

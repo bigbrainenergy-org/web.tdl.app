@@ -83,8 +83,9 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisB } from 'src/perf'
   import Fuse, { FuseResult } from 'fuse.js'
+  import { T2 } from 'src/stores/t2/t2-model'
+  import { useT2Store } from 'src/stores/t2/t2-store'
   // import { useElementSize } from '@vueuse/core'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
 
   interface Props {
     dialogTitle: string
@@ -113,7 +114,6 @@
 
   Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
   onMounted(() => {
-    console.log('busy and addDependencyDialogActive set to true')
     useLoadingStateStore().busy = true
     useLoadingStateStore().addDependencyDialogActive = true
   })
@@ -158,7 +158,7 @@
   const defaultFilter = (currentTaskID: number | undefined) => {
     const simplestFilter = (x: T2) => !x.completed
     if (typeof currentTaskID === 'undefined') return simplestFilter
-    const ct = useTasksStore().mapp.get(currentTaskID)
+    const ct = useT2Store().mapp.get(currentTaskID)
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
@@ -176,7 +176,7 @@
   const getTasks = (): T2[] => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useTasksStore().array as T2[]).filter(filterish.value(props.taskID))
+    const allTasks = (useT2Store().array as T2[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
@@ -196,7 +196,7 @@
   // const defaultBatchFilter = (taskID: number | undefined) => (tasks: T2[]) => {
   //   if (omitRedundant.value) {
   //     if (typeof taskID !== 'undefined') {
-  //       const ct = useTasksStore().mapp.get(taskID)
+  //       const ct = useT2Store().mapp.get(taskID)
   //       if (typeof ct !== 'undefined') {
   //         const relationInfo = ct.hasRelationToAny(tasks.map((x) => x.id))
   //         tasks = tasks.filter((x) => relationInfo.get(x.id) !== true)
@@ -228,8 +228,6 @@
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
     const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
-
-    // console.log({ run })
 
     results.value = run.map((x) => x.item)
     timeThis(kickOffRedundancyCheck, 'kickOffRedundancyCheck', 13)()
@@ -263,7 +261,7 @@
     const toCreate: CreateTaskOptions = { title: searchString.value }
     const start = performance.now()
     const target = 400
-    useTasksStore()
+    useT2Store()
       .apiCreate(toCreate)
       .then((result) => {
         if (result === null) return
@@ -295,7 +293,7 @@
       currentTask.value?.hasRelationToAny(results.value.map((x) => x.id)) ?? new Map()
   }
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? useTasksStore().hardGet(props.taskID) : null
+    typeof props.taskID !== 'undefined' ? useT2Store().hardGet(props.taskID) : null
   )
   const debounceAmount = ref(100)
   fuse.value

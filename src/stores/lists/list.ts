@@ -3,6 +3,8 @@ import iRecord, { iOptions } from '../generics/i-record'
 import { Attr, HasMany, Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { Task } from '../tasks/task'
+import { useT2Store } from 'src/stores/t2/t2-store'
+import { T2 } from 'src/stores/t2/t2-model'
 
 export interface CreateListOptions {
   title: string
@@ -20,7 +22,7 @@ export interface UpdateListOptions extends iOptions {
 }
 
 export class List extends Model implements iRecord {
-  static entity = 'lists'
+  static override entity = 'lists'
 
   @Num(-1) declare id: number
   @Str('') declare title: string
@@ -28,18 +30,21 @@ export class List extends Model implements iRecord {
   @Num(0) declare order: number
   @Str('') declare notes: string
 
-  @HasMany(() => Task, 'list_id') declare tasks: Task[]
+  // @HasMany(() => Task, 'list_id') declare tasks: Task[]
+  get tasks(): T2[] {
+    return (useT2Store().array as T2[]).filter((x) => x.list_id === this.id)
+  }
 
   get incompleteTaskCount() {
     return this.tasks.filter((task) => !task.completed).length
   }
 
-  static piniaOptions = {
+  static override piniaOptions = {
     persist: true
   }
 }
 
 export class ListRepo extends GenericRepo<CreateListOptions, UpdateListOptions, List> {
-  use = List
-  apidir = List.entity
+  override use = List
+  override apidir = List.entity
 }

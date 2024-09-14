@@ -30,7 +30,6 @@
           @click="openCreateProcedureDialog"
         />
         <q-btn class="q-ma-md" color="yellow" icon="fa-solid fa-refresh" @click="pullFresh" />
-        <q-btn class="q-ma-md" color="red" icon="fa-solid fa-refresh" @click="dumpDebug" />
         <q-btn
           class="q-ma-md"
           color="white"
@@ -119,7 +118,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-  import { useQuasar, Dialog } from 'quasar'
+  import { useQuasar } from 'quasar'
   import { useRoute, useRouter } from 'vue-router'
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
   import errorNotification from 'src/hackerman/ErrorNotification'
@@ -136,11 +135,9 @@
   import { useAxiosStore } from 'src/stores/axios-store'
   import { ComponentPublicInstance } from 'vue'
   import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
-  import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { storeToRefs } from 'pinia'
   import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { TDLAPP } from 'src/TDLAPP'
 
   const $q = useQuasar()
   const $route = useRoute()
@@ -173,7 +170,6 @@
         openCreateTaskDialog()
       }
     } else if (event.key === '/' || event.key === 'Slash') {
-      console.log('yup')
       if (!isTextInputFocused && !isDialogOpen.value) {
         event.preventDefault()
         openSearchDialog()
@@ -256,7 +252,7 @@
 
   const createTask = (payload: CreateTaskOptions) => {
     // const tr = useRepo(TaskRepo)
-    useTasksStore()
+    useT2Store()
       .apiCreate(payload)
       .then(() => {
         Utils.notifySuccess('Successfully created a task')
@@ -288,9 +284,7 @@
           isDialogOpen.value = false
         }
       }
-    }).onDismiss(() => {
-      isDialogOpen.value = false
-    })
+    }).onDismiss(() => TDLAPP.considerOpeningQuickSort('mainLayout create task'))
   }
 
   const openCreateProcedureDialog = () => {
@@ -337,30 +331,15 @@
     else {
       Utils.notifySuccess('Refreshed All')
       refreshRoutedComponent()
+      TDLAPP.considerOpeningQuickSort('mainLayout pullFresh')
     }
-  }
-
-  const dumpDebug = () => {
-    const lss = useLoadingStateStore()
-    const payload = {
-      busy: lss.busy,
-      quickSortOpen: lss.quickSortDialogActive,
-      addTaskOpen: lss.createTaskDialogActive,
-      addDependencyOpen: lss.addDependencyDialogActive,
-      layerZeroLength: layerZero.value.length,
-      tasksWithoutPosts: layerZero.value.filter(
-        (x) => x.hard_postreqs.filter((y) => !y.completed).length > 0
-      ).length,
-      shouldSort: shouldSort.value
-    }
-    console.debug(payload)
   }
 
   const wreak = async () => {
     // const tr = useRepo(TaskRepo)
     const autoTaskName = 'auto task for testing purposes'
     for (let i = 1; i < 10; i++) {
-      await useTasksStore().apiCreate({ title: `${autoTaskName} ${i}` })
+      await useT2Store().apiCreate({ title: `${autoTaskName} ${i}` })
     }
   }
 
@@ -426,7 +405,6 @@
   }
 
   watch(backgroundModeSetting, () => {
-    console.log('background mode setting was changed.')
     let animationHack = setInterval(() => {
       if (backgroundModeSetting.value === 'image') clearInterval(animationHack)
       if (backgroundModeSetting.value === currentBackgroundMode.value) clearInterval(animationHack)
@@ -438,59 +416,6 @@
     }, 10)
   })
 
-  const { layerZero } = storeToRefs(useTasksStore())
-
-  // todo: storeToRefs
-  const hasTooManyInLayerZero = () =>
-    useLocalSettingsStore().enableQuickSortOnLayerZeroQTY > 0
-      ? layerZero.value.length > useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
-      : false
-  // const postreqs = (x: Task, incompleteOnly = true) => incompleteOnly ? x.hard_postreqs.filter(x => !x.completed) : x.hard_postreqs
-  const hasNewTasksInLayerZero = () =>
-    useLocalSettingsStore().enableQuickSortOnNewTask
-      ? (layerZero.value as T2[]).filter(
-          (x: T2) => x.hard_postreqs.filter((y) => !y.completed).length === 0
-        ).length > 0
-      : false
-  const quickSortEnabled = () =>
-    !useLocalSettingsStore().disableQuickSort &&
-    $route.path !== '/settings' &&
-    !useLoadingStateStore().dialogOpenExclQuickSort
-  const shouldSort = computed<{ l0len: number; shouldSort: boolean }>({
-    get: () => ({
-      l0len: layerZero.value.length,
-      shouldSort: quickSortEnabled() && (hasTooManyInLayerZero() || hasNewTasksInLayerZero())
-    }),
-    set: (x) => {
-      if (!x.shouldSort && !(hasTooManyInLayerZero() || hasNewTasksInLayerZero())) return x
-    }
-  })
-
-  // const unbusy = () => {
-  //   console.log('unbusy.')
-  //   if (shouldSort.value.shouldSort === false) {
-  //     useLoadingStateStore().busy = false
-  //   }
-  //   console.log('setting quick sort active to FALSE')
-  //   useLoadingStateStore().quickSortDialogActive = false
-  // }
-
-  const openQuickSortDialog = () => {
-    if (useLoadingStateStore().quickSortDialogActive) return
-    // todo fixme this is BAD.
-    useLoadingStateStore().quickSortDialogActive = true
-    console.log('OPENING QUICK SORT')
-    Dialog.create({
-      component: QuickSortLayerZeroDialog,
-      componentProps: {
-        objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
-      }
-    })
-  }
-  watch(shouldSort, () => {
-    // console.log(`layer zero length is ${tasks.value.length}`)
-    if (shouldSort.value.shouldSort) {
-      openQuickSortDialog()
-    }
-  })
+  // TODO: I really want quick sort to be on a v-model, v-if, v-show, what-have-you, placed in the template here, and the model value could be stored with pinia and accessible/writeable anywhere.
+  TDLAPP.considerOpeningQuickSort('main layout')
 </script>

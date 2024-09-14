@@ -42,7 +42,8 @@
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   interface Props {
     task: T2
@@ -53,8 +54,8 @@
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const layerZero = ref<{ selected: boolean; obj: T2 }[]>(
-    (useTasksStore().layerZero as T2[])
-      .filter((x: T2) => {
+    useT2Store()
+      .layerZero.filter((x: T2) => {
         if (x.id === prop.task.id) return false
         if (prop.task.anyIDsBelow([x.id])) return false
         return true
@@ -67,7 +68,7 @@
     // TODO: batch update this!
     for (let i = 0; i < selectedTasks.length; i++) {
       const element = layerZero.value[i]
-      useTasksStore()
+      useT2Store()
         .addRule(prop.task.id, element.obj.id)
         .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))
     }

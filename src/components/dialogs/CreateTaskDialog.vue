@@ -91,7 +91,8 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { computed, onMounted, ref } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   const emit = defineEmits([
     // REQUIRED; need to specify some events that your
@@ -127,7 +128,7 @@
 
   const openTask = TDLAPP.openTask
 
-  const tasks = computed(() => useTasksStore().incompleteOnly)
+  const tasks = computed(() => useT2Store().incompleteOnly)
 
   const searchOptions = {
     isCaseSensitive: false,

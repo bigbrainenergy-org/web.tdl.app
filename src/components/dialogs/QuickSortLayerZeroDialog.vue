@@ -109,7 +109,8 @@
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { T2 } from 'src/stores/t2/t2-model'
+  import { useT2Store } from 'src/stores/t2/t2-store'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -145,7 +146,7 @@
   const postWeightedTask = (x: T2) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
-    const layerZeroTasks = useTasksStore().layerZero as T2[]
+    const layerZeroTasks = useT2Store().layerZero
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
@@ -187,15 +188,15 @@
   const addPres = (x: T2) => {
     TDLAPP.addPrerequisitesDialog(x)
       .onOk(() => {
-        console.log('getting a new pair now')
+        console.debug('getting a new pair now')
         skip()
       })
       .onCancel(() => {
-        console.log('getting a new pair now')
+        console.debug('getting a new pair now')
         skip()
       })
       .onDismiss(() => {
-        console.log('getting a new pair now')
+        console.debug('getting a new pair now')
         skip()
       })
   }
@@ -203,15 +204,15 @@
   const sliceTask = (x: T2) => {
     TDLAPP.sliceTask(x)
       .onOk(() => {
-        console.log('getting a new pair now')
+        console.debug('getting a new pair now')
         skip()
       })
       .onCancel(() => {
-        console.log('getting a new pair now')
+        console.debug('getting a new pair now')
         skip()
       })
       .onDismiss(() => {
-        console.log('getting a new pair now')
+        console.debug('getting a new pair now')
         skip()
       })
   }
@@ -222,11 +223,8 @@
 
   const complete = async (x: T2) => {
     try {
-      const result = await x.toggleCompleted()
-      if (result === null) throw new Error('error during toggling task complete.')
-      if (result.completed === false) throw new Error('somehow task was not marked as complete.')
+      await x.toggleCompleted()
       reloadTasks()
-      return result
     } catch (error: any) {
       Notify.create('Failed to mark the task complete.')
       console.error(error)
@@ -263,7 +261,6 @@
   const finishedSorting = (msg = 'Finished Sorting') => {
     Utils.notifySuccess(msg)
     useLoadingStateStore().busy = false
-    console.log('setting quick sort dialog active to false')
     useLoadingStateStore().quickSortDialogActive = false
     if (dialogRef !== null) onDialogHide()
   }
@@ -303,7 +300,7 @@
   try {
     firstPair = generateNewPair()
   } catch (e: any) {
-    console.log(e)
+    console.warn(e)
     finishedSorting()
   }
   if (firstPair === null || typeof firstPair === 'undefined')
@@ -330,18 +327,22 @@
 
   const makeSelection = (mvp: T2) => {
     loading.value = true
-
-    for (let t of currentPair.value) {
-      if (t.id === mvp.id) continue
-      TDLAPP.addPre(t as T2, mvp.id).then(() => {
+    const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
+    const selected_ids = selected_tasks.map((x) => x.id)
+    mvp.hard_postreq_ids.push(...selected_ids)
+    selected_tasks.forEach((x) => {
+      x.hard_prereq_ids.push(mvp.id)
+    })
+    useT2Store()
+      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+      .then(() => {
         tryNewPair()
         loading.value = false
       })
-    }
   }
 
   const skip = () => {
-    Utils.handleError('TODO')
+    tryNewPair()
   }
 
   const onCancelClick = () => {

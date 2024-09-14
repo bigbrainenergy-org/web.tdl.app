@@ -83,7 +83,8 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import Fuse, { FuseResult } from 'fuse.js'
   import { timeThisB } from 'src/perf'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   interface Props {
     dialogTitle: string
@@ -177,7 +178,7 @@
     const toCreate: CreateTaskOptions = {
       title: searchString.value
     }
-    const newTask = await useTasksStore().apiCreate(toCreate)
+    const newTask = await useT2Store().apiCreate(toCreate)
     if (newTask !== null) selectTask(newTask)
   }
 
@@ -204,7 +205,7 @@
   const getTasks = () => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useTasksStore().array as T2[]).filter(filterish.value(props.taskID))
+    const allTasks = (useT2Store().array as T2[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)

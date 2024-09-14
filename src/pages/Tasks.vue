@@ -28,7 +28,7 @@
               :tasks="tasks"
               :unblocked-only="layerZeroOnly"
               :incomplete-only="hideCompleted"
-              @task-completion-toggled="updateTaskCompletedStatus"
+              @task-completion-toggled="(x: T2) => x.updateTaskCompletionStatus()"
               @task-clicked="openTask"
             />
           </q-card-section>
@@ -43,13 +43,13 @@
   import { computed, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import TaskList from 'src/components/TaskList.vue'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   useMeta(() => {
     return {
@@ -88,9 +88,7 @@
 
   const tasks = computed(() => {
     if (busy.value) return []
-    console.debug('updating tasks on Task page')
-    let baseQuery = useTasksStore().layerZero as T2[]
-    console.debug({ baseQuery })
+    let baseQuery = useT2Store().layerZero
     const filterByList = (x: T2) => x.list?.title === selectedList.value
     if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
     const postreqs = hideCompleted.value
@@ -99,20 +97,6 @@
     baseQuery.sort((a, b) => postreqs(b).length - postreqs(a).length)
     return baseQuery
   })
-
-  const updateTaskCompletedStatus = async (task: T2) => {
-    const newStatus = task.completed
-    // TODO: strip payload object of everything except necessary
-    await useTasksStore()
-      .apiUpdate(task)
-      .then((t) => {
-        // console.debug({ 'Tasks updateTaskCompletedStatus': t })
-        if (t === null) throw new Error('error updating task status')
-        if (t.completed !== newStatus)
-          throw new Error('updated value and value meant to update do not match')
-        TDLAPP.notifyUpdatedCompletionStatus(task)
-      }, Utils.handleError('Error updating completion status of a task.'))
-  }
 
   const openSearchDialog = () => TDLAPP.searchDialog()
 

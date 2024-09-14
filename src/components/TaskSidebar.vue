@@ -120,7 +120,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { textColor } from 'src/hackerman/TextColor'
-  import { useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
 
   const $q = useQuasar()
   const model = defineModel<boolean>({ default: false })
@@ -132,13 +132,12 @@
   const hoveredList = ref(-1)
 
   const lists = computed(() => listsRepo.withAll().get())
-  console.log({ lists: lists.value })
 
   const openSearchDialog = () => TDLAPP.searchDialog()
 
   const createTask = (payload: CreateTaskOptions) => {
     // const tr = useRepo(TaskRepo)
-    useTasksStore()
+    useT2Store()
       .apiCreate(payload)
       .then(
         Utils.handleSuccess('Successfully created a task'),
@@ -188,6 +187,6 @@
   }
 
   const openMenu = (index: number) => {
-    console.log({ index })
+    console.debug({ index })
   }
 </script>

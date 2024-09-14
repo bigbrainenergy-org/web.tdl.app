@@ -95,7 +95,7 @@ export async function syncNotifications(store: any) {
 //         sound: null,
 //         vibration: false
 //       })
-//       console.log(newChannel)
+//       console.debug(newChannel)
 //     }
 //   }
 //  }
@@ -111,6 +111,6 @@ export async function syncNotifications(store: any) {
 //       importance: 3,
 //       vibration: false
 //     })
-//     console.log(newChannel)
+//     console.debug(newChannel)
 //   }
 // }

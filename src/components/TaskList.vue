@@ -16,9 +16,7 @@
 <script setup lang="ts">
   import { toRef } from 'vue'
   import TaskItem from 'src/components/TaskItem.vue'
-  import { T2 } from 'src/stores/taskNoORM'
-
-  console.log('loaded task list')
+  import { T2 } from 'src/stores/t2/t2-model'
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(

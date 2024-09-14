@@ -3,7 +3,8 @@ import iRecord, { iOptions } from '../generics/i-record'
 import { Num, Str, Attr } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { Utils } from 'src/util'
-import { T2, useTasksStore } from '../taskNoORM'
+import { useT2Store } from 'src/stores/t2/t2-store'
+import { T2 } from 'src/stores/t2/t2-model'
 
 export interface CreateProcedureOptions {
   title: string
@@ -42,12 +43,12 @@ export class Procedure extends Model implements iRecord {
   }
 
   grabTasks(): T2[] {
-    const tasks = (useTasksStore().array as T2[]).filter((x) => x.procedure_ids?.includes(this.id))
+    const tasks = (useT2Store().array as T2[]).filter((x) => x.procedure_ids?.includes(this.id))
     return tasks
   }
 
   get tasks() {
-    const ts = useTasksStore()
+    const ts = useT2Store()
     return this.task_ids.map((x) => ts.hardGet(x))
   }
 }
@@ -62,14 +63,16 @@ export class ProcedureRepo extends GenericRepo<
 
   resetProcedure = (id: number) => {
     const url = `/${this.apidir}/reset/${id}`
-    console.log({ url })
     return this.api()
       .post(url, undefined, this.commonHeader())
       .then(() => {
         const tmp = Utils.hardCheck(this.withAll().find(id))
         const tasks = tmp.grabTasks()
-        tasks.forEach((x) => (x.completed = false))
-        useTasksStore().update(tasks)
+        const ts = useT2Store()
+        tasks.forEach((x) => {
+          x.completed = false
+          ts.updateSingle(x.rawData)
+        })
         return tmp
       }, Utils.handleError('Error restarting procedure.'))
   }

@@ -48,7 +48,7 @@
 <script setup lang="ts">
   import { toRef } from 'vue'
   import { TDLAPP } from 'src/TDLAPP'
-  import { T2 } from 'src/stores/taskNoORM'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   const props = withDefaults(
     defineProps<{

@@ -34,7 +34,7 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { Utils } from 'src/util'
-  import { T2 } from 'src/stores/taskNoORM'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   const props = defineProps<{ task: T2 }>()
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { T2 } from 'src/stores/taskNoORM'
+  import { T2 } from 'src/stores/t2/t2-model'
   import { ref } from 'vue'
 
   const props = defineProps<{ task: T2 }>()
@@ -8,7 +8,6 @@
   // const tr = useRepo(TaskRepo)
 
   const loadChildren = (t: T2) => {
-    console.log('loadChildren')
     t.expanded_state.expanded = true
   }
 </script>

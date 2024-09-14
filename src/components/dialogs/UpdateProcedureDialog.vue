@@ -37,7 +37,7 @@
               @add-item="openAddProcedureTaskDialog"
               @remove-item="removeTaskFromProcedure"
               @select-item="openTask"
-              @toggle-completed-item="updateTaskCompletedStatus"
+              @toggle-completed-item="(x: T2) => x.updateTaskCompletionStatus()"
             />
           </div>
         </div>
@@ -62,7 +62,8 @@
   import GloriousTextInput from '../GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import { TDLAPP } from 'src/TDLAPP'
-  import { T2, useTasksStore } from 'src/stores/taskNoORM'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { T2 } from 'src/stores/t2/t2-model'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)
@@ -82,14 +83,10 @@
 
   const procedureTasks = computed<T2[]>(() => {
     console.log('fetching proceduretasks again!!')
-    const tasksArr = (useTasksStore().array as T2[]).filter((x) =>
+    const tasksArr = (useT2Store().array as T2[]).filter((x) =>
       x.procedure_ids?.includes(props.procedure.id)
     )
-    const prm_tasks = props.procedure.grabTasks()
-    const tmp = props.procedure
-    useRepo(ProcedureRepo).withAll().load([tmp])
-    const tmp_tasks = tmp.tasks
-    console.debug({ tr_tasks: tasksArr, prm_tasks, tmp_tasks })
+    // const prm_tasks = props.procedure.grabTasks()
     return tasksArr
   })
 
@@ -230,14 +227,6 @@
   }
 
   const openTask = TDLAPP.openTask
-
-  const updateTaskCompletedStatus = async (task: T2) => {
-    const newStatus = task.completed
-    console.debug(`marking ${task.id} ${newStatus ? 'completed' : 'incomplete'}.`)
-    const result = await useTasksStore().apiUpdate(task)
-    if (result !== null && result.completed !== newStatus)
-      throw new Error('result from update request is not the same as the status marked on UI')
-  }
 
   const removeTaskFromProcedure = () => {
     throw new Error('not implemented yet')
