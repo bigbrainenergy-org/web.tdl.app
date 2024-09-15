@@ -5,8 +5,8 @@ import { TaskCache } from 'src/stores/performance/task-go-fast'
 import { TaskRepo } from 'src/stores/tasks/task'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
-import { Utils } from 'src/util'
-import { errorNotification } from './notification-utils'
+import { errorNotification, handleError, notifySuccess } from './notification-utils'
+import { updateLuxonTimeZone } from './luxon-utils'
 
 interface verySpecial {
   modelname: string
@@ -18,7 +18,7 @@ export async function pullFresh() {
   if (syncResult === 1)
     errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
   else {
-    Utils.notifySuccess('Refreshed All')
+    notifySuccess('Refreshed All')
   }
 }
 
@@ -48,7 +48,7 @@ export async function syncWithBackend(): Promise<number> {
       .fetch()
       .then(queue.pop())
       .catch(() => {
-        Utils.handleError(
+        handleError(
           `Failed to fetch from repo ${queue[0].repo.apidir}; MAKING ${tries} MORE ATTEMPTS`
         )
         tries--
@@ -59,7 +59,7 @@ export async function syncWithBackend(): Promise<number> {
     const currentUser = useRepo(UserRepo).getUser()
     if (currentUser === null || typeof currentUser === 'undefined') return 2
     console.log({ user: currentUser })
-    Utils.updateLuxonTimeZone(currentUser.time_zone)
+    updateLuxonTimeZone(currentUser.time_zone)
     console.log({
       setting: Settings.defaultZone,
       currentUserSetting: currentUser.time_zone,

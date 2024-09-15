@@ -36,14 +36,14 @@
   import { useRepo } from 'pinia-orm'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Utils } from 'src/util'
-  import { TDLAPP } from 'src/TDLAPP'
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import TaskList from 'src/components/TaskList.vue'
-  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { cachedTask } from 'src/stores/performance/all-tasks'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { handleError, notifyUpdatedCompletionStatus } from 'src/utils/notification-utils'
+  import { openSearchDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => {
     return {
@@ -53,7 +53,7 @@
 
   const $q = useQuasar()
 
-  const openTask = (_event: any, task: Task) => TDLAPP.openTask(task)
+  const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task)
 
   const pageTasks = defineComponent({
     name: 'PageTasks'
@@ -101,11 +101,9 @@
       // console.debug({ 'Tasks updateTaskCompletedStatus': t })
       if (t.completed !== newStatus)
         throw new Error('updated value and value meant to update do not match')
-      TDLAPP.notifyUpdatedCompletionStatus(task)
-    }, Utils.handleError('Error updating completion status of a task.'))
+      notifyUpdatedCompletionStatus(task)
+    }, handleError('Error updating completion status of a task.'))
   }
-
-  const openSearchDialog = () => TDLAPP.searchDialog()
 
   const openQuickSortDialog = () =>
     $q.dialog({

@@ -33,13 +33,13 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, toRef } from 'vue'
+  import { toRef } from 'vue'
   import { Task, TaskRepo } from 'stores/tasks/task'
-  import { TDLAPP } from 'src/TDLAPP'
   import { cachedTask } from 'src/stores/performance/all-tasks'
   import { usePostreqWarning } from 'src/composables/use-postreq-warning'
   import { useRepo } from 'pinia-orm'
-  import { Utils } from 'src/util'
+  import { handleError, notifyUpdatedCompletionStatus } from 'src/utils/notification-utils'
+  import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
 
   const props = withDefaults(
     defineProps<{
@@ -70,13 +70,13 @@
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
       if (result.completed !== newStatus) throw new Error('error saving completed status of task')
       // useAllTasksStore().completion(task.id, newStatus)
-      TDLAPP.notifyUpdatedCompletionStatus(result)
+      notifyUpdatedCompletionStatus(result)
       console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
-    }, Utils.handleError('Error updating completion status of a task.'))
+    }, handleError('Error updating completion status of a task.'))
   }
 
   const task = toRef(props, 'task')
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const addTaskPre = (currentTask: Task) => addPrerequisitesDialog(currentTask)
   const { postreqQuantityWarningThreshold } = usePostreqWarning()
 </script>
 

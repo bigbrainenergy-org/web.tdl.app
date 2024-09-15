@@ -51,7 +51,6 @@
   import { computed, onMounted, ref, watch } from 'vue'
 
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-  import { Utils } from 'src/util'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -62,6 +61,8 @@
   import Fuse, { FuseResult } from 'fuse.js'
   import { useElementSize } from '@vueuse/core'
   import { useAllTasksStore } from 'src/stores/performance/all-tasks'
+  import { hardCheck } from 'src/utils/type-utils'
+  import { handleError } from 'src/utils/notification-utils'
 
   interface Props {
     dialogTitle: string
@@ -88,7 +89,7 @@
 
   const key = ref(0)
 
-  Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
+  hardCheck(props.dialogTitle, 'Dialog title must be given a value')
   onMounted(() => {
     console.log('busy and addDependencyDialogActive set to true')
     useLoadingStateStore().busy = true
@@ -247,7 +248,7 @@
       if (typeof props.taskID !== 'undefined') selectTask(result)
       const duration = Math.floor(performance.now() - start)
       if (duration > target) console.warn(`createTask took ${duration} ms - target is ${target} ms`)
-    }, Utils.handleError('Error creating task.'))
+    }, handleError('Error creating task.'))
     busy.value = false
   }
 

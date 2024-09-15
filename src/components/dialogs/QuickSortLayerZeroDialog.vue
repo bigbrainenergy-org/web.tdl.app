@@ -66,9 +66,7 @@
   import { Notify, useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
-  import { TDLAPP } from 'src/TDLAPP'
   import { SimpleMenuItem } from 'src/utils/types'
-  import { Utils } from 'src/util'
   import { onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
   import SettingsButton from '../SettingsButton.vue'
@@ -78,6 +76,10 @@
   import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { cachedTask } from 'src/stores/performance/all-tasks'
   import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { addPre } from 'src/utils/task-utils'
+  import { notifySuccess } from 'src/utils/notification-utils'
+  import { getRandomInt } from 'src/utils/math-utils'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -172,7 +174,7 @@
   let skippedPairs: pair<Task>[] = []
 
   const addPres = (x: Task) => {
-    TDLAPP.addPrerequisitesDialog(x)
+    addPrerequisitesDialog(x)
       .onOk(() => {
         console.log('getting a new pair now')
         skip()
@@ -188,7 +190,7 @@
   }
 
   const sliceTask = (x: Task) => {
-    TDLAPP.sliceTask(x)
+    openTaskSlicerDialog(x)
       .onOk(() => {
         console.log('getting a new pair now')
         skip()
@@ -220,7 +222,7 @@
   }
   const taskDetails = (x: Task) => {
     console.debug(`opening details for task ID ${x.id}`)
-    TDLAPP.openTask(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
+    openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
   const menuItems: SimpleMenuItem<Task>[] = [
@@ -247,7 +249,7 @@
   ]
 
   const finishedSorting = (msg = 'Finished Sorting') => {
-    Utils.notifySuccess(msg)
+    notifySuccess(msg)
     useLoadingStateStore().busy = false
     console.log('setting quick sort dialog active to false')
     useLoadingStateStore().quickSortDialogActive = false
@@ -289,8 +291,8 @@
       return { id: arr.id, data: { a: lastPair.a.t, b: lastPair.b.t } }
     }
     let ints: pair<number> = {
-      a: Utils.getRandomInt(arr.data.length),
-      b: Utils.getRandomInt(arr.data.length)
+      a: getRandomInt(arr.data.length),
+      b: getRandomInt(arr.data.length)
     }
     let totalPermutations = permutations(arr.data)
     let tmp: pair<PostWeightedTask> = {
@@ -378,7 +380,7 @@
     let tmp: withID<pair<Task>> | null = null
     const tryGetLayerOnePair = () => {
       if (layerOne.value === null || layerOne.value.length === 0) return null
-      let randomindex = Utils.getRandomInt(layerOne.value.length)
+      let randomindex = getRandomInt(layerOne.value.length)
       console.debug({ randomindex })
       let randomlySelectedPostsList = layerOne.value[randomindex]
       console.debug({ randomlySelectedPostsList })
@@ -446,7 +448,7 @@
     try {
       currentPair.value = generateNewPair()
     } catch (e) {
-      Utils.notifySuccess('Nothing more to sort')
+      notifySuccess('Nothing more to sort')
       if (dialogRef !== null) onDialogOK()
     }
   }
@@ -455,7 +457,7 @@
     console.debug({ first, second })
     loading.value = true
     await timeThisAABAsync(
-      TDLAPP.addPre,
+      addPre,
       'add rule on quick sort dialog',
       1000
     )(second, first.id).then(() => {

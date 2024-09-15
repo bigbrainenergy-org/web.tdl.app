@@ -1,14 +1,35 @@
 import { useRepo } from 'pinia-orm'
 import { cachedTask } from 'src/stores/performance/all-tasks'
 import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-import { TDLAPP } from 'src/TDLAPP'
-import { Utils } from 'src/util'
+import { timeThisAABAsync } from './performance-utils'
+import { handleError, handleSuccess, notifySuccess, notifyUpdatedCompletionStatus } from './notification-utils'
 
 export function createTask(payload: CreateTaskOptions) {
   const tasksRepo = useRepo(TaskRepo)
   tasksRepo.addAndCache(payload).then(() => {
-    Utils.notifySuccess('Successfully created a task')
-  }, Utils.handleError('Failed to create task.'))
+    notifySuccess('Successfully created a task')
+  }, handleError('Failed to create task.'))
+}
+
+export async function addPre(task: Task, newPreID: number) {
+  console.log('addPre')
+  await timeThisAABAsync(
+    useRepo(TaskRepo).addPre,
+    'repo add pre function',
+    1000
+  )(task, newPreID).then(() => {
+    // console.log('successfully added pre.')
+    notifySuccess('Added Prerequisite', 'fa-solid fa-link')
+  }, handleError('Failed to add prereq'))
+}
+
+export async function addPost(task: Task, newPostID: number) {
+  await useRepo(TaskRepo)
+    .addPost(task, newPostID)
+    .then(
+      handleSuccess('Added Postrequisite', 'fa-solid fa-link'),
+      handleError('Failed to add postreq')
+    )
 }
 
 export async function updateTaskCompletedStatus(task: Task) {
@@ -19,8 +40,8 @@ export async function updateTaskCompletedStatus(task: Task) {
     // console.debug({ 'Tasks updateTaskCompletedStatus': t })
     if (t.completed !== newStatus)
       throw new Error('updated value and value meant to update do not match')
-    TDLAPP.notifyUpdatedCompletionStatus(task)
-  }, Utils.handleError('Error updating completion status of a task.'))
+    notifyUpdatedCompletionStatus(task)
+  }, handleError('Error updating completion status of a task.'))
 }
 
 export function filterByList(tasks: cachedTask[], listTitle: string): cachedTask[] {

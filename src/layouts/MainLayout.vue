@@ -24,11 +24,11 @@
   import { onMounted, ref } from 'vue'
   import { UserRepo } from 'src/stores/users/user'
   import { useRepo } from 'pinia-orm'
-  import { Utils } from 'src/util'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
   import { useBackgroundMode } from 'src/composables/use-background-mode'
   import { useTasks } from 'src/composables/use-tasks'
+  import { updateLuxonTimeZone } from 'src/utils/luxon-utils'
 
   const drawer = ref(false)
   const { backgroundStyle } = useBackgroundMode()
@@ -44,7 +44,7 @@
       console.warn('user data issue.')
       return
     }
-    Utils.updateLuxonTimeZone(user.time_zone)
+    updateLuxonTimeZone(user.time_zone)
     TaskCache.regenerate()
   })
 </script>

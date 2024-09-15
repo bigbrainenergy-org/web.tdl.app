@@ -1,10 +1,10 @@
 import { Repository } from 'pinia-orm'
 import iRecord, { iOptions } from './i-record'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
-import { Utils } from 'src/util'
-import { AxiosError, AxiosResponse } from 'axios'
+import { AxiosResponse } from 'axios'
 import { useAxiosStore } from '../axios-store'
 import { ApiError } from 'src/utils/types'
+import { handleError } from 'src/utils/notification-utils'
 
 interface SimpleApiBackedRepo {
   // TODO: access T.entity somehow. In the meantime just have a string property.
@@ -53,7 +53,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
       .then((response: AxiosResponse) => {
         // console.debug(`${this.apidir} fetched: `, { response })
         this.fresh(response.data as T[])
-      }, Utils.handleError(`Could not fetch all ${this.apidir}`))
+      }, handleError(`Could not fetch all ${this.apidir}`))
   }
 
   getId = async (id: number): Promise<T | null> => {
@@ -65,7 +65,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
           return this.save(response.data as T)
         },
         (error: ApiError) => {
-          Utils.handleError(`Could not get ${this.apidir} id ${id}`)(error)
+          handleError(`Could not get ${this.apidir} id ${id}`)(error)
           return null
         }
       )
@@ -121,7 +121,7 @@ export default abstract class GenericRepo<iCreateT, iUpdateT extends iOptions, T
             `Patching server took longer than target of 400ms - it took ${Math.floor(duration)}ms`
           )
         return result
-      }, Utils.handleError('Error updating record'))
+      }, handleError('Error updating record'))
   }
 
   localUpdate = (itemOptions: iUpdateT) => {

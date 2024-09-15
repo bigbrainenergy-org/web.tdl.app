@@ -1,38 +1,11 @@
 <template>
-  <q-input
-    v-model="currentPassword"
-    class="q-my-md"
-    filled
-    type="password"
-    label="Current Password"
-    name="current_password"
-    data-cy="current_password"
-  />
-  <q-input
-    v-model="newPassword"
-    class="q-my-md"
-    filled
-    type="password"
-    label="New Password"
-    name="new_password"
-    data-cy="new_password"
-  />
-  <q-input
-    v-model="confirmPassword"
-    class="q-my-md"
-    filled
-    type="password"
-    label="Confirm Password"
-    name="confirm_password"
-    data-cy="confirm_password"
-  />
-  <q-btn
-    class="full-width"
-    color="orange"
-    outline
-    label="Change Password"
-    @click="changePassword"
-  />
+  <q-input v-model="currentPassword" class="q-my-md" filled type="password" label="Current Password"
+    name="current_password" data-cy="current_password" />
+  <q-input v-model="newPassword" class="q-my-md" filled type="password" label="New Password" name="new_password"
+    data-cy="new_password" />
+  <q-input v-model="confirmPassword" class="q-my-md" filled type="password" label="Confirm Password"
+    name="confirm_password" data-cy="confirm_password" />
+  <q-btn class="full-width" color="orange" outline label="Change Password" @click="changePassword" />
 </template>
 
 <script setup lang="ts">
@@ -40,7 +13,7 @@
   import { useQuasar } from 'quasar'
   import { useRepo } from 'pinia-orm'
   import { UserRepo } from 'src/stores/users/user'
-  import { Utils } from 'src/util'
+  import { handleError } from 'src/utils/notification-utils'
 
   const $q = useQuasar()
   const userRepo = computed(() => useRepo(UserRepo))
@@ -75,6 +48,6 @@
           position: 'top',
           message: 'Password changed!'
         })
-      }, Utils.handleError('Failed to change password.'))
+      }, handleError('Failed to change password.'))
   }
 </script>

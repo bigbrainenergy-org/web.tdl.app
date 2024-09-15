@@ -9,14 +9,8 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <q-input
-              v-model.number="slices"
-              filled
-              clearable
-              label="Number of Slices"
-              @touchstart.stop
-              @mousedown.stop
-            />
+            <q-input v-model.number="slices" filled clearable label="Number of Slices" @touchstart.stop
+              @mousedown.stop />
             <br />
             <div class="row">
               <div class="col-grow">
@@ -34,7 +28,7 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { Task } from 'src/stores/tasks/task'
-  import { Utils } from 'src/util'
+  import { handleError } from 'src/utils/notification-utils';
 
   const props = defineProps<{ task: Task }>()
 
@@ -45,6 +39,6 @@
   const slices = ref(0)
 
   const sliceTask = async () => {
-    await props.task.split(slices.value).then(onDialogOK, Utils.handleError('Error slicing task.'))
+    await props.task.split(slices.value).then(onDialogOK, handleError('Error slicing task.'))
   }
 </script>

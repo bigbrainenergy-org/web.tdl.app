@@ -1,24 +1,16 @@
 <template>
   <p>Current Time: {{ currentTime }}</p>
-  <q-select
-    v-model="editTimeZone"
-    class="q-my-md"
-    filled
-    :options="timeZones"
-    option-value="value"
-    option-label="name"
-    label="Time Zone"
-    @update:model-value="updateTimeZone"
-  />
+  <q-select v-model="editTimeZone" class="q-my-md" filled :options="timeZones" option-value="value" option-label="name"
+    label="Time Zone" @update:model-value="updateTimeZone" />
 </template>
 
 <script setup lang="ts">
   import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
   import { DateTime } from 'luxon'
   import { useRepo } from 'pinia-orm'
-  import { Utils } from 'src/util'
   import { TimeZone, TimeZoneRepo } from 'src/stores/time-zones/time-zone'
   import { UserRepo } from 'src/stores/users/user'
+  import { hardCheck } from 'src/utils/type-utils'
 
   const tzr = useRepo(TimeZoneRepo)
   const userRepo = computed(() => useRepo(UserRepo))
@@ -26,10 +18,10 @@
   const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
 
   const user = computed(() =>
-    Utils.hardCheck(userRepo.value.getUser(), 'user not found in authentication store or user repo')
+    hardCheck(userRepo.value.getUser(), 'user not found in authentication store or user repo')
   )
 
-  const userTimeZone = computed(() => Utils.hardCheck(user.value).timeZoneObj)
+  const userTimeZone = computed(() => hardCheck(user.value).timeZoneObj)
 
   const timeZones = computed(() => tzr.all())
 
@@ -50,7 +42,7 @@
   //   }
   // }
 
-  const editTimeZone = ref<TimeZone>(Utils.hardCheck(userTimeZone.value))
+  const editTimeZone = ref<TimeZone>(hardCheck(userTimeZone.value))
 
   const updateTimeZone = async () => {
     await userRepo.value.changeTimezone(editTimeZone.value as TimeZone)

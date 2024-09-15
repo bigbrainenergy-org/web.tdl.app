@@ -12,7 +12,6 @@
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  // import { TDLAPP } from 'src/TDLAPP'
   import { openQuickSortDialog, openSearchDialog } from 'src/utils/dialog-utils'
   import { cachedTask } from 'src/stores/performance/all-tasks'
 

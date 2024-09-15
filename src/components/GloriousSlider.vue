@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/first-attribute-linebreak -->
 <template>
   <q-item class="q-my-sm">
     <q-item-section v-if="typeof props.beginIcon !== 'undefined'" side>
@@ -6,17 +7,8 @@
 
     <q-item-section>
       <div>
-        <q-slider
-          v-model="val"
-          :min="props.min"
-          :max="props.max"
-          :step="props.step"
-          label
-          label-always
-          :label-value="label"
-          :color="props.color"
-          @change="emit('change', val)"
-        />
+        <q-slider v-model="val" :min="props.min" :max="props.max" :step="props.step" label label-always
+          :label-value="label" :color="props.color" @change="emit('change', val)" />
       </div>
     </q-item-section>
 
@@ -26,7 +18,7 @@
   </q-item>
 </template>
 <script setup lang="ts">
-  import { GloriousSliderProp } from 'src/glorious'
+  import { GloriousSliderProp } from 'src/utils/glorious-utils'
   import { computed } from 'vue'
 
   const props = withDefaults(defineProps<GloriousSliderProp>(), {

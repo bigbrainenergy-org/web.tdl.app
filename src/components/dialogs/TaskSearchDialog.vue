@@ -49,7 +49,6 @@
   import { computed, ref, watch } from 'vue'
 
   import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-  import { Utils } from 'src/util'
   // import { useRepo } from 'pinia-orm'
   // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
@@ -60,6 +59,7 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import Fuse, { FuseResult } from 'fuse.js'
   import { timeThisB } from 'src/utils/performance-utils'
+  import { hardCheck } from 'src/utils/type-utils'
 
   interface Props {
     dialogTitle: string
@@ -89,7 +89,7 @@
 
   const key = ref(0)
 
-  Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
+  hardCheck(props.dialogTitle, 'Dialog title must be given a value')
   useLoadingStateStore().busy = true
 
   const emit = defineEmits([

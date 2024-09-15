@@ -29,8 +29,8 @@
   import { useQuasar, useMeta } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { λ } from 'src/utils/types'
-  import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
+  import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
 
@@ -278,7 +278,7 @@
     node.call(CustomForceGraph.d3DragDefaults(simulation))
 
     node.on('click', (event) => {
-      TDLAPP.openTask(event.target.__data__.obj as Task)
+      openUpdateTaskDialog(event.target.__data__.obj as Task)
         .onOk(reInitializeGraph)
         .onCancel(reInitializeGraph)
         .onDismiss(reInitializeGraph)
@@ -304,11 +304,10 @@
 
   onMounted(initializeGraph)
 
-  const openSearchDialog = () => TDLAPP.searchDialog()
   const biggest = (prev: d3Node<Task>, curr: d3Node<Task>) =>
     curr.radius > prev.radius ? curr : prev
   const openLargest = () =>
-    TDLAPP.openTask(allTaskNodes.reduce(biggest).obj)
+    openUpdateTaskDialog(allTaskNodes.reduce(biggest).obj)
       .onOk(reInitializeGraph)
       .onCancel(reInitializeGraph)
       .onDismiss(reInitializeGraph)

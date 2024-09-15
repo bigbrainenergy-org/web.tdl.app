@@ -68,12 +68,10 @@
   import { ListRepo } from 'src/stores/lists/list'
   import { AllOptionalTaskProperties, Task, TaskRepo } from 'src/stores/tasks/task'
   import { useRepo } from 'pinia-orm'
-  import { Utils } from 'src/util'
-  import { TDLAPP } from 'src/TDLAPP'
   import { syncWithBackend } from 'src/utils/sync-utils'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
-  import { errorNotification } from 'src/utils/notification-utils'
+  import { errorNotification, handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
   import TaskSearchDialog from './TaskSearchDialog.vue'
   import { Button, unknownishλ, λ } from 'src/utils/types'
   import { onMounted } from 'vue'
@@ -85,6 +83,9 @@
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import GloriousSlider from '../GloriousSlider.vue'
   import { storeToRefs } from 'pinia'
+  import { hardCheck } from 'src/utils/type-utils'
+  import { addPostrequisiteDialog, addPrerequisitesDialog, openTaskSlicerDialog } from 'src/utils/dialog-utils'
+  import { blockingFunc } from 'src/utils/performance-utils'
 
   const cts = useCurrentTaskStore()
   const currentTaskID = computed(() => cts.id)
@@ -135,7 +136,7 @@
     }
     const markCompleteButton = positiveColorButton('Mark Complete', action)
     const prioritizeButton = positiveColorButton('Prioritize', prioritize)
-    const sliceButton = positiveColorButton('Slice Task', TDLAPP.sliceTask)
+    const sliceButton = positiveColorButton('Slice Task', openTaskSlicerDialog)
     if (currentTask.value.completed) return [markIncompleteButton, deleteButton, closeButton]
     return [markCompleteButton, prioritizeButton, sliceButton, deleteButton, closeButton]
   })
@@ -256,8 +257,8 @@
     }).onOk(() => {
       console.debug('deleting task')
       tr.deleteTask(task).then(
-        Utils.handleSuccess('Deleted task', 'fa-solid fa-tasks'),
-        Utils.handleError('Failed to delete task.')
+        handleSuccess('Deleted task', 'fa-solid fa-tasks'),
+        handleError('Failed to delete task.')
       )
     })
   }
@@ -267,13 +268,13 @@
       id: currentTask.value.id,
       payload: { task: options }
     }).then(() => {
-      Utils.notifySuccess('Task Was Updated')
-    }, Utils.handleError('Error updating task'))
+      notifySuccess('Task Was Updated')
+    }, handleError('Error updating task'))
   }
 
-  const openPrerequisiteDialog = () => TDLAPP.addPrerequisitesDialog(currentTask.value)
+  const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value)
 
-  const openPostrequisiteDialog = () => TDLAPP.addPostrequisiteDialog(currentTask.value)
+  const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value)
 
   const mvpPostrequisite = async (post: Task) => {
     console.debug(post)
@@ -282,21 +283,21 @@
       await tr
         .removePre(allOtherPosts[i], currentTask.value.id)
         .then(
-          Utils.handleSuccess('removed redundant prerequisite'),
-          Utils.handleError('error removing redundant prerequisite')
+          handleSuccess('removed redundant prerequisite'),
+          handleError('error removing redundant prerequisite')
         )
       await tr
         .addPre(allOtherPosts[i], post.id)
-        .then(Utils.handleSuccess('moved a task'), Utils.handleError('failed to move a task'))
+        .then(handleSuccess('moved a task'), handleError('failed to move a task'))
     }
     const syncResult = await syncWithBackend()
     if (syncResult === 1)
       errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
-    else Utils.notifySuccess('Refreshed All')
+    else notifySuccess('Refreshed All')
   }
 
   const insertBetweenPost = async (payload: { task: Task }) => {
-    const oldPost = Utils.hardCheck(currentPost)
+    const oldPost = hardCheck(currentPost)
     // start: A --> C
     // desired end state: A --> B --> C
     // 2. remove rule A --> C
@@ -309,7 +310,7 @@
       if (op === null) throw new Error('old post was not found by id')
       if (op.hard_prereq_ids.includes(currentTaskID.value))
         throw new Error('prereq was not removed!')
-    }, Utils.handleError('error moving postrequisite!'))
+    }, handleError('error moving postrequisite!'))
     // FIXME: if these steps are done in 1->2->3 order, currentTask somehow ends up with no postrequisite.
     // FIXME: I'm sure there is the same error for insertbetweenPre.
     // 3. add rule B --> C
@@ -324,7 +325,7 @@
       if (op === null) throw new Error('old post was not found by id')
       if (!op.hard_prereq_ids.includes(payload.task.id))
         throw new Error('prereq was not added to old postreq!')
-    }, Utils.handleError('error moving postrequisite!'))
+    }, handleError('error moving postrequisite!'))
     // 1. add rule A --> B
     console.debug('adding selected postrequisite to current task')
     if (!currentTask.value.hard_postreq_ids.includes(payload.task.id)) {
@@ -337,7 +338,7 @@
         if (pt === null) throw new Error('payload task was not found by id')
         if (!pt.hard_prereq_ids.includes(currentTaskID.value))
           throw new Error('prereq (current task) was not found related to new postreq')
-      }, Utils.handleError('error adding new post to current task'))
+      }, handleError('error adding new post to current task'))
 
       const newPost = await useRepo(TaskRepo).getId(payload.task.id)
       console.log({ newPost })
@@ -349,22 +350,22 @@
   }
 
   const insertBetweenPre = async (payload: { task: Task }) => {
-    const oldPre = Utils.hardCheck(currentPre)
+    const oldPre = hardCheck(currentPre)
     await tr
       .removePre(currentTask.value, oldPre.id)
-      .then(Utils.handleSuccess('moving pre...'), Utils.handleError('error moving pre!'))
+      .then(handleSuccess('moving pre...'), handleError('error moving pre!'))
     await tr
       .addPre(payload.task, oldPre.id)
       .then(
-        Utils.handleSuccess('successfully moved prerequisite!'),
-        Utils.handleError('error moving prerequisite!')
+        handleSuccess('successfully moved prerequisite!'),
+        handleError('error moving prerequisite!')
       )
     if (!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
       await tr
         .addPre(currentTask.value, payload.task.id)
         .then(
-          Utils.handleSuccess('added new pre to current task'),
-          Utils.handleError('error adding new pre to current task')
+          handleSuccess('added new pre to current task'),
+          handleError('error adding new pre to current task')
         )
     }
   }
@@ -487,7 +488,8 @@
     }
   ]
 
-  const prunePosts = TDLAPP.blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
+  // FIXME: TypeScript is angry
+  const prunePosts = blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
     useLoadingStateStore().busy = true
     const toRemove = allPosts.value.filter(
       (x) => payload.below.has(x.id) && !payload.above.has(x.id)
@@ -498,7 +500,7 @@
     useLoadingStateStore().busy = false
   })
 
-  const prunePres = TDLAPP.blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
+  const prunePres = blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
     const toRemove = allPres.value.filter((x) => {
       const hasRelationsAbove = payload.above.has(x.id)
       const hasRelationsBelow = payload.below.has(x.id)

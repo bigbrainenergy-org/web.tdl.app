@@ -105,14 +105,11 @@
   import { useRepo } from 'pinia-orm'
   import { useQuasar } from 'quasar'
   import { List, ListRepo } from 'src/stores/lists/list'
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-  import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
-  import { Utils } from 'src/util'
-  import { TDLAPP } from 'src/TDLAPP'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { autoContrastTextColor } from 'src/utils/color-utils'
-  import { openCreateTaskDialog } from 'src/utils/dialog-utils'
+  import { openCreateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
+  import { notifySuccess } from 'src/utils/notification-utils'
 
   const $q = useQuasar()
   const drawer = defineModel<boolean>('drawer')
@@ -126,10 +123,8 @@
   const lists = computed(() => listsRepo.withAll().get())
   console.log({ lists: lists.value })
 
-  const openSearchDialog = () => TDLAPP.searchDialog()
-
   const openCreateListDialog = () => {
-    Utils.notifySuccess('Coming soon')
+    notifySuccess('Coming soon')
   }
 
   type HasTitle = { title: string }

@@ -45,17 +45,18 @@
 <script setup lang="ts">
   import { useRepo } from 'pinia-orm'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed, onMounted, ref, watch } from 'vue'
   import { useQuasar, useMeta } from 'quasar'
-  import { details, QTreeComponent, SimpleTreeNode } from 'src/quasar-interfaces'
-  import { Utils } from 'src/util'
+  import { details, QTreeComponent, SimpleTreeNode } from 'src/utils/quasar-interfaces'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   // import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { NodeKey, λ } from 'src/utils/types'
-  import { TDLAPP } from 'src/TDLAPP'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
+  import { notifySuccess } from 'src/utils/notification-utils'
+  import { arrayDelete, combineArrays } from 'src/utils/array-utils'
+  import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => ({ title: 'Tree | TDL App' }))
 
@@ -81,7 +82,7 @@
   })
 
   watch(expandAllWithSameID, () => {
-    Utils.notifySuccess('Coming Soon', 'fas fa-info')
+    notifySuccess('Coming Soon', 'fas fa-info')
     usr.expandAllWithSameID = expandAllWithSameID.value
   })
 
@@ -168,7 +169,7 @@
         ).filter((x) => !t.value?.isExpanded(x))
       )
       // console.debug({ 'in expanded nodes store and not expanded': shouldBeExpanded, 'length': shouldBeExpanded.length })
-      queueExpand = Utils.combineArrays(queueExpand, shouldBeExpanded)
+      queueExpand = combineArrays(queueExpand, shouldBeExpanded)
       // console.debug({ 'combined': queueExpand, 'length': queueExpand.length })
       if (queueExpand.length === 0) {
         console.warn('ALL DONE')
@@ -201,7 +202,7 @@
           continue
         } else if (typeof t.value?.getNodeByKey(tmp.key) === 'undefined') {
           msgqueue.lazySkipped.push(tmp.key)
-          Utils.arrayDelete(queueExpand, tmp, 'key')
+          arrayDelete(queueExpand, tmp, 'key')
           continue
         } else {
           msgqueue.triedToExpand.push(tmp.key)
@@ -219,7 +220,7 @@
   const $q = useQuasar()
 
   const openTask = (currentTask: Task) => {
-    TDLAPP.openTask(currentTask)
+    openUpdateTaskDialog(currentTask)
       .onDismiss(() => initializeQueues())
       .onCancel(() => initializeQueues())
       .onOk(() => initializeQueues())
@@ -342,5 +343,4 @@
   //   clearTimeout(expanderTimer)
   //   queueExpand = []
   // })
-  const openSearchDialog = () => TDLAPP.searchDialog()
 </script>

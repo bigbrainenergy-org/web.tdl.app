@@ -2,8 +2,7 @@ import { AxiosError } from 'axios'
 import { useQuasar } from 'quasar'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
 import { useAxiosStore } from 'src/stores/axios-store'
-import { Utils } from 'src/util'
-import { errorNotification } from 'src/utils/notification-utils'
+import { errorNotification, notifySuccess } from 'src/utils/notification-utils'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -42,7 +41,7 @@ export function useAuthentication() {
         () => {
           sessionTokenComputed.value = ''
           void $router.push({ path: '/login' })
-          Utils.notifySuccess('Logged out successfully', 'fa-solid fa-sign-out-alt')
+          notifySuccess('Logged out successfully', 'fa-solid fa-sign-out-alt')
         },
         (error: AxiosError | Error) => {
           sessionTokenComputed.value = '' // Remove token even if it fails

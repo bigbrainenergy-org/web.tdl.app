@@ -4,16 +4,17 @@ import { Attr, BelongsTo, Bool, HasManyBy, HasOne, Num } from 'pinia-orm/dist/de
 import { List } from '../lists/list'
 import GenericRepo from '../generics/generic-repo'
 import ExpandedState from '../task-meta/expanded-state'
-import { SimpleTreeNode } from 'src/quasar-interfaces'
+import { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { useRawExpandedStateStore } from '../task-meta/raw-expanded-state-store'
-import { Utils } from 'src/util'
-import { TDLAPP } from 'src/TDLAPP'
 import { Queue } from 'src/utils/types'
 import { timeThisB } from 'src/utils/performance-utils'
 import { cachedTask, useAllTasksStore } from '../performance/all-tasks'
 import { TaskCache } from '../performance/task-go-fast'
+import { handleError, notifySuccess, notifyUpdatedCompletionStatus } from 'src/utils/notification-utils'
+import { arrayDelete } from 'src/utils/array-utils'
+import { hardCheck } from 'src/utils/type-utils'
 
 const createPayload = (task: Task): UpdateTaskOptions => {
   const payload = {
@@ -248,7 +249,7 @@ export class Task extends Model implements iRecord {
         id: this.id,
         payload: { task: { completed: this.completed } }
       })
-      .then(TDLAPP.notifyUpdatedCompletionStatus, (error) => {
+      .then(notifyUpdatedCompletionStatus, (error) => {
         throw error
       })
   }
@@ -491,12 +492,12 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     if (position < 0) throw new Error('removePre: id provided was not found in prereqs list')
     const options = createPayload(task)
     options.payload.task.hard_prereq_ids!.splice(position, 1)
-    this.updateAndCache(options).then(() => {
-      const pre: Task = Utils.hardCheck(this.find(id_of_prereq))
-      Utils.arrayDelete(pre.hard_postreq_ids, task.id)
+    return this.updateAndCache(options).then(() => {
+      const pre: Task = hardCheck(this.find(id_of_prereq))
+      arrayDelete(pre.hard_postreq_ids, task.id)
       this.where('id', pre.id).update({ hard_postreq_ids: pre.hard_postreq_ids })
-      Utils.notifySuccess('Removed prerequisite')
-    }, Utils.handleError('Error removing prerequisite'))
+      notifySuccess('Removed prerequisite')
+    }, handleError('Error removing prerequisite'))
   }
 
   /**
@@ -510,13 +511,13 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
     const options = createPayload(task)
     options.payload.task.hard_postreq_ids!.splice(position, 1)
     this.updateAndCache(options).then(() => {
-      const post: Task = Utils.hardCheck(this.find(id_of_postreq))
+      const post: Task = hardCheck(this.find(id_of_postreq))
       // console.log(`before arrayDelete (pre ids): ${post.hard_prereq_ids}`)
-      Utils.arrayDelete(post.hard_prereq_ids, task.id)
+      arrayDelete(post.hard_prereq_ids, task.id)
       console.log(`after arrayDelete (pre ids): ${post.hard_prereq_ids}`)
       this.where('id', post.id).update({ hard_prereq_ids: post.hard_prereq_ids })
-      Utils.notifySuccess('Removed postrequisite')
-    }, Utils.handleError('Error removing postrequisite'))
+      notifySuccess('Removed postrequisite')
+    }, handleError('Error removing postrequisite'))
   }
 
   /**
@@ -571,7 +572,7 @@ export class TaskRepo extends GenericRepo<CreateTaskOptions, UpdateTaskOptions, 
    * await useRepo(TaskRepo).addPost(task, post.id)
    */
   addPost = async (task: Task, id_of_postreq: number) => {
-    const post = Utils.hardCheck(
+    const post = hardCheck(
       this.withAll().find(id_of_postreq),
       'Postreq was not found in this list.'
     )

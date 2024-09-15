@@ -4,9 +4,9 @@ import { Attr, BelongsTo, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { TimeZone } from '../time-zones/time-zone'
-import { Utils } from 'src/util'
 import { useAxiosStore } from '../axios-store'
-import { Settings } from 'luxon'
+import { handleError, handleSuccess } from 'src/utils/notification-utils'
+import { updateLuxonTimeZone } from 'src/utils/luxon-utils'
 
 export interface CreateUserOptions {
   time_zone: string
@@ -71,8 +71,8 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
         }
       )
       .then(
-        Utils.handleSuccess('Password has been changed'),
-        Utils.handleError('Failed to change user password')
+        handleSuccess('Password has been changed'),
+        handleError('Failed to change user password')
       )
   }
 
@@ -89,7 +89,7 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
       }
     }).then((response: any) => {
       console.log({ theResponseData: response })
-      Utils.updateLuxonTimeZone(newTimeZone.value)
-    }, Utils.handleError('failed to update timezone'))
+      updateLuxonTimeZone(newTimeZone.value)
+    }, handleError('failed to update timezone'))
   }
 }

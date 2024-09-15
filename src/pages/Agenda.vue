@@ -53,19 +53,16 @@
   import { useRepo } from 'pinia-orm'
   import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Utils, exists } from 'src/util'
-  import { TDLAPP } from 'src/TDLAPP'
-  import SettingsButton from 'src/components/SettingsButton.vue'
-  import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
   import { TaskCache } from 'src/stores/performance/task-go-fast'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
-  import { openQuickSortDialog, openSearchDialog } from 'src/utils/dialog-utils'
+  import { addPrerequisitesDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { handleError, notifyUpdatedCompletionStatus } from 'src/utils/notification-utils'
+  import { exists } from 'src/utils/type-utils'
 
   const $q = useQuasar()
 
-  const open = (task: Task) => TDLAPP.openTask(task)
+  const open = (task: Task) => openUpdateTaskDialog(task)
 
   const tasksRepo = useRepo(TaskRepo)
 
@@ -162,11 +159,11 @@
     await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
       if (result.completed !== newStatus) throw new Error('error saving completed status of task')
       // useAllTasksStore().completion(task.id, newStatus)
-      TDLAPP.notifyUpdatedCompletionStatus(result)
+      notifyUpdatedCompletionStatus(result)
       console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
-    }, Utils.handleError('Error updating completion status of a task.'))
+    }, handleError('Error updating completion status of a task.'))
   }
 
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const addTaskPre = (currentTask: Task) => addPrerequisitesDialog(currentTask)
   useMeta(() => ({ title: 'Agenda | TDL App' }))
 </script>

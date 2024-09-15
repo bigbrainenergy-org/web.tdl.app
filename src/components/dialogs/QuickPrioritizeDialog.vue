@@ -7,27 +7,12 @@
         <q-btn class="q-ma-sm" size="md" color="positive" label="Save" @click="saveNewRules" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Cancel" @click="onCancelClick" />
       </q-card-section>
-      <q-linear-progress
-        v-if="typeof saveProgress !== 'undefined'"
-        stripe
-        size="10px"
-        :value="saveProgress"
-      />
+      <q-linear-progress v-if="typeof saveProgress !== 'undefined'" stripe size="10px" :value="saveProgress" />
       <q-card-section>
-        <q-btn
-          class="q-ma-sm"
-          size="md"
-          color="negative"
-          :label="layerZero.some((x) => !x.selected) ? 'SELECT ALL' : 'UNSELECT ALL'"
-          @click="selectAll"
-        />
+        <q-btn class="q-ma-sm" size="md" color="negative"
+          :label="layerZero.some((x) => !x.selected) ? 'SELECT ALL' : 'UNSELECT ALL'" @click="selectAll" />
         <q-list class="text-primary">
-          <q-intersection
-            v-for="(currentTask, index) in layerZero"
-            :key="index"
-            once
-            style="min-height: 48px"
-          >
+          <q-intersection v-for="(currentTask, index) in layerZero" :key="index" once style="min-height: 48px">
             <q-item>
               <q-checkbox v-model:model-value="currentTask.selected" color="primary" keep-color />
               <q-item-section>{{ currentTask.obj.title }}</q-item-section>
@@ -42,10 +27,10 @@
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
   import { Task } from 'src/stores/tasks/task'
-  import { TDLAPP } from 'src/TDLAPP'
   import { ref } from 'vue'
-  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { addPost } from 'src/utils/task-utils'
 
   interface Props {
     task: Task
@@ -68,7 +53,7 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
     // TODO: batch update this!
     for (let i = 0; i < selectedTasks.length; i++) {
       const element = layerZero[i]
-      await TDLAPP.addPost(prop.task, element.obj.id).then(
+      await addPost(prop.task, element.obj.id).then(
         () => (saveProgress.value = (i + 1) / selectedTasks.length)
       )
     }

@@ -28,11 +28,11 @@
   import { useRouter } from 'vue-router'
   import { ref } from 'vue'
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-  import { Utils } from 'src/util'
   import { useAxiosStore } from 'src/stores/axios-store'
   import { syncWithBackend } from 'src/utils/sync-utils'
   import LoginForm from 'src/components/forms/LoginForm.vue'
   import CenteredPage from 'src/components/CenteredPage.vue'
+  import { handleError } from 'src/utils/notification-utils'
 
   useMeta(() => ({ title: 'Login | TDL App' }))
 
@@ -62,8 +62,8 @@
         })
         syncWithBackend().then(
           () => $router.push({ path: '/' }),
-          Utils.handleError('Failed to fetch data')
+          handleError('Failed to fetch data')
         )
-      }, Utils.handleError('Failed to log in'))
+      }, handleError('Failed to log in'))
   }
 </script>

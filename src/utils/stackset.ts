@@ -1,3 +1,4 @@
+// REVIEW: Unused, remove?
 class StackSet<T> {
   private set: Set<T>
   private traversed: Set<T>

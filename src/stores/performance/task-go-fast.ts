@@ -3,8 +3,9 @@ import { Task, TaskRepo } from '../tasks/task'
 import { cachedTask, useAllTasksStore } from './all-tasks'
 import { useCompletedTasksStore } from './completed-tasks'
 import { useIncompleteTasksStore } from './incomplete-tasks'
-import { Utils } from 'src/util'
 import { useLayerZeroStore } from './layer-zero'
+import { arrayDelete, arrayUpdate, venn } from 'src/utils/array-utils'
+import { hardCheck } from 'src/utils/type-utils'
 
 export class TaskCache {
   static regenerate = () => {
@@ -24,7 +25,7 @@ export class TaskCache {
   }
   static update = (task: Task) => {
     // todo: might need to rewrite.
-    // 
+    //
     const tr = useRepo(TaskRepo)
     tr.withAll().load([task])
     const newCachedTask = new cachedTask(task)
@@ -34,8 +35,8 @@ export class TaskCache {
       ats.allTasks.set(newCachedTask.id, newCachedTask)
       currentTaskValue = newCachedTask
     }
-    const vennPres = Utils.venn(currentTaskValue.hard_prereqs, newCachedTask.hard_prereqs)
-    const vennPosts = Utils.venn(currentTaskValue.hard_postreqs, newCachedTask.hard_postreqs)
+    const vennPres = venn(currentTaskValue.hard_prereqs, newCachedTask.hard_prereqs)
+    const vennPosts = venn(currentTaskValue.hard_postreqs, newCachedTask.hard_postreqs)
     console.debug({ vennPres, vennPosts })
     if (newCachedTask.completed) {
       useCompletedTasksStore().tasks.set(task.id, newCachedTask)
@@ -45,20 +46,20 @@ export class TaskCache {
       useIncompleteTasksStore().tasks.set(task.id, newCachedTask)
     }
     ats.allTasks.set(newCachedTask.id, newCachedTask)
-    const ATHardGet = (id: number): cachedTask => Utils.hardCheck(ats.typed.get(id))
+    const ATHardGet = (id: number): cachedTask => hardCheck(ats.typed.get(id))
     // left: tasks that have been removed from the dependencies
     // center: tasks whose state is unchanged
     // right: tasks that are being added to the dependencies
     vennPres.left.forEach((x) => {
       const t = ATHardGet(x.id)
-      Utils.arrayDelete(t.hard_postreqs, task, 'id')
+      arrayDelete(t.hard_postreqs, task, 'id')
       console.log({ 'postreqs before delete': t.hard_postreq_ids})
-      Utils.arrayDelete(t.hard_postreq_ids, task.id)
+      arrayDelete(t.hard_postreq_ids, task.id)
       console.log({ 'postreqs after delete': t.hard_postreq_ids})
     })
     vennPres.center.forEach((x) => {
       const t = ATHardGet(x.id)
-      Utils.arrayUpdate(t.hard_postreqs, task, 'id')
+      arrayUpdate(t.hard_postreqs, task, 'id')
     })
     vennPres.right.forEach((x) => {
       const t = ATHardGet(x.id)
@@ -67,14 +68,14 @@ export class TaskCache {
     })
     vennPosts.left.forEach((x) => {
       const t = ATHardGet(x.id)
-      Utils.arrayDelete(t.hard_prereqs, task, 'id')
+      arrayDelete(t.hard_prereqs, task, 'id')
       console.log({ 'prereqs before delete': t.hard_prereq_ids})
-      Utils.arrayDelete(t.hard_prereq_ids, task.id)
+      arrayDelete(t.hard_prereq_ids, task.id)
       console.log({ 'prereqs after delete': t.hard_prereq_ids})
     })
     vennPosts.center.forEach((x) => {
       const t = ATHardGet(x.id)
-      Utils.arrayUpdate(t.hard_prereqs, task, 'id')
+      arrayUpdate(t.hard_prereqs, task, 'id')
     })
     vennPosts.right.forEach((x) => {
       const t = ATHardGet(x.id)
