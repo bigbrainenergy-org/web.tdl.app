@@ -48,6 +48,7 @@ export class T2 implements TaskLike {
           console.debug({ 'null or empty property name access of hard_prereq_ids': property })
           return true
         }
+        if (property === 'length') return true
         if (isNaN(Number(property))) {
           console.debug({
             'catch-all for hard_prereq_ids access that does not fit a mould': property
@@ -96,6 +97,7 @@ export class T2 implements TaskLike {
           console.debug({ 'null or empty property name access of hard_postreq_ids': property })
           return true
         }
+        if (property === 'length') return true
         if (isNaN(Number(property))) {
           console.debug({
             'catch-all for hard_postreq_ids access that does not fit a mould': property
