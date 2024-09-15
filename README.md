@@ -38,6 +38,12 @@ npm run format
 quasar build
 ```
 
+#### Debug production versions
+
+```bash
+docker compose build --no-cache --progress=plain
+```
+
 ### Customize the configuration
 
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
