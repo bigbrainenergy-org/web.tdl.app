@@ -6,7 +6,6 @@ import { ProcedureRepo } from '../procedures/procedure'
 import { ExpandedStateRepo } from '../task-meta/expanded-state'
 import { TaskLike, CreateTaskOptions } from './t2-interfaces-types'
 import { useT2Store } from './t2-store'
-import { Utils } from 'src/util'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 

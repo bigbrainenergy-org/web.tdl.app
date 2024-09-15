@@ -1,4 +1,3 @@
-import { AllOptionalTaskProperties } from '../tasks/task'
 import { T2 } from './t2-model'
 
 export interface T2State {
@@ -45,4 +44,19 @@ export interface UpdateTaskLike {
   payload: {
     task: AllOptionalTaskProperties
   }
+}
+
+export interface AllOptionalTaskProperties {
+  list_id?: number | null
+  title?: string
+  notes?: string
+  completed?: boolean
+  deadline_at?: string
+  prioritize_at?: string
+  remind_me_at?: string
+  review_at?: string
+  hard_prereq_ids?: number[]
+  hard_postreq_ids?: number[]
+  mental_energy_required?: number
+  physical_energy_required?: number
 }

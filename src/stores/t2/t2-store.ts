@@ -1,12 +1,16 @@
 import { defineStore, PiniaPluginContext, StateTree } from 'pinia'
-import { CreateTaskOptions, T2State, TaskLike, UpdateTaskLike } from './t2-interfaces-types'
+import {
+  AllOptionalTaskProperties,
+  CreateTaskOptions,
+  T2State,
+  TaskLike
+} from './t2-interfaces-types'
 import { T2 } from './t2-model'
 import { AxiosResponse } from 'axios'
 import { Queue } from 'src/types'
 import { Utils } from 'src/util'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
-import { AllOptionalTaskProperties } from '../tasks/task'
 import { retrieve } from './t2-utils'
 
 export const useT2Store = defineStore('t2', {
@@ -29,9 +33,11 @@ export const useT2Store = defineStore('t2', {
     debug: true,
     serializer: {
       serialize: (value: StateTree) => {
+        console.debug('serializing tasks into localStorage')
         return JSON.stringify(value.array.map((x: T2) => x.rawData))
       },
       deserialize: (value: string): StateTree => {
+        console.debug('parsing local storage for tasks')
         const parsed = JSON.parse(value) as TaskLike[]
         const array = parsed.map((x: TaskLike) => new T2(x))
         return { array }
