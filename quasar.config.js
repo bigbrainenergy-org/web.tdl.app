@@ -10,6 +10,7 @@
 
 import { configure } from 'quasar/wrappers'
 import { resolve } from 'path'
+import { mergeConfig } from 'vite'
 
 export default configure(function (/* ctx */) {
   return {
@@ -63,14 +64,18 @@ export default configure(function (/* ctx */) {
       // analyze: true,
       env: {
         RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
-      }
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+      extendViteConf (viteConf) {
+      	viteConf.build = mergeConfig(viteConf.build, {
+      		sourcemap: true
+      	})
+      },
       // viteVuePluginOptions: {},
 
       // vitePlugins: [
