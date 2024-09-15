@@ -40,9 +40,20 @@ export class T2 implements TaskLike {
     this.hard_prereq_ids = new Proxy(this._hard_prereq_ids, {
       set: (target, property, value: number) => {
         target[property as any] = value
-        if (typeof property === 'symbol') return true
-        if (property === null || property === '') return true
-        if (isNaN(Number(property))) return true
+        if (typeof property === 'symbol') {
+          console.debug({ 'symbol access of hard_prereq_ids': property })
+          return true
+        }
+        if (property === null || property === '') {
+          console.debug({ 'null or empty property name access of hard_prereq_ids': property })
+          return true
+        }
+        if (isNaN(Number(property))) {
+          console.debug({
+            'catch-all for hard_prereq_ids access that does not fit a mould': property
+          })
+          return true
+        }
         const obj = useT2Store().mapp.get(value)
         if (typeof obj !== 'undefined') {
           this.hard_prereqs[property as any] = obj as T2
@@ -77,9 +88,20 @@ export class T2 implements TaskLike {
     this.hard_postreq_ids = new Proxy(this._hard_postreq_ids, {
       set: (target, property, value: number) => {
         target[property as any] = value
-        if (typeof property === 'symbol') return true
-        if (property === null || property === '') return true
-        if (isNaN(Number(property))) return true
+        if (typeof property === 'symbol') {
+          console.debug({ 'symbol access of hard_postreq_ids': property })
+          return true
+        }
+        if (property === null || property === '') {
+          console.debug({ 'null or empty property name access of hard_postreq_ids': property })
+          return true
+        }
+        if (isNaN(Number(property))) {
+          console.debug({
+            'catch-all for hard_postreq_ids access that does not fit a mould': property
+          })
+          return true
+        }
         const obj = useT2Store().mapp.get(value) // FIXME: this used to be hardGet but it runs into issues when adding tasks one by one to an empty store.
         if (typeof obj !== 'undefined') {
           this.hard_postreqs[property as any] = obj as T2
