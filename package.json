@@ -42,7 +42,7 @@
     "luxon": "latest",
     "pinia": "latest",
     "pinia-orm": "latest",
-    "pinia-plugin-persistedstate": "latest",
+    "pinia-plugin-persistedstate": "3.2.1",
     "postcss": "latest",
     "quasar": "latest",
     "vue": "latest",
