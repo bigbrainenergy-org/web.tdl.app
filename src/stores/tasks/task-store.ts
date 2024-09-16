@@ -2,27 +2,27 @@ import { defineStore, PiniaPluginContext, StateTree } from 'pinia'
 import {
   AllOptionalTaskProperties,
   CreateTaskOptions,
-  T2State,
+  TaskState,
   TaskLike
-} from './t2-interfaces-types'
-import { T2 } from './t2-model'
+} from './task-interfaces-types'
+import { Task } from './task-model'
 import { AxiosResponse } from 'axios'
 import { Queue } from 'src/types'
 import { Utils } from 'src/util'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
-import { retrieve } from './t2-utils'
+import { retrieve } from './task-utils'
 
-export const useT2Store = defineStore('t2', {
-  state: (): T2State => ({
-    mapp: new Map<number, T2>(),
-    array: [] as T2[]
+export const useTaskStore = defineStore('tasks', {
+  state: (): TaskState => ({
+    mapp: new Map<number, Task>(),
+    array: [] as Task[]
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
       const store = context.store
       console.debug({ msg: 'restoring tasks store.', mapp: store.mapp, array: store.array })
-      ;(store.mapp as Map<number, T2>).forEach((val: T2) => {
+      ;(store.mapp as Map<number, Task>).forEach((val: Task) => {
         val.fullSyncPosts()
         val.fullSyncPres()
       })
@@ -33,12 +33,12 @@ export const useT2Store = defineStore('t2', {
     serializer: {
       serialize: (value: StateTree) => {
         console.debug('SERIALIZE: stringifying tasks into localStorage')
-        return JSON.stringify(value.array.map((x: T2) => x.rawData))
+        return JSON.stringify(value.array.map((x: Task) => x.rawData))
       },
       deserialize: (value: string): StateTree => {
         console.debug('DESERIALIZE: parsing local storage for tasks')
         const parsed = JSON.parse(value) as TaskLike[]
-        const mapp: Map<number, T2> = new Map(parsed.map((x: TaskLike) => [x.id, new T2(x)]))
+        const mapp: Map<number, Task> = new Map(parsed.map((x: TaskLike) => [x.id, new Task(x)]))
         const array = Array.from(mapp.values())
         return { array, mapp }
       }
@@ -46,29 +46,29 @@ export const useT2Store = defineStore('t2', {
   },
   actions: {
     updateSingle(data: TaskLike) {
-      const newT2 = new T2(data)
-      const index = this.array.findIndex((x) => x.id === newT2.id)
+      const newTask = new Task(data)
+      const index = this.array.findIndex((x) => x.id === newTask.id)
       if (index < 0) {
-        this.array.push(newT2)
-      } else this.array[index] = newT2
-      let inMap = this.mapp.get(newT2.id)
+        this.array.push(newTask)
+      } else this.array[index] = newTask
+      let inMap = this.mapp.get(newTask.id)
       if (typeof inMap === 'undefined')
-        inMap = (this.mapp as Map<number, T2>).set(newT2.id, newT2).get(newT2.id)!
-      else Object.assign(inMap, newT2)
-      return newT2
+        inMap = (this.mapp as Map<number, Task>).set(newTask.id, newTask).get(newTask.id)!
+      else Object.assign(inMap, newTask)
+      return newTask
     },
     update(data: TaskLike[]) {
-      this.array = data.map((x) => new T2(x))
-      this.mapp = new Map((this.array as T2[]).map((x: T2) => [x.id, x]))
-      ;(this.mapp as Map<number, T2>).forEach((val: T2) => {
+      this.array = data.map((x) => new Task(x))
+      this.mapp = new Map((this.array as Task[]).map((x: Task) => [x.id, x]))
+      ;(this.mapp as Map<number, Task>).forEach((val: Task) => {
         val.fullSyncPosts()
         val.fullSyncPres()
       })
       console.debug({ 'after bulk update': this.array })
       return this.array
     },
-    hardGet(id: number): T2 {
-      return Utils.hardCheck(this.mapp.get(id) as T2, `attempted to access T2 with ID of ${id}`)
+    hardGet(id: number): Task {
+      return Utils.hardCheck(this.mapp.get(id) as Task, `attempted to access Task with ID of ${id}`)
     },
     commonHeader() {
       try {
@@ -92,7 +92,7 @@ export const useT2Store = defineStore('t2', {
         .then((result: AxiosResponse<TaskLike[]>) => {
           this.update(result.data)
           return result.data
-        }, Utils.handleError('Error updating local store for Tasks (T2)'))
+        }, Utils.handleError('Error updating local store for Tasks'))
     },
     apiGetId(id: number) {
       return this.api()
@@ -152,11 +152,11 @@ export const useT2Store = defineStore('t2', {
       const allPres = new Set<number>()
       const queue = new Queue<number>()
       const preIDs = incompleteOnly
-        ? (t: T2) => {
+        ? (t: Task) => {
             const pres = task.hard_prereq_ids.map(retrieve).filter((x) => !x.completed)
             return pres.map((x) => x.id)
           }
-        : (t: T2) => {
+        : (t: Task) => {
             const pres = task.hard_prereq_ids.map(retrieve)
             return pres.map((x) => x.id)
           }
@@ -176,11 +176,11 @@ export const useT2Store = defineStore('t2', {
       const allPosts = new Set<number>()
       const queue = new Queue<number>()
       const postIDs = incompleteOnly
-        ? (t: T2) => {
+        ? (t: Task) => {
             const posts = task.hard_postreq_ids.map(retrieve).filter((x) => !x.completed)
             return posts.map((x) => x.id)
           }
-        : (t: T2) => {
+        : (t: Task) => {
             const posts = task.hard_postreq_ids.map(retrieve)
             return posts.map((x) => x.id)
           }
@@ -228,7 +228,7 @@ export const useT2Store = defineStore('t2', {
   },
   getters: {
     incompleteOnly: (state) => state.array.filter((x) => !x.completed),
-    layerZero: (state): T2[] =>
-      (state.array as T2[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0)
+    layerZero: (state): Task[] =>
+      (state.array as Task[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0)
   }
 })

@@ -3,8 +3,8 @@ import iRecord, { iOptions } from '../generics/i-record'
 import { Num, Str, Attr } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { Utils } from 'src/util'
-import { useT2Store } from 'src/stores/t2/t2-store'
-import { T2 } from 'src/stores/t2/t2-model'
+import { useTaskStore } from 'src/stores/tasks/task-store'
+import { Task } from 'src/stores/tasks/task-model'
 
 export interface CreateProcedureOptions {
   title: string
@@ -42,13 +42,13 @@ export class Procedure extends Model implements iRecord {
     persist: true
   }
 
-  grabTasks(): T2[] {
-    const tasks = (useT2Store().array as T2[]).filter((x) => x.procedure_ids?.includes(this.id))
+  grabTasks(): Task[] {
+    const tasks = (useTaskStore().array as Task[]).filter((x) => x.procedure_ids?.includes(this.id))
     return tasks
   }
 
   get tasks() {
-    const ts = useT2Store()
+    const ts = useTaskStore()
     return this.task_ids.map((x) => ts.hardGet(x))
   }
 }

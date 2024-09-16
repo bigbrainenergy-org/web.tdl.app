@@ -1,31 +1,17 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog
-    ref="dialogRef"
-    :maximized="$q.screen.lt.md"
-    backdrop-filter="blur(4px)"
-    @hide="hideDialog"
-  >
+  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" backdrop-filter="blur(4px)" @hide="hideDialog">
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
-        <SettingsButton
-          v-model:settings="taskSearchSettings"
-          name="Task Search Settings"
-          color="white"
-        />
+        <SettingsButton v-model:settings="taskSearchSettings" name="Task Search Settings" color="white" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
       <q-separator />
 
-      <TaskSearchInput
-        v-model:model-value="searchString"
-        :search-label="searchLabel"
-        :dialog-title="dialogTitle"
-        :debounce="debounceAmount"
-        @do-a-search="searchForTasks"
-      />
+      <TaskSearchInput v-model:model-value="searchString" :search-label="searchLabel" :dialog-title="dialogTitle"
+        :debounce="debounceAmount" @do-a-search="searchForTasks" />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm text-white">
@@ -34,25 +20,15 @@
               <q-separator class="q-my-md" />
               <div class="text-h4 q-mb-md">{{ resultsTitle }} - {{ results.length }}</div>
               <q-item v-if="showCreateButton">
-                <q-btn
-                  icon="fas fa-plus"
-                  label="Create A New Task"
-                  color="primary"
-                  @click="createTask"
-                />
+                <q-btn icon="fas fa-plus" label="Create A New Task" color="primary" @click="createTask" />
               </q-item>
               <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <!-- <q-scroll-area v-else> -->
               <q-list v-else ref="el">
-                <q-item
-                  v-for="task in results"
-                  :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as T2)"
-                >
+                <q-item v-for="task in results" :key="task.id ?? -1" v-ripple clickable
+                  @click="selectTask(task as Task)">
                   <q-item-section :style="colorize(task.id)">
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -82,9 +58,9 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisB } from 'src/perf'
   import Fuse, { FuseResult } from 'fuse.js'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
   // import { useElementSize } from '@vueuse/core'
 
   interface Props {
@@ -94,8 +70,8 @@
     taskID: number | undefined
     closeOnSelect?: boolean
     showCreateButton?: boolean
-    initialFilter: λ<number | undefined, λ<T2, boolean>> | undefined
-    batchFilter: λ<number | undefined, λ<T2[], T2[]>> | undefined
+    initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
+    batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -156,13 +132,13 @@
   // can't set this in withDefaults... don't even try
   // DON'T
   const defaultFilter = (currentTaskID: number | undefined) => {
-    const simplestFilter = (x: T2) => !x.completed
+    const simplestFilter = (x: Task) => !x.completed
     if (typeof currentTaskID === 'undefined') return simplestFilter
-    const ct = useT2Store().mapp.get(currentTaskID)
+    const ct = useTaskStore().mapp.get(currentTaskID)
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
-      return (x: T2) => {
+      return (x: Task) => {
         if (x.completed) return false
         if (ct.hard_prereq_ids.includes(x.id)) return false
         if (ct.hard_postreq_ids.includes(x.id)) return false
@@ -173,16 +149,15 @@
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
 
-  const getTasks = (): T2[] => {
+  const getTasks = (): Task[] => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useT2Store().array as T2[]).filter(filterish.value(props.taskID))
+    const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
       console.warn(
-        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
-          allTasks.length / 2
+        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${allTasks.length / 2
         }ms`
       )
     return allTasks
@@ -193,10 +168,10 @@
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
    */
-  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: T2[]) => {
+  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
   //   if (omitRedundant.value) {
   //     if (typeof taskID !== 'undefined') {
-  //       const ct = useT2Store().mapp.get(taskID)
+  //       const ct = useTaskStore().mapp.get(taskID)
   //       if (typeof ct !== 'undefined') {
   //         const relationInfo = ct.hasRelationToAny(tasks.map((x) => x.id))
   //         tasks = tasks.filter((x) => relationInfo.get(x.id) !== true)
@@ -227,7 +202,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
     results.value = run.map((x) => x.item)
     timeThis(kickOffRedundancyCheck, 'kickOffRedundancyCheck', 13)()
@@ -241,7 +216,7 @@
     }
   }
 
-  const selectTask = (task: T2) => {
+  const selectTask = (task: Task) => {
     emit('select', { task })
     searchForTasks()
     if (props.closeOnSelect) onDialogCancel()
@@ -261,7 +236,7 @@
     const toCreate: CreateTaskOptions = { title: searchString.value }
     const start = performance.now()
     const target = 400
-    useT2Store()
+    useTaskStore()
       .apiCreate(toCreate)
       .then((result) => {
         if (result === null) return
@@ -279,7 +254,7 @@
     onDialogHide()
   }
 
-  const results = ref<T2[]>([])
+  const results = ref<Task[]>([])
   const redundantTasks = ref<Map<number, boolean>>(new Map())
   const colorize = (id: number) =>
     redundantTasks.value.get(id) ? "color: 'warning'" : "color: 'primary'"
@@ -293,7 +268,7 @@
       currentTask.value?.hasRelationToAny(results.value.map((x) => x.id)) ?? new Map()
   }
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? useT2Store().hardGet(props.taskID) : null
+    typeof props.taskID !== 'undefined' ? useTaskStore().hardGet(props.taskID) : null
   )
   const debounceAmount = ref(100)
   fuse.value

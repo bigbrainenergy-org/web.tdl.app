@@ -56,7 +56,7 @@
           split
           auto-close
           dropdown-icon="more_vert"
-          @click.stop="makeSelection(t as T2)"
+          @click.stop="makeSelection(t as Task)"
           @touchstart.stop
           @mousedown.stop
         >
@@ -73,7 +73,7 @@
               :key="index"
               v-close-popup
               clickable
-              @click.stop="menuitem.action(t as T2)"
+              @click.stop="menuitem.action(t as Task)"
             >
               <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
               <q-space />
@@ -109,8 +109,8 @@
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -127,8 +127,8 @@
   })
 
   class PostWeightedTask {
-    t: T2
-    constructor(t: T2) {
+    t: Task
+    constructor(t: Task) {
       this.t = t
     }
     weight = () => 1 / Math.min(Math.max(1, this.t.incomplete_postreqs.length), 10)
@@ -143,10 +143,10 @@
     quickSortDialogMaxToShow
   } = storeToRefs(useLocalSettingsStore())
 
-  const postWeightedTask = (x: T2) => new PostWeightedTask(x)
+  const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
   const layerZero = computed(() => {
-    const layerZeroTasks = useT2Store().layerZero
+    const layerZeroTasks = useTaskStore().layerZero
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
@@ -185,7 +185,7 @@
   // type pair<T> = { a: T; b: T }
   // let skippedPairs: pair<Task>[] = []
 
-  const addPres = (x: T2) => {
+  const addPres = (x: Task) => {
     TDLAPP.addPrerequisitesDialog(x)
       .onOk(() => {
         console.debug('getting a new pair now')
@@ -201,7 +201,7 @@
       })
   }
 
-  const sliceTask = (x: T2) => {
+  const sliceTask = (x: Task) => {
     TDLAPP.sliceTask(x)
       .onOk(() => {
         console.debug('getting a new pair now')
@@ -221,7 +221,7 @@
     tryNewPair()
   }
 
-  const complete = async (x: T2) => {
+  const complete = async (x: Task) => {
     try {
       await x.toggleCompleted()
       reloadTasks()
@@ -230,12 +230,12 @@
       console.error(error)
     }
   }
-  const taskDetails = (x: T2) => {
+  const taskDetails = (x: Task) => {
     console.debug(`opening details for task ID ${x.id}`)
     TDLAPP.openTask(x.id).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
-  const menuItems: SimpleMenuItem<T2>[] = [
+  const menuItems: SimpleMenuItem<Task>[] = [
     {
       label: 'Mark Complete',
       icon: 'fa-solid fa-clipboard-check',
@@ -289,7 +289,7 @@
    * - throw an error if sorting is done
    * - select a new pair (or trio or quartet or n-tet)
    */
-  const generateNewPair = (): T2[] => {
+  const generateNewPair = (): Task[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
@@ -325,7 +325,7 @@
     }
   }
 
-  const makeSelection = (mvp: T2) => {
+  const makeSelection = (mvp: Task) => {
     loading.value = true
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     const selected_ids = selected_tasks.map((x) => x.id)
@@ -333,7 +333,7 @@
     selected_tasks.forEach((x) => {
       x.hard_prereq_ids.push(mvp.id)
     })
-    useT2Store()
+    useTaskStore()
       .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
       .then(() => {
         tryNewPair()

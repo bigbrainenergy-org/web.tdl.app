@@ -48,11 +48,11 @@
 <script setup lang="ts">
   import { toRef } from 'vue'
   import { TDLAPP } from 'src/TDLAPP'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { Task } from 'src/stores/tasks/task-model'
 
   const props = withDefaults(
     defineProps<{
-      task: T2
+      task: Task
       incompleteOnly?: boolean
     }>(),
     {
@@ -63,5 +63,5 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
-  const addTaskPre = (currentTask: T2) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
 </script>

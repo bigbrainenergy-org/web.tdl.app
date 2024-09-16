@@ -37,7 +37,7 @@
               @add-item="openAddProcedureTaskDialog"
               @remove-item="removeTaskFromProcedure"
               @select-item="openTask"
-              @toggle-completed-item="(x: T2) => x.updateTaskCompletionStatus()"
+              @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
             />
           </div>
         </div>
@@ -62,8 +62,8 @@
   import GloriousTextInput from '../GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import { TDLAPP } from 'src/TDLAPP'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)
@@ -81,9 +81,9 @@
   //   return t
   // })
 
-  const procedureTasks = computed<T2[]>(() => {
+  const procedureTasks = computed<Task[]>(() => {
     console.log('fetching proceduretasks again!!')
-    const tasksArr = (useT2Store().array as T2[]).filter((x) =>
+    const tasksArr = (useTaskStore().array as Task[]).filter((x) =>
       x.procedure_ids?.includes(props.procedure.id)
     )
     // const prm_tasks = props.procedure.grabTasks()
@@ -136,7 +136,7 @@
 
   const editTitle = ref(procedureRef.value.title)
 
-  const allTasks = computed<T2[]>(() =>
+  const allTasks = computed<Task[]>(() =>
     incompleteOnly.value ? procedureTasks.value.filter((x) => !x.completed) : procedureTasks.value
   )
 
@@ -182,7 +182,7 @@
     {
       label: 'Unlink this Task',
       icon: 'fas fa-unlink',
-      action: (x: T2) => {
+      action: (x: Task) => {
         const options: UpdateProcedureOptions = {
           id: procedureRef.value.id,
           payload: {
@@ -205,7 +205,7 @@
   ]
 
   const openAddProcedureTaskDialog = () => {
-    const assignTaskToProcedure = (payload: { task: T2 }) => {
+    const assignTaskToProcedure = (payload: { task: Task }) => {
       const options: UpdateProcedureOptions = {
         id: procedureRef.value.id,
         payload: {
@@ -220,8 +220,8 @@
         .update(options)
         .then(Utils.handleSuccess('Linked a task.'), Utils.handleError('Error linking a task.'))
     }
-    const initialFilter: λ<number | undefined, λ<T2[], T2[]>> = () => {
-      return (tasks: T2[]) => tasks.filter((x) => !procedureRef.value.task_ids.includes(x.id))
+    const initialFilter: λ<number | undefined, λ<Task[], Task[]>> = () => {
+      return (tasks: Task[]) => tasks.filter((x) => !procedureRef.value.task_ids.includes(x.id))
     }
     TDLAPP.searchDialog(assignTaskToProcedure, initialFilter)
   }

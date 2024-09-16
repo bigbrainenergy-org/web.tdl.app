@@ -1,42 +1,16 @@
 <template>
   <div class="fixed-center" style="width: max(min(100%, 500px), 40%); text-align: center">
-    <q-card
-      style="background-color: #1d1d1df6"
-      class="q-ma-lg text-primary"
-      :dark="useLocalSettingsStore().backgroundMode !== 'image'"
-      flat
-      bordered
-    >
+    <q-card style="background-color: #1d1d1df6" class="q-ma-lg text-primary"
+      :dark="useLocalSettingsStore().backgroundMode !== 'image'" flat bordered>
       <q-bar v-if="currentTask" style="background-color: #333333">
         <div>IN FOCUS</div>
         <q-space />
-        <q-btn
-          dense
-          flat
-          icon="fa fa-scissors"
-          class="q-pr-sm"
-          @click="slice(currentTask)"
-          @touchstart.stop
-          @mousedown.stop
-        />
-        <q-btn
-          dense
-          flat
-          icon="fa fa-info"
-          class="q-pr-sm"
-          @click="open(currentTask)"
-          @touchstart.stop
-          @mousedown.stop
-        />
-        <q-btn
-          dense
-          flat
-          icon="fa fa-plus"
-          class="q-pr-sm"
-          @click="addTaskPre(currentTask)"
-          @touchstart.stop
-          @mousedown.stop
-        >
+        <q-btn dense flat icon="fa fa-scissors" class="q-pr-sm" @click="slice(currentTask)" @touchstart.stop
+          @mousedown.stop />
+        <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(currentTask)" @touchstart.stop
+          @mousedown.stop />
+        <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(currentTask)" @touchstart.stop
+          @mousedown.stop>
           <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
             Add Prerequisites
           </q-tooltip>
@@ -48,46 +22,19 @@
       </q-card-section>
       <q-card-section v-else> No tasks in this list! </q-card-section>
     </q-card>
-    <q-card
-      style="background-color: #1d1d1df6; color: #5d5d5d; margin-top: 8%"
-      class="q-ma-lg"
-      :dark="useLocalSettingsStore().backgroundMode !== 'image'"
-      flat
-      bordered
-    >
+    <q-card style="background-color: #1d1d1df6; color: #5d5d5d; margin-top: 8%" class="q-ma-lg"
+      :dark="useLocalSettingsStore().backgroundMode !== 'image'" flat bordered>
       <q-bar v-if="nextUp" style="background-color: #333333">
         <div>UP NEXT</div>
         <q-space />
-        <q-btn
-          dense
-          flat
-          icon="fa fa-info"
-          class="q-pr-sm"
-          @click="open(nextUp)"
-          @touchstart.stop
-          @mousedown.stop
-        />
-        <q-btn
-          dense
-          flat
-          icon="fa fa-plus"
-          class="q-pr-sm"
-          @click="addTaskPre(nextUp)"
-          @touchstart.stop
-          @mousedown.stop
-        >
+        <q-btn dense flat icon="fa fa-info" class="q-pr-sm" @click="open(nextUp)" @touchstart.stop @mousedown.stop />
+        <q-btn dense flat icon="fa fa-plus" class="q-pr-sm" @click="addTaskPre(nextUp)" @touchstart.stop
+          @mousedown.stop>
           <q-tooltip anchor="top middle" self="bottom middle" :offset="[7, 7]">
             Add Prerequisites
           </q-tooltip>
         </q-btn>
-        <q-btn
-          dense
-          flat
-          icon="fa fa-check"
-          @click="nextUp.toggleCompleted()"
-          @touchstart.stop
-          @mousedown.stop
-        />
+        <q-btn dense flat icon="fa fa-check" @click="nextUp.toggleCompleted()" @touchstart.stop @mousedown.stop />
       </q-bar>
       <q-card-section v-if="nextUp" class="text-h4">
         {{ nextUp.title }}
@@ -101,18 +48,18 @@
   import { TDLAPP } from 'src/TDLAPP'
   // import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
   import { computed } from 'vue'
 
-  const open = (task: T2) => TDLAPP.openTask(task.id)
+  const open = (task: Task) => TDLAPP.openTask(task.id)
 
   const addTaskPre = TDLAPP.addPrerequisitesDialog
 
   const slice = TDLAPP.sliceTask
 
   const layerZero = computed(() => {
-    return useT2Store().layerZero.sort(
+    return useTaskStore().layerZero.sort(
       (a, b) => b.incomplete_postreqs.length - a.incomplete_postreqs.length
     )
   })
@@ -124,7 +71,7 @@
   const hasNewTasksInLayerZero = () =>
     useLocalSettingsStore().enableQuickSortOnNewTask
       ? layerZero.value.filter((x) => x.hard_postreqs.filter((y) => !y.completed).length === 0)
-          .length > 0
+        .length > 0
       : false
   const shouldSort = computed<boolean>({
     get: () => hasTooManyInLayerZero() || hasNewTasksInLayerZero(),
@@ -133,11 +80,11 @@
     }
   })
 
-  const currentTask = computed((): T2 | null =>
+  const currentTask = computed((): Task | null =>
     layerZero.value.length ? layerZero.value[0] : null
   )
-  const nextUp = computed((): T2 | null => {
-    let arr: Array<T2> = Array.from(layerZero.value)
+  const nextUp = computed((): Task | null => {
+    let arr: Array<Task> = Array.from(layerZero.value)
     if (currentTask.value !== null) {
       let posts = currentTask.value.grabPostreqs(true)
       posts = posts.filter((x) => x.grabPrereqs(true).length === 1)

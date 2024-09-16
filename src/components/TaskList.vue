@@ -16,12 +16,12 @@
 <script setup lang="ts">
   import { toRef } from 'vue'
   import TaskItem from 'src/components/TaskItem.vue'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { Task } from 'src/stores/tasks/task-model'
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
     defineProps<{
-      tasks?: Array<T2>
+      tasks?: Array<Task>
       unblockedOnly?: boolean
       incompleteOnly?: boolean
       emptyListMessage?: string

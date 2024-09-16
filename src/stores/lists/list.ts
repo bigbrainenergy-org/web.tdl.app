@@ -3,8 +3,8 @@ import iRecord, { iOptions } from '../generics/i-record'
 import { Attr, HasMany, Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { Task } from '../tasks/task'
-import { useT2Store } from 'src/stores/t2/t2-store'
-import { T2 } from 'src/stores/t2/t2-model'
+import { useTaskStore } from 'src/stores/tasks/task-store'
+import { Task } from 'src/stores/tasks/task-model'
 
 export interface CreateListOptions {
   title: string
@@ -31,8 +31,8 @@ export class List extends Model implements iRecord {
   @Str('') declare notes: string
 
   // @HasMany(() => Task, 'list_id') declare tasks: Task[]
-  get tasks(): T2[] {
-    return (useT2Store().array as T2[]).filter((x) => x.list_id === this.id)
+  get tasks(): Task[] {
+    return (useTaskStore().array as Task[]).filter((x) => x.list_id === this.id)
   }
 
   get incompleteTaskCount() {

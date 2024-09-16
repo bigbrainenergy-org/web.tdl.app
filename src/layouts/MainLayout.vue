@@ -135,9 +135,9 @@
   import { ComponentPublicInstance } from 'vue'
   import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
-  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
   import { TDLAPP } from 'src/TDLAPP'
-  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
+  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 
   const $q = useQuasar()
   const $route = useRoute()
@@ -252,7 +252,7 @@
 
   const createTask = (payload: CreateTaskOptions) => {
     // const tr = useRepo(TaskRepo)
-    useT2Store()
+    useTaskStore()
       .apiCreate(payload)
       .then(() => {
         Utils.notifySuccess('Successfully created a task')
@@ -339,7 +339,7 @@
     // const tr = useRepo(TaskRepo)
     const autoTaskName = 'auto task for testing purposes'
     for (let i = 1; i < 10; i++) {
-      await useT2Store().apiCreate({ title: `${autoTaskName} ${i}` })
+      await useTaskStore().apiCreate({ title: `${autoTaskName} ${i}` })
     }
   }
 

@@ -34,9 +34,9 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { Utils } from 'src/util'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { Task } from 'src/stores/tasks/task-model'
 
-  const props = defineProps<{ task: T2 }>()
+  const props = defineProps<{ task: Task }>()
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
 

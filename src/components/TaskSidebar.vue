@@ -119,8 +119,8 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { textColor } from 'src/hackerman/TextColor'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 
   const $q = useQuasar()
   const model = defineModel<boolean>({ default: false })
@@ -137,7 +137,7 @@
 
   const createTask = (payload: CreateTaskOptions) => {
     // const tr = useRepo(TaskRepo)
-    useT2Store()
+    useTaskStore()
       .apiCreate(payload)
       .then(
         Utils.handleSuccess('Successfully created a task'),

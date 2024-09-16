@@ -25,8 +25,8 @@
   import { λ } from 'src/types'
   import { TDLAPP } from 'src/TDLAPP'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   useMeta(() => {
     return {
@@ -34,10 +34,10 @@
     }
   })
 
-  const ts = useT2Store()
+  const ts = useTaskStore()
   const usr = useLocalSettingsStore()
   let allTasks
-  let allTaskNodes: d3Node<T2>[]
+  let allTaskNodes: d3Node<Task>[]
 
   // size of the chart, not size of the viewport onto the chart
   let width = 1000
@@ -50,7 +50,7 @@
     normalXoffset: number
     normalYoffset: number
   }
-  let links: d3Link<T2>[]
+  let links: d3Link<Task>[]
 
   const incompleteOnly = ref(usr.hideCompleted)
   const taskNodeMaxSize = ref(usr.maxGraphNodeRadius)
@@ -79,10 +79,10 @@
     for (let i = 0; i < allTasks.length; i++) {
       allTaskNodes.push(allTasks[i].d3forceNode(i))
     }
-    const taskNodeMap: Map<number, d3Node<T2>> = new Map<number, d3Node<T2>>()
+    const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
     allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
     links = links.concat(
-      allTaskNodes.flatMap((x: d3Node<T2>) =>
+      allTaskNodes.flatMap((x: d3Node<Task>) =>
         x.obj.hard_postreqs
           .filter((y) => (y.completed ? !usr.hideCompleted : true))
           .map(
@@ -94,20 +94,20 @@
                 slopeY: 1,
                 normalXoffset: 1,
                 normalYoffset: 1
-              }) as d3Link<T2>
+              }) as d3Link<Task>
           )
       )
     )
   }
 
   const populateGraphDataStructuresIncompleteOnly = () => {
-    const incomplete: λ<T2, boolean> = (x: T2) => !x.completed
+    const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
     allTasks = ts.incompleteOnly
-    const taskNodeMap: Map<number, d3Node<T2>> = new Map<number, d3Node<T2>>()
+    const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
     allTasks.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
 
-    const generateD3LinkToPostreq: λ<d3Node<T2>, λ<T2, d3Link<T2>>> =
-      (currentTaskNode: d3Node<T2>) => (currentPost: T2) =>
+    const generateD3LinkToPostreq: λ<d3Node<Task>, λ<Task, d3Link<Task>>> =
+      (currentTaskNode: d3Node<Task>) => (currentPost: Task) =>
         ({
           source: currentTaskNode,
           target: taskNodeMap.get(currentPost.id),
@@ -115,10 +115,10 @@
           slopeY: 1,
           normalXoffset: 1,
           normalYoffset: 1
-        }) as d3Link<T2>
+        }) as d3Link<Task>
 
-    const generateD3LinksToAllPostreqs: λ<d3Node<T2>, Array<d3Link<T2>>> = (
-      currentTaskNode: d3Node<T2>
+    const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (
+      currentTaskNode: d3Node<Task>
     ) =>
       currentTaskNode.obj.hard_postreqs
         .filter(incomplete)
@@ -137,14 +137,14 @@
 
   const graphRef = ref<SVGSVGElement | null>(null)
 
-  let link: d3.Selection<SVGLineElement, d3Link<T2>, SVGSVGElement | null, unknown>
-  let node: d3.Selection<SVGCircleElement, d3Node<T2>, SVGSVGElement | null, unknown>
-  let label: d3.Selection<SVGTextElement, d3Node<T2>, SVGSVGElement | null, unknown>
+  let link: d3.Selection<SVGLineElement, d3Link<Task>, SVGSVGElement | null, unknown>
+  let node: d3.Selection<SVGCircleElement, d3Node<Task>, SVGSVGElement | null, unknown>
+  let label: d3.Selection<SVGTextElement, d3Node<Task>, SVGSVGElement | null, unknown>
 
   const updateSlopes = () => {
     links.forEach((d) => {
-      d.slopeY = (d.target as d3Node<T2>).y - (d.source as d3Node<T2>).y
-      d.slopeX = (d.target as d3Node<T2>).x - (d.source as d3Node<T2>).x
+      d.slopeY = (d.target as d3Node<Task>).y - (d.source as d3Node<Task>).y
+      d.slopeX = (d.target as d3Node<Task>).x - (d.source as d3Node<Task>).x
       d.angle = Math.atan(d.slopeY / d.slopeX)
       d.normalXoffset = Math.cos(d.angle)
       d.normalYoffset = Math.sin(d.angle)
@@ -160,32 +160,32 @@
       .attr(
         'x1',
         (d) =>
-          (d.source as d3Node<T2>).x +
-          (d.source as d3Node<T2>).radius * d.normalXoffset * (d.slopeX < 0 ? -1 : 1)
+          (d.source as d3Node<Task>).x +
+          (d.source as d3Node<Task>).radius * d.normalXoffset * (d.slopeX < 0 ? -1 : 1)
       )
       .attr(
         'y1',
         (d) =>
-          (d.source as d3Node<T2>).y +
-          (d.source as d3Node<T2>).radius * d.normalYoffset * (d.slopeX < 0 ? -1 : 1)
+          (d.source as d3Node<Task>).y +
+          (d.source as d3Node<Task>).radius * d.normalYoffset * (d.slopeX < 0 ? -1 : 1)
       )
       .attr(
         'x2',
         (d) =>
-          (d.target as d3Node<T2>).x +
-          (d.target as d3Node<T2>).radius * d.normalXoffset * (d.slopeX > 0 ? -1 : 1)
+          (d.target as d3Node<Task>).x +
+          (d.target as d3Node<Task>).radius * d.normalXoffset * (d.slopeX > 0 ? -1 : 1)
       )
       .attr(
         'y2',
         (d) =>
-          (d.target as d3Node<T2>).y +
-          (d.target as d3Node<T2>).radius * d.normalYoffset * (d.slopeX > 0 ? -1 : 1)
+          (d.target as d3Node<Task>).y +
+          (d.target as d3Node<Task>).radius * d.normalYoffset * (d.slopeX > 0 ? -1 : 1)
       )
 
     label.attr('x', (d) => d.x).attr('y', (d) => d.y - 10)
   }
 
-  let simulation: d3.Simulation<d3Node<T2>, undefined>
+  let simulation: d3.Simulation<d3Node<Task>, undefined>
 
   let gnodes: any
   let gg: any
@@ -239,25 +239,25 @@
       .selectAll('line')
       .data(links)
       .join('line')
-      //.attr('stroke-width', (d: d3Link<T2>) => (d.source as d3Node<T2>).obj.hard_postreq_ids.length**2)
+      //.attr('stroke-width', (d: d3Link<Task>) => (d.source as d3Node<Task>).obj.hard_postreq_ids.length**2)
       .attr('stroke', '#FFF')
       .attr('stroke-opacity', '0.5')
       .attr('marker-end', 'url(#arrowhead)')
 
     node = gnodes
       .append('circle')
-      .attr('r', (d: d3Node<T2>) => d.radius)
-      .attr('fill', (d: d3Node<T2>) => d.color)
+      .attr('r', (d: d3Node<Task>) => d.radius)
+      .attr('fill', (d: d3Node<Task>) => d.color)
       .on('mouseover', raise)
 
     label = gnodes
       .filter(
-        (x: d3Node<T2>) =>
+        (x: d3Node<Task>) =>
           !x.obj.completed &&
           (x.radius >= 12 || x.obj.hard_prereqs.filter((x) => !x.completed).length === 0)
       )
       .append('text')
-      .text((d: d3Node<T2>) => d.obj.title)
+      .text((d: d3Node<Task>) => d.obj.title)
       .style('font', '1.2em')
       .attr('stroke', 'black')
       .attr('stroke-width', '0.3em')
@@ -271,7 +271,7 @@
     node.call(CustomForceGraph.d3DragDefaults(simulation))
 
     node.on('click', (event) => {
-      TDLAPP.openTask((event.target.__data__.obj as T2).id)
+      TDLAPP.openTask((event.target.__data__.obj as Task).id)
         .onOk(reInitializeGraph)
         .onCancel(reInitializeGraph)
         .onDismiss(reInitializeGraph)
@@ -298,7 +298,7 @@
   onMounted(initializeGraph)
 
   const openSearchDialog = () => TDLAPP.searchDialog()
-  const biggest = (prev: d3Node<T2>, curr: d3Node<T2>) => (curr.radius > prev.radius ? curr : prev)
+  const biggest = (prev: d3Node<Task>, curr: d3Node<Task>) => (curr.radius > prev.radius ? curr : prev)
   const openLargest = () =>
     TDLAPP.openTask(allTaskNodes.reduce(biggest).obj.id)
       .onOk(reInitializeGraph)

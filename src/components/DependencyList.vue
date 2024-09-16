@@ -75,7 +75,7 @@
 <script setup lang="ts">
   import { useElementSize } from '@vueuse/core'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { Task } from 'src/stores/tasks/task-model'
   import { SimpleMenuItem } from 'src/types'
   import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
@@ -87,9 +87,9 @@
   }
 
   interface Props {
-    items?: Array<T2>
+    items?: Array<Task>
     dependencyType?: EntityType // eg. Prerequisites (capitalize)
-    menuItems?: Array<SimpleMenuItem<T2>>
+    menuItems?: Array<SimpleMenuItem<Task>>
     showPrune?: boolean
   }
 

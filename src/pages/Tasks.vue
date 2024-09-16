@@ -28,7 +28,7 @@
               :tasks="tasks"
               :unblocked-only="layerZeroOnly"
               :incomplete-only="hideCompleted"
-              @task-completion-toggled="(x: T2) => x.updateTaskCompletionStatus()"
+              @task-completion-toggled="(x: Task) => x.updateTaskCompletionStatus()"
               @task-clicked="openTask"
             />
           </q-card-section>
@@ -48,8 +48,8 @@
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import TaskList from 'src/components/TaskList.vue'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
 
   useMeta(() => {
     return {
@@ -59,7 +59,7 @@
 
   const $q = useQuasar()
 
-  const openTask = (_event: any, task: T2) => TDLAPP.openTask(task.id)
+  const openTask = (_event: any, task: Task) => TDLAPP.openTask(task.id)
 
   // const pageTasks = defineComponent({
   //   name: 'PageTasks'
@@ -88,12 +88,12 @@
 
   const tasks = computed(() => {
     if (busy.value) return []
-    let baseQuery = useT2Store().layerZero
-    const filterByList = (x: T2) => x.list?.title === selectedList.value
+    let baseQuery = useTaskStore().layerZero
+    const filterByList = (x: Task) => x.list?.title === selectedList.value
     if (selectedList.value) baseQuery = baseQuery.filter(filterByList)
     const postreqs = hideCompleted.value
-      ? (t: T2) => t.incomplete_postreqs
-      : (t: T2) => t.hard_postreqs
+      ? (t: Task) => t.incomplete_postreqs
+      : (t: Task) => t.hard_postreqs
     baseQuery.sort((a, b) => postreqs(b).length - postreqs(a).length)
     return baseQuery
   })

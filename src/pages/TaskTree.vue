@@ -77,8 +77,8 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   // const tr = computed(() => useRepo(TaskRepo))
   // const esr = computed(() => useRepo(ExpandedStateRepo))
@@ -124,12 +124,12 @@
     console.debug({ expandedReverse })
   })
 
-  const style = (task: T2) => ({
+  const style = (task: Task) => ({
     backgroundColor: toggleRGB.value ? task.hashColor() : undefined,
     innerWidth: '100%'
   })
 
-  const { array } = storeToRefs(useT2Store())
+  const { array } = storeToRefs(useTaskStore())
 
   const layerZero = computed(() =>
     array.value
@@ -143,8 +143,8 @@
   // todo: this could be a problem for reactivity
   let allTaskNodes = Array.from(layerZero.value)
 
-  const theTree = ref<QTreeComponent<T2> | undefined>()
-  const theReverseTree = ref<QTreeComponent<T2> | undefined>()
+  const theTree = ref<QTreeComponent<Task> | undefined>()
+  const theReverseTree = ref<QTreeComponent<Task> | undefined>()
 
   // forgive me
   // let queueCollapse: NodeKey[] = []
@@ -240,14 +240,14 @@
 
   // const $q = useQuasar()
 
-  const openTask = (currentTask: T2) => {
+  const openTask = (currentTask: Task) => {
     TDLAPP.openTask(currentTask.id)
       .onDismiss(() => initializeQueues())
       .onCancel(() => initializeQueues())
       .onOk(() => initializeQueues())
   }
 
-  const updateTaskCompletedStatus = (task: T2) => {
+  const updateTaskCompletedStatus = (task: Task) => {
     task.updateTaskCompletionStatus().then(() => {
       if (incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
     })
@@ -259,7 +259,7 @@
   // const shouldBeExpanded = <T>(x: SimpleTreeNode<T>) => esr.value.isExpanded(x.id)
   const toNodeKey = <T,>(x: SimpleTreeNode<T>) => ({ id: x.id, key: x.key })
 
-  const childNodeLoader = (getter: λ<details<T2>, SimpleTreeNode<T2>[]>) => (d: details<T2>) => {
+  const childNodeLoader = (getter: λ<details<Task>, SimpleTreeNode<Task>[]>) => (d: details<Task>) => {
     // esrc.setExpanded(d.node.id, true)
     queueExpand.push(toNodeKey(d.node))
     const childNodes = getter(d)
@@ -280,13 +280,13 @@
     handleExpandAndCollapse()
   }
 
-  const prenodes = (x: details<T2>) => {
+  const prenodes = (x: details<Task>) => {
     return x.node.obj.hardPrereqTreeNodes(reverseOrder.value, incompleteOnly.value, x.node.key)
   }
-  const postnodes = (x: details<T2>) => {
+  const postnodes = (x: details<Task>) => {
     return x.node.obj.hardPostreqTreeNodes(reverseOrder.value, incompleteOnly.value, x.node.key)
   }
-  const loadChildren: λ<details<T2>, void> = (d) =>
+  const loadChildren: λ<details<Task>, void> = (d) =>
     childNodeLoader(reverseOrder.value ? prenodes : postnodes)(d)
 
   // let previousExpanded: string[] = []

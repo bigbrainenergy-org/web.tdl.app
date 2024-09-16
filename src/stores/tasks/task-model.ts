@@ -4,20 +4,20 @@ import { TDLAPP } from 'src/TDLAPP'
 import { ListRepo } from '../lists/list'
 import { ProcedureRepo } from '../procedures/procedure'
 import { ExpandedStateRepo } from '../task-meta/expanded-state'
-import { TaskLike, CreateTaskOptions } from './t2-interfaces-types'
-import { useT2Store } from './t2-store'
+import { TaskLike, CreateTaskOptions } from './task-interfaces-types'
+import { useTaskStore } from './task-store'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 
-export class T2 implements TaskLike {
+export class Task implements TaskLike {
   hard_prereq_ids: number[]
   hard_postreq_ids: number[]
   _hard_prereq_ids: number[]
   _hard_postreq_ids: number[]
-  hard_prereqs: T2[]
-  hard_postreqs: T2[]
-  incomplete_prereqs: T2[]
-  incomplete_postreqs: T2[]
+  hard_prereqs: Task[]
+  hard_postreqs: Task[]
+  incomplete_prereqs: Task[]
+  incomplete_postreqs: Task[]
   completed: boolean
   id: number
   title: string
@@ -55,10 +55,10 @@ export class T2 implements TaskLike {
           })
           return true
         }
-        const obj = useT2Store().mapp.get(value)
+        const obj = useTaskStore().mapp.get(value)
         if (typeof obj !== 'undefined') {
-          this.hard_prereqs[property as any] = obj as T2
-          if (!obj.completed) this.incomplete_prereqs.push(obj as T2)
+          this.hard_prereqs[property as any] = obj as Task
+          if (!obj.completed) this.incomplete_prereqs.push(obj as Task)
         }
         return true
       },
@@ -69,7 +69,7 @@ export class T2 implements TaskLike {
         if (isNaN(Number(prop))) return target[prop as any]
         const val = target[prop as any]
         if (this.hard_prereqs[prop as any] === null) {
-          const obj = useT2Store().hardGet(val)
+          const obj = useTaskStore().hardGet(val)
           this.hard_prereqs[prop as any] = obj
           if (!obj.completed) {
             if (this.incomplete_prereqs.findIndex((x) => x.id === obj.id) < 0) {
@@ -104,10 +104,10 @@ export class T2 implements TaskLike {
           })
           return true
         }
-        const obj = useT2Store().mapp.get(value) // FIXME: this used to be hardGet but it runs into issues when adding tasks one by one to an empty store.
+        const obj = useTaskStore().mapp.get(value) // FIXME: this used to be hardGet but it runs into issues when adding tasks one by one to an empty store.
         if (typeof obj !== 'undefined') {
-          this.hard_postreqs[property as any] = obj as T2
-          if (!obj.completed) this.incomplete_postreqs.push(obj as T2)
+          this.hard_postreqs[property as any] = obj as Task
+          if (!obj.completed) this.incomplete_postreqs.push(obj as Task)
         }
         return true
       },
@@ -118,7 +118,7 @@ export class T2 implements TaskLike {
         if (isNaN(Number(prop))) return target[prop as any]
         const val = target[prop as any]
         if (this.hard_postreqs[prop as any] === null) {
-          const obj = useT2Store().hardGet(val)
+          const obj = useTaskStore().hardGet(val)
           this.hard_postreqs[prop as any] = obj
           if (!obj.completed) {
             if (this.incomplete_postreqs.findIndex((x) => x.id === obj.id) < 0) {
@@ -153,7 +153,7 @@ export class T2 implements TaskLike {
     const hp = []
     for (let i = 0; i < this._hard_prereq_ids.length; i++) {
       try {
-        const pre = useT2Store().hardGet(this._hard_prereq_ids[i])
+        const pre = useTaskStore().hardGet(this._hard_prereq_ids[i])
         hp.push(pre)
       } catch (e) {
         console.warn(`tried to get pres for ${this.title} but encountered an error.`)
@@ -167,7 +167,7 @@ export class T2 implements TaskLike {
     const hp = []
     for (let i = 0; i < this._hard_postreq_ids.length; i++) {
       try {
-        const post = useT2Store().hardGet(this._hard_postreq_ids[i])
+        const post = useTaskStore().hardGet(this._hard_postreq_ids[i])
         hp.push(post)
       } catch (e) {
         console.warn(`tried to get posts for ${this.title} but encountered an error.`)
@@ -197,7 +197,7 @@ export class T2 implements TaskLike {
    * A similar function but just sets up the api update to only have a payload containing the new completed status; does not actively switch the completed status
    */
   updateTaskCompletionStatus() {
-    return useT2Store()
+    return useTaskStore()
       .apiUpdate(this.id, { completed: this.completed })
       .then(() => {
         TDLAPP.considerOpeningQuickSort('mark task complete')
@@ -210,17 +210,17 @@ export class T2 implements TaskLike {
     return incompleteOnly ? this.incomplete_postreqs : this.hard_postreqs
   }
   anyIDsAbove(ids: number[]): Map<number, boolean> {
-    const ts = useT2Store()
+    const ts = useTaskStore()
     const allIDsAbove = ts.idsBefore(this.id)
     return new Map(ids.map((x) => [x, allIDsAbove.has(x)]))
   }
   anyIDsBelow(ids: number[]): Map<number, boolean> {
-    const ts = useT2Store()
+    const ts = useTaskStore()
     const allIDsBelow = ts.idsAfter(this.id)
     return new Map(ids.map((x) => [x, allIDsBelow.has(x)]))
   }
   hasRelationTo(id: number) {
-    const ts = useT2Store()
+    const ts = useTaskStore()
     const idsAfter = ts.idsAfter(this.id)
     const idsBefore = ts.idsBefore(this.id)
     return idsAfter.has(id) || idsBefore.has(id)
@@ -232,7 +232,7 @@ export class T2 implements TaskLike {
     })
     return result
   }
-  get rawData(): Pick<T2, keyof TaskLike> {
+  get rawData(): Pick<Task, keyof TaskLike> {
     return {
       id: this.id,
       hard_prereq_ids: this.hard_prereq_ids,
@@ -260,7 +260,7 @@ export class T2 implements TaskLike {
   //  vy:
   //  radius: calculated radius value of each node (to be drawn as a circle)
   //  color: if you want to color-code the nodes based on its properties.
-  d3forceNode(index: number, width = 0, height = 0): d3Node<T2> {
+  d3forceNode(index: number, width = 0, height = 0): d3Node<Task> {
     return {
       id: this.id,
       obj: this,
@@ -295,7 +295,7 @@ export class T2 implements TaskLike {
   get expanded_state() {
     return useRepo(ExpandedStateRepo).getByTaskID(this.id)
   }
-  treeNode(reverse = false, hideCompleted = false, parentKey = ''): SimpleTreeNode<T2> {
+  treeNode(reverse = false, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task> {
     const node: any = {
       id: this.id,
       obj: this,
@@ -326,13 +326,13 @@ export class T2 implements TaskLike {
     reverse = false,
     hideCompleted = false,
     parentKey = ''
-  ): SimpleTreeNode<T2>[] {
+  ): SimpleTreeNode<Task>[] {
     return this.grabPostreqs(hideCompleted).map((x) =>
       x.treeNode(reverse, hideCompleted, parentKey)
     )
   }
 
-  hardPrereqTreeNodes(reverse = true, hideCompleted = false, parentKey = ''): SimpleTreeNode<T2>[] {
+  hardPrereqTreeNodes(reverse = true, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task>[] {
     return this.grabPrereqs(hideCompleted).map((x) => x.treeNode(reverse, hideCompleted, parentKey))
   }
 
@@ -356,7 +356,7 @@ export class T2 implements TaskLike {
     // copy the prereq and postreq id arrays
     const prereq_ids = Array.from(this.hard_prereq_ids)
     for (let i = 0; i < prereq_ids.length; i++) {
-      useT2Store().removeRule(prereq_ids[i], this.id)
+      useTaskStore().removeRule(prereq_ids[i], this.id)
     }
     // make a template object (strip away title, prereqs, and postreqs)
     const templateTaskSliceObj = (number: number): CreateTaskOptions => ({
@@ -374,8 +374,8 @@ export class T2 implements TaskLike {
     })
     // collect the generated slices
     const newSlices: Array<CreateTaskOptions> = []
-    const resultTasks: Array<T2> = []
-    const ts = useT2Store()
+    const resultTasks: Array<Task> = []
+    const ts = useTaskStore()
     // the last slice is the original task record
     for (let i = 0; i < slices - 1; i++) {
       newSlices.push(templateTaskSliceObj(i + 1))

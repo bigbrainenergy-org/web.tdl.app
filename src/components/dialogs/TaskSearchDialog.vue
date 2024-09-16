@@ -1,31 +1,17 @@
 <template>
   <!-- notice dialogRef here -->
-  <q-dialog
-    ref="dialogRef"
-    :maximized="$q.screen.lt.md"
-    backdrop-filter="blur(4px)"
-    @hide="hideDialog"
-  >
+  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" backdrop-filter="blur(4px)" @hide="hideDialog">
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
-        <SettingsButton
-          v-model:settings="taskSearchSettings"
-          name="Task Search Settings"
-          color="white"
-        />
+        <SettingsButton v-model:settings="taskSearchSettings" name="Task Search Settings" color="white" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
       <q-separator />
 
-      <TaskSearchInput
-        v-model:model-value="searchString"
-        :search-label="searchLabel"
-        :dialog-title="dialogTitle"
-        :debounce="debounceAmount"
-        @do-a-search="searchForTasks"
-      />
+      <TaskSearchInput v-model:model-value="searchString" :search-label="searchLabel" :dialog-title="dialogTitle"
+        :debounce="debounceAmount" @do-a-search="searchForTasks" />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
@@ -38,20 +24,10 @@
                   <q-item-section>No results found</q-item-section>
                 </q-item>
                 <q-item v-if="showCreateButton">
-                  <q-btn
-                    icon="fas fa-plus"
-                    label="Create A New Task"
-                    color="primary"
-                    @click="createTask"
-                  />
+                  <q-btn icon="fas fa-plus" label="Create A New Task" color="primary" @click="createTask" />
                 </q-item>
-                <q-item
-                  v-for="task in results"
-                  :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as T2)"
-                >
+                <q-item v-for="task in results" :key="task.id ?? -1" v-ripple clickable
+                  @click="selectTask(task as Task)">
                   <q-item-section>
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -82,9 +58,9 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import Fuse, { FuseResult } from 'fuse.js'
   import { timeThisB } from 'src/perf'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 
   interface Props {
     dialogTitle: string
@@ -93,8 +69,8 @@
     taskID: number | undefined
     closeOnSelect?: boolean
     showCreateButton?: boolean
-    initialFilter: λ<number | undefined, λ<T2, boolean>> | undefined
-    batchFilter: λ<number | undefined, λ<T2[], T2[]>> | undefined
+    initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
+    batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -108,7 +84,7 @@
   })
 
   const debounceAmount = ref(100)
-  const results = ref<T2[]>([])
+  const results = ref<Task[]>([])
 
   const searchString = ref<string | undefined>(undefined)
 
@@ -156,14 +132,14 @@
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
    */
-  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: T2[]) => {
+  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
   //   if (typeof props.batchFilter !== 'undefined') {
   //     return props.batchFilter(taskID)(tasks)
   //   }
   //   return tasks
   // }
 
-  const selectTask = (task: T2) => {
+  const selectTask = (task: Task) => {
     emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
@@ -178,7 +154,7 @@
     const toCreate: CreateTaskOptions = {
       title: searchString.value
     }
-    const newTask = await useT2Store().apiCreate(toCreate)
+    const newTask = await useTaskStore().apiCreate(toCreate)
     if (newTask !== null) selectTask(newTask)
   }
 
@@ -192,12 +168,12 @@
   const defaultFilter = (currentTaskID: number | undefined) => {
     const filterCompleted = useLocalSettingsStore().hideCompleted
     if (filterCompleted) {
-      return (x: T2) => {
+      return (x: Task) => {
         if (x.completed) return false
         return true
       }
     }
-    return (x: T2) => true
+    return (x: Task) => true
   }
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
@@ -205,13 +181,12 @@
   const getTasks = () => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useT2Store().array as T2[]).filter(filterish.value(props.taskID))
+    const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
       console.warn(
-        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
-          allTasks.length / 2
+        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${allTasks.length / 2
         }ms`
       )
     return allTasks
@@ -233,7 +208,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
     console.log({ run })
 

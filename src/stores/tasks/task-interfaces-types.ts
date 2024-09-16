@@ -1,8 +1,8 @@
-import { T2 } from './t2-model'
+import { Task } from './task-model'
 
-export interface T2State {
-  mapp: Map<number, T2>
-  array: T2[]
+export interface TaskState {
+  mapp: Map<number, Task>
+  array: Task[]
 }
 
 export interface TaskLike {

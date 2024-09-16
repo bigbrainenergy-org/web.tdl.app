@@ -91,8 +91,8 @@
   import { TDLAPP } from 'src/TDLAPP'
   import { computed, onMounted, ref } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { T2 } from 'src/stores/t2/t2-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
 
   const emit = defineEmits([
     // REQUIRED; need to specify some events that your
@@ -114,7 +114,7 @@
   const notes = ref('')
 
   const debounceAmount = ref(100)
-  const results = ref<T2[]>([])
+  const results = ref<Task[]>([])
 
   const createTask = () => {
     emit('create', {
@@ -128,7 +128,7 @@
 
   const openTask = TDLAPP.openTask
 
-  const tasks = computed(() => useT2Store().incompleteOnly)
+  const tasks = computed(() => useTaskStore().incompleteOnly)
 
   const searchOptions = {
     isCaseSensitive: false,
@@ -144,7 +144,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<T2>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
     console.log({ run })
 

@@ -9,10 +9,10 @@ import AddDependencyDialog from './components/dialogs/AddDependencyDialog.vue'
 import { useLocalSettingsStore } from './stores/local-settings/local-setting'
 import { useLoadingStateStore } from './stores/performance/loading-state'
 import { Procedure } from './stores/procedures/procedure'
-import { useT2Store } from './stores/t2/t2-store'
+import { useTaskStore } from './stores/tasks/task-store'
 import QuickSortLayerZeroDialog from './components/dialogs/QuickSortLayerZeroDialog.vue'
 import { storeToRefs } from 'pinia'
-import { T2 } from './stores/t2/t2-model'
+import { Task } from './stores/tasks/task-model'
 
 export class TDLAPP {
   static considerOpeningQuickSort = (src: string) => {
@@ -22,13 +22,13 @@ export class TDLAPP {
     if (quickSortDialogActive.value) return
     if (disableQuickSort) return
     if (enableQuickSortOnLayerZeroQTY > 0) {
-      const layerZeroQTY = useT2Store().layerZero.length
+      const layerZeroQTY = useTaskStore().layerZero.length
       if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
         this.openQuickSortDialog()
       }
       if (
         enableQuickSortOnNewTask &&
-        useT2Store().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
+        useTaskStore().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
       ) {
         this.openQuickSortDialog()
       }
@@ -60,8 +60,8 @@ export class TDLAPP {
   }
 
   static searchDialog = (
-    onSelect: (payload: { task: T2 }) => void = (x: { task: T2 }) => this.openTask(x.task.id),
-    initialFilter?: λ<number | undefined, λ<T2[], T2[]>> | undefined
+    onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => this.openTask(x.task.id),
+    initialFilter?: λ<number | undefined, λ<Task[], Task[]>> | undefined
   ) => {
     return Dialog.create({
       component: TaskSearchDialog,
@@ -75,37 +75,37 @@ export class TDLAPP {
       }
     })
   }
-  static addPre = (task: T2, newPreID: number) => {
-    return useT2Store().addRule(newPreID, task.id)
+  static addPre = (task: Task, newPreID: number) => {
+    return useTaskStore().addRule(newPreID, task.id)
   }
-  static addPost = (task: T2, newPostID: number) => {
-    useT2Store().addRule(task.id, newPostID)
+  static addPost = (task: Task, newPostID: number) => {
+    useTaskStore().addRule(task.id, newPostID)
   }
-  static addPrerequisitesDialog = (currentTask: T2) => {
+  static addPrerequisitesDialog = (currentTask: Task) => {
     return Dialog.create({
       component: AddDependencyDialog,
       componentProps: {
         dialogTitle: 'Add Prerequisite',
         taskID: currentTask.id,
         showCreateButton: true,
-        onSelect: (payload: { task: T2 }) => {
+        onSelect: (payload: { task: Task }) => {
           this.addPre(currentTask, payload.task.id)
         },
         initialFilter: (currentTaskID: number | undefined) => {
           if (typeof currentTaskID === 'undefined')
             throw new Error('Add Prerequisite: Current Task ID is undefined')
-          const ct = useT2Store().hardGet(currentTaskID)
+          const ct = useTaskStore().hardGet(currentTaskID)
           if (ct === null) throw new Error(`Add Prerequisite: Task ID ${currentTaskID} not found`)
-          return (x: T2) => {
+          return (x: Task) => {
             if (x.completed) return false
             if (x.id === ct.id) return false
             if (ct.hard_prereq_ids.includes(x.id)) return false
             return true
           }
         },
-        batchFilter: (taskID: number | undefined) => (tasks: T2[]) => {
+        batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
           if (typeof taskID === 'undefined') return undefined
-          const ct = useT2Store().hardGet(taskID)
+          const ct = useTaskStore().hardGet(taskID)
           if (ct === null) return undefined
           const relationInfo = ct.anyIDsBelow(tasks.map((x) => x.id))
           return tasks.filter((x) => relationInfo.get(x.id) !== true)
@@ -113,32 +113,32 @@ export class TDLAPP {
       }
     })
   }
-  static addPostrequisiteDialog = (currentTask: T2) => {
+  static addPostrequisiteDialog = (currentTask: Task) => {
     return Dialog.create({
       component: AddDependencyDialog,
       componentProps: {
         dialogTitle: 'Add Postrequisite',
         taskID: currentTask.id,
         showCreateButton: true,
-        onSelect: (payload: { task: T2 }) => {
+        onSelect: (payload: { task: Task }) => {
           this.addPost(currentTask, payload.task.id)
         },
         initialFilter: (currentTaskID: number | undefined) => {
           if (typeof currentTaskID === 'undefined')
             throw new Error('Add Postrequisite: Current Task ID is undefined')
-          const ct = useT2Store().hardGet(currentTaskID)
+          const ct = useTaskStore().hardGet(currentTaskID)
           if (ct === null)
             throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
-          return (x: T2) => {
+          return (x: Task) => {
             if (x.completed) return false
             if (x.id === ct.id) return false
             if (ct.hard_postreq_ids.includes(x.id)) return false
             return true
           }
         },
-        batchFilter: (taskID: number | undefined) => (tasks: T2[]) => {
+        batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
           if (typeof taskID === 'undefined') return undefined
-          const ct = useT2Store().hardGet(taskID)
+          const ct = useTaskStore().hardGet(taskID)
           if (ct === null) return undefined
           const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
           return tasks.filter((x) => relationInfo.get(x.id) !== true)
@@ -146,13 +146,13 @@ export class TDLAPP {
       }
     })
   }
-  static sliceTask = (task: T2) => {
+  static sliceTask = (task: Task) => {
     return Dialog.create({
       component: TaskSlicerDialog,
       componentProps: { task }
     })
   }
-  static notifyUpdatedCompletionStatus: λ<T2, T2> = (task: T2) => {
+  static notifyUpdatedCompletionStatus: λ<Task, Task> = (task: Task) => {
     Notify.create({
       message: `Marked "${task.title}" ${task.completed ? 'Complete' : 'Incomplete'}`,
       color: 'positive',

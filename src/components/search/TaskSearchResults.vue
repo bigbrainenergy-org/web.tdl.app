@@ -11,20 +11,9 @@
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <q-item v-if="showCreateButton">
-                <q-btn
-                  icon="fas fa-plus"
-                  label="Create A New Task"
-                  color="primary"
-                  @click="createTask"
-                />
+                <q-btn icon="fas fa-plus" label="Create A New Task" color="primary" @click="createTask" />
               </q-item>
-              <q-item
-                v-for="task in results"
-                :key="task.id ?? -1"
-                v-ripple
-                clickable
-                @click="selectTask(task as T2)"
-              >
+              <q-item v-for="task in results" :key="task.id ?? -1" v-ripple clickable @click="selectTask(task as Task)">
                 <q-item-section :style="colorize(task.id)">
                   {{ task.title }}
                 </q-item-section>
@@ -43,9 +32,9 @@
   import { computed, ref } from 'vue'
   import type { λ } from '../../types'
   import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
-  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { CreateTaskOptions } from 'src/stores/tasks/t2-interfaces-types'
 
   interface Prop {
     search: string | undefined
@@ -54,13 +43,13 @@
     searchLabel?: string
     resultsTitle?: string
     showCreateButton: boolean
-    initialFilter: λ<number | undefined, λ<T2, boolean>> | undefined
-    batchFilter: λ<number | undefined, λ<T2[], T2[]>> | undefined
+    initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
+    batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
   }
 
   const emit = defineEmits(['select', 'create'])
 
-  const checkTaskRelation = (task: T2) => {
+  const checkTaskRelation = (task: Task) => {
     return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
   }
 
@@ -74,13 +63,13 @@
   // can't set this in withDefaults... don't even try
   // DON'T
   const defaultFilter = (currentTaskID: number | undefined) => {
-    const simplestFilter = (x: T2) => !x.completed
+    const simplestFilter = (x: Task) => !x.completed
     if (typeof currentTaskID === 'undefined') return simplestFilter
-    const ct = useT2Store().mapp.get(currentTaskID)
+    const ct = useTaskStore().mapp.get(currentTaskID)
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
-      return (x: T2) => {
+      return (x: Task) => {
         if (x.completed) return false
         if (ct.hard_prereq_ids.includes(x.id)) return false
         if (ct.hard_postreq_ids.includes(x.id)) return false
@@ -98,10 +87,10 @@
   })
 
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? useT2Store().mapp.get(props.taskID) : null
+    typeof props.taskID !== 'undefined' ? useTaskStore().mapp.get(props.taskID) : null
   )
 
-  const results = ref<T2[]>([])
+  const results = ref<Task[]>([])
 
   const searchOptions = {
     isCaseSensitive: false,
@@ -113,7 +102,7 @@
     timeThisB(
       () => {
         console.debug('recalculating tasks list for task search results')
-        const allTasks = (useT2Store().array as T2[]).filter(filterish.value(props.taskID))
+        const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
         if (typeof props.batchFilter !== 'undefined')
           return props.batchFilter(props.taskID)(allTasks)
         return allTasks
@@ -132,7 +121,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<T2>[]>(
+    const run = timeThisB<FuseResult<Task>[]>(
       () => fuse.search(props.search ?? ''),
       'fuse search',
       21
@@ -165,12 +154,12 @@
   const createTask = async () => {
     if (typeof props.search === 'undefined') return
     const toCreate: CreateTaskOptions = { title: props.search }
-    const newTask = await useT2Store().apiCreate(toCreate)
+    const newTask = await useTaskStore().apiCreate(toCreate)
     if (newTask === null) throw new Error('Error creating task.')
     if (typeof props.taskID !== 'undefined') selectTask(newTask)
   }
 
-  const selectTask = (task: T2) => {
+  const selectTask = (task: Task) => {
     emit('select', { task, callback: searchForTasks })
   }
 

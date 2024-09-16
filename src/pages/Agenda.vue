@@ -104,8 +104,8 @@
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
-  import { T2 } from 'src/stores/t2/t2-model'
-  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const $q = useQuasar()
 
@@ -134,19 +134,19 @@
   // fancy footwork
   const tasks = computed(() => {
     console.debug('recalculating agenda.')
-    const layerZero = (useT2Store().array as T2[]).filter(
-      (x: T2) => !x.completed && x.hard_prereqs.filter((y) => !y.completed).length === 0
+    const layerZero = (useTaskStore().array as Task[]).filter(
+      (x: Task) => !x.completed && x.hard_prereqs.filter((y) => !y.completed).length === 0
     )
-    layerZero.sort((a: T2, b: T2) => b.incomplete_postreqs.length - a.incomplete_postreqs.length)
+    layerZero.sort((a: Task, b: Task) => b.incomplete_postreqs.length - a.incomplete_postreqs.length)
     console.debug({ layerZero })
-    const finalList = new Set<T2>()
-    const queue: Map<number, T2[]> = new Map()
+    const finalList = new Set<Task>()
+    const queue: Map<number, Task[]> = new Map()
     const addedToQueue = new Set<number>()
-    const safeAccess = (q: Map<number, T2[]>, key: number): T2[] => {
+    const safeAccess = (q: Map<number, Task[]>, key: number): Task[] => {
       if (typeof q.get(key) === 'undefined') q.set(key, [])
       return q.get(key)!
     }
-    const enqueue = (tasks: T2[]) => {
+    const enqueue = (tasks: Task[]) => {
       tasks.forEach((x) => {
         safeAccess(queue, x.incomplete_postreqs.length).push(x)
         addedToQueue.add(x.id)
@@ -210,14 +210,14 @@
   })
 
   const sortQty = computed(() => {
-    const len0 = useT2Store().layerZero.length
+    const len0 = useTaskStore().layerZero.length
     if (disableQuickSort.value) return len0
     return autoScalePriority.value
       ? autoThreshold.value
       : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
 
-  const addTaskPre = (currentTask: T2) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
   const openSearchDialog = () => TDLAPP.searchDialog()
 
   const openQuickSortDialog = () => $q.dialog({ component: QuickSortLayerZeroDialog })
