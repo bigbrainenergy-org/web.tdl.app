@@ -72,7 +72,6 @@
 
   import { computed, ref, watch } from 'vue'
 
-  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   // import { useRepo } from 'pinia-orm'
   // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -85,6 +84,7 @@
   import { timeThisB } from 'src/perf'
   import { useT2Store } from 'src/stores/t2/t2-store'
   import { T2 } from 'src/stores/t2/t2-model'
+  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
 
   interface Props {
     dialogTitle: string

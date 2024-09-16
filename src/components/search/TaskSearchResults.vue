@@ -23,7 +23,7 @@
                 :key="task.id ?? -1"
                 v-ripple
                 clickable
-                @click="selectTask(task as Task)"
+                @click="selectTask(task as T2)"
               >
                 <q-item-section :style="colorize(task.id)">
                   {{ task.title }}
@@ -40,10 +40,12 @@
 <script setup lang="ts">
   import Fuse, { FuseResult } from 'fuse.js'
   import { useRepo } from 'pinia-orm'
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed, ref } from 'vue'
   import type { λ } from '../../types'
   import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
+  import { T2 } from 'src/stores/t2/t2-model'
+  import { useT2Store } from 'src/stores/t2/t2-store'
+  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
 
   interface Prop {
     search: string | undefined
@@ -52,13 +54,13 @@
     searchLabel?: string
     resultsTitle?: string
     showCreateButton: boolean
-    initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
-    batchFilter: λ<number | undefined, λ<Task[], Task[]>> | undefined
+    initialFilter: λ<number | undefined, λ<T2, boolean>> | undefined
+    batchFilter: λ<number | undefined, λ<T2[], T2[]>> | undefined
   }
 
   const emit = defineEmits(['select', 'create'])
 
-  const checkTaskRelation = (task: Task) => {
+  const checkTaskRelation = (task: T2) => {
     return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
   }
 
@@ -72,13 +74,13 @@
   // can't set this in withDefaults... don't even try
   // DON'T
   const defaultFilter = (currentTaskID: number | undefined) => {
-    const simplestFilter = (x: Task) => !x.completed
+    const simplestFilter = (x: T2) => !x.completed
     if (typeof currentTaskID === 'undefined') return simplestFilter
-    const ct = useRepo(TaskRepo).find(currentTaskID)
-    if (ct === null) {
+    const ct = useT2Store().mapp.get(currentTaskID)
+    if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
-      return (x: Task) => {
+      return (x: T2) => {
         if (x.completed) return false
         if (ct.hard_prereq_ids.includes(x.id)) return false
         if (ct.hard_postreq_ids.includes(x.id)) return false
@@ -89,8 +91,6 @@
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
 
-  const tr = useRepo(TaskRepo)
-
   const props = withDefaults(defineProps<Prop>(), {
     showCreateButton: true,
     resultsTitle: 'Search Results',
@@ -98,10 +98,10 @@
   })
 
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? tr.withAll().find(props.taskID) : null
+    typeof props.taskID !== 'undefined' ? useT2Store().mapp.get(props.taskID) : null
   )
 
-  const results = ref<Task[]>([])
+  const results = ref<T2[]>([])
 
   const searchOptions = {
     isCaseSensitive: false,
@@ -113,7 +113,7 @@
     timeThisB(
       () => {
         console.debug('recalculating tasks list for task search results')
-        const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+        const allTasks = (useT2Store().array as T2[]).filter(filterish.value(props.taskID))
         if (typeof props.batchFilter !== 'undefined')
           return props.batchFilter(props.taskID)(allTasks)
         return allTasks
@@ -132,7 +132,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(
+    const run = timeThisB<FuseResult<T2>[]>(
       () => fuse.search(props.search ?? ''),
       'fuse search',
       21
@@ -159,20 +159,18 @@
     // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
     // note: I tried storing the traversed Set in pinia but it was running into lockups.
     redundantTasks.value =
-      currentTask.value?.BulkHasRelationTo(
-        results.value.map((x) => x.id),
-        { incompleteOnly: true, useStore: true }
-      ) ?? new Map()
+      currentTask.value?.hasRelationToAny(results.value.map((x) => x.id)) ?? new Map()
   }
 
   const createTask = async () => {
     if (typeof props.search === 'undefined') return
     const toCreate: CreateTaskOptions = { title: props.search }
-    const newTask = await timeThisABAsync(tr.addAndCache, 'addAndCache', 400)(toCreate)
+    const newTask = await useT2Store().apiCreate(toCreate)
+    if (newTask === null) throw new Error('Error creating task.')
     if (typeof props.taskID !== 'undefined') selectTask(newTask)
   }
 
-  const selectTask = (task: Task) => {
+  const selectTask = (task: T2) => {
     emit('select', { task, callback: searchForTasks })
   }
 

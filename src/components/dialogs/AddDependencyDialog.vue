@@ -74,7 +74,6 @@
 
   import { computed, onMounted, ref, watch } from 'vue'
 
-  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import { λ } from 'src/types'
@@ -85,6 +84,7 @@
   import Fuse, { FuseResult } from 'fuse.js'
   import { T2 } from 'src/stores/t2/t2-model'
   import { useT2Store } from 'src/stores/t2/t2-store'
+  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
   // import { useElementSize } from '@vueuse/core'
 
   interface Props {

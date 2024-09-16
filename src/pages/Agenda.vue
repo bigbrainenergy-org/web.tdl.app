@@ -104,7 +104,6 @@
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { storeToRefs } from 'pinia'
-  import { NumericKeysObject } from 'src/types'
   import { T2 } from 'src/stores/t2/t2-model'
   import { useT2Store } from 'src/stores/t2/t2-store'
 
@@ -141,11 +140,11 @@
     layerZero.sort((a: T2, b: T2) => b.incomplete_postreqs.length - a.incomplete_postreqs.length)
     console.debug({ layerZero })
     const finalList = new Set<T2>()
-    const queue: NumericKeysObject<T2[]> = {}
+    const queue: Map<number, T2[]> = new Map()
     const addedToQueue = new Set<number>()
-    const safeAccess = (q: NumericKeysObject<T2[]>, key: number): T2[] => {
-      if (typeof q[key] === 'undefined') q[key] = []
-      return q[key]
+    const safeAccess = (q: Map<number, T2[]>, key: number): T2[] => {
+      if (typeof q.get(key) === 'undefined') q.set(key, [])
+      return q.get(key)!
     }
     const enqueue = (tasks: T2[]) => {
       tasks.forEach((x) => {
@@ -155,35 +154,39 @@
     }
     enqueue(layerZero)
     {
-      let qkeys = Object.keys(queue).map(Number)
+      let qkeys = Array.from(queue.keys())
       let hundos = 0
       const hasKeys = () => {
-        qkeys = Object.keys(queue)
-          .map(Number)
-          .sort((a, b) => b - a)
+        const start = performance.now()
+        qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
         hundos++
+        const duration = performance.now() - start
+        console.assert(duration < 10, 'checking keys took too long.')
         return qkeys.length > 0
       }
       while (hasKeys()) {
-        if (hundos > 1000 * addedToQueue.size) {
+        if (hundos > 4 * addedToQueue.size) {
           console.warn('agenda calc is taking too long. bailing out. Also TODO')
           break
         }
         let bail = false
+        const start = performance.now()
         for (let i = 0; i < qkeys.length; i++) {
           const k = qkeys[i]
-          const qk = queue[k]
+          const qk = queue.get(k)!
           for (let j = 0; j < qk.length; j++) {
             const t = qk[j]
             const ip = t.incomplete_prereqs
-            if (ip.filter((y) => !finalList.has(y)).length === 0) {
+            if (ip.every((y) => finalList.has(y))) {
               finalList.add(t)
               enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
               qk.splice(j, 1)
               if (qk.length === 0) {
-                delete queue[k]
+                queue.delete(k)
                 qkeys.splice(i, 1)
               }
+              const duration = performance.now() - start
+              console.assert(duration < 8, 'agenda main loop is taking too long per task')
               bail = true
               break
             }

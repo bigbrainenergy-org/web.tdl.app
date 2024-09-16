@@ -66,13 +66,16 @@ export class ProcedureRepo extends GenericRepo<
     return this.api()
       .post(url, undefined, this.commonHeader())
       .then(() => {
-        const tmp = Utils.hardCheck(this.withAll().find(id))
+        const tmp = Utils.hardCheck(this.find(id))
         const tasks = tmp.grabTasks()
-        const ts = useT2Store()
-        tasks.forEach((x) => {
-          x.completed = false
-          ts.updateSingle(x.rawData)
-        })
+        for (let i = 0; i < tasks.length; i++) {
+          const ti = tasks[i]
+          ti.completed = false
+          for (let j = 0; j < ti.hard_prereqs.length; j++) ti.hard_prereqs[j].fullSyncPosts()
+          for (let j = 0; j < ti.hard_postreqs.length; j++) ti.hard_postreqs[j].fullSyncPres()
+          ti.fullSyncPres()
+          ti.fullSyncPosts()
+        }
         return tmp
       }, Utils.handleError('Error restarting procedure.'))
   }

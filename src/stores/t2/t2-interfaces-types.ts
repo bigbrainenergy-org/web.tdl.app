@@ -59,4 +59,5 @@ export interface AllOptionalTaskProperties {
   hard_postreq_ids?: number[]
   mental_energy_required?: number
   physical_energy_required?: number
+  procedure_ids?: number[]
 }

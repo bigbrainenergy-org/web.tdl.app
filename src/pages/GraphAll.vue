@@ -17,11 +17,10 @@
 </template>
 
 <script setup lang="ts">
-  import { useRepo } from 'pinia-orm'
   import * as d3 from 'd3'
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { onMounted, ref, watch } from 'vue'
   import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
-  import { useQuasar, useMeta } from 'quasar'
+  import { useMeta } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { λ } from 'src/types'
   import { TDLAPP } from 'src/TDLAPP'
@@ -60,8 +59,6 @@
     'Hide Completed Tasks': incompleteOnly,
     'Max Task Node Size': taskNodeMaxSize
   })
-
-  const reinit = () => reInitializeGraph()
 
   watch(incompleteOnly, () => {
     usr.hideCompleted = incompleteOnly.value
@@ -189,8 +186,6 @@
   }
 
   let simulation: d3.Simulation<d3Node<T2>, undefined>
-
-  const $q = useQuasar()
 
   let gnodes: any
   let gg: any

@@ -22,7 +22,6 @@ export const useT2Store = defineStore('t2', {
     afterRestore: (context: PiniaPluginContext) => {
       const store = context.store
       console.debug({ msg: 'restoring tasks store.', mapp: store.mapp, array: store.array })
-      store.mapp = new Map((store.array as T2[]).map((x: T2) => [x.id, x]))
       ;(store.mapp as Map<number, T2>).forEach((val: T2) => {
         val.fullSyncPosts()
         val.fullSyncPres()
@@ -33,14 +32,15 @@ export const useT2Store = defineStore('t2', {
     debug: true,
     serializer: {
       serialize: (value: StateTree) => {
-        console.debug('serializing tasks into localStorage')
+        console.debug('SERIALIZE: stringifying tasks into localStorage')
         return JSON.stringify(value.array.map((x: T2) => x.rawData))
       },
       deserialize: (value: string): StateTree => {
-        console.debug('parsing local storage for tasks')
+        console.debug('DESERIALIZE: parsing local storage for tasks')
         const parsed = JSON.parse(value) as TaskLike[]
-        const array = parsed.map((x: TaskLike) => new T2(x))
-        return { array }
+        const mapp: Map<number, T2> = new Map(parsed.map((x: TaskLike) => [x.id, new T2(x)]))
+        const array = Array.from(mapp.values())
+        return { array, mapp }
       }
     }
   },

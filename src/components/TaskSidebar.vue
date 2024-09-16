@@ -113,7 +113,6 @@
   import { useRepo } from 'pinia-orm'
   import { useQuasar } from 'quasar'
   import { List, ListRepo } from 'src/stores/lists/list'
-  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
@@ -121,6 +120,7 @@
   import { storeToRefs } from 'pinia'
   import { textColor } from 'src/hackerman/TextColor'
   import { useT2Store } from 'src/stores/t2/t2-store'
+  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
 
   const $q = useQuasar()
   const model = defineModel<boolean>({ default: false })

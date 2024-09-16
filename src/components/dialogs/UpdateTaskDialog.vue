@@ -138,7 +138,6 @@
   import DependencyList from '../DependencyList.vue'
   import QDatetimeInput from 'components/QDatetimeInput.vue'
   import { ListRepo } from 'src/stores/lists/list'
-  import { AllOptionalTaskProperties } from 'src/stores/tasks/task'
   import { useRepo } from 'pinia-orm'
   import { Utils } from 'src/util'
   import { TDLAPP } from 'src/TDLAPP'
@@ -160,6 +159,7 @@
   import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
   import { useT2Store } from 'src/stores/t2/t2-store'
   import { T2 } from 'src/stores/t2/t2-model'
+  import { AllOptionalTaskProperties } from 'src/stores/t2/t2-interfaces-types'
 
   const cts = useCurrentTaskStore()
   const currentTaskID = computed(() => cts.id)

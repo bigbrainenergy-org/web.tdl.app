@@ -1,8 +1,8 @@
 <script setup lang="ts">
-  import { Task } from 'src/stores/tasks/task'
+  import { T2 } from 'src/stores/t2/t2-model'
   import TaskTreeItem from './TaskTreeItem.vue'
 
-  const props = defineProps<{ tasks: Task[] }>()
+  const props = defineProps<{ tasks: T2[] }>()
 </script>
 
 <template>

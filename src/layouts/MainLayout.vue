@@ -128,7 +128,6 @@
   import TaskSidebar from 'src/components/TaskSidebar.vue'
   import { UserRepo } from 'src/stores/users/user'
   import { useRepo } from 'pinia-orm'
-  import { CreateTaskOptions } from 'src/stores/tasks/task'
   import { Utils } from 'src/util'
   import { syncWithBackend } from 'src/hackerman/sync'
   import { AxiosError } from 'axios'
@@ -138,6 +137,7 @@
   import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
   import { useT2Store } from 'src/stores/t2/t2-store'
   import { TDLAPP } from 'src/TDLAPP'
+  import { CreateTaskOptions } from 'src/stores/t2/t2-interfaces-types'
 
   const $q = useQuasar()
   const $route = useRoute()

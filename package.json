@@ -51,14 +51,14 @@
     "vue-router": "latest"
   },
   "devDependencies": {
-    "@quasar/app-vite": "beta",
+    "@quasar/app-vite": "^2.0.0-beta.0",
     "@quasar/quasar-app-extension-testing-e2e-cypress": "latest",
-    "@quasar/quasar-app-extension-testing-unit-vitest": "latest",
+    "@quasar/quasar-app-extension-testing-unit-vitest": "^1.0.0",
     "@types/body-parser": "latest",
     "@types/d3": "latest",
     "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "5.x",
-    "@typescript-eslint/parser": "latest",
+    "@typescript-eslint/parser": "^5.0.0",
     "@vue/test-utils": "latest",
     "autoprefixer": "latest",
     "cypress": "latest",
