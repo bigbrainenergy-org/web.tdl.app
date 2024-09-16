@@ -1,14 +1,15 @@
 import { storeToRefs } from 'pinia'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { computed } from 'vue'
 import { useTaskFiltering } from './use-task-filtering'
 import { useTaskSorting } from './use-task-sorting'
+import { useTaskFetching } from './use-task-fetching'
 
 // TODO: unblockedOnly is unused, use it
 export function useTasks() {
   const loadingStateStore = useLoadingStateStore()
   const { busy, quickSortDialogActive } = storeToRefs(loadingStateStore)
+  const { fetchTasks } = useTaskFetching()
   const { filterTasks } = useTaskFiltering()
   const { sortTasks } = useTaskSorting()
 
@@ -22,7 +23,7 @@ export function useTasks() {
       return []
     }
     console.debug('recalculating tasks')
-    let baseQuery = useLayerZeroStore().typed
+    let baseQuery = fetchTasks()
     console.debug({ baseQuery })
     baseQuery = filterTasks(baseQuery)
     baseQuery = sortTasks(baseQuery)
