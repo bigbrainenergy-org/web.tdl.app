@@ -20,15 +20,11 @@
   import MainHeader from 'src/components/MainHeader.vue'
   import MainSidebar from 'src/components/MainSidebar.vue'
   import MainFooter from 'src/components/MainFooter.vue'
-
-  import { onMounted, ref } from 'vue'
-  import { UserRepo } from 'src/stores/users/user'
-  import { useRepo } from 'pinia-orm'
-  import { TaskCache } from 'src/stores/performance/task-go-fast'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
   import { useBackgroundMode } from 'src/composables/use-background-mode'
   import { useTasks } from 'src/composables/use-tasks'
-  import { updateLuxonTimeZone } from 'src/utils/luxon-utils'
+  import { ref } from 'vue'
+  import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
 
   const drawer = ref(false)
   const { backgroundStyle } = useBackgroundMode()
@@ -37,14 +33,5 @@
 
   const { tasks } = useTasks()
 
-  // REVIEW: Sus
-  onMounted(() => {
-    const user = useRepo(UserRepo).getUser()
-    if (user === null || typeof user === 'undefined') {
-      console.warn('user data issue.')
-      return
-    }
-    updateLuxonTimeZone(user.time_zone)
-    TaskCache.regenerate()
-  })
+  considerOpeningQuickSortDialog()
 </script>

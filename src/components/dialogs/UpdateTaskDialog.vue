@@ -15,31 +15,103 @@
             <q-item-label class="text-h4 text-primary" lines="3">{{
               currentTask.title
             }}</q-item-label>
-            <GloriousTextInput v-model="editTitle" label="Task Title" :placeholder="currentTask.title"
-              data-cy="task_title_input" @enter-key="updateTask({ title: editTitle })" />
-            <q-select v-model="selectedList" filled hide-selected fill-input input-debounce="20" :options="lists"
-              option-label="title" map-options emit-value label="List" use-input option-value="id"
-              class="q-my-md text-primary" @filter="filterSelection" @update:model-value="updateList" />
-            <q-datetime-input v-model="editRemindMeAt" label="Remind me at" class="q-my-md"
-              @update:model-value="updateTask({ remind_me_at: editRemindMeAt })" />
-            <q-expansion-item v-model="expandEnergyStats" expand-separator switch-toggle-side icon="fas fa-lightbulb"
-              caption="Metadata">
+            <GloriousTextInput
+              v-model="editTitle"
+              label="Task Title"
+              :placeholder="currentTask.title"
+              data-cy="task_title_input"
+              @enter-key="updateTask(currentTask.id, { title: editTitle })"
+            />
+            <q-select
+              v-model="selectedList"
+              filled
+              hide-selected
+              fill-input
+              input-debounce="20"
+              :options="lists"
+              use-chips
+              option-label="title"
+              map-options
+              emit-value
+              label="List"
+              use-input
+              option-value="id"
+              class="q-my-md text-primary"
+              @filter="filterSelection"
+              @update:model-value="updateList"
+            />
+            <q-select
+              v-model="selectedProcedures"
+              multiple
+              filled
+              fill-input
+              input-debounce="20"
+              :options="procedures"
+              use-chips
+              option-label="title"
+              map-options
+              emit-value
+              label="Procedures"
+              use-input
+              class="q-my-md text-primary"
+              @update:model-value="updateProcedures"
+            />
+            <q-datetime-input
+              v-model="editRemindMeAt"
+              label="Remind me at"
+              class="q-my-md"
+              @update:model-value="updateTask(currentTask.id, { remind_me_at: editRemindMeAt })"
+            />
+            <q-expansion-item
+              v-model="expandEnergyStats"
+              expand-separator
+              switch-toggle-side
+              icon="fas fa-lightbulb"
+              caption="Metadata"
+            >
               <br />
-              <GloriousSlider v-for="(s, key) of sliders" :key="key" v-model="s.modelRef.value" v-bind="s"
-                @change="s.updateFunc" />
+              <GloriousSlider
+                v-for="(s, key) of sliders"
+                :key="key"
+                v-model="s.modelRef.value"
+                v-bind="s"
+                @change="s.updateFunc"
+              />
             </q-expansion-item>
             <br />
-            <q-input v-model="editNotes" filled autogrow debounce="1000" label="Notes"
-              @update:model-value="updateTask({ notes: editNotes })" />
+            <q-input
+              v-model="editNotes"
+              filled
+              autogrow
+              debounce="1000"
+              label="Notes"
+              @update:model-value="updateTask(currentTask.id, { notes: editNotes })"
+            />
           </div>
           <div class="col-12 col-md">
             <IncompleteOnlyToggle />
-            <DependencyList :items="allPres" :dependency-type="preDepType" :menu-items="prereqMenuItems" show-prune
-              @prune-dependencies="prunePres" @add-item="openPrerequisiteDialog" @remove-item="tr.removePre"
-              @select-item="setCurrentTask" @toggle-completed-item="updateTaskCompletedStatus" />
-            <DependencyList :items="allPosts" :dependency-type="postDepType" :menu-items="postreqMenuItems" show-prune
-              @prune-dependencies="prunePosts" @add-item="openPostrequisiteDialog" @remove-item="tr.removePost"
-              @select-item="setCurrentTask" @toggle-completed-item="updateTaskCompletedStatus" />
+            <DependencyList
+              :items="allPres"
+              :dependency-type="preDepType"
+              :menu-items="prereqMenuItems"
+              show-prune
+              @prune-dependencies="prunePres"
+              @add-item="openPrerequisiteDialog"
+              @remove-item="removePre"
+              @select-item="setCurrentTask"
+              @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
+            />
+            <DependencyList
+              :items="allPosts"
+              :dependency-type="postDepType"
+              :menu-items="postreqMenuItems"
+              show-prune
+              @prune-dependencies="prunePosts"
+              @add-item="openPostrequisiteDialog"
+              @remove-item="removePost"
+              @select-item="setCurrentTask"
+              @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
+            />
             <div class="row">
               <div class="col">
                 <div class="text-h5">Subtasks</div>
@@ -66,33 +138,46 @@
   import DependencyList from '../DependencyList.vue'
   import QDatetimeInput from 'components/QDatetimeInput.vue'
   import { ListRepo } from 'src/stores/lists/list'
-  import { AllOptionalTaskProperties, Task, TaskRepo } from 'src/stores/tasks/task'
   import { useRepo } from 'pinia-orm'
   import { syncWithBackend } from 'src/utils/sync-utils'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
-  import { errorNotification, handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
+  import {
+    errorNotification,
+    handleError,
+    handleSuccess,
+    notifySuccess
+  } from 'src/utils/notification-utils'
   import TaskSearchDialog from './TaskSearchDialog.vue'
   import { Button, unknownishλ, λ } from 'src/utils/types'
   import { onMounted } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import GloriousTextInput from '../GloriousTextInput.vue'
   import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
-  import { GloriousSliderConfig } from 'src/glorious'
   import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import GloriousSlider from '../GloriousSlider.vue'
   import { storeToRefs } from 'pinia'
   import { hardCheck } from 'src/utils/type-utils'
-  import { addPostrequisiteDialog, addPrerequisitesDialog, openTaskSlicerDialog } from 'src/utils/dialog-utils'
+  import {
+    addPostrequisiteDialog,
+    addPrerequisitesDialog,
+    openTaskSlicerDialog
+  } from 'src/utils/dialog-utils'
   import { blockingFunc } from 'src/utils/performance-utils'
+  import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { AllOptionalTaskProperties } from 'src/stores/tasks/task-interfaces-types'
+  import { GloriousSliderConfig } from 'src/utils/glorious-utils'
+  import { arrayDelete } from 'src/utils/array-utils'
 
   const cts = useCurrentTaskStore()
   const currentTaskID = computed(() => cts.id)
   const currentTask = computed(() => {
     const id = currentTaskID.value
     if (id === null) throw new Error('no id')
-    const t = useRepo(TaskRepo).withAll().find(id)
+    const t = useTaskStore().hardGet(id)
     if (typeof t === 'undefined' || t === null)
       throw new Error('id does not match a task in the repo')
     return t
@@ -150,7 +235,7 @@
       endIcon: 'fas fa-lightbulb',
       cuteName: 'Mental',
       modelRef: editMentalEnergyRequired,
-      updateFunc: (x) => updateTask({ mental_energy_required: x })
+      updateFunc: (x) => updateTask(currentTask.value.id, { mental_energy_required: x })
     },
     {
       beginIcon: 'far fa-tired',
@@ -158,7 +243,7 @@
       cuteName: 'Physical',
       color: 'red',
       modelRef: editPhysicalEnergyRequired,
-      updateFunc: (x) => updateTask({ physical_energy_required: x })
+      updateFunc: (x) => updateTask(currentTask.value.id, { physical_energy_required: x })
     }
   ]
 
@@ -167,7 +252,7 @@
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
   const listsRepo = useRepo(ListRepo)
-  const tr = useRepo(TaskRepo)
+  // const tr = useRepo(TaskRepo)
   const usr = useLocalSettingsStore()
 
   onMounted(() => {
@@ -193,18 +278,15 @@
   const { expandEnergyStats, hideCompleted } = storeToRefs(usr)
 
   const lists = computed(() => listsRepo.all())
+  const procedures = computed(() => useRepo(ProcedureRepo).all())
   const allPres = computed(() => currentTask.value.grabPrereqs(hideCompleted.value))
   const allPosts = computed(() => currentTask.value.grabPostreqs(hideCompleted.value))
 
-  const updateTaskCompletedStatus = async (task: Task) => {
-    const newStatus = task.completed
-    console.debug(`marking ${task.id} ${newStatus ? 'completed' : 'incomplete'}.`)
-    const result = await tr.updateAndCache({ id: task.id, payload: { task } })
-    if (result.completed !== newStatus)
-      throw new Error('result from update request is not the same as the status marked on UI')
-  }
+  const updateList = () => updateTask(currentTask.value.id, { list_id: selectedList.value?.id })
 
-  const updateList = () => updateTask({ list_id: selectedList.value?.id })
+  const updateProcedures = () => {
+    updateTask(currentTask.value.id, { procedure_ids: selectedProcedures.value.map((x) => x.id) })
+  }
 
   const allLists = listsRepo.all()
   const listOptions = ref(allLists)
@@ -231,6 +313,7 @@
   }
 
   const selectedList = ref(getSelectedList(currentTask.value))
+  const selectedProcedures = ref<Procedure[]>(currentTask.value.procedures)
 
   function setCurrentTask(newTask: Task) {
     console.debug('setCurrentTask')
@@ -241,6 +324,7 @@
     editMentalEnergyRequired.value = currentTask.value.mental_energy_required
     editPhysicalEnergyRequired.value = currentTask.value.physical_energy_required
     selectedList.value = getSelectedList(currentTask.value)
+    selectedProcedures.value = currentTask.value.procedures
   }
 
   function deleteTask(task: Task) {
@@ -256,20 +340,21 @@
       }
     }).onOk(() => {
       console.debug('deleting task')
-      tr.deleteTask(task).then(
-        handleSuccess('Deleted task', 'fa-solid fa-tasks'),
-        handleError('Failed to delete task.')
-      )
+      useTaskStore()
+        .apiDelete(task.id)
+        .then(
+          handleSuccess('Deleted task', 'fa-solid fa-tasks'),
+          handleError('Failed to delete task.')
+        )
     })
   }
 
-  function updateTask(options: AllOptionalTaskProperties) {
-    tr.updateAndCache({
-      id: currentTask.value.id,
-      payload: { task: options }
-    }).then(() => {
-      notifySuccess('Task Was Updated')
-    }, handleError('Error updating task'))
+  function updateTask(id: number, options: AllOptionalTaskProperties) {
+    useTaskStore()
+      .apiUpdate(id, options)
+      .then(() => {
+        notifySuccess('Task Was Updated')
+      }, handleError('Error updating task'))
   }
 
   const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value)
@@ -280,89 +365,34 @@
     console.debug(post)
     const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)
     for (let i = 0; i < allOtherPosts.length; i++) {
-      await tr
-        .removePre(allOtherPosts[i], currentTask.value.id)
-        .then(
-          handleSuccess('removed redundant prerequisite'),
-          handleError('error removing redundant prerequisite')
-        )
-      await tr
-        .addPre(allOtherPosts[i], post.id)
-        .then(handleSuccess('moved a task'), handleError('failed to move a task'))
+      const pid = allOtherPosts[i].id
+      arrayDelete(currentTask.value.hard_postreq_ids, pid)
+      post.hard_postreq_ids.push(pid)
     }
+
+    await useTaskStore().apiUpdate(currentTask.value.id, {
+      hard_postreq_ids: currentTask.value.hard_postreq_ids
+    })
+    await useTaskStore().apiUpdate(post.id, { hard_postreq_ids: post.hard_postreq_ids })
+
     const syncResult = await syncWithBackend()
     if (syncResult === 1)
       errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
     else notifySuccess('Refreshed All')
   }
 
-  const insertBetweenPost = async (payload: { task: Task }) => {
-    const oldPost = hardCheck(currentPost)
-    // start: A --> C
-    // desired end state: A --> B --> C
-    // 2. remove rule A --> C
-    console.debug('removing the old (now redundant) postrequisite from the current task')
-    await tr.removePost(currentTask.value, oldPost.id).then(() => {
-      const ct = useRepo(TaskRepo).find(currentTaskID.value)
-      if (ct === null) throw new Error('current task was not found by id')
-      if (ct.hard_postreq_ids.includes(oldPost.id)) throw new Error('postreq was not removed!')
-      const op = useRepo(TaskRepo).find(oldPost.id)
-      if (op === null) throw new Error('old post was not found by id')
-      if (op.hard_prereq_ids.includes(currentTaskID.value))
-        throw new Error('prereq was not removed!')
-    }, handleError('error moving postrequisite!'))
-    // FIXME: if these steps are done in 1->2->3 order, currentTask somehow ends up with no postrequisite.
-    // FIXME: I'm sure there is the same error for insertbetweenPre.
-    // 3. add rule B --> C
-    console.debug('adding the old postrequisite to the new postrequisite of the current task')
-    await tr.addPost(payload.task, oldPost.id).then(() => {
-      const pt = useRepo(TaskRepo).find(payload.task.id)
-      if (pt === null) throw new Error('new task was not found by id')
-      if (!pt.hard_postreq_ids.includes(oldPost.id)) {
-        throw new Error('postreq was not added to new postreq!')
-      }
-      const op = useRepo(TaskRepo).find(oldPost.id)
-      if (op === null) throw new Error('old post was not found by id')
-      if (!op.hard_prereq_ids.includes(payload.task.id))
-        throw new Error('prereq was not added to old postreq!')
-    }, handleError('error moving postrequisite!'))
-    // 1. add rule A --> B
-    console.debug('adding selected postrequisite to current task')
-    if (!currentTask.value.hard_postreq_ids.includes(payload.task.id)) {
-      await tr.addPost(currentTask.value, payload.task.id).then(() => {
-        const ct = useRepo(TaskRepo).find(currentTaskID.value)
-        if (ct === null) throw new Error('current task was not found by id')
-        if (!ct.hard_postreq_ids.includes(payload.task.id))
-          throw new Error('postreq was not added!')
-        const pt = useRepo(TaskRepo).find(payload.task.id)
-        if (pt === null) throw new Error('payload task was not found by id')
-        if (!pt.hard_prereq_ids.includes(currentTaskID.value))
-          throw new Error('prereq (current task) was not found related to new postreq')
-      }, handleError('error adding new post to current task'))
-
-      const newPost = await useRepo(TaskRepo).getId(payload.task.id)
-      console.log({ newPost })
-      if (newPost === null) throw new Error('newPost is null')
-      if (!newPost.hard_prereq_ids.includes(currentTask.value.id)) {
-        throw new Error('new post does not have current task as a pre!')
-      }
-    }
-  }
-
   const insertBetweenPre = async (payload: { task: Task }) => {
     const oldPre = hardCheck(currentPre)
-    await tr
-      .removePre(currentTask.value, oldPre.id)
-      .then(handleSuccess('moving pre...'), handleError('error moving pre!'))
-    await tr
-      .addPre(payload.task, oldPre.id)
+    await useTaskStore().removeRule(oldPre.id, currentTask.value.id)
+    await useTaskStore()
+      .addRule(oldPre.id, payload.task.id)
       .then(
         handleSuccess('successfully moved prerequisite!'),
         handleError('error moving prerequisite!')
       )
     if (!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
-      await tr
-        .addPre(currentTask.value, payload.task.id)
+      await useTaskStore()
+        .addRule(payload.task.id, currentTask.value.id)
         .then(
           handleSuccess('added new pre to current task'),
           handleError('error adding new pre to current task')
@@ -376,39 +406,40 @@
       !x.completed
 
   const dialogInsertBetweenPost = (post: Task) => {
-    currentPost = post
-    $q.dialog({
-      component: TaskSearchDialog,
-      componentProps: {
-        dialogTitle: 'Insert Task Between Two Others',
-        taskID: currentTaskID.value,
-        searchLabel: 'Search',
-        resultsTitle: 'Search Results',
-        closeOnSelect: false,
-        onSelect: insertBetweenPost,
-        initialFilter: insertBetweenFilter,
-        batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
-          if (typeof taskID === 'undefined') {
-            console.warn('task id is undefined')
-            return []
-          }
-          const ct = useRepo(TaskRepo).withAll().find(taskID)
-          if (ct === null) {
-            console.warn('current task was not found (by id)')
-            return []
-          }
-          const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
-          if (currentPost === null) {
-            console.warn('current postrequisite info was not passed in')
-            return []
-          }
-          const postRelationInfo = currentPost.anyIDsBelow(tasks.map((x) => x.id))
-          return tasks
-            .filter((x) => relationInfo.get(x.id) !== true)
-            .filter((x) => postRelationInfo.get(x.id) !== true)
-        }
-      }
-    })
+    notifySuccess('Coming soon')
+    //   currentPost = post
+    //   $q.dialog({
+    //     component: TaskSearchDialog,
+    //     componentProps: {
+    //       dialogTitle: 'Insert Task Between Two Others',
+    //       taskID: currentTaskID.value,
+    //       searchLabel: 'Search',
+    //       resultsTitle: 'Search Results',
+    //       closeOnSelect: false,
+    //       onSelect: insertBetweenPost,
+    //       initialFilter: insertBetweenFilter,
+    //       batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
+    //         if (typeof taskID === 'undefined') {
+    //           console.warn('task id is undefined')
+    //           return []
+    //         }
+    //         const ct = useTaskStore().hardGet(taskID)
+    //         if (ct === null) {
+    //           console.warn('current task was not found (by id)')
+    //           return []
+    //         }
+    //         const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
+    //         if (currentPost === null) {
+    //           console.warn('current postrequisite info was not passed in')
+    //           return []
+    //         }
+    //         const postRelationInfo = currentPost.anyIDsBelow(tasks.map((x) => x.id))
+    //         return tasks
+    //           .filter((x) => relationInfo.get(x.id) !== true)
+    //           .filter((x) => postRelationInfo.get(x.id) !== true)
+    //       }
+    //     }
+    //   })
   }
 
   const dialogInsertBetweenPre = (pre: Task) => {
@@ -428,7 +459,7 @@
             console.warn('task id is undefined')
             return []
           }
-          const ct = useRepo(TaskRepo).withAll().find(taskID)
+          const ct = useTaskStore().hardGet(taskID)
           if (ct === null) {
             console.warn('current task was not found (by id)')
             return []
@@ -461,7 +492,7 @@
     {
       label: 'Unlink this Prerequisite',
       icon: 'fas fa-unlink',
-      action: (x: Task) => tr.removePre(currentTask.value, x.id)
+      action: (x: Task) => useTaskStore().removeRule(x.id, currentTask.value.id)
     },
     {
       label: 'Add Task Between This Prereq and This Task',
@@ -474,7 +505,7 @@
     {
       label: 'Unlink this Postrequisite',
       icon: 'fas fa-unlink',
-      action: (x: Task) => tr.removePost(currentTask.value, x.id)
+      action: (x: Task) => useTaskStore().removeRule(currentTask.value.id, x.id)
     },
     {
       label: 'Move all Postreqs from Current Task to This Task',
@@ -488,19 +519,18 @@
     }
   ]
 
-  // FIXME: TypeScript is angry
-  const prunePosts = blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
+  const prunePosts = blockingFunc(async (payload: { above: Set<number>; below: Set<number> }) => {
     useLoadingStateStore().busy = true
     const toRemove = allPosts.value.filter(
       (x) => payload.below.has(x.id) && !payload.above.has(x.id)
     )
     for (let i = 0; i < toRemove.length; i++) {
-      tr.removePost(currentTask.value, toRemove[i].id)
+      await useTaskStore().removeRule(currentTask.value.id, toRemove[i].id)
     }
     useLoadingStateStore().busy = false
   })
 
-  const prunePres = blockingFunc((payload: { above: Set<number>; below: Set<number> }) => {
+  const prunePres = blockingFunc(async (payload: { above: Set<number>; below: Set<number> }) => {
     const toRemove = allPres.value.filter((x) => {
       const hasRelationsAbove = payload.above.has(x.id)
       const hasRelationsBelow = payload.below.has(x.id)
@@ -509,7 +539,19 @@
     })
     console.log('pruning prerequisites', { payload, toRemove })
     for (let i = 0; i < toRemove.length; i++) {
-      tr.removePre(currentTask.value, toRemove[i].id)
+      await useTaskStore().removeRule(toRemove[i].id, currentTask.value.id)
     }
   })
+
+  const removePre = (task: Task, id_of_prereq: number) => {
+    useTaskStore()
+      .removeRule(id_of_prereq, task.id)
+      .then(handleSuccess('Removed a prerequisite'), handleError('Error removing the prerequisite'))
+  }
+
+  const removePost = (task: Task, id_of_postreq: number) => {
+    useTaskStore()
+      .removeRule(task.id, id_of_postreq)
+      .then(handleSuccess('Removed a prerequisite'), handleError('Error removing the prerequisite'))
+  }
 </script>

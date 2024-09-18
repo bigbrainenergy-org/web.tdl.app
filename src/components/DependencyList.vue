@@ -22,24 +22,44 @@
           <q-item-section>No {{ dependencyType.plural }}</q-item-section>
         </q-item>
         <q-item v-for="(item, itemkey) in items" :key="itemkey" v-ripple>
-          <q-btn-dropdown style="width: 100%; overflow: hidden" split auto-close dropdown-icon="more_vert"
-            @click.stop="emit('selectItem', item)">
+          <q-btn-dropdown
+            style="width: 100%; overflow: hidden"
+            split
+            auto-close
+            dropdown-icon="more_vert"
+            @click.stop="emit('selectItem', item)"
+          >
             <template #label>
               <q-item-section avatar style="width: 9%; max-width: 9%">
-                <q-checkbox v-model:model-value="item.completed"
-                  @update:model-value="emit('toggleCompletedItem', item)" />
+                <q-checkbox
+                  v-model:model-value="item.completed"
+                  @update:model-value="emit('toggleCompletedItem', item)"
+                />
               </q-item-section>
               <q-item-section class="vertical-top wrapped" :style="style">
-                <q-icon v-if="isNearRedundant(item.id)" name="fas fa-triangle-exclamation" color="green" />
-                <q-icon v-if="isFarRedundant(item.id)" name="fas fa-triangle-exclamation" color="red" />
+                <q-icon
+                  v-if="isNearRedundant(item.id)"
+                  name="fas fa-triangle-exclamation"
+                  color="green"
+                />
+                <q-icon
+                  v-if="isFarRedundant(item.id)"
+                  name="fas fa-triangle-exclamation"
+                  color="red"
+                />
                 <q-item-label lines="2">
                   {{ item.title }}
                 </q-item-label>
               </q-item-section>
             </template>
             <q-list>
-              <q-item v-for="(menuitem, index) in menuItems" :key="index" v-close-popup clickable
-                @click.stop="menuitem.action(item)">
+              <q-item
+                v-for="(menuitem, index) in menuItems"
+                :key="index"
+                v-close-popup
+                clickable
+                @click.stop="menuitem.action(item)"
+              >
                 <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
                 <q-space />
                 <q-icon :name="menuitem.icon" />
@@ -54,17 +74,16 @@
 
 <script setup lang="ts">
   import { useElementSize } from '@vueuse/core'
-  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task } from 'src/stores/tasks/task'
-  import { SimpleMenuItem, λ } from 'src/utils/types'
-  import { Ref, computed, onMounted } from 'vue'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { SimpleMenuItem } from 'src/utils/types'
+  import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
   import { ref } from 'vue'
 
   export interface EntityType {
-    singular: 'Prerequisite' | 'Postrequisite'
-    plural: 'Prerequisites' | 'Postrequisites'
+    singular: string
+    plural: string
   }
 
   interface Props {
@@ -76,7 +95,7 @@
 
   const prop = withDefaults(defineProps<Props>(), {
     items: () => [],
-    dependencyType: { plural: 'Requisites', singular: 'Requisite' } as const,
+    dependencyType: () => ({ plural: 'Requisites', singular: 'Requisite' }),
     menuItems: () => [],
     showPrune: false
   })
@@ -107,16 +126,12 @@
     if (prop.items.length === 0) return
     // console.warn(`updating redundant check for ${prop.items.length} dependents`)
     const arr = prop.items.map((x) => x.id)
-    const options = {
-      incompleteOnly: useLocalSettingsStore().hideCompleted,
-      useStore: true
-    }
     prop.items.forEach((x) => {
       const arrExcludingX = arr.filter(
         (y) => y !== x.id && !belows.value.has(y) && !aboves.value.has(y)
       )
-      const aboveX = x.anyIDsAbove(arrExcludingX, options)
-      const belowX = x.anyIDsBelow(arrExcludingX, options)
+      const aboveX = x.anyIDsAbove(arrExcludingX)
+      const belowX = x.anyIDsBelow(arrExcludingX)
       aboveX.forEach((val, key) => {
         if (val) aboves.value.add(key)
       })
@@ -146,12 +161,11 @@
   }
 
   const pruneDependencies = () => {
-    console.log(`pruning ${prop.dependencyType.plural}`)
     emit('pruneDependencies', { above: aboves.value, below: belows.value })
   }
 
   const el = ref()
-  const setEl = (x: any) => (el.value = x)
+  // const setEl = (x: any) => (el.value = x)
   const { width } = useElementSize(el)
 
   const style = computed(() => {

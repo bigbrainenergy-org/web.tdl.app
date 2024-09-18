@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios'
-import { Model, PrimaryKey } from 'pinia-orm'
+import { RouteTo } from 'src/router/routes'
+import { RouteRecordRaw } from 'vue-router'
 
 // hahaha.... started as a joke but I kindof like it.
 export type λ<inputType = void | unknown, returnType = void> = (
@@ -55,6 +56,11 @@ export class Queue<T> {
   has(value: T): boolean {
     return this.set.has(value)
   }
+  filterDequeue(predicate: (t: T) => boolean): T[] {
+    const result = Array.from(this.set.values()).filter(predicate)
+    result.forEach((x) => this.set.delete(x))
+    return result
+  }
 }
 
 export interface TaskGetterOptions {
@@ -74,9 +80,32 @@ export type Button<T> = {
 export type ripped<T> = T extends readonly (infer U)[]
   ? U
   : T extends (infer U)[]
-  ? U
-  : T extends (...args: any[]) => infer U
-  ? U
-  : T extends Promise<infer U>
-  ? U
-  : T
+    ? U
+    : T extends (...args: any[]) => infer U
+      ? U
+      : T extends Promise<infer U>
+        ? U
+        : T
+
+export type NumericKeysObject<T> = { [key: number]: T }
+
+const icons = [
+  'fa-solid fa-circle-dot',
+  'fa-solid fa-inbox',
+  'fa-solid fa-project-diagram',
+  'fa-solid fa-star',
+  'fa-solid fa-list-check',
+  'fa-solid fa-calendar-day',
+  'hub',
+  'self_improvement'
+] as const
+
+export type Icon = (typeof icons)[number]
+
+export type RouteTab = {
+  icon: Icon
+  to: RouteTo
+  label: string
+  enabled: boolean
+  default: boolean
+}

@@ -28,12 +28,14 @@
     max: 100,
     step: 1,
     cuteName: undefined,
+    unit: undefined,
     color: 'primary'
   })
   const val = defineModel<number>()
   const emit = defineEmits(['change'])
   const cuteNamePortion = computed(() =>
-    typeof props.cuteName === 'undefined' ? '' : `${props.cuteName} `
+    typeof props.cuteName === 'undefined' ? '' : props.cuteName
   )
-  const label = computed(() => `${cuteNamePortion.value}${val.value}%`)
+  const unitPortion = computed(() => (typeof props.unit === 'undefined' ? '' : ` ${props.unit}`))
+  const label = computed(() => `${cuteNamePortion.value} ${val.value}${unitPortion.value}`)
 </script>

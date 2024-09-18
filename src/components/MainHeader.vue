@@ -13,7 +13,7 @@
 <script setup lang="ts">
   import HeaderButtons from 'src/components/HeaderButtons.vue'
   import HeaderUserMenu from 'src/components/HeaderUserMenu.vue'
-  import { Task } from 'src/stores/tasks/task';
+  import { Task } from 'src/stores/tasks/task-model'
 
   const drawer = defineModel<boolean>('drawer')
   const tasks = defineModel<Array<Task>>('tasks', { required: true })

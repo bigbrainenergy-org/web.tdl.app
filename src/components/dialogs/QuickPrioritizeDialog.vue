@@ -7,12 +7,27 @@
         <q-btn class="q-ma-sm" size="md" color="positive" label="Save" @click="saveNewRules" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="Cancel" @click="onCancelClick" />
       </q-card-section>
-      <q-linear-progress v-if="typeof saveProgress !== 'undefined'" stripe size="10px" :value="saveProgress" />
+      <q-linear-progress
+        v-if="typeof saveProgress !== 'undefined'"
+        stripe
+        size="10px"
+        :value="saveProgress"
+      />
       <q-card-section>
-        <q-btn class="q-ma-sm" size="md" color="negative"
-          :label="layerZero.some((x) => !x.selected) ? 'SELECT ALL' : 'UNSELECT ALL'" @click="selectAll" />
+        <q-btn
+          class="q-ma-sm"
+          size="md"
+          color="negative"
+          :label="layerZero.some((x) => !x.selected) ? 'SELECT ALL' : 'UNSELECT ALL'"
+          @click="selectAll"
+        />
         <q-list class="text-primary">
-          <q-intersection v-for="(currentTask, index) in layerZero" :key="index" once style="min-height: 48px">
+          <q-intersection
+            v-for="(currentTask, index) in layerZero"
+            :key="index"
+            once
+            style="min-height: 48px"
+          >
             <q-item>
               <q-checkbox v-model:model-value="currentTask.selected" color="primary" keep-color />
               <q-item-section>{{ currentTask.obj.title }}</q-item-section>
@@ -26,11 +41,10 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { Task } from 'src/stores/tasks/task'
-  import { ref } from 'vue'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
-  import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   import { addPost } from 'src/utils/task-utils'
+  import { ref } from 'vue'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
 
   interface Props {
     task: Task
@@ -40,28 +54,31 @@
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-  const layerZero: { selected: boolean; obj: cachedTask }[] = useLayerZeroStore().typed
-    .filter((x: cachedTask) => {
-      if (x.id === prop.task.id) return false
-      if (prop.task.isIDBelow(x.id, { incompleteOnly: true, useStore: false })) return false
-      return true
-    })
-    .map((x: cachedTask) => ({ selected: false, obj: x }))
-  const saveNewRules = async () => {
-    const selectedTasks = layerZero.filter((x) => x.selected)
+  const layerZero = ref<{ selected: boolean; obj: Task }[]>(
+    useTaskStore()
+      .layerZero.filter((x: Task) => {
+        if (x.id === prop.task.id) return false
+        if (prop.task.anyIDsBelow([x.id])) return false
+        return true
+      })
+      .map((x: Task) => ({ selected: false, obj: x }))
+  )
+  const saveNewRules = () => {
+    const selectedTasks = layerZero.value.filter((x) => x.selected)
     saveProgress.value = 0
     // TODO: batch update this!
     for (let i = 0; i < selectedTasks.length; i++) {
-      const element = layerZero[i]
-      await addPost(prop.task, element.obj.id).then(
-        () => (saveProgress.value = (i + 1) / selectedTasks.length)
-      )
+      const element = layerZero.value[i]
+      useTaskStore()
+        .addRule(prop.task.id, element.obj.id)
+        .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))
     }
     onDialogCancel()
   }
   const selectAll = () => {
-    if (layerZero.some((x) => !x.selected)) layerZero.forEach((x) => (x.selected = true))
-    else layerZero.forEach((x) => (x.selected = false))
+    if (layerZero.value.some((x) => !x.selected))
+      layerZero.value.forEach((x) => (x.selected = true))
+    else layerZero.value.forEach((x) => (x.selected = false))
   }
 
   const onCancelClick = onDialogCancel

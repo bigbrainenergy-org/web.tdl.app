@@ -23,7 +23,7 @@ export interface UpdateUserOptions extends iOptions {
 }
 
 export class User extends Model implements iRecord {
-  static entity = 'users'
+  static override entity = 'users'
   // todo: correct decorator type for this and other models
   @Attr(null) declare id: number | null
   @Attr('') declare time_zone: string
@@ -31,15 +31,15 @@ export class User extends Model implements iRecord {
 
   @BelongsTo(() => TimeZone, 'time_zone') declare timeZoneObj: TimeZone | null
 
-  static piniaOptions = {
+  static override piniaOptions = {
     persist: true
   }
 }
 
 type passOptions = { current_password: string; password: string }
 export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, User> {
-  use = User
-  apidir = User.entity
+  override use = User
+  override apidir = User.entity
 
   override fetch = async (): Promise<void> => {
     const userId = useAuthenticationStore().userId
@@ -51,8 +51,6 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
   getUser = () => {
     const userId = useAuthenticationStore().userId
     const user = this.withAll().find(userId)
-    // console.debug({ userId, user })
-    // console.debug({ 'all users': this.all() })
     return user
   }
 
@@ -79,7 +77,6 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
   changeTimezone = async (newTimeZone: TimeZone) => {
     const aust = useAuthenticationStore()
     const userId = aust.userId
-    console.log('changing time zone to ', newTimeZone)
     await this.update({
       id: userId,
       payload: {
@@ -88,7 +85,7 @@ export class UserRepo extends GenericRepo<CreateUserOptions, UpdateUserOptions, 
         }
       }
     }).then((response: any) => {
-      console.log({ theResponseData: response })
+      console.debug({ theResponseData: response })
       updateLuxonTimeZone(newTimeZone.value)
     }, handleError('failed to update timezone'))
   }

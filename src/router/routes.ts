@@ -1,11 +1,38 @@
 import { RouteRecordRaw } from 'vue-router'
 
-const routes: RouteRecordRaw[] = [
+const PageNames = [
+  'List',
+  'Calendar',
+  'Focus',
+  'Tree',
+  'Settings',
+  'Graph',
+  'Agenda',
+  'Routines',
+  'Login',
+  '',
+  '/',
+  'Empty',
+  'Error 404'
+] as const
+
+export type RouteName = (typeof PageNames)[number]
+export type RoutePath = Lowercase<RouteName> | '' | '/'
+export type RouteTo = `/${RoutePath}`
+
+export interface StronglyTypedRouteRecordRaw
+  extends Omit<RouteRecordRaw, 'path' | 'name' | 'children'> {
+  path: RoutePath | '/:catchAll(.*)*'
+  name?: RouteName
+  children?: StronglyTypedRouteRecordRaw[]
+}
+
+const routes: StronglyTypedRouteRecordRaw[] = [
   {
     path: '/',
     component: () => import('src/layouts/MainLayout.vue'),
     children: [
-      { path: '', name: 'Empty', redirect: 'list' },
+      { path: '', name: 'Empty', redirect: 'List' },
       {
         path: 'list',
         name: 'List',
@@ -40,8 +67,13 @@ const routes: RouteRecordRaw[] = [
         path: 'agenda',
         name: 'Agenda',
         component: () => import('src/pages/Agenda.vue')
+      },
+      {
+        path: 'routines',
+        name: 'Routines',
+        component: () => import('src/pages/Routines.vue')
       }
-    ]
+    ] as StronglyTypedRouteRecordRaw[]
   },
   {
     path: '/',

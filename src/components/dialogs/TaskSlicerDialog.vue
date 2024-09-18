@@ -9,8 +9,14 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
-            <q-input v-model.number="slices" filled clearable label="Number of Slices" @touchstart.stop
-              @mousedown.stop />
+            <q-input
+              v-model.number="slices"
+              filled
+              clearable
+              label="Number of Slices"
+              @touchstart.stop
+              @mousedown.stop
+            />
             <br />
             <div class="row">
               <div class="col-grow">
@@ -27,8 +33,8 @@
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
-  import { Task } from 'src/stores/tasks/task'
-  import { handleError } from 'src/utils/notification-utils';
+  import { handleError } from 'src/utils/notification-utils'
+  import { Task } from 'src/stores/tasks/task-model'
 
   const props = defineProps<{ task: Task }>()
 

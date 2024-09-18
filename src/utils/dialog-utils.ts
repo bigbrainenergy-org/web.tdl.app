@@ -1,10 +1,8 @@
 import { Dialog } from 'quasar'
-import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
 import { addPost, addPre, createTask } from './task-utils'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
-
 import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
@@ -12,6 +10,12 @@ import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroD
 import AddDependencyDialog from 'src/components/dialogs/AddDependencyDialog.vue'
 import TaskSlicerDialog from 'src/components/dialogs/TaskSlicerDialog.vue'
 import { useRepo } from 'pinia-orm'
+import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+import { Task } from 'src/stores/tasks/task-model'
+import { useTaskStore } from 'src/stores/tasks/task-store'
+import { CreateListOptions, ListRepo } from 'src/stores/lists/list'
+import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
+import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
 
 export function openCreateTaskDialog() {
   return Dialog.create({
@@ -22,6 +26,29 @@ export function openCreateTaskDialog() {
         newTask.hard_prereq_ids = []
         newTask.hard_postreq_ids = []
         createTask(newTask)
+      }
+    }
+  })
+}
+
+export function openCreateListDialog() {
+  return Dialog.create({
+    // TODO
+    // component: CreateListDialog,
+    componentProps: {
+      onCreate: (payload: { options: CreateListOptions; callback: () => void }) => {
+        useRepo(ListRepo).add(payload.options)
+      }
+    }
+  })
+}
+
+export function openCreateProcedureDialog(src: string) {
+  return Dialog.create({
+    component: CreateProcedureDialog,
+    componentProps: {
+      onCreate: (payload: { options: CreateProcedureOptions; callback: () => void }) => {
+        useRepo(ProcedureRepo).add(payload.options)
       }
     }
   })
@@ -53,6 +80,26 @@ export function openQuickSortDialog() {
   })
 }
 
+export function considerOpeningQuickSortDialog() {
+  const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
+    useLocalSettingsStore()
+  const { quickSortDialogActive } = useLoadingStateStore()
+  if (quickSortDialogActive) return
+  if (disableQuickSort) return
+  if (enableQuickSortOnLayerZeroQTY > 0) {
+    const layerZeroQTY = useTaskStore().layerZero.length
+    if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
+      openQuickSortDialog()
+    }
+    if (
+      enableQuickSortOnNewTask &&
+      useTaskStore().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
+    ) {
+      openQuickSortDialog()
+    }
+  }
+}
+
 export function openUpdateTaskDialog(currentTask: Task | number) {
   const cts = useCurrentTaskStore()
   if (currentTask instanceof Task) {
@@ -76,8 +123,8 @@ export function addPrerequisitesDialog(currentTask: Task) {
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')
           throw new Error('Add Prerequisite: Current Task ID is undefined')
-        const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
-        if (ct === null)
+        const ct = useTaskStore().mapp.get(currentTaskID)
+        if (typeof ct === 'undefined')
           throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
         return (x: Task) => {
           if (x.completed) return false
@@ -88,8 +135,8 @@ export function addPrerequisitesDialog(currentTask: Task) {
       },
       batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
         if (typeof taskID === 'undefined') return undefined
-        const ct = useRepo(TaskRepo).find(taskID)
-        if (ct === null) return undefined
+        const ct = useTaskStore().mapp.get(taskID)
+        if (typeof ct === 'undefined') return undefined
         const relationInfo = ct.anyIDsBelow(tasks.map((x) => x.id))
         return tasks.filter((x) => relationInfo.get(x.id) !== true)
       }
@@ -110,8 +157,8 @@ export function addPostrequisiteDialog(currentTask: Task) {
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')
           throw new Error('Add Postrequisite: Current Task ID is undefined')
-        const ct = useRepo(TaskRepo).withAll().find(currentTaskID)
-        if (ct === null)
+        const ct = useTaskStore().mapp.get(currentTaskID)
+        if (typeof ct === 'undefined')
           throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
         return (x: Task) => {
           if (x.completed) return false
@@ -122,8 +169,8 @@ export function addPostrequisiteDialog(currentTask: Task) {
       },
       batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
         if (typeof taskID === 'undefined') return undefined
-        const ct = useRepo(TaskRepo).find(taskID)
-        if (ct === null) return undefined
+        const ct = useTaskStore().mapp.get(taskID)
+        if (typeof ct === 'undefined') return undefined
         const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
         return tasks.filter((x) => relationInfo.get(x.id) !== true)
       }

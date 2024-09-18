@@ -9,11 +9,11 @@
   import TaskPage from 'src/components/TaskPage.vue'
 
   import { useMeta } from 'quasar'
-  import { Task } from 'src/stores/tasks/task'
   import { useTasks } from 'src/composables/use-tasks'
   import { updateTaskCompletedStatus } from 'src/utils/task-utils'
   import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { playCheckboxSound } from 'src/utils/sound-utils'
+  import { Task } from 'src/stores/tasks/task-model'
 
   useMeta(() => ({ title: 'List | TDL App' }))
 

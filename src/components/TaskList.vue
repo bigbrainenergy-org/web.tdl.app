@@ -19,7 +19,12 @@
           <q-skeleton type="QBtn" />
         </q-item-section>
       </q-item>
-      <q-inner-loading :showing="loading" label="Loading..." label-class="text-teal" label-style="font-size: 1.1em" />
+      <q-inner-loading
+        :showing="loading"
+        label="Loading..."
+        label-class="text-teal"
+        label-style="font-size: 1.1em"
+      />
     </template>
     <template v-else>
       <!-- If no tasks, render empty list item -->
@@ -35,25 +40,28 @@
       </q-item>
       <!-- Otherwise, lazy render tasks -->
       <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
-        <TaskItem :task="task" @task-clicked="$emit('task-clicked', $event, task.t)"
-          @task-completion-toggled="$emit('task-completion-toggled', $event, task.t)" />
+        <TaskItem
+          :task="task"
+          @task-clicked="$emit('task-clicked', $event, task)"
+          @task-completion-toggled="$emit('task-completion-toggled', $event, task)"
+        />
       </q-intersection>
     </template>
   </q-list>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, toRef } from 'vue'
+  import { computed, toRef } from 'vue'
   import TaskItem from 'src/components/TaskItem.vue'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-
-  console.log('loaded task list')
+  import { Task } from 'src/stores/tasks/task-model'
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
     defineProps<{
-      tasks?: Array<cachedTask>
+      tasks?: Array<Task>
+      unblockedOnly?: boolean
+      incompleteOnly?: boolean
       emptyListMessage?: string
     }>(),
     {

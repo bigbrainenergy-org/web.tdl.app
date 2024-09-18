@@ -41,8 +41,13 @@
         <q-item-section>Upcoming</q-item-section>
       </q-item>
 
-      <q-item v-ripple clickable :active="agendaSelected"
-        :style="agendaSelected ? listColorStyle({ color: '#ffffff' }) : null" @click="setAgenda">
+      <q-item
+        v-ripple
+        clickable
+        :active="agendaSelected"
+        :style="agendaSelected ? listColorStyle({ color: '#ffffff' }) : null"
+        @click="setAgenda"
+      >
         <q-item-section avatar>
           <q-icon name="fa-solid fa-inbox" />
         </q-item-section>
@@ -50,9 +55,13 @@
         <q-item-section>Agenda</q-item-section>
       </q-item>
 
-      <q-item v-ripple clickable :active="listSelected({ title: '' })"
+      <q-item
+        v-ripple
+        clickable
+        :active="listSelected({ title: '' })"
         :style="listSelected({ title: '' }) ? listColorStyle({ color: '#ffffff' }) : null"
-        @click="setList({ title: '' })">
+        @click="setList({ title: '' })"
+      >
         <q-item-section avatar>
           <q-icon name="checklist" />
         </q-item-section>
@@ -64,9 +73,18 @@
     <p class="q-ma-sm text-bold text-h6">Lists</p>
 
     <q-list padding overflow-hidden full-width>
-      <q-item v-for="(list, index) in lists" :key="index" v-ripple :active="listSelected(list)" clickable full-width
-        :style="listSelected(list) ? listColorStyle(list) : null" @click="setList(list)"
-        @mouseover="hoveredList = index" @mouseleave="hoveredList = -1">
+      <q-item
+        v-for="(list, index) in lists"
+        :key="index"
+        v-ripple
+        :active="listSelected(list)"
+        clickable
+        full-width
+        :style="listSelected(list) ? listColorStyle(list) : null"
+        @click="setList(list)"
+        @mouseover="hoveredList = index"
+        @mouseleave="hoveredList = -1"
+      >
         <q-menu context-menu>
           <q-list>
             <q-item clickable>
@@ -87,7 +105,11 @@
           </q-item-label>
         </q-item-section>
 
-        <q-item-section side :style="listSelected(list) ? listCountStyle(list) : null" class="q-pa-none q-ma-none">
+        <q-item-section
+          side
+          :style="listSelected(list) ? listCountStyle(list) : null"
+          class="q-pa-none q-ma-none"
+        >
           <template v-if="hoveredList === index">
             <q-btn icon="more_horiz" flat padding="xs" size="md" @click.stop="openMenu(index)" />
           </template>
@@ -103,15 +125,12 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRepo } from 'pinia-orm'
-  import { useQuasar } from 'quasar'
   import { List, ListRepo } from 'src/stores/lists/list'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { autoContrastTextColor } from 'src/utils/color-utils'
   import { openCreateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
-  import { notifySuccess } from 'src/utils/notification-utils'
 
-  const $q = useQuasar()
   const drawer = defineModel<boolean>('drawer')
   const listsRepo = useRepo(ListRepo)
   const localSettingsStore = useLocalSettingsStore()
@@ -121,11 +140,6 @@
   const hoveredList = ref(-1)
 
   const lists = computed(() => listsRepo.withAll().get())
-  console.log({ lists: lists.value })
-
-  const openCreateListDialog = () => {
-    notifySuccess('Coming soon')
-  }
 
   type HasTitle = { title: string }
 
@@ -134,15 +148,12 @@
     selectedList.value = list.title
   }
 
-  const setAgenda = () => currentFilteringMode.value = 'filterByAgenda'
+  const setAgenda = () => (currentFilteringMode.value = 'filterByAgenda')
 
   const agendaSelected = computed(() => currentFilteringMode.value === 'filterByAgenda')
 
   const listSelected = (list: HasTitle) => {
-    return (
-      currentFilteringMode.value === 'filterByList' &&
-      selectedList.value === list.title
-    )
+    return currentFilteringMode.value === 'filterByList' && selectedList.value === list.title
   }
 
   // TODO: These can all be DRY'd up.
@@ -163,6 +174,6 @@
   }
 
   const openMenu = (index: number) => {
-    console.log({ index })
+    console.debug({ index })
   }
 </script>

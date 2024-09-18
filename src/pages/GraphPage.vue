@@ -21,20 +21,25 @@
 </template>
 
 <script setup lang="ts">
-  import { useRepo } from 'pinia-orm'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
   import * as d3 from 'd3'
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { onMounted, ref, watch } from 'vue'
   import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
-  import { useQuasar, useMeta } from 'quasar'
+  import { useMeta } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { λ } from 'src/utils/types'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
 
-  const tr = computed(() => useRepo(TaskRepo))
+  interface Prop {
+    tasks: Task[]
+  }
+  const props = withDefaults(defineProps<Prop>(), { tasks: () => useTaskStore().array as Task[] })
+
+  const ts = useTaskStore()
   const usr = useLocalSettingsStore()
   let allTasks
   let allTaskNodes: d3Node<Task>[]
@@ -60,8 +65,6 @@
     'Max Task Node Size': taskNodeMaxSize
   })
 
-  const reinit = () => reInitializeGraph()
-
   watch(incompleteOnly, () => {
     usr.hideCompleted = incompleteOnly.value
     reInitializeGraph()
@@ -71,13 +74,11 @@
     reInitializeGraph()
   })
 
-  console.log(graphSettings.value)
-
   // todo: merge with other populate function
   // todo: make less weird
   // todo: optimize
   const populateGraphDataStructures = () => {
-    allTasks = tr.value.withAll().get()
+    allTasks = props.tasks
     allTaskNodes = []
     links = []
     for (let i = 0; i < allTasks.length; i++) {
@@ -102,12 +103,11 @@
           )
       )
     )
-    console.log({ links })
   }
 
   const populateGraphDataStructuresIncompleteOnly = () => {
     const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
-    allTasks = tr.value.where('completed', false).withAll().get()
+    allTasks = ts.incompleteOnly
     const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
     allTasks.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
 
@@ -191,8 +191,6 @@
   }
 
   let simulation: d3.Simulation<d3Node<Task>, undefined>
-
-  const $q = useQuasar()
 
   let gnodes: any
   let gg: any
@@ -295,12 +293,12 @@
     usr.hideCompleted = incompleteOnly.value
   }
 
-  const toggleIncompleteOnly = () => {
-    incompleteOnly.value = !incompleteOnly.value
-    reInitializeGraph()
-  }
+  // const toggleIncompleteOnly = () => {
+  //   incompleteOnly.value = !incompleteOnly.value
+  //   reInitializeGraph()
+  // }
 
-  const refresh = reInitializeGraph
+  // const refresh = reInitializeGraph
 
   onMounted(initializeGraph)
 

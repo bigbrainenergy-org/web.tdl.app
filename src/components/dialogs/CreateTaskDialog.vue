@@ -92,8 +92,8 @@
   const title = ref('')
   const notes = ref('')
 
-  const titleInput = ref(null)
-  const notesInput = ref(null)
+  const titleInput = ref()
+  const notesInput = ref()
 
   const focusTitle = () => {
     titleInput.value?.focus()

@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+  import { computed } from 'vue'
   import { useRepo } from 'pinia-orm'
   import { UserRepo } from 'src/stores/users/user'
   import { pullFresh } from 'src/utils/sync-utils'

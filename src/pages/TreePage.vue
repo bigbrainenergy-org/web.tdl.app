@@ -10,26 +10,50 @@
             <q-space />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
-          <q-tree v-if="reverseOrder" ref="theReverseTree"
-            v-model:expanded="useRawExpandedStateStore().expandedNodesReverse" :nodes="layerZero" node-key="key" dense
-            class="text-primary" @lazy-load="loadChildren" @update:expanded="onExpanded">
+          <q-tree
+            v-if="reverseOrder"
+            ref="theReverseTree"
+            v-model:expanded="useRawExpandedStateStore().expandedNodesReverse"
+            :nodes="layerZero"
+            node-key="key"
+            dense
+            class="text-primary"
+            @lazy-load="loadChildren"
+            @update:expanded="onExpanded"
+          >
             <template #default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
-                <q-checkbox v-model:model-value="prop.node.obj.completed" color="primary" keep-color
-                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
+                <q-checkbox
+                  v-model:model-value="prop.node.obj.completed"
+                  color="primary"
+                  keep-color
+                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"
+                ></q-checkbox>
                 <q-item-label @click.stop="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
               </q-item>
             </template>
           </q-tree>
-          <q-tree v-else ref="theTree" v-model:expanded="useRawExpandedStateStore().expandedNodesRegular"
-            :nodes="layerZero" node-key="key" dense class="text-primary" @lazy-load="loadChildren"
-            @update:expanded="onExpanded">
+          <q-tree
+            v-else
+            ref="theTree"
+            v-model:expanded="useRawExpandedStateStore().expandedNodesRegular"
+            :nodes="layerZero"
+            node-key="key"
+            dense
+            class="text-primary"
+            @lazy-load="loadChildren"
+            @update:expanded="onExpanded"
+          >
             <template #default-header="prop">
               <q-item class="text-primary" :style="style(prop.node.obj)">
-                <q-checkbox v-model:model-value="prop.node.obj.completed" color="primary" keep-color
-                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"></q-checkbox>
+                <q-checkbox
+                  v-model:model-value="prop.node.obj.completed"
+                  color="primary"
+                  keep-color
+                  @update:model-value="updateTaskCompletedStatus(prop.node.obj)"
+                ></q-checkbox>
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
@@ -43,10 +67,8 @@
 </template>
 
 <script setup lang="ts">
-  import { useRepo } from 'pinia-orm'
-  import { Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed, onMounted, ref, watch } from 'vue'
-  import { useQuasar, useMeta } from 'quasar'
+  import { useMeta } from 'quasar'
   import { details, QTreeComponent, SimpleTreeNode } from 'src/utils/quasar-interfaces'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   // import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
@@ -59,8 +81,10 @@
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => ({ title: 'Tree | TDL App' }))
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
-  const tr = computed(() => useRepo(TaskRepo))
+  // const tr = computed(() => useRepo(TaskRepo))
   // const esr = computed(() => useRepo(ExpandedStateRepo))
   const usr = useLocalSettingsStore()
 
@@ -93,14 +117,15 @@
     initializeQueues()
   })
 
+  // TODO: storetoref
   const expanded = ref(useRawExpandedStateStore().expandedNodesRegular)
   watch(expanded, () => {
-    console.log({ expanded })
+    console.debug({ expanded })
   })
 
   const expandedReverse = ref(useRawExpandedStateStore().expandedNodesReverse)
   watch(expandedReverse, () => {
-    console.log({ expandedReverse })
+    console.debug({ expandedReverse })
   })
 
   const style = (task: Task) => ({
@@ -108,19 +133,19 @@
     innerWidth: '100%'
   })
 
-  const allTasks = computed(() => tr.value.withAll().get())
+  const { array } = storeToRefs(useTaskStore())
 
   const layerZero = computed(() =>
-    allTasks.value
+    array.value
       .filter((x) => (incompleteOnly.value ? !x.completed : true))
-      .filter((x) => (reverseOrder.value ? !x.hasIncompletePostreqs : !x.hasIncompletePrereqs))
+      .filter((x) =>
+        reverseOrder.value ? x.incomplete_postreqs.length === 0 : x.incomplete_prereqs.length === 0
+      )
       .map((x) => x.treeNode(reverseOrder.value, incompleteOnly.value))
   )
 
   // todo: this could be a problem for reactivity
   let allTaskNodes = Array.from(layerZero.value)
-
-  // console.log({ allTaskNodes })
 
   const theTree = ref<QTreeComponent<Task> | undefined>()
   const theReverseTree = ref<QTreeComponent<Task> | undefined>()
@@ -217,7 +242,7 @@
     else busy = false
   }
 
-  const $q = useQuasar()
+  // const $q = useQuasar()
 
   const openTask = (currentTask: Task) => {
     openUpdateTaskDialog(currentTask)
@@ -227,8 +252,9 @@
   }
 
   const updateTaskCompletedStatus = (task: Task) => {
-    tr.value.updateAndCache({ id: task.id, payload: { task } })
-    if (incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
+    task.updateTaskCompletionStatus().then(() => {
+      if (incompleteOnly.value) useRawExpandedStateStore().forgetTask(task.id)
+    })
   }
 
   const rawExpandedStateStore = useRawExpandedStateStore()
@@ -254,10 +280,8 @@
           .forEach((x) => t.value?.setExpanded(x, true))
         if (expandAllWithSameID.value) {
           // queueExpand.push(...childNodes.filter(shouldBeExpanded).map(toNodeKey))
-          // console.log({ queueExpand })
         }
       }
-      console.log('calling handleExpandAndCollapse from childNodeLoader')
       handleExpandAndCollapse()
     }
 
@@ -273,10 +297,7 @@
   // let previousExpanded: string[] = []
 
   const onExpanded = (list: readonly any[]) => {
-    // console.debug('onExpanded: ', list)
     // if(!expandAllWithSameID.value) {
-    //   console.log('expand all with same id setting is disabled, skipping custom behavior')
-    //   console.debug({ previousExpanded, list })
     //   return
     // }
     // const delta = previousExpanded.length - list.length
