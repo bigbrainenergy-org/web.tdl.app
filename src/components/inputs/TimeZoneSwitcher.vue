@@ -1,7 +1,15 @@
 <template>
   <p>Current Time: {{ currentTime }}</p>
-  <q-select v-model="editTimeZone" class="q-my-md" filled :options="timeZones" option-value="value" option-label="name"
-    label="Time Zone" @update:model-value="updateTimeZone" />
+  <q-select
+    v-model="editTimeZone"
+    class="q-my-md"
+    filled
+    :options="timeZones"
+    option-value="value"
+    option-label="name"
+    label="Time Zone"
+    @update:model-value="updateTimeZone"
+  />
 </template>
 
 <script setup lang="ts">

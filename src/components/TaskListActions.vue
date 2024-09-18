@@ -13,17 +13,13 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { openQuickSortDialog, openSearchDialog } from 'src/utils/dialog-utils'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { Task } from 'src/stores/tasks/task-model'
 
-  const tasks = defineModel<Array<cachedTask>>('tasks', { required: true })
+  const tasks = defineModel<Array<Task>>('tasks', { required: true })
 
   const localSettingsStore = useLocalSettingsStore()
 
-  const {
-    layerZeroOnly,
-    hideCompleted,
-    autoScalePriority
-  } = storeToRefs(localSettingsStore)
+  const { layerZeroOnly, hideCompleted, autoScalePriority } = storeToRefs(localSettingsStore)
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,

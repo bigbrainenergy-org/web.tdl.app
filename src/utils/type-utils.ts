@@ -1,4 +1,4 @@
-import { errorNotification } from "./notification-utils"
+import { errorNotification } from './notification-utils'
 
 export function hardCheck<T>(t: T | undefined | null, memo = 'ERROR'): T {
   if (!exists(t)) {
@@ -13,3 +13,5 @@ export function exists<T>(t: T | undefined | null): t is T {
   if (typeof t === 'undefined' || t === null) return false
   return true
 }
+
+export type Override<T, U> = Omit<T, keyof U> & U

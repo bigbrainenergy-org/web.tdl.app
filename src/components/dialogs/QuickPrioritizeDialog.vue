@@ -41,7 +41,6 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { addPost } from 'src/utils/task-utils'
   import { ref } from 'vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { Task } from 'src/stores/tasks/task-model'

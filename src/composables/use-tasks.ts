@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { useTaskFiltering } from './use-task-filtering'
 import { useTaskSorting } from './use-task-sorting'
 import { useTaskFetching } from './use-task-fetching'
+import { Task } from 'src/stores/tasks/task-model'
 
 // TODO: unblockedOnly is unused, use it
 export function useTasks() {
@@ -13,7 +14,7 @@ export function useTasks() {
   const { filterTasks } = useTaskFiltering()
   const { sortTasks } = useTaskSorting()
 
-  const tasks = computed(() => {
+  const tasks = computed((): Task[] => {
     if (busy.value) {
       console.debug('busy signal; skipping task recalc.')
       return []

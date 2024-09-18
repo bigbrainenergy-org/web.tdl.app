@@ -1,6 +1,9 @@
-import { RouteRecordRaw } from 'vue-router'
+import { PageNameBuiltins, StronglyTypedRouteRecordRaw } from './REEEE'
 
+// Add your page names here. Formatting:
+// - Capitalize first letter
 const PageNames = [
+  ...PageNameBuiltins,
   'List',
   'Calendar',
   'Focus',
@@ -10,22 +13,13 @@ const PageNames = [
   'Agenda',
   'Routines',
   'Login',
-  '',
-  '/',
   'Empty',
   'Error 404'
 ] as const
 
-export type RouteName = (typeof PageNames)[number]
+export type RouteName = (typeof PageNames)[number] | '' | '/'
 export type RoutePath = Lowercase<RouteName> | '' | '/'
 export type RouteTo = `/${RoutePath}`
-
-export interface StronglyTypedRouteRecordRaw
-  extends Omit<RouteRecordRaw, 'path' | 'name' | 'children'> {
-  path: RoutePath | '/:catchAll(.*)*'
-  name?: RouteName
-  children?: StronglyTypedRouteRecordRaw[]
-}
 
 const routes: StronglyTypedRouteRecordRaw[] = [
   {

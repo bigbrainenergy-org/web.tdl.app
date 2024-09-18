@@ -1,6 +1,14 @@
 <template>
-  <q-btn v-for="(button, key) in buttons" :key="key" class="q-ma-sm" size="md" :color="button.color"
-    :label="button.label" :data-cy="button.dataCy" @click.stop="button.action(target as G)" />
+  <q-btn
+    v-for="(button, key) in buttons"
+    :key="key"
+    class="q-ma-sm"
+    size="md"
+    :color="button.color"
+    :label="button.label"
+    :data-cy="button.dataCy"
+    @click.stop="button.action(target as G)"
+  />
 </template>
 <script setup lang="ts" generic="G">
   import { Button } from 'src/utils/types'

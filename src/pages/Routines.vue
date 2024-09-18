@@ -75,7 +75,7 @@
   import { defineComponent, ref, computed } from 'vue'
   import { useRepo } from 'pinia-orm'
   import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
-  import { TDLAPP } from 'src/TDLAPP'
+  import { openProcedureDetailsDialog } from 'src/utils/dialog-utils'
 
   defineComponent({
     name: 'PageLists'
@@ -91,13 +91,14 @@
   const selectedProcedure = ref<Procedure | null>(null)
   const listSplitter = ref(50)
 
+  // TODO: type this explicitly
   function doThing(prop: any) {
     //Utils.todo('fix doThing and rename it')
     if (selectedProcedure.value?.id == prop.node?.id) {
       selectedProcedure.value = null
     } else {
       selectedProcedure.value = prop.node
-      TDLAPP.openProcedure(selectedProcedure.value as Procedure)
+      openProcedureDetailsDialog(selectedProcedure.value as Procedure)
     }
   }
 </script>

@@ -59,16 +59,16 @@
 
   const emit = defineEmits(['select', 'create'])
 
-  const checkTaskRelation = (task: Task) => {
-    return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
-  }
+  // TODO: re-introduce functionality to hide redundant tasks from search list when doing things like adding pres and posts
+  // const checkTaskRelation = (task: Task) => {
+  //   return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
+  // }
 
   const redundantTasks = ref<Map<number, boolean>>(new Map())
   const colorize = (id: number) => (redundantTasks.value.get(id) ? 'color: orange' : 'color: black')
 
-  type HasID = { id: number }
-  const byRedundancy = (a: HasID, b: HasID) =>
-    redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
+  // const byRedundancy = (a: HasID, b: HasID) =>
+  //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
 
   // can't set this in withDefaults... don't even try
   // DON'T

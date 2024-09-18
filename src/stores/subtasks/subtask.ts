@@ -23,7 +23,7 @@ export interface UpdateSubtaskOptions extends iOptions {
 }
 
 export class Subtask extends Model implements iRecord {
-  static entity = 'subtasks'
+  static override entity = 'subtasks'
 
   // todo: don't just use attr
   @Attr(null) declare id: number | null
@@ -34,6 +34,6 @@ export class Subtask extends Model implements iRecord {
 }
 
 export class SubtaskRepo extends GenericRepo<CreateSubtaskOptions, UpdateSubtaskOptions, Subtask> {
-  use = Subtask
-  apidir = Subtask.entity
+  override use = Subtask
+  override apidir = Subtask.entity
 }

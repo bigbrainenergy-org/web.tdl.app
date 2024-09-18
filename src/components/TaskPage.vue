@@ -21,7 +21,7 @@
   import TransparentCard from 'src/components/TransparentCard.vue'
   import TaskListActions from 'src/components/TaskListActions.vue'
   import PainHeader from 'src/components/PainHeader.vue'
-  import { cachedTask } from 'src/stores/performance/all-tasks';
+  import { Task } from 'src/stores/tasks/task-model'
 
-  const tasks = defineModel<Array<cachedTask>>('tasks', { required: true })
+  const tasks = defineModel<Array<Task>>('tasks', { required: true })
 </script>

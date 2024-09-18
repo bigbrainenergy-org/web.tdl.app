@@ -5,24 +5,41 @@
       <q-card-section class="bg-primary text-white text-center q-mb-xs">
         <div class="text-h6">Inbox Review</div>
         <template v-if="currentStep !== 'done'">
-          <q-btn class="q-ma-sm" size="md" :color="content[currentStep].backColor !== undefined ? content[currentStep].backColor : 'grey'
-            " :label="content[currentStep].backLabel !== undefined
+          <q-btn
+            class="q-ma-sm"
+            size="md"
+            :color="
+              content[currentStep].backColor !== undefined ? content[currentStep].backColor : 'grey'
+            "
+            :label="
+              content[currentStep].backLabel !== undefined
                 ? content[currentStep].backLabel
                 : 'Close'
-              " @click="
+            "
+            @click="
               content[currentStep].backAction !== undefined
                 ? content[currentStep].backAction()
                 : onCancelClick()
-              " />
+            "
+          />
         </template>
         <template v-else>
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" disabled />
         </template>
       </q-card-section>
 
-      <q-linear-progress :value="mainProgress" color="secondary" animation-speed="500" class="q-mb-xs" />
-      <q-linear-progress :value="secondaryProgress" color="pink" animation-speed="500"
-        :instant-feedback="instantFeedback" />
+      <q-linear-progress
+        :value="mainProgress"
+        color="secondary"
+        animation-speed="500"
+        class="q-mb-xs"
+      />
+      <q-linear-progress
+        :value="secondaryProgress"
+        color="pink"
+        animation-speed="500"
+        :instant-feedback="instantFeedback"
+      />
 
       <q-card-section class="full-height">
         <template v-if="currentStep !== 'done'">
@@ -47,19 +64,48 @@
 
               <template v-if="currentStep === 'nextAction'">
                 <q-input v-model="nextTaskTitle" class="q-my-md" filled clearable label="Title" />
-                <q-input v-model="nextTaskNotes" class="q-my-md" filled autogrow clearable label="Notes" />
+                <q-input
+                  v-model="nextTaskNotes"
+                  class="q-my-md"
+                  filled
+                  autogrow
+                  clearable
+                  label="Notes"
+                />
               </template>
               <template v-else-if="currentStep === 'delegate'">
                 <q-input v-model="taskTitle" class="q-my-md" filled clearable label="Title" />
-                <q-input v-model="taskNotes" class="q-my-md" filled autogrow clearable label="Notes" />
+                <q-input
+                  v-model="taskNotes"
+                  class="q-my-md"
+                  filled
+                  autogrow
+                  clearable
+                  label="Notes"
+                />
               </template>
               <template v-else-if="currentStep === 'projects'">
                 <q-input v-model="listTitle" class="q-my-md" filled clearable label="Title" />
-                <q-input v-model="listNotes" class="q-my-md" filled autogrow clearable label="Notes" />
+                <q-input
+                  v-model="listNotes"
+                  class="q-my-md"
+                  filled
+                  autogrow
+                  clearable
+                  label="Notes"
+                />
               </template>
 
-              <q-btn v-for="button in content[currentStep].buttons" :key="button.label" padding="lg" class="q-ma-lg"
-                :color="button.color" :icon="button.icon" :label="button.label" @click="button.click" />
+              <q-btn
+                v-for="button in content[currentStep].buttons"
+                :key="button.label"
+                padding="lg"
+                class="q-ma-lg"
+                :color="button.color"
+                :icon="button.icon"
+                :label="button.label"
+                @click="button.click"
+              />
             </div>
           </div>
         </template>

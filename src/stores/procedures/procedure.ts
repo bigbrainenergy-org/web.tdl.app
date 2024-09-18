@@ -2,9 +2,10 @@ import { Model } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
 import { Num, Str, Attr } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
-import { Utils } from 'src/util'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { Task } from 'src/stores/tasks/task-model'
+import { hardCheck } from 'src/utils/type-utils'
+import { handleError } from 'src/utils/notification-utils'
 
 export interface CreateProcedureOptions {
   title: string
@@ -66,7 +67,7 @@ export class ProcedureRepo extends GenericRepo<
     return this.api()
       .post(url, undefined, this.commonHeader())
       .then(() => {
-        const tmp = Utils.hardCheck(this.find(id))
+        const tmp = hardCheck(this.find(id))
         const tasks = tmp.grabTasks()
         for (let i = 0; i < tasks.length; i++) {
           const ti = tasks[i]
@@ -77,6 +78,6 @@ export class ProcedureRepo extends GenericRepo<
           ti.fullSyncPosts()
         }
         return tmp
-      }, Utils.handleError('Error restarting procedure.'))
+      }, handleError('Error restarting procedure.'))
   }
 }

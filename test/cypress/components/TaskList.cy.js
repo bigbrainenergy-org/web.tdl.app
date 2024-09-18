@@ -1,5 +1,5 @@
 import TaskList from 'src/components/TaskList.vue'
-import { cachedTask } from 'src/stores/performance/all-tasks'
+import { Task } from 'src/stores/tasks/task-model'
 
 describe('<TaskList/>', () => {
   context('when passed no tasks', () => {
@@ -26,9 +26,9 @@ describe('<TaskList/>', () => {
       cy.mount(TaskList, {
         props: {
           tasks: [
-            new cachedTask({ title: 'Task 1' }),
-            new cachedTask({ title: 'Task 2' }),
-            new cachedTask({ title: 'Task 3' })
+            new Task({ title: 'Task 1' }),
+            new Task({ title: 'Task 2' }),
+            new Task({ title: 'Task 3' })
           ],
           onTaskClicked: onTaskClickedSpy
         }

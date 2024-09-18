@@ -1,8 +1,8 @@
 import { AxiosError } from 'axios'
 import { Notify } from 'quasar'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { Task } from 'src/stores/tasks/task'
 import { λ } from './types'
+import { Task } from 'src/stores/tasks/task-model'
 
 export function errorNotification(error: Error | AxiosError, fallbackMessage: string) {
   const errorMessage = `${fallbackMessage}: ${error.message}`
@@ -19,7 +19,7 @@ export function errorNotification(error: Error | AxiosError, fallbackMessage: st
   return null
 }
 
-export function notifyUpdatedCompletionStatus (task: Task) {
+export function notifyUpdatedCompletionStatus(task: Task) {
   console.log(
     `notifyUpdatedCompletionStatus: task is ${task.completed ? 'completed' : 'incomplete'}`
   )

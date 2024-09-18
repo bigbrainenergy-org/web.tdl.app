@@ -11,7 +11,8 @@
 </template>
 <script setup lang="ts">
   import { storeToRefs } from 'pinia'
-  import { RouteTab, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { RouteTab } from 'src/utils/types'
   import { computed, ref } from 'vue'
   const { toolbarButtons } = storeToRefs(useLocalSettingsStore())
   const enabledToolbarButtons = computed(() => toolbarButtons.value.filter((x) => x.enabled))

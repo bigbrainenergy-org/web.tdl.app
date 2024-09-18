@@ -1,6 +1,4 @@
 import { useRepo } from 'pinia-orm'
-import { SimpleTreeNode } from 'src/quasar-interfaces'
-import { TDLAPP } from 'src/TDLAPP'
 import { ListRepo } from '../lists/list'
 import { ProcedureRepo } from '../procedures/procedure'
 import { ExpandedStateRepo } from '../task-meta/expanded-state'
@@ -8,6 +6,9 @@ import { TaskLike, CreateTaskOptions } from './task-interfaces-types'
 import { useTaskStore } from './task-store'
 import { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
+import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
+import { SimpleTreeNode } from 'src/utils/quasar-interfaces'
+import { taskLike } from './task-utils'
 
 export class Task implements TaskLike {
   hard_prereq_ids: number[]
@@ -30,7 +31,7 @@ export class Task implements TaskLike {
   procedure_ids?: number[]
   mental_energy_required: number
   physical_energy_required: number
-  constructor(data: TaskLike) {
+  constructor(data: TaskLike | CreateTaskOptions) {
     this._hard_prereq_ids = []
     this._hard_postreq_ids = []
     this.hard_prereqs = [] // this._hard_prereq_ids.map(retrieve)
@@ -85,7 +86,7 @@ export class Task implements TaskLike {
         return result
       }
     })
-    this.hard_prereq_ids.push(...data.hard_prereq_ids)
+    this.hard_prereq_ids.push(...(data.hard_prereq_ids ?? []))
     this.hard_postreq_ids = new Proxy(this._hard_postreq_ids, {
       set: (target, property, value: number) => {
         target[property as any] = value
@@ -134,19 +135,19 @@ export class Task implements TaskLike {
         return result
       }
     })
-    this.hard_postreq_ids.push(...data.hard_postreq_ids)
-    this.completed = data.completed
-    this.id = data.id
+    this.hard_postreq_ids.push(...(data.hard_postreq_ids ?? []))
+    this.completed = taskLike(data, 'completed') ? data.completed : false
+    this.id = taskLike(data, 'id') ? data.id : -1
     this.title = data.title
     this.notes = data.notes
-    this.list_id = data.list_id
+    this.list_id = data.list_id ?? undefined
     this.deadline_at = data.deadline_at
     this.prioritize_at = data.prioritize_at
     this.remind_me_at = data.remind_me_at
     this.review_at = data.review_at
     this.procedure_ids = data.procedure_ids
-    this.mental_energy_required = data.mental_energy_required
-    this.physical_energy_required = data.physical_energy_required
+    this.mental_energy_required = data.mental_energy_required ?? 50
+    this.physical_energy_required = data.physical_energy_required ?? 50
   }
   fullSyncPres() {
     // TODO: make private if possible
@@ -200,7 +201,7 @@ export class Task implements TaskLike {
     return useTaskStore()
       .apiUpdate(this.id, { completed: this.completed })
       .then(() => {
-        TDLAPP.considerOpeningQuickSort('mark task complete')
+        considerOpeningQuickSortDialog()
       })
   }
   grabPrereqs(incompleteOnly: boolean) {
@@ -332,7 +333,11 @@ export class Task implements TaskLike {
     )
   }
 
-  hardPrereqTreeNodes(reverse = true, hideCompleted = false, parentKey = ''): SimpleTreeNode<Task>[] {
+  hardPrereqTreeNodes(
+    reverse = true,
+    hideCompleted = false,
+    parentKey = ''
+  ): SimpleTreeNode<Task>[] {
     return this.grabPrereqs(hideCompleted).map((x) => x.treeNode(reverse, hideCompleted, parentKey))
   }
 

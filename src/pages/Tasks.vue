@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-  import { useQuasar, useMeta } from 'quasar'
+  import { useMeta } from 'quasar'
   import { computed, ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'

@@ -1,6 +1,5 @@
 import { AxiosError } from 'axios'
 import { RouteTo } from 'src/router/routes'
-import { RouteRecordRaw } from 'vue-router'
 
 // hahaha.... started as a joke but I kindof like it.
 export type λ<inputType = void | unknown, returnType = void> = (
@@ -109,3 +108,5 @@ export type RouteTab = {
   enabled: boolean
   default: boolean
 }
+
+export type HasID = { id: number }

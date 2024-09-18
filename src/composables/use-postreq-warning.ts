@@ -1,16 +1,13 @@
 import { storeToRefs } from 'pinia'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
 import { computed } from 'vue'
 import { useTasks } from './use-tasks'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useTaskStore } from 'src/stores/tasks/task-store'
 
 export function usePostreqWarning() {
   const localSettingsStore = useLocalSettingsStore()
-  const {
-    disableQuickSort,
-    enableQuickSortOnLayerZeroQTY,
-    autoScalePriority
-  } = storeToRefs(localSettingsStore)
+  const { disableQuickSort, enableQuickSortOnLayerZeroQTY, autoScalePriority } =
+    storeToRefs(localSettingsStore)
 
   // const notCompleted = (x: Task) => x.completed === false
 
@@ -26,7 +23,7 @@ export function usePostreqWarning() {
   })
 
   const postreqQuantityWarningThreshold = computed(() => {
-    const len0 = useLayerZeroStore().tasks.length
+    const len0 = useTaskStore().layerZero.length
     if (disableQuickSort.value) return len0
     return autoScalePriority.value
       ? autoThreshold.value

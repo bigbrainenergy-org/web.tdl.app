@@ -36,7 +36,7 @@
               :menu-items="procedureDependencyMenuItems"
               @add-item="openAddProcedureTaskDialog"
               @remove-item="removeTaskFromProcedure"
-              @select-item="openTask"
+              @select-item="(x: Task) => openUpdateTaskDialog(x)"
               @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
             />
           </div>
@@ -57,17 +57,22 @@
     UpdateProcedureOptions
   } from 'src/stores/procedures/procedure'
   import { useRepo } from 'pinia-orm'
-  import { Utils } from 'src/util'
-  import { Button, λ } from 'src/types'
   import GloriousTextInput from '../GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
-  import { TDLAPP } from 'src/TDLAPP'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { Task } from 'src/stores/tasks/task-model'
+  import { hardCheck } from 'src/utils/type-utils'
+  import { Button, λ } from 'src/utils/types'
+  import { handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
+  import {
+    openBespokeSearchDialog,
+    // openSearchDialog,
+    openUpdateTaskDialog
+  } from 'src/utils/dialog-utils'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)
-  Utils.hardCheck(procedureRef.value)
+  hardCheck(procedureRef.value)
   const pr = computed(() => useRepo(ProcedureRepo))
 
   // const currentProcedure = computed(() => {
@@ -156,8 +161,8 @@
       useRepo(ProcedureRepo)
         .delete(procedure.id)
         .then(
-          Utils.handleSuccess('Deleted procedure', 'fa-solid fa-tasks'),
-          Utils.handleError('Failed to delete procedure.')
+          handleSuccess('Deleted procedure', 'fa-solid fa-tasks'),
+          handleError('Failed to delete procedure.')
         )
     })
   }
@@ -169,8 +174,8 @@
         payload: { procedure: options }
       })
       .then(() => {
-        Utils.notifySuccess('Procedure Was Updated')
-      }, Utils.handleError('Error updating procedure'))
+        notifySuccess('Procedure Was Updated')
+      }, handleError('Error updating procedure'))
   }
 
   const procedureDepType = {
@@ -198,8 +203,8 @@
         task_ids.splice(indexOfTask, 1)
         pr.value.update(options).then((response) => {
           if (response === null) throw new Error('response was null')
-          Utils.notifySuccess('Unlinked a task.')
-        }, Utils.handleError('Error unlinking a task.'))
+          notifySuccess('Unlinked a task.')
+        }, handleError('Error unlinking a task.'))
       }
     }
   ]
@@ -218,15 +223,13 @@
       task_ids.push(payload.task.id)
       pr.value
         .update(options)
-        .then(Utils.handleSuccess('Linked a task.'), Utils.handleError('Error linking a task.'))
+        .then(handleSuccess('Linked a task.'), handleError('Error linking a task.'))
     }
     const initialFilter: λ<number | undefined, λ<Task[], Task[]>> = () => {
       return (tasks: Task[]) => tasks.filter((x) => !procedureRef.value.task_ids.includes(x.id))
     }
-    TDLAPP.searchDialog(assignTaskToProcedure, initialFilter)
+    openBespokeSearchDialog(assignTaskToProcedure, initialFilter)
   }
-
-  const openTask = TDLAPP.openTask
 
   const removeTaskFromProcedure = () => {
     throw new Error('not implemented yet')

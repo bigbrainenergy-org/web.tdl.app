@@ -24,16 +24,15 @@
       </q-avatar>
     </q-item-section>
 
-    <q-item-section v-if="task.grabPostreqs(incompleteOnly).length" side>
+    <q-item-section v-if="task.incomplete_postreqs.length" side>
       <q-chip
-        v-if="task.grabPostreqs(incompleteOnly).length"
         :style="
-          task.grabPostreqs(incompleteOnly).length > postreqQuantityWarningThreshold
+          task.incomplete_postreqs.length > postreqQuantityWarningThreshold
             ? 'background-color: red;'
             : 'background-color: gray;'
         "
       >
-        {{ task.grabPostreqs(incompleteOnly).length }}
+        {{ task.incomplete_postreqs.length }}
       </q-chip>
     </q-item-section>
     <q-item-section side>
@@ -53,8 +52,6 @@
   import { usePostreqWarning } from 'src/composables/use-postreq-warning'
   import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'
-  import checkedSfx from 'src/assets/task_checked.wav'
-  import uncheckedSfx from 'src/assets/task_unchecked.wav'
 
   const props = withDefaults(
     defineProps<{
@@ -68,15 +65,15 @@
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
-  function play() {
-    if (task.value.completed) {
-      const audio = new Audio(checkedSfx)
-      audio.play()
-    } else {
-      const audio = new Audio(uncheckedSfx)
-      audio.play()
-    }
-  }
+  // function play() {
+  //   if (task.value.completed) {
+  //     const audio = new Audio(checkedSfx)
+  //     audio.play()
+  //   } else {
+  //     const audio = new Audio(uncheckedSfx)
+  //     audio.play()
+  //   }
+  // }
 
   // const updateTaskCompletedStatus = async (task: Task) => {
   //   play()

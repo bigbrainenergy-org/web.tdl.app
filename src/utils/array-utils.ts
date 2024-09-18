@@ -1,3 +1,5 @@
+import { NodeKey } from './types'
+
 export function arrayDelete<T>(arr: Array<T>, element: T, key?: keyof T) {
   if (arr.length === 0) {
     console.trace('arrayDelete: array is empty')
@@ -42,7 +44,7 @@ export function innerJoin<T>(a: T[], b: T[]) {
   return a.filter((x) => setB.has(x))
 }
 export function combineArrays(a: NodeKey[], b: NodeKey[]) {
-  return [...a, ...this.onlyInLeftArray(b, a, 'key')]
+  return [...a, ...onlyInLeftArray(b, a, 'key')]
 }
 export function venn<T extends { id: number }>(a: T[], b: T[]) {
   const setB = new Set<number>(b.map((x) => x.id))

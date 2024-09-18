@@ -1,4 +1,5 @@
 // REVIEW: Unused, remove?
+// might still use in the future for auto scheduler features.
 class StackSet<T> {
   private set: Set<T>
   private traversed: Set<T>

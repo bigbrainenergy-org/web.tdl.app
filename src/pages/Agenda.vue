@@ -13,7 +13,7 @@
               class="text-primary"
               @click="openQuickSortDialog"
             />
-            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
+            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog()" />
           </q-card-actions>
           <q-card-section>
             <q-list class="text-primary">
@@ -61,7 +61,7 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addTaskPre(currentTask)"
+                      @click.stop="addPrerequisitesDialog(currentTask)"
                     />
                   </q-item-section>
                 </q-item>
@@ -80,8 +80,12 @@
   import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
-  import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
-  import { TDLAPP } from 'src/TDLAPP'
+  import {
+    addPrerequisitesDialog,
+    considerOpeningQuickSortDialog,
+    openSearchDialog,
+    openUpdateTaskDialog
+  } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 
@@ -89,9 +93,9 @@
 
   const open = (task: Task) =>
     openUpdateTaskDialog(task)
-      .onDismiss(() => TDLAPP.considerOpeningQuickSort('agenda'))
-      .onCancel(() => TDLAPP.considerOpeningQuickSort('agenda'))
-      .onOk(TDLAPP.considerOpeningQuickSort)
+      .onDismiss(considerOpeningQuickSortDialog)
+      .onCancel(considerOpeningQuickSortDialog)
+      .onOk(considerOpeningQuickSortDialog)
 
   const localSettingsStore = useLocalSettingsStore()
 
@@ -196,9 +200,6 @@
       ? autoThreshold.value
       : Math.max(1, enableQuickSortOnLayerZeroQTY.value - len0)
   })
-
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
-  const openSearchDialog = () => TDLAPP.searchDialog()
 
   const openQuickSortDialog = () => $q.dialog({ component: QuickSortLayerZeroDialog })
   useMeta(() => ({ title: 'Agenda | TDL App' }))

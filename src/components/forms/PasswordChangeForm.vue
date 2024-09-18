@@ -1,11 +1,38 @@
 <template>
-  <q-input v-model="currentPassword" class="q-my-md" filled type="password" label="Current Password"
-    name="current_password" data-cy="current_password" />
-  <q-input v-model="newPassword" class="q-my-md" filled type="password" label="New Password" name="new_password"
-    data-cy="new_password" />
-  <q-input v-model="confirmPassword" class="q-my-md" filled type="password" label="Confirm Password"
-    name="confirm_password" data-cy="confirm_password" />
-  <q-btn class="full-width" color="orange" outline label="Change Password" @click="changePassword" />
+  <q-input
+    v-model="currentPassword"
+    class="q-my-md"
+    filled
+    type="password"
+    label="Current Password"
+    name="current_password"
+    data-cy="current_password"
+  />
+  <q-input
+    v-model="newPassword"
+    class="q-my-md"
+    filled
+    type="password"
+    label="New Password"
+    name="new_password"
+    data-cy="new_password"
+  />
+  <q-input
+    v-model="confirmPassword"
+    class="q-my-md"
+    filled
+    type="password"
+    label="Confirm Password"
+    name="confirm_password"
+    data-cy="confirm_password"
+  />
+  <q-btn
+    class="full-width"
+    color="orange"
+    outline
+    label="Change Password"
+    @click="changePassword"
+  />
 </template>
 
 <script setup lang="ts">

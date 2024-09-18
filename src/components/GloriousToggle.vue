@@ -7,6 +7,6 @@
   </q-item>
 </template>
 <script setup lang="ts">
-const props = defineProps<{ label?: string }>()
-const val = defineModel<boolean>()
+  defineProps<{ label?: string }>()
+  const val = defineModel<boolean>()
 </script>

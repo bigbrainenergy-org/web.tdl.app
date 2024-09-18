@@ -1,4 +1,3 @@
-import { Task } from 'src/stores/tasks/task'
 import DependencyList from 'src/components/DependencyList.vue'
 
 describe('<DependencyList/>', () => {

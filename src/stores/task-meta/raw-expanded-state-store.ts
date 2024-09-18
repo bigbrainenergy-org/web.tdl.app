@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 
-interface ExpandedState {
-  id: number
-  expanded: boolean
-}
+// interface ExpandedState {
+//   id: number
+//   expanded: boolean
+// }
 
 interface RawExpandedStateStoreState {
   expandedNodesRegular: string[]

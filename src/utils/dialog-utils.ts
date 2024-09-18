@@ -15,7 +15,9 @@ import { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { CreateListOptions, ListRepo } from 'src/stores/lists/list'
 import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
-import { CreateProcedureOptions, ProcedureRepo } from 'src/stores/procedures/procedure'
+import { CreateProcedureOptions, Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.vue'
+import { λ } from './types'
 
 export function openCreateTaskDialog() {
   return Dialog.create({
@@ -50,6 +52,23 @@ export function openCreateProcedureDialog(src: string) {
       onCreate: (payload: { options: CreateProcedureOptions; callback: () => void }) => {
         useRepo(ProcedureRepo).add(payload.options)
       }
+    }
+  })
+}
+
+export function openBespokeSearchDialog(
+  onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => openUpdateTaskDialog(x.task),
+  initialFilter?: λ<number | undefined, λ<Task[], Task[]>> | undefined
+) {
+  return Dialog.create({
+    component: TaskSearchDialog,
+    componentProps: {
+      dialogTitle: 'Search For A Task',
+      taskID: undefined,
+      showCreateButton: true,
+      onSelect,
+      closeOnSelect: true,
+      initialFilter
     }
   })
 }
@@ -108,6 +127,15 @@ export function openUpdateTaskDialog(currentTask: Task | number) {
     cts.id = currentTask
   }
   return Dialog.create({ component: UpdateTaskDialog })
+}
+
+export function openProcedureDetailsDialog(procedure: Procedure) {
+  return Dialog.create({
+    component: UpdateProcedureDialog,
+    componentProps: {
+      procedure
+    }
+  })
 }
 
 export function addPrerequisitesDialog(currentTask: Task) {

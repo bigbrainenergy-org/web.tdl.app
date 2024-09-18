@@ -1,8 +1,7 @@
 import { Model } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Attr, HasMany, Num, Str } from 'pinia-orm/dist/decorators'
+import { Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
-import { Task } from '../tasks/task'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { Task } from 'src/stores/tasks/task-model'
 

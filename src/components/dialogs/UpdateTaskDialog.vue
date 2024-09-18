@@ -265,7 +265,7 @@
   })
 
   let currentPre: Task | null = null
-  let currentPost: Task | null = null
+  // let currentPost: Task | null = null
 
   console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 

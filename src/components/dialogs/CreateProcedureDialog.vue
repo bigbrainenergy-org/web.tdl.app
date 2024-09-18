@@ -68,7 +68,7 @@
                   :key="procedure.id ?? -1"
                   v-ripple
                   clickable
-                  @click="openProcedure(procedure as Procedure)"
+                  @click="openProcedureDetailsDialog(procedure as Procedure)"
                 >
                   <q-item-section>
                     <q-item-label lines="2">
@@ -89,10 +89,10 @@
   import Fuse, { FuseResult } from 'fuse.js'
   import { useRepo } from 'pinia-orm'
   import { useDialogPluginComponent } from 'quasar'
-  import { timeThisB } from 'src/perf'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
-  import { TDLAPP } from 'src/TDLAPP'
+  import { openProcedureDetailsDialog } from 'src/utils/dialog-utils'
+  import { timeThisB } from 'src/utils/performance-utils'
   import { computed, onMounted, ref } from 'vue'
 
   const emit = defineEmits([
@@ -126,8 +126,6 @@
       callback: clearFields
     })
   }
-
-  const openProcedure = TDLAPP.openProcedure
 
   const procedures = computed(() => useRepo(ProcedureRepo).all())
 

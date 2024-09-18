@@ -1,6 +1,6 @@
-import { Task } from '../stores/tasks/task'
 import { Notification as NotificationInterface } from 'src/models/Notification'
 import { DateTime } from 'luxon'
+import { Task } from 'src/stores/tasks/task-model'
 
 // TODO: Merge with notification utils?
 
@@ -65,14 +65,16 @@ export async function syncNotifications(store: any) {
         })
       }
     ) // previouslyScheduled where not currentlyScheduled
-    const toBeScheduled = currentlyScheduled.map((task: Task) => {
-      return {
-        id: task.id,
-        title: task.title,
-        schedule: { at: DateTime.fromISO(task.remind_me_at).toJSDate() },
-        group: 'tasks'
-      }
-    })
+    const toBeScheduled = currentlyScheduled
+      .filter((x: Task) => typeof x.remind_me_at !== 'undefined')
+      .map((task: Task) => {
+        return {
+          id: task.id,
+          title: task.title,
+          schedule: { at: DateTime.fromISO(task.remind_me_at!).toJSDate() },
+          group: 'tasks'
+        }
+      })
     if (toBeCancelled.length > 0) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       cancelNotifications(toBeCancelled)

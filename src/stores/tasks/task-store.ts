@@ -7,11 +7,13 @@ import {
 } from './task-interfaces-types'
 import { Task } from './task-model'
 import { AxiosResponse } from 'axios'
-import { Queue } from 'src/types'
-import { Utils } from 'src/util'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
 import { retrieve } from './task-utils'
+import { hardCheck } from 'src/utils/type-utils'
+import { handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
+import { arrayDelete } from 'src/utils/array-utils'
+import { Queue } from 'src/utils/types'
 
 export const useTaskStore = defineStore('tasks', {
   state: (): TaskState => ({
@@ -68,7 +70,7 @@ export const useTaskStore = defineStore('tasks', {
       return this.array
     },
     hardGet(id: number): Task {
-      return Utils.hardCheck(this.mapp.get(id) as Task, `attempted to access Task with ID of ${id}`)
+      return hardCheck(this.mapp.get(id) as Task, `attempted to access Task with ID of ${id}`)
     },
     commonHeader() {
       try {
@@ -92,21 +94,21 @@ export const useTaskStore = defineStore('tasks', {
         .then((result: AxiosResponse<TaskLike[]>) => {
           this.update(result.data)
           return result.data
-        }, Utils.handleError('Error updating local store for Tasks'))
+        }, handleError('Error updating local store for Tasks'))
     },
     apiGetId(id: number) {
       return this.api()
         .get(`/tasks/${id}`)
         .then((result: AxiosResponse<TaskLike>) => {
           return this.updateSingle(result.data)
-        }, Utils.handleError('Error getting '))
+        }, handleError('Error getting '))
     },
     apiCreate(task: CreateTaskOptions) {
       return this.api()
         .post('/tasks', task, this.commonHeader())
         .then((result: AxiosResponse<TaskLike>) => {
           return this.updateSingle(result.data)
-        }, Utils.handleError('Error creating a task.'))
+        }, handleError('Error creating a task.'))
     },
     /**
      *
@@ -136,10 +138,10 @@ export const useTaskStore = defineStore('tasks', {
         .delete(`/tasks/${id}`, this.commonHeader())
         .then(() => {
           const theTask = this.hardGet(id)
-          Utils.arrayDelete(this.array, theTask, 'id')
+          arrayDelete(this.array, theTask, 'id')
           this.mapp.delete(id)
-          Utils.notifySuccess('Task was deleted.')
-        }, Utils.handleError('Error deleting task.'))
+          notifySuccess('Task was deleted.')
+        }, handleError('Error deleting task.'))
     },
     /**
      *
@@ -211,18 +213,18 @@ export const useTaskStore = defineStore('tasks', {
       second.hard_prereq_ids.push(first_id)
       // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       return this.apiUpdate(first.id, { hard_postreq_ids: first.hard_postreq_ids }).then(() => {
-        Utils.notifySuccess('Added the dependency.')
-      }, Utils.handleError('Failed to add the dependency.'))
+        notifySuccess('Added the dependency.')
+      }, handleError('Failed to add the dependency.'))
     },
     removeRule(first_id: number, second_id: number) {
       const first = this.hardGet(first_id)
       const second = this.hardGet(second_id)
-      Utils.arrayDelete(first.hard_postreq_ids, second_id)
-      Utils.arrayDelete(second.hard_prereq_ids, first_id)
+      arrayDelete(first.hard_postreq_ids, second_id)
+      arrayDelete(second.hard_prereq_ids, first_id)
       const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       return this.apiUpdate(first.id, first_payload).then(
-        Utils.handleSuccess('Removed the dependency.'),
-        Utils.handleError('Failed to remove the dependency.')
+        handleSuccess('Removed the dependency.'),
+        handleError('Failed to remove the dependency.')
       )
     }
   },
