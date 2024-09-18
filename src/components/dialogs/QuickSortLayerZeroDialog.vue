@@ -261,6 +261,11 @@
       label: 'Add Prerequisite',
       icon: 'fa-solid fa-square-plus',
       action: addPres
+    },
+    {
+      label: 'Do This ASAP',
+      icon: 'fa-solid fa-fire',
+      action: doASAP
     }
   ]
 
@@ -353,6 +358,21 @@
         tryNewPair()
         loading.value = false
       })
+  }
+
+  const doASAP = (mvp: Task) => {
+    loading.value = true
+    const allOtherLayerZero = layerZero.value.filter((x: Task) => x.id !== mvp.id)
+    // TODO: write a bulk_add_posts action on the model
+    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: Task) => x.id))
+    allOtherLayerZero.forEach((x: Task) => {
+      x.hard_prereq_ids.push(mvp.id)
+    })
+    useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+    .then(() => {
+      tryNewPair()
+      loading.value = false
+    })
   }
 
   const skip = () => {
