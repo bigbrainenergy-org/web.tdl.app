@@ -49,6 +49,8 @@ interface LocalSettingsState {
   autoScalePriority: boolean
   quickSortDialogMaxToShow: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
   toolbarButtons: RouteTab[]
+  enableQuickSortBailOnBigTask: boolean
+  quickSortBailOnTaskSize: number
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -121,7 +123,9 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       notificationSpeed: 3,
       autoScalePriority: false,
       quickSortDialogMaxToShow: 2,
-      toolbarButtons: originalToolbarButtons
+      toolbarButtons: originalToolbarButtons,
+      enableQuickSortBailOnBigTask: false,
+      quickSortBailOnTaskSize: 9
     }
   },
   persist: true,

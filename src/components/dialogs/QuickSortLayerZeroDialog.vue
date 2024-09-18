@@ -144,7 +144,9 @@
     // enableDeeperQuickSort,
     enableQuickSortOnLayerZeroQTY,
     // enableQuickSortOnNewTask,
-    quickSortDialogMaxToShow
+    quickSortDialogMaxToShow,
+    enableQuickSortBailOnBigTask,
+    quickSortBailOnTaskSize
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
@@ -296,6 +298,14 @@
   const generateNewPair = (): Task[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
+    if (enableQuickSortBailOnBigTask.value) {
+      if (
+        layerZero.value.filter(
+          (x) => x.t.incomplete_postreqs.length > enableQuickSortOnLayerZeroQTY.value
+        ).length > 0
+      )
+        throw new Error('There is already a layer zero task that is big')
+    }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
     return layerZero.value.slice(0, howManyToSelect).map((x) => x.t)
   }

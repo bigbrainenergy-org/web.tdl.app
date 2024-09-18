@@ -5,9 +5,13 @@
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
 
-  const { disableQuickSort, enableQuickSortOnNewTask, enableQuickSortOnLayerZeroQTY } = storeToRefs(
-    useLocalSettingsStore()
-  )
+  const {
+    disableQuickSort,
+    enableQuickSortOnNewTask,
+    enableQuickSortOnLayerZeroQTY,
+    enableQuickSortBailOnBigTask,
+    quickSortBailOnTaskSize
+  } = storeToRefs(useLocalSettingsStore())
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 
@@ -36,6 +40,17 @@
             <GloriousToggle
               v-model:model-value="enableQuickSortOnNewTask"
               label="Quick Sort on Any Task w/o Postreqs"
+            />
+            <GloriousToggle
+              v-model:model-value="enableQuickSortBailOnBigTask"
+              label="Abort quick sort if there is a task with gobs of postreqs"
+            />
+            <GloriousSlider
+              v-model:model-value="quickSortBailOnTaskSize"
+              :min="3"
+              :max="30"
+              :step="1"
+              cute-name="How many postreqs is too many?"
             />
           </div>
         </div>
