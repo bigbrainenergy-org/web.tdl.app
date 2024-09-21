@@ -64,7 +64,17 @@ export default tseslint.config(
       'vue/attribute-hyphenation': 'off',
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
       'no-debugger': 'off',
+      "vue/html-self-closing": ["error", {
+        "html": {
+          "void": "never",
+          "normal": "always",
+          "component": "always"
+        },
+        "svg": "always",
+        "math": "always"
+      }]
     }
   }
 )
