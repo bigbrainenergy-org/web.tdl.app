@@ -1,6 +1,12 @@
 {
-  "recommendations": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "Vue.volar", "usernamehw.errorlens"],
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "Vue.volar",
+    "usernamehw.errorlens",
+    "mxsdev.typescript-explorer"
+  ],
   "unwantedRecommendations": [
+    "esbenp.prettier-vscode",
     "hookyqr.beautify",
     "dbaeumer.jshint",
     "ms-vscode.vscode-typescript-tslint-plugin"

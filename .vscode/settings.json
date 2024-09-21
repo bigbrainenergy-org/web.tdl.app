@@ -1,6 +1,9 @@
 {
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "vue"],
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
   "editor.formatOnSave": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "editor.tabSize": 2
