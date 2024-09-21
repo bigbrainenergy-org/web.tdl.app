@@ -19,6 +19,11 @@
     }
   },
 
+  // Add yarn executables to PATH
+  "remoteEnv": {
+    "PATH": "/workspaces/${localWorkspaceFolderBasename}/node_modules/.bin:${containerEnv:PATH}"
+  },
+
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [8080, 6080],
 
