@@ -2,6 +2,7 @@ import eslint from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import cypress from 'eslint-plugin-cypress/flat'
 import vue from 'eslint-plugin-vue'
+import globals from 'globals'
 
 // See: https://typescript-eslint.io/troubleshooting/typed-linting/performance/
 
@@ -33,6 +34,10 @@ export default tseslint.config(
         parser: '@typescript-eslint/parser',
         projectService: true,
         extraFileExtensions: ['.vue']
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node
       }
     },
     rules: {

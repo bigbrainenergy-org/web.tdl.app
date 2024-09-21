@@ -68,6 +68,7 @@
     "eslint": "latest",
     "eslint-plugin-cypress": "latest",
     "eslint-plugin-vue": "latest",
+    "globals": "latest",
     "prettier": "latest",
     "typescript": "5.5.x",
     "typescript-eslint": "latest",
