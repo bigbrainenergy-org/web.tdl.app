@@ -72,9 +72,9 @@ export default configure(function (/* ctx */) {
       // distDir
 
       extendViteConf (viteConf) {
-      	viteConf.build = mergeConfig(viteConf.build, {
-      		sourcemap: true
-      	})
+        viteConf.build = mergeConfig(viteConf.build, {
+          sourcemap: true
+        })
       },
       // viteVuePluginOptions: {},
 

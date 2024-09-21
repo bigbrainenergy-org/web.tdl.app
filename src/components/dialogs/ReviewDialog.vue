@@ -226,7 +226,7 @@
               listNotes.value = ''
               stepProcessNow()
             },
-            (error) => {
+            (error: Error) => {
               errorNotification(error, 'Failed to create project')
             }
           )
@@ -282,7 +282,7 @@
               nextTaskNotes.value = ''
               stepMoreActions()
             },
-            (error) => {
+            (error: Error) => {
               errorNotification(error, 'Failed to create task')
             }
           )
@@ -352,7 +352,7 @@
               stepActionable()
             }
           },
-          (error) => {
+          (error: Error) => {
             // TODO: How do error handling?
             errorNotification(error, 'Failed to delete task')
           }
