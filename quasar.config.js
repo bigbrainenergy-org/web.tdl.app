@@ -107,7 +107,7 @@ export default configure(function (/* ctx */) {
         loadingBar: {
           color: 'purple',
           position: 'bottom',
-          size: '15px'
+          size: '5px'
         }
       },
 
