@@ -14,6 +14,7 @@
 
       <q-card-section class="text-center q-pa-md">
         <div>
+          <CurrentTimeIndicator />
           <TimeZoneSwitcher />
           <LanguageSwitcher />
           <DefaultPageSwitcher />
@@ -51,8 +52,7 @@
             href="https://github.com/bigbrainenergy-org/web.tdl.app"
             target="_blank"
             data-cy="source_code_link"
-            >Github</a
-          >.
+          >Github</a>.
         </p>
       </q-card-section>
     </q-card>
@@ -72,6 +72,7 @@
   import PasswordChangeForm from 'src/components/forms/PasswordChangeForm.vue'
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
   import DefaultPageSwitcher from 'src/components/inputs/DefaultPageSwitcher.vue'
+  import CurrentTimeIndicator from 'src/components/CurrentTimeIndicator.vue'
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 
