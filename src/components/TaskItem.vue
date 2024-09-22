@@ -24,25 +24,13 @@
       </q-avatar>
     </q-item-section>
 
-    <q-item-section v-if="task.incomplete_postreqs.length" side>
-      <q-chip
-        :style="
-          task.incomplete_postreqs.length > postreqQuantityWarningThreshold
-            ? 'background-color: red;'
-            : 'background-color: gray;'
-        "
-      >
-        {{ task.incomplete_postreqs.length }}
+    <q-item-section v-if="taskIncompletePostreqLength" side>
+      <q-chip v-if="taskIncompletePostreqLength" :style="taskPostreqColor">
+        {{ taskIncompletePostreqLength }}
       </q-chip>
     </q-item-section>
     <q-item-section side>
-      <q-btn
-        v-if="!task.completed"
-        outline
-        rounded
-        label="ADD PRE"
-        @click.stop="addTaskPre(task)"
-      />
+      <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPrerequisitesDialog(task)" />
     </q-item-section>
   </q-item>
 </template>
@@ -66,7 +54,15 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
-  const addTaskPre = (currentTask: Task) => addPrerequisitesDialog(currentTask)
+  const taskIncompletePostreqLength = computed(
+    // REVIEW: grabPostreqs is likely a source of significant lag
+    () => task.value.incomplete_postreqs.length
+  )
+  const taskPostreqColor = computed(
+    () => taskIncompletePostreqLength.value > postreqQuantityWarningThreshold.value
+      ? 'background-color: red;'
+      : 'background-color: gray;'
+  )
   const { postreqQuantityWarningThreshold } = usePostreqWarning()
 </script>
 
