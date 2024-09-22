@@ -65,27 +65,6 @@
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
-  // function play() {
-  //   if (task.value.completed) {
-  //     const audio = new Audio(checkedSfx)
-  //     audio.play()
-  //   } else {
-  //     const audio = new Audio(uncheckedSfx)
-  //     audio.play()
-  //   }
-  // }
-
-  // const updateTaskCompletedStatus = async (task: Task) => {
-  //   play()
-  //   const newStatus = task.completed
-  //   await tasksRepo.updateAndCache({ id: task.id, payload: { task } }).then((result) => {
-  //     if (result.completed !== newStatus) throw new Error('error saving completed status of task')
-  //     // useAllTasksStore().completion(task.id, newStatus)
-  //     notifyUpdatedCompletionStatus(result)
-  //     console.debug({ 'Agenda updateTaskCompletedStatus task result': result })
-  //   }, handleError('Error updating completion status of a task.'))
-  // }
-
   const task = toRef(props, 'task')
   const addTaskPre = (currentTask: Task) => addPrerequisitesDialog(currentTask)
   const { postreqQuantityWarningThreshold } = usePostreqWarning()
