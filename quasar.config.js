@@ -14,6 +14,7 @@ import { mergeConfig } from 'vite'
 
 export default configure(function (/* ctx */) {
   return {
+    // https://quasar.dev/quasar-cli-vite/supporting-ts
     supportTS: {
       tsCheckerConfig: {
         eslint: {
