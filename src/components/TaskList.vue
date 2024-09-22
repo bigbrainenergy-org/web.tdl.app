@@ -51,10 +51,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, toRef } from 'vue'
   import TaskItem from 'src/components/TaskItem.vue'
+
+  import { computed, toRef } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { Task } from 'src/stores/tasks/task-model'
+
+  console.debug('loaded task list')
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(

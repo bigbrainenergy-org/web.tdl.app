@@ -21,7 +21,10 @@
   import TransparentCard from 'src/components/TransparentCard.vue'
   import TaskListActions from 'src/components/TaskListActions.vue'
   import PainHeader from 'src/components/PainHeader.vue'
+
   import { Task } from 'src/stores/tasks/task-model'
+
+  // TODO: This should probably be a layout instead
 
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
 </script>

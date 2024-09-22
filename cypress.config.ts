@@ -13,7 +13,7 @@ module.exports = defineConfig({
       return config
     },
     baseUrl: 'http://localhost:8080/',
-    supportFile: 'test/cypress/support/e2e.js',
+    supportFile: 'test/cypress/support/e2e.ts',
     specPattern: 'test/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
   },
   component: {
@@ -21,7 +21,7 @@ module.exports = defineConfig({
       registerCodeCoverageTasks(on, config)
       return config
     },
-    supportFile: 'test/cypress/support/component.js',
+    supportFile: 'test/cypress/support/component.ts',
     // specPattern: 'src/**/*.cy.{js,jsx,ts,tsx}',
     specPattern: 'test/cypress/components/**/*.cy.{js,jsx,ts,tsx}',
     indexHtmlFile: 'test/cypress/support/component-index.html',

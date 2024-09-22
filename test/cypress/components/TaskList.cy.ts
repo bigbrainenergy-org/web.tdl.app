@@ -47,7 +47,7 @@ describe('<TaskList/>', () => {
       cy.dataCy('task_item').should('have.length', 3)
     })
 
-    it('should emit task-selected when task clicked', () => {
+    it('should emit task-clicked when task clicked', () => {
       cy.dataCy('task_item').first().click()
       cy.get('@onTaskClickedSpy').should('have.been.called')
     })

@@ -45,7 +45,7 @@ Cypress.Commands.add('login', () => {
   cy.dataCy('login').click()
   // REVIEW: Breaks if we don't wait
   cy.wait('@fetchUser').then((interception) => {
-    assert.isNotNull(interception.response.body, 'User has data')
+    assert.isNotNull(interception.response?.body, 'User has data')
   })
 })
 
