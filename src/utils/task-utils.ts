@@ -1,4 +1,4 @@
-import { handleError, handleSuccess, notifySuccess } from './notification-utils'
+import { handleError, notifySuccess } from './notification-utils'
 import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { Task } from 'src/stores/tasks/task-model'
@@ -38,19 +38,6 @@ export async function addPost(task: Task, newPostID: number) {
         `Adding a postrequisite via API should ideally be faster than ${duration} ms`
       )
     }, handleError('Failed to add postreq'))
-}
-
-// TODO: Consolidate with task.updateTaskCompletionStatus() - there should only be one way to do this
-export async function updateTaskCompletedStatus(task: Task) {
-  const ts = useTaskStore()
-  const newStatus = task.completed
-  // TODO: strip payload object of everything except necessary
-  await ts
-    .apiUpdate(task.id, task.rawData) // BROKEN
-    .then(
-      handleSuccess(`Marked Task ${newStatus ? 'Complete' : 'Incomplete'}`),
-      handleError('Error updating completion status of a task.')
-    )
 }
 
 export function filterByList(tasks: Task[], listTitle: string): Task[] {

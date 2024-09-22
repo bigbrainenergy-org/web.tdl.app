@@ -13,13 +13,12 @@
   import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { playCheckboxSound } from 'src/utils/sound-utils'
   import { Task } from 'src/stores/tasks/task-model'
-  import { updateTaskCompletedStatus } from 'src/utils/task-utils'
 
   useMeta(() => ({ title: 'List | TDL App' }))
 
   const updateTask = (_event: any, task: Task) => {
     playCheckboxSound(task.completed)
-    updateTaskCompletedStatus(task)
+    task.updateTaskCompletionStatus()
   }
   const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task)
 
