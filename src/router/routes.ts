@@ -30,32 +30,32 @@ const routes: StronglyTypedRouteRecordRaw[] = [
       {
         path: 'list',
         name: 'List',
-        component: () => import('src/pages/ListPage.vue')
+        component: () => import('src/pages/List.vue')
       },
       {
         path: 'calendar',
         name: 'Calendar',
-        component: () => import('src/pages/CalendarPage.vue')
+        component: () => import('src/pages/Calendar.vue')
       },
       {
         path: 'focus',
         name: 'Focus',
-        component: () => import('src/pages/FocusPage.vue')
+        component: () => import('src/pages/Focus.vue')
       },
       {
         path: 'tree',
         name: 'Tree',
-        component: () => import('src/pages/TreePage.vue')
+        component: () => import('src/pages/Tree.vue')
       },
       {
         path: 'settings',
         name: 'Settings',
-        component: () => import('src/pages/SettingsPage.vue')
+        component: () => import('src/pages/Settings.vue')
       },
       {
         path: 'graph',
         name: 'Graph',
-        component: () => import('src/pages/GraphPage.vue')
+        component: () => import('src/pages/Graph.vue')
       },
       {
         path: 'agenda',
@@ -76,7 +76,7 @@ const routes: StronglyTypedRouteRecordRaw[] = [
       {
         path: 'login',
         name: 'Login',
-        component: () => import('src/pages/LoginPage.vue')
+        component: () => import('src/pages/Login.vue')
       }
     ]
   },
@@ -85,7 +85,7 @@ const routes: StronglyTypedRouteRecordRaw[] = [
   {
     path: '/:catchAll(.*)*',
     name: 'Error 404',
-    component: () => import('src/pages/Error404Page.vue')
+    component: () => import('src/pages/Error404.vue')
   }
 ]
 
