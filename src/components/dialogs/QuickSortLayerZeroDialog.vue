@@ -369,10 +369,10 @@
       x.hard_prereq_ids.push(mvp.id)
     })
     useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-    .then(() => {
-      tryNewPair()
-      loading.value = false
-    })
+      .then(() => {
+        tryNewPair()
+        loading.value = false
+      })
   }
 
   const skip = () => {

@@ -60,14 +60,10 @@ const getIdFromURL = (url: string) => {
   return id
 }
 const fetchStateFromConfig = (config: AxiosRequestConfig) => {
-  try {
-    const url = getUrlFromConfig(config)
-    const entity = getEntityNameFromURL(url)
-    const data = fetchState(entity)
-    return data
-  } catch (error) {
-    throw error
-  }
+  const url = getUrlFromConfig(config)
+  const entity = getEntityNameFromURL(url)
+  const data = fetchState(entity)
+  return data
 }
 const fetchDataFromConfig = (config: AxiosRequestConfig) => {
   const { data } = config
@@ -76,22 +72,14 @@ const fetchDataFromConfig = (config: AxiosRequestConfig) => {
 }
 mock.onGet(/\/(\w+)/).reply(withAuth(tryIt((config) => okdk(fetchStateFromConfig(config)))))
 const getIdFromConfig = (config: AxiosRequestConfig) => {
-  try {
-    return getIdFromURL(getUrlFromConfig(config))
-  } catch (error) {
-    throw error
-  }
+  return getIdFromURL(getUrlFromConfig(config))
 }
 const findRecordIndexWithIdFromConfig = (config: AxiosRequestConfig) => {
-  try {
-    const state = fetchStateFromConfig(config)
-    const id = getIdFromConfig(config)
-    const index = state.findIndex((x) => x.id === id)
-    if (index < 0) throw new Error('id not found in entity list')
-    return index
-  } catch (error) {
-    throw error
-  }
+  const state = fetchStateFromConfig(config)
+  const id = getIdFromConfig(config)
+  const index = state.findIndex((x) => x.id === id)
+  if (index < 0) throw new Error('id not found in entity list')
+  return index
 }
 mock.onDelete(/\/(\w+)\/\d+/).reply(
   withAuth(

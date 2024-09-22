@@ -1,6 +1,6 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <slot></slot>
+    <slot />
   </q-page>
 </template>
 

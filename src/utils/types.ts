@@ -2,6 +2,7 @@ import { AxiosError } from 'axios'
 import { RouteTo } from 'src/router/routes'
 
 // hahaha.... started as a joke but I kindof like it.
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 export type λ<inputType = void | unknown, returnType = void> = (
   inputArgument: inputType
 ) => returnType
@@ -67,6 +68,7 @@ export interface TaskGetterOptions {
   useStore: boolean | undefined
 }
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 export type unknownishλ<T> = λ<T, unknown | Promise<unknown>>
 
 export type Button<T> = {

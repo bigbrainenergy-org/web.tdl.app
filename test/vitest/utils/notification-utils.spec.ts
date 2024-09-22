@@ -27,7 +27,9 @@ describe('errorNotification', () => {
     expect(spy).not.toHaveBeenCalled()
     try {
       errorNotification(new Error(), '')
-    } catch {}
+    } catch {
+      // REVIEW: Do something?
+    }
     expect(spy).toHaveBeenCalled()
   })
 })

@@ -34,10 +34,10 @@
               @update:model-value="searchForProcedures"
               @keyup.enter="searchForProcedures"
             />
-            <br />
+            <br>
             <q-input v-model="notes" filled autogrow clearable label="Notes" />
 
-            <br />
+            <br>
 
             <div class="row">
               <div class="col-grow">

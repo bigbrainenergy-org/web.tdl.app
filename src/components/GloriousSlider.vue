@@ -7,8 +7,17 @@
 
     <q-item-section>
       <div>
-        <q-slider v-model="val" :min="props.min" :max="props.max" :step="props.step" label label-always
-          :label-value="label" :color="props.color" @change="emit('change', val)" />
+        <q-slider
+          v-model="val"
+          :min="props.min"
+          :max="props.max"
+          :step="props.step"
+          label
+          label-always
+          :label-value="label"
+          :color="props.color"
+          @change="emit('change', val)"
+        />
       </div>
     </q-item-section>
 

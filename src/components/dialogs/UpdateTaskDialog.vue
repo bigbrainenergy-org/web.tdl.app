@@ -12,9 +12,9 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
-            <q-item-label class="text-h4 text-primary" lines="3">{{
-              currentTask.title
-            }}</q-item-label>
+            <q-item-label class="text-h4 text-primary" lines="3">
+              {{ currentTask.title }}
+            </q-item-label>
             <GloriousTextInput
               v-model="editTitle"
               label="Task Title"
@@ -69,7 +69,7 @@
               icon="fas fa-lightbulb"
               caption="Metadata"
             >
-              <br />
+              <br>
               <GloriousSlider
                 v-for="(s, key) of sliders"
                 :key="key"
@@ -78,7 +78,7 @@
                 @change="s.updateFunc"
               />
             </q-expansion-item>
-            <br />
+            <br>
             <q-input
               v-model="editNotes"
               filled
@@ -309,7 +309,7 @@
   }
 
   function getSelectedList(task: Task) {
-    return !!task.list ? { id: task.list.id, title: task.list.title } : null
+    return task.list ? { id: task.list.id, title: task.list.title } : null
   }
 
   const selectedList = ref(getSelectedList(currentTask.value))

@@ -36,7 +36,7 @@
               @keyup.enter="focusNotes"
               @keydown.tab.exact.prevent="focusNotes"
             />
-            <br />
+            <br>
             <q-input
               ref="notesInput"
               v-model="notes"
@@ -48,7 +48,7 @@
               @keydown.ctrl.enter.exact.prevent="createTask"
             />
 
-            <br />
+            <br>
 
             <div class="row">
               <div class="col-grow">

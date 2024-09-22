@@ -1,5 +1,5 @@
 // NOTE: ExpressJS wants the require syntax, idk why
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const express = require('express'),
   serveStatic = require('serve-static'),
   history = require('connect-history-api-fallback'),

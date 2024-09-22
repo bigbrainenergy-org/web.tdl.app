@@ -48,7 +48,6 @@ export class CustomForceGraph {
       event.subject.fy = null
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return d3
       .drag<SVGCircleElement, d3Node<T>>()
       .on('start', dragstarted)
@@ -90,7 +89,6 @@ export class CustomForceGraph {
       event.subject.fy = null
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return d3
       .drag<SVGCircleElement, d3Node<T>>()
       .on('start', dragstarted)

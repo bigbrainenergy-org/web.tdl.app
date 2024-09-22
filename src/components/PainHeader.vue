@@ -1,6 +1,6 @@
 <template>
   <div class="text-h6 text-pain" :data-cy="props.dataCy">
-    <slot></slot>
+    <slot />
   </div>
 </template>
 

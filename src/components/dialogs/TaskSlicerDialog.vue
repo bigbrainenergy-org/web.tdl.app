@@ -17,7 +17,7 @@
               @touchstart.stop
               @mousedown.stop
             />
-            <br />
+            <br>
             <div class="row">
               <div class="col-grow">
                 <q-btn icon="fas fa-plus" label="Slice Task" color="primary" @click="sliceTask" />

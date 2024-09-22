@@ -10,7 +10,7 @@
       </template>
 
       <template #body>
-        <slot></slot>
+        <slot />
       </template>
     </TransparentCard>
   </FullPage>

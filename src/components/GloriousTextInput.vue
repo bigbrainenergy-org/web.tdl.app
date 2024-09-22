@@ -6,7 +6,8 @@
     :placeholder="placeholder"
     clearable
     class="q-my-md"
-    @keyup.enter="emit('enter-key')" />
+    @keyup.enter="emit('enter-key')"
+  />
 </template>
 <script setup lang="ts">
   const model = defineModel<string>()

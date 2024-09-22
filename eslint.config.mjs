@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 import eslint from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import cypress from 'eslint-plugin-cypress/flat'
@@ -15,12 +17,9 @@ export default tseslint.config(
       '**/src-capacitor/*',
       '**/src-electron/*',
       '**/src-pwa/*',
+      '**/*.d.ts',
       '.quasar',
-      '.eslintrc.js',
-      'eslint.config.mjs',
-      'babel.config.js',
       '.postcssrc.js',
-      'server.js',
     ]
   },
   // Import recommendations for all plugins
@@ -42,6 +41,7 @@ export default tseslint.config(
     },
     rules: {
       'prefer-promise-reject-errors': 'off',
+      'no-debugger': 'off',
 
       quotes: ['warn', 'single', {
         avoidEscape: true,
@@ -65,15 +65,17 @@ export default tseslint.config(
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',
       'vue/singleline-html-element-content-newline': 'off',
-      'no-debugger': 'off',
-      "vue/html-self-closing": ["error", {
-        "html": {
-          "void": "never",
-          "normal": "always",
-          "component": "always"
+      'vue/html-self-closing': ['error', {
+        'html': {
+          'void': 'never',
+          'normal': 'always',
+          'component': 'always'
         },
-        "svg": "always",
-        "math": "always"
+        'svg': 'always',
+        'math': 'always'
+      }],
+      'vue/script-indent': ['error', 2, {
+        'baseIndent': 1
       }]
     }
   }

@@ -4,11 +4,10 @@
   import PlaintextItemComponent from './PlaintextItemComponent.vue'
   import { GenericPropStructure, SingularPrimitive, isSingularPrimitive } from './lazyVueUtils'
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = defineModel<SingularPrimitive>('data')
   if (!isSingularPrimitive(data.value))
     throw new Error('SingularPrimitiveComponent: provided data was not a singular primitive!')
-  const edit = defineModel<boolean | undefined>('edit')
+  const edit = defineModel<boolean>('edit', { required: true })
   const props = withDefaults(defineProps<GenericPropStructure>(), {
     showEdit: true
   })

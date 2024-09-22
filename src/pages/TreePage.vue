@@ -28,7 +28,7 @@
                   color="primary"
                   keep-color
                   @update:model-value="updateTaskCompletedStatus(prop.node.obj)"
-                ></q-checkbox>
+                />
                 <q-item-label @click.stop="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
@@ -53,7 +53,7 @@
                   color="primary"
                   keep-color
                   @update:model-value="updateTaskCompletedStatus(prop.node.obj)"
-                ></q-checkbox>
+                />
                 <q-item-label @click="openTask(prop.node.obj)">
                   {{ prop.node.label }}
                 </q-item-label>
@@ -164,6 +164,7 @@
 
   // i hate that this works
   let queueExpand: NodeKey[] = []
+  // eslint-disable-next-line no-undef
   let expanderTimer: NodeJS.Timeout | number
   let busy = false
   type msgQueue = {

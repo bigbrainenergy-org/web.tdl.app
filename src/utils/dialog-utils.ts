@@ -58,7 +58,7 @@ export function openCreateProcedureDialog(src: string) {
 
 export function openBespokeSearchDialog(
   onSelect: (payload: { task: Task }) => void = (x: { task: Task }) => openUpdateTaskDialog(x.task),
-  initialFilter?: λ<number | undefined, λ<Task[], Task[]>> | undefined
+  initialFilter?: λ<number | undefined, λ<Task[], Task[]>>
 ) {
   return Dialog.create({
     component: TaskSearchDialog,

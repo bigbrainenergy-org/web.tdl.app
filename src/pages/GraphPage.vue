@@ -13,7 +13,7 @@
             <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
             <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
           </q-card-actions>
-          <svg id="graphElement" ref="graphRef"></svg>
+          <svg id="graphElement" ref="graphRef" />
         </q-card>
       </div>
     </div>
