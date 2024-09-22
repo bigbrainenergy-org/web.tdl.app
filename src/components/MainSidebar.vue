@@ -134,7 +134,12 @@
   const drawer = defineModel<boolean>('drawer')
   const listsRepo = useRepo(ListRepo)
   const localSettingsStore = useLocalSettingsStore()
-  const { currentFilteringMode, selectedList } = storeToRefs(localSettingsStore)
+  const {
+    currentBaseQueryMode,
+    currentFilteringMode,
+    currentSortingMode,
+    selectedList
+  } = storeToRefs(localSettingsStore)
 
   // HACK: I hate this with every fiber of my being
   const hoveredList = ref(-1)
@@ -144,11 +149,17 @@
   type HasTitle = { title: string }
 
   const setList = (list: HasTitle) => {
+    currentBaseQueryMode.value = 'allTasks'
     currentFilteringMode.value = 'filterByList'
+    currentSortingMode.value = 'sortByPostreqs'
     selectedList.value = list.title
   }
 
-  const setAgenda = () => (currentFilteringMode.value = 'filterByAgenda')
+  const setAgenda = () => {
+    currentBaseQueryMode.value = 'layerZero'
+    currentFilteringMode.value = 'filterByAgenda'
+    currentSortingMode.value = 'sortByAgenda'
+  }
 
   const agendaSelected = computed(() => currentFilteringMode.value === 'filterByAgenda')
 

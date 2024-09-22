@@ -117,7 +117,9 @@
   const tasks = computed(() => {
     console.debug('recalculating agenda.')
     const layerZero = (useTaskStore().array as Task[]).filter(
-      (x: Task) => !x.completed && x.hard_prereqs.filter((y) => !y.completed).length === 0
+      (task: Task) =>
+        !task.completed &&
+        task.hard_prereqs.filter((prereq) => !prereq.completed).length === 0
     )
     layerZero.sort(
       (a: Task, b: Task) => b.incomplete_postreqs.length - a.incomplete_postreqs.length

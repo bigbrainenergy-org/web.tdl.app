@@ -40,12 +40,13 @@ export async function addPost(task: Task, newPostID: number) {
     }, handleError('Failed to add postreq'))
 }
 
+// TODO: Consolidate with task.updateTaskCompletionStatus() - there should only be one way to do this
 export async function updateTaskCompletedStatus(task: Task) {
   const ts = useTaskStore()
   const newStatus = task.completed
   // TODO: strip payload object of everything except necessary
   await ts
-    .apiUpdate(task.id, task)
+    .apiUpdate(task.id, task.rawData) // BROKEN
     .then(
       handleSuccess(`Marked Task ${newStatus ? 'Complete' : 'Incomplete'}`),
       handleError('Error updating completion status of a task.')
@@ -59,6 +60,66 @@ export function filterByList(tasks: Task[], listTitle: string): Task[] {
   } else {
     return tasks.filter((task) => task.list?.title === listTitle)
   }
+}
+
+export function filterByAgenda(baseQuery: Task[]): Task[] {
+  const finalList = new Set<Task>()
+  const queue: Map<number, Task[]> = new Map()
+  const addedToQueue = new Set<number>()
+  const safeAccess = (q: Map<number, Task[]>, key: number): Task[] => {
+    if (typeof q.get(key) === 'undefined') q.set(key, [])
+    return q.get(key)!
+  }
+  const enqueue = (tasks: Task[]) => {
+    tasks.forEach((x) => {
+      safeAccess(queue, x.incomplete_postreqs.length).push(x)
+      addedToQueue.add(x.id)
+    })
+  }
+  enqueue(baseQuery)
+  {
+    let qkeys = Array.from(queue.keys())
+    let hundos = 0
+    const hasKeys = () => {
+      const start = performance.now()
+      qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
+      hundos++
+      const duration = performance.now() - start
+      console.assert(duration < 10, 'checking keys took too long.')
+      return qkeys.length > 0
+    }
+    while (hasKeys()) {
+      if (hundos > 4 * addedToQueue.size) {
+        console.warn('agenda calc is taking too long. bailing out. Also TODO')
+        break
+      }
+      let bail = false
+      const start = performance.now()
+      for (let i = 0; i < qkeys.length; i++) {
+        const k = qkeys[i]
+        const qk = queue.get(k)!
+        for (let j = 0; j < qk.length; j++) {
+          const t = qk[j]
+          const ip = t.incomplete_prereqs
+          if (ip.every((y) => finalList.has(y))) {
+            finalList.add(t)
+            enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
+            qk.splice(j, 1)
+            if (qk.length === 0) {
+              queue.delete(k)
+              qkeys.splice(i, 1)
+            }
+            const duration = performance.now() - start
+            console.assert(duration < 8, 'agenda main loop is taking too long per task')
+            bail = true
+            break
+          }
+        }
+        if (bail) break
+      }
+    }
+  }
+  return Array.from(finalList)
 }
 
 // TODO do I use this?

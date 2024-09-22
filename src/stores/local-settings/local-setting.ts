@@ -8,6 +8,7 @@ export type BackgroundMode = 'image' | '#000000' | '#220000'
 interface LocalSettingsState {
   id: number | null
   taskSearch: string
+  currentBaseQueryMode: string
   currentFilteringMode: string
   currentSortingMode: string
   selectedList: string
@@ -103,6 +104,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
     return {
       id: null,
       taskSearch: '',
+      currentBaseQueryMode: 'allTasks',
       currentFilteringMode: 'filterByList',
       currentSortingMode: 'sortByPostreqs',
       selectedList: '',

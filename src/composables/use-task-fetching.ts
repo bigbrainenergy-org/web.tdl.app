@@ -1,9 +1,19 @@
+import { storeToRefs } from 'pinia'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 
 export function useTaskFetching() {
-  // TODO: Allow switching between all tasks, and layer zero (aka next up) tasks
+  const localSettingsStore = useLocalSettingsStore()
+  const { currentBaseQueryMode } = storeToRefs(localSettingsStore)
+
   function fetchTasks() {
-    return useTaskStore().layerZero
+    if (currentBaseQueryMode.value === 'allTasks' ) {
+      return useTaskStore().allTasks
+    } else if(currentBaseQueryMode.value === 'layerZero') {
+      return useTaskStore().layerZero
+    } else {
+      return []
+    }
   }
 
   return { fetchTasks }

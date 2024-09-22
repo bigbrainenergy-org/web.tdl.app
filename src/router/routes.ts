@@ -26,7 +26,7 @@ const routes: StronglyTypedRouteRecordRaw[] = [
     path: '/',
     component: () => import('src/layouts/MainLayout.vue'),
     children: [
-      { path: '', name: 'Empty', redirect: 'List' },
+      { path: '', name: 'Empty', redirect: 'list' },
       {
         path: 'list',
         name: 'List',

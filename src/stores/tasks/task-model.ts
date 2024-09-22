@@ -199,7 +199,7 @@ export class Task implements TaskLike {
    */
   updateTaskCompletionStatus() {
     return useTaskStore()
-      .apiUpdate(this.id, { completed: this.completed })
+      .apiUpdate(this.id, { completed: this.completed }) // WORKING
       .then(() => {
         considerOpeningQuickSortDialog()
       })

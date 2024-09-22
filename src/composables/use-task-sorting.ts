@@ -10,6 +10,8 @@ export function useTaskSorting() {
   function sortTasks(tasks: Task[]): Task[] {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
+    } else if(currentSortingMode.value === 'sortByAgenda') {
+      return tasks
     } else {
       return tasks
     }

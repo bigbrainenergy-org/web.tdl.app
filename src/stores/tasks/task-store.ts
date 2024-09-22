@@ -231,6 +231,8 @@ export const useTaskStore = defineStore('tasks', {
   getters: {
     incompleteOnly: (state) => state.array.filter((x) => !x.completed),
     layerZero: (state): Task[] =>
-      (state.array as Task[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0)
+      (state.array as Task[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0),
+    allTasks: (state): Task[] =>
+    (state.array as Task[])
   }
 })
