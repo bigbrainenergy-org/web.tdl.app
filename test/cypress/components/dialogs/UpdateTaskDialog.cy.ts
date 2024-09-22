@@ -1,4 +1,4 @@
-import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
+// import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 
 describe('UpdateTaskDialog', () => {
   it('should allow editing title')
