@@ -72,14 +72,7 @@
     "prettier": "latest",
     "typescript": "5.5.x",
     "typescript-eslint": "latest",
-    "vitest": "latest",
-    "workbox-build": "latest",
-    "workbox-cacheable-response": "latest",
-    "workbox-core": "latest",
-    "workbox-expiration": "latest",
-    "workbox-precaching": "latest",
-    "workbox-routing": "latest",
-    "workbox-strategies": "latest"
+    "vitest": "latest"
   },
   "engines": {
     "node": "20.x",
