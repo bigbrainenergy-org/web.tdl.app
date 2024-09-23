@@ -35,7 +35,7 @@ export class List extends Model implements iRecord {
   }
 
   get incompleteTaskCount() {
-    return this.tasks.filter((task) => !task.completed).length
+    return this.tasks.filter((task) => !task.completed && task.incomplete_prereqs.length === 0).length
   }
 
   static override piniaOptions = {
