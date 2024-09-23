@@ -1,14 +1,23 @@
 import { handleError, notifySuccess } from './notification-utils'
-import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+import { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { Task } from 'src/stores/tasks/task-model'
 
+// FIXME: This should (probably) return the task created
 export function createTask(payload: CreateTaskOptions) {
   useTaskStore()
     .apiCreate(payload)
     .then(() => {
       notifySuccess('Successfully created a task')
     }, handleError('Failed to create task.'))
+}
+
+export function updateTask(id: number, options: AllOptionalTaskProperties) {
+  useTaskStore()
+    .apiUpdate(id, options)
+    .then(() => {
+      notifySuccess('Task Was Updated')
+    }, handleError('Error updating task'))
 }
 
 export async function addPre(task: Task, newPreID: number) {

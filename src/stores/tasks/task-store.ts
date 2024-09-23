@@ -24,10 +24,10 @@ export const useTaskStore = defineStore('tasks', {
     afterRestore: (context: PiniaPluginContext) => {
       const store = context.store
       console.debug({ msg: 'restoring tasks store.', mapp: store.mapp, array: store.array })
-      ;(store.mapp as Map<number, Task>).forEach((val: Task) => {
-        val.fullSyncPosts()
-        val.fullSyncPres()
-      })
+        ; (store.mapp as Map<number, Task>).forEach((val: Task) => {
+          val.fullSyncPosts()
+          val.fullSyncPres()
+        })
       console.debug({ 'after restore': store })
     },
     paths: ['array'],
@@ -62,10 +62,10 @@ export const useTaskStore = defineStore('tasks', {
     update(data: TaskLike[]) {
       this.array = data.map((x) => new Task(x))
       this.mapp = new Map((this.array as Task[]).map((x: Task) => [x.id, x]))
-      ;(this.mapp as Map<number, Task>).forEach((val: Task) => {
-        val.fullSyncPosts()
-        val.fullSyncPres()
-      })
+        ; (this.mapp as Map<number, Task>).forEach((val: Task) => {
+          val.fullSyncPosts()
+          val.fullSyncPres()
+        })
       console.debug({ 'after bulk update': this.array })
       return this.array
     },
@@ -118,10 +118,11 @@ export const useTaskStore = defineStore('tasks', {
      */
     async apiUpdate(id: number, task: AllOptionalTaskProperties) {
       try {
-        const tmp = this.hardGet(id)
         await this.api()
           .patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
-          .then(() => {
+          .then((result: AxiosResponse<TaskLike>) => {
+            this.updateSingle(result.data)
+            const tmp = this.hardGet(result.data.id)
             tmp.hard_prereqs.forEach((x) => x.fullSyncPosts())
             tmp.hard_postreqs.forEach((x) => x.fullSyncPres())
             tmp.fullSyncPres()
@@ -155,13 +156,13 @@ export const useTaskStore = defineStore('tasks', {
       const queue = new Queue<number>()
       const preIDs = incompleteOnly
         ? (t: Task) => {
-            const pres = task.hard_prereq_ids.map(retrieve).filter((x) => !x.completed)
-            return pres.map((x) => x.id)
-          }
+          const pres = task.hard_prereq_ids.map(retrieve).filter((x) => !x.completed)
+          return pres.map((x) => x.id)
+        }
         : (t: Task) => {
-            const pres = task.hard_prereq_ids.map(retrieve)
-            return pres.map((x) => x.id)
-          }
+          const pres = task.hard_prereq_ids.map(retrieve)
+          return pres.map((x) => x.id)
+        }
       const thisPres = preIDs(task)
       queue.enqueueAll(thisPres)
       while (queue.size > 0) {
@@ -179,13 +180,13 @@ export const useTaskStore = defineStore('tasks', {
       const queue = new Queue<number>()
       const postIDs = incompleteOnly
         ? (t: Task) => {
-            const posts = task.hard_postreq_ids.map(retrieve).filter((x) => !x.completed)
-            return posts.map((x) => x.id)
-          }
+          const posts = task.hard_postreq_ids.map(retrieve).filter((x) => !x.completed)
+          return posts.map((x) => x.id)
+        }
         : (t: Task) => {
-            const posts = task.hard_postreq_ids.map(retrieve)
-            return posts.map((x) => x.id)
-          }
+          const posts = task.hard_postreq_ids.map(retrieve)
+          return posts.map((x) => x.id)
+        }
       const thisPosts = postIDs(task)
       queue.enqueueAll(thisPosts)
       while (queue.size > 0) {
@@ -233,6 +234,6 @@ export const useTaskStore = defineStore('tasks', {
     layerZero: (state): Task[] =>
       (state.array as Task[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0),
     allTasks: (state): Task[] =>
-    (state.array as Task[])
+      (state.array as Task[])
   }
 })

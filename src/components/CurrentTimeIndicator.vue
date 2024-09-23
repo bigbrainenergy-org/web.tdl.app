@@ -3,9 +3,9 @@
 </template>
 
 <script setup lang="ts">
-  import { useIntervalFn } from '@vueuse/core';
+  import { useIntervalFn } from '@vueuse/core'
   import { DateTime } from 'luxon'
-  import { onActivated, onDeactivated, onMounted, ref } from 'vue';
+  import { onActivated, onDeactivated, onMounted, ref } from 'vue'
 
   const currentTime = ref(DateTime.local().toFormat('h:mm:ss a ZZZZ'))
 

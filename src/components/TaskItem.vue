@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-  import { toRef } from 'vue'
+  import { computed, toRef } from 'vue'
   import { usePostreqWarning } from 'src/composables/use-postreq-warning'
   import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'

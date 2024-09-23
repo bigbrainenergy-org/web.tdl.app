@@ -27,7 +27,7 @@ import 'quasar/icon-set/material-icons'
 import '@quasar/extras/material-icons/material-icons.css'
 
 import { installQuasarPlugin } from '@quasar/quasar-app-extension-testing-e2e-cypress'
-import { Dialog } from 'quasar'
+import { Dialog, Notify } from 'quasar'
 
 // Since Cypress v10 we cannot import `config` directly from VTU as Cypress bundles its own version of it
 // See https://github.com/cypress-io/cypress/issues/22611
@@ -48,7 +48,7 @@ config.global.mocks = {
 // We do want transitions to show when doing visual testing :)
 config.global.stubs = {}
 
-installQuasarPlugin({ plugins: { Dialog } })
+installQuasarPlugin({ plugins: { Dialog, Notify } })
 
 // Allow mocking pinia for all specs
 import { createPinia, setActivePinia } from 'pinia'

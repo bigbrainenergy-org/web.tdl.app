@@ -24,6 +24,7 @@ export default tseslint.config(
   },
   // Import recommendations for all plugins
   eslint.configs.recommended,
+  // tseslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   cypress.configs.recommended,
   ...vue.configs['flat/recommended'],
@@ -42,6 +43,7 @@ export default tseslint.config(
     rules: {
       'prefer-promise-reject-errors': 'off',
       'no-debugger': 'off',
+      'semi': ['error', 'never'],
 
       quotes: ['warn', 'single', {
         avoidEscape: true,

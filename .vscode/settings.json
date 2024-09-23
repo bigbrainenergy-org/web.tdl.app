@@ -6,5 +6,10 @@
   },
   "editor.formatOnSave": true,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "eslint.format.enable": true,
+  "eslint.lintTask.enable": true
 }

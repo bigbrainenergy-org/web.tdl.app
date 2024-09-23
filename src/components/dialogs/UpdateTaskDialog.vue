@@ -12,81 +12,16 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12 col-md">
-            <q-item-label class="text-h4 text-primary" lines="3">
+            <q-item-label class="text-h4 text-primary" lines="3" data-cy="task_title">
               {{ currentTask.title }}
             </q-item-label>
-            <GloriousTextInput
-              v-model="editTitle"
-              label="Task Title"
-              :placeholder="currentTask.title"
-              data-cy="task_title_input"
-              @enter-key="updateTask(currentTask.id, { title: editTitle })"
-            />
-            <q-select
-              v-model="selectedList"
-              filled
-              hide-selected
-              fill-input
-              input-debounce="20"
-              :options="lists"
-              use-chips
-              option-label="title"
-              map-options
-              emit-value
-              label="List"
-              use-input
-              option-value="id"
-              class="q-my-md text-primary"
-              @filter="filterSelection"
-              @update:model-value="updateList"
-            />
-            <q-select
-              v-model="selectedProcedures"
-              multiple
-              filled
-              fill-input
-              input-debounce="20"
-              :options="procedures"
-              use-chips
-              option-label="title"
-              map-options
-              emit-value
-              label="Procedures"
-              use-input
-              class="q-my-md text-primary"
-              @update:model-value="updateProcedures"
-            />
-            <q-datetime-input
-              v-model="editRemindMeAt"
-              label="Remind me at"
-              class="q-my-md"
-              @update:model-value="updateTask(currentTask.id, { remind_me_at: editRemindMeAt })"
-            />
-            <q-expansion-item
-              v-model="expandEnergyStats"
-              expand-separator
-              switch-toggle-side
-              icon="fas fa-lightbulb"
-              caption="Metadata"
-            >
-              <br>
-              <GloriousSlider
-                v-for="(s, key) of sliders"
-                :key="key"
-                v-model="s.modelRef.value"
-                v-bind="s"
-                @change="s.updateFunc"
-              />
-            </q-expansion-item>
+            <TaskInputTitle :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputList :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputProcedures :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputRemindMeAt :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputEnergy :key="currentTask.id" v-model:task="currentTask as Task" />
             <br>
-            <q-input
-              v-model="editNotes"
-              filled
-              autogrow
-              debounce="1000"
-              label="Notes"
-              @update:model-value="updateTask(currentTask.id, { notes: editNotes })"
-            />
+            <TaskInputNotes :key="currentTask.id" v-model:task="currentTask as Task" />
           </div>
           <div class="col-12 col-md">
             <IncompleteOnlyToggle />
@@ -136,9 +71,6 @@
   import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
   import { computed, ref } from 'vue'
   import DependencyList from '../DependencyList.vue'
-  import QDatetimeInput from 'components/QDatetimeInput.vue'
-  import { ListRepo } from 'src/stores/lists/list'
-  import { useRepo } from 'pinia-orm'
   import { syncWithBackend } from 'src/utils/sync-utils'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
@@ -152,11 +84,15 @@
   import { Button, unknownishλ, λ } from 'src/utils/types'
   import { onMounted } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import GloriousTextInput from '../GloriousTextInput.vue'
-  import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
   import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
+  import TaskInputTitle from 'src/components/TaskInputTitle.vue'
+  import TaskInputList from 'src/components/TaskInputList.vue'
+  import TaskInputProcedures from 'src/components/TaskInputProcedures.vue'
+  import TaskInputRemindMeAt from 'src/components/TaskInputRemindMeAt.vue'
+  import TaskInputEnergy from 'src/components/TaskInputEnergy.vue'
+  import TaskInputNotes from 'src/components/TaskInputNotes.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
-  import GloriousSlider from '../GloriousSlider.vue'
+
   import { storeToRefs } from 'pinia'
   import { hardCheck } from 'src/utils/type-utils'
   import {
@@ -165,23 +101,29 @@
     openTaskSlicerDialog
   } from 'src/utils/dialog-utils'
   import { blockingFunc } from 'src/utils/performance-utils'
-  import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { Task } from 'src/stores/tasks/task-model'
-  import { AllOptionalTaskProperties } from 'src/stores/tasks/task-interfaces-types'
-  import { GloriousSliderConfig } from 'src/utils/glorious-utils'
   import { arrayDelete } from 'src/utils/array-utils'
 
-  const cts = useCurrentTaskStore()
-  const currentTaskID = computed(() => cts.id)
-  const currentTask = computed(() => {
-    const id = currentTaskID.value
-    if (id === null) throw new Error('no id')
-    const t = useTaskStore().hardGet(id)
-    if (typeof t === 'undefined' || t === null)
-      throw new Error('id does not match a task in the repo')
-    return t
-  })
+  // HACK: The `:key="currentTask.id"` works for refreshing on task change, but isn't ideal
+  // FIXME: Find a better way to switch between tasks
+
+  // const props = defineProps({
+  //   task: { type: Task, required: true }
+  // })
+
+  const props = defineProps<{
+    task: Task
+  }>()
+
+  const currentTask = ref<Task>(props.task)
+
+  // const currentTask = ref<Task>(new Task({ title: 'asdf' }))
+
+  // const { task } = toRefs(props)
+
+  // const currentTask = toRef(props, 'task')
 
   const prioritize = () => {
     $q.dialog({
@@ -226,32 +168,11 @@
     return [markCompleteButton, prioritizeButton, sliceButton, deleteButton, closeButton]
   })
 
-  const editMentalEnergyRequired = ref(currentTask.value.mental_energy_required)
-  const editPhysicalEnergyRequired = ref(currentTask.value.physical_energy_required)
-
-  const sliders: GloriousSliderConfig[] = [
-    {
-      beginIcon: 'far fa-tired',
-      endIcon: 'fas fa-lightbulb',
-      cuteName: 'Mental',
-      modelRef: editMentalEnergyRequired,
-      updateFunc: (x) => updateTask(currentTask.value.id, { mental_energy_required: x })
-    },
-    {
-      beginIcon: 'far fa-tired',
-      endIcon: 'fas fa-dumbbell',
-      cuteName: 'Physical',
-      color: 'red',
-      modelRef: editPhysicalEnergyRequired,
-      updateFunc: (x) => updateTask(currentTask.value.id, { physical_energy_required: x })
-    }
-  ]
-
   const emit = defineEmits([...useDialogPluginComponent.emits])
 
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
-  const listsRepo = useRepo(ListRepo)
+
   // const tr = useRepo(TaskRepo)
   const usr = useLocalSettingsStore()
 
@@ -271,60 +192,14 @@
 
   useMeta(() => ({ title: currentTask.value.title + ' | TDL App' }))
 
-  const editTitle = ref(currentTask.value.title)
-  const editNotes = ref(currentTask.value.notes)
-  const editRemindMeAt = ref(currentTask.value.remind_me_at)
+  const { hideCompleted } = storeToRefs(usr)
 
-  const { expandEnergyStats, hideCompleted } = storeToRefs(usr)
-
-  const lists = computed(() => listsRepo.all())
-  const procedures = computed(() => useRepo(ProcedureRepo).all())
   const allPres = computed(() => currentTask.value.grabPrereqs(hideCompleted.value))
   const allPosts = computed(() => currentTask.value.grabPostreqs(hideCompleted.value))
 
-  const updateList = () => updateTask(currentTask.value.id, { list_id: selectedList.value?.id })
-
-  const updateProcedures = () => {
-    updateTask(currentTask.value.id, { procedure_ids: selectedProcedures.value.map((x) => x.id) })
-  }
-
-  const allLists = listsRepo.all()
-  const listOptions = ref(allLists)
-
-  // thank you Berichtsheft for concise type info on this piece of quasar api
-  type voidFn = () => void
-  type doneFn = (a: voidFn) => void
-
-  const filterSelection = (val: string, update: doneFn) => {
-    update(() => {
-      if (val === '') {
-        listOptions.value = allLists
-      } else {
-        const query = val.toLowerCase()
-        listOptions.value = allLists.filter((x) => {
-          return x.title.toLowerCase().includes(query)
-        })
-      }
-    })
-  }
-
-  function getSelectedList(task: Task) {
-    return task.list ? { id: task.list.id, title: task.list.title } : null
-  }
-
-  const selectedList = ref(getSelectedList(currentTask.value))
-  const selectedProcedures = ref<Procedure[]>(currentTask.value.procedures)
-
   function setCurrentTask(newTask: Task) {
     console.debug('setCurrentTask')
-    cts.id = newTask.id
-    editTitle.value = currentTask.value.title
-    editNotes.value = currentTask.value.notes
-    editRemindMeAt.value = currentTask.value.remind_me_at
-    editMentalEnergyRequired.value = currentTask.value.mental_energy_required
-    editPhysicalEnergyRequired.value = currentTask.value.physical_energy_required
-    selectedList.value = getSelectedList(currentTask.value)
-    selectedProcedures.value = currentTask.value.procedures
+    currentTask.value = newTask
   }
 
   function deleteTask(task: Task) {
@@ -349,17 +224,8 @@
     })
   }
 
-  function updateTask(id: number, options: AllOptionalTaskProperties) {
-    useTaskStore()
-      .apiUpdate(id, options)
-      .then(() => {
-        notifySuccess('Task Was Updated')
-      }, handleError('Error updating task'))
-  }
-
-  const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value)
-
-  const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value)
+  const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value as Task)
+  const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
 
   const mvpPostrequisite = async (post: Task) => {
     console.debug(post)
@@ -400,7 +266,7 @@
     }
   }
 
-  // when is a joke taken too far?
+  // when is a joke taken too far? - never, full send λ
   const insertBetweenFilter: λ<number | undefined, λ<Task, boolean>> =
     (taskID: number | undefined) => (x: Task) =>
       !x.completed
@@ -448,7 +314,7 @@
       component: TaskSearchDialog,
       componentProps: {
         dialogTitle: 'Insert Task Between Two Others',
-        taskID: currentTaskID.value,
+        taskID: currentTask.value.id,
         searchLabel: 'Search',
         resultsTitle: 'Search Results',
         closeOnSelect: false,

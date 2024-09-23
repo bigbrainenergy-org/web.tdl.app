@@ -2,7 +2,6 @@ import { Dialog } from 'quasar'
 import { addPost, addPre, createTask } from './task-utils'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { useCurrentTaskStore } from 'src/stores/task-meta/current-task'
 import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
@@ -119,14 +118,13 @@ export function considerOpeningQuickSortDialog() {
   }
 }
 
-export function openUpdateTaskDialog(currentTask: Task | number) {
-  const cts = useCurrentTaskStore()
-  if (currentTask instanceof Task) {
-    cts.id = currentTask.id
-  } else {
-    cts.id = currentTask
-  }
-  return Dialog.create({ component: UpdateTaskDialog })
+export function openUpdateTaskDialog(task: Task) {
+  return Dialog.create({
+    component: UpdateTaskDialog,
+    componentProps: {
+      task: task
+    }
+  })
 }
 
 export function openProcedureDetailsDialog(procedure: Procedure) {
