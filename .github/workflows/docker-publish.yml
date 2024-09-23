@@ -1,21 +1,12 @@
-name: Docker
+name: Docker Publish
 
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# TODO: Only run on successful builds off main
-
+# Only publish when a semver tag is created:
+# https://github.com/bigbrainenergy-org/web.tdl.app/releases/new
 on:
-  schedule:
-    - cron: '43 4 * * *'
   push:
-    branches: ['main']
+    # branches: ['main']
     # Publish semver tags as releases.
     tags: ['v*.*.*']
-  pull_request:
-    branches: ['main']
 
 env:
   # Use docker.io for Docker Hub if empty
