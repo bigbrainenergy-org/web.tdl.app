@@ -8,7 +8,6 @@ RUN yarn global add @quasar/cli
 # Copy files required for building the final dists
 COPY ./public ./public
 COPY ./src ./src
-COPY ./src-pwa ./src-pwa
 COPY ./babel.config.js .
 COPY ./index.html .
 COPY ./LICENSE .

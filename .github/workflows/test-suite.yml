@@ -6,7 +6,8 @@ on:
   schedule:
    - cron: '0 0 * * MON' # Once a week on monday
   push:
-  pull_request:
+  # Redundant when we're running against literally all commits (including PRs)
+  # pull_request:
 
 jobs:
   yarn-audit:
