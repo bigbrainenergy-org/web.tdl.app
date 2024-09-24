@@ -1,8 +1,9 @@
 import { Model } from 'pinia-orm'
 import iRecord, { iOptions } from '../generics/i-record'
-import { Attr, HasMany, Num, Str } from 'pinia-orm/dist/decorators'
+import { Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
-import { Task } from '../tasks/task'
+import { useTaskStore } from 'src/stores/tasks/task-store'
+import { Task } from 'src/stores/tasks/task-model'
 
 export interface CreateListOptions {
   title: string
@@ -20,7 +21,7 @@ export interface UpdateListOptions extends iOptions {
 }
 
 export class List extends Model implements iRecord {
-  static entity = 'lists'
+  static override entity = 'lists'
 
   @Num(-1) declare id: number
   @Str('') declare title: string
@@ -28,18 +29,21 @@ export class List extends Model implements iRecord {
   @Num(0) declare order: number
   @Str('') declare notes: string
 
-  @HasMany(() => Task, 'list_id') declare tasks: Task[]
-
-  get incompleteTaskCount() {
-    return this.tasks.filter((task) => !task.completed).length
+  // @HasMany(() => Task, 'list_id') declare tasks: Task[]
+  get tasks(): Task[] {
+    return (useTaskStore().array as Task[]).filter((x) => x.list_id === this.id)
   }
 
-  static piniaOptions = {
+  get incompleteTaskCount() {
+    return this.tasks.filter((task) => !task.completed && task.incomplete_prereqs.length === 0).length
+  }
+
+  static override piniaOptions = {
     persist: true
   }
 }
 
 export class ListRepo extends GenericRepo<CreateListOptions, UpdateListOptions, List> {
-  use = List
-  apidir = List.entity
+  override use = List
+  override apidir = List.entity
 }

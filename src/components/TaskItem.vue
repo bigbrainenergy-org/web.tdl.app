@@ -1,10 +1,13 @@
 <template>
-  <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task.t)">
+  <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task)">
     <q-checkbox
       v-model:model-value="task.completed"
       color="primary"
       keep-color
-      @update:model-value="$emit('task-completion-toggled', $event, task.t)"
+      checked-icon="task_alt"
+      unchecked-icon="radio_button_unchecked"
+      class="q-mr-sm"
+      @update:model-value="$emit('task-completion-toggled', $event, task)"
     />
 
     <q-item-section>
@@ -13,7 +16,7 @@
       </q-item-label>
     </q-item-section>
 
-    <q-item-section v-if="task.t.notes" side data-cy="notes_indicator">
+    <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
           Has additional notes! Click to view.
@@ -21,39 +24,26 @@
       </q-avatar>
     </q-item-section>
 
-    <q-item-section v-if="task.grabPostreqs(incompleteOnly).length" side>
-      <q-chip
-        v-if="task.grabPostreqs(incompleteOnly).length"
-        :style="
-          task.grabPostreqs(incompleteOnly).length > 5
-            ? 'background-color: red;'
-            : 'background-color: gray;'
-        "
-      >
-        {{ task.grabPostreqs(incompleteOnly).length }}
+    <q-item-section v-if="taskIncompletePostreqLength" side>
+      <q-chip v-if="taskIncompletePostreqLength" :style="taskPostreqColor">
+        {{ taskIncompletePostreqLength }}
       </q-chip>
     </q-item-section>
     <q-item-section side>
-      <q-btn
-        v-if="!task.completed"
-        outline
-        rounded
-        label="ADD PRE"
-        @click.stop="addTaskPre(task.t)"
-      />
+      <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPrerequisitesDialog(task)" />
     </q-item-section>
   </q-item>
 </template>
 
 <script setup lang="ts">
-  import { ref, toRef } from 'vue'
-  import { Task } from 'stores/tasks/task'
-  import { TDLAPP } from 'src/TDLAPP'
-  import { cachedTask } from 'src/stores/performance/all-tasks'
+  import { computed, toRef } from 'vue'
+  import { usePostreqWarning } from 'src/composables/use-postreq-warning'
+  import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
+  import { Task } from 'src/stores/tasks/task-model'
 
   const props = withDefaults(
     defineProps<{
-      task: cachedTask
+      task: Task
       incompleteOnly?: boolean
     }>(),
     {
@@ -64,5 +54,20 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
-  const addTaskPre = (currentTask: Task) => TDLAPP.addPrerequisitesDialog(currentTask)
+  const taskIncompletePostreqLength = computed(
+    // REVIEW: grabPostreqs is likely a source of significant lag
+    () => task.value.incomplete_postreqs.length
+  )
+  const taskPostreqColor = computed(
+    () => taskIncompletePostreqLength.value > postreqQuantityWarningThreshold.value
+      ? 'background-color: red;'
+      : 'background-color: gray;'
+  )
+  const { postreqQuantityWarningThreshold } = usePostreqWarning()
 </script>
+
+<style>
+  .q-checkbox__icon {
+    font-size: 0.75em;
+  }
+</style>

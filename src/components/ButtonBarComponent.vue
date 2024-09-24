@@ -11,7 +11,7 @@
   />
 </template>
 <script setup lang="ts" generic="G">
-  import { Button } from 'src/types'
+  import { Button } from 'src/utils/types'
   const props = defineProps<{ buttons: Array<Button<G>>; target?: G }>()
   if (typeof props.target === 'undefined') {
     if (props.buttons.some((x) => x.action.length === 1)) {

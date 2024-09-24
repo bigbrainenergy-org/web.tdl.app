@@ -26,7 +26,7 @@ export interface UpdateStatusOptions extends iOptions {
 }
 
 export class Status extends Model implements iRecord {
-  static entity = 'statuses'
+  static override entity = 'statuses'
 
   // todo: don't just use attr
   @Attr(null) declare id: number | null
@@ -39,6 +39,6 @@ export class Status extends Model implements iRecord {
 }
 
 export class StatusRepo extends GenericRepo<CreateStatusOptions, UpdateStatusOptions, Status> {
-  use = Status
-  apidir = Status.entity
+  override use = Status
+  override apidir = Status.entity
 }

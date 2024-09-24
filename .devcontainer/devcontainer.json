@@ -12,11 +12,16 @@
       // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
         "Vue.volar",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "mxsdev.typescript-explorer"
       ]
     }
+  },
+
+  // Add yarn executables to PATH
+  "remoteEnv": {
+    "PATH": "/workspaces/${localWorkspaceFolderBasename}/node_modules/.bin:${containerEnv:PATH}"
   },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
@@ -30,7 +35,8 @@
   },
 
   // postCreateCommand (only on build) -> postStartCommand -> postAttachCommand
-  "postStartCommand": "yarn",
+  "postCreateCommand": "yarn",
+  "postStartCommand": "yarn dev",
 
   // Set `remoteUser` to `root` to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
   "remoteUser": "node",

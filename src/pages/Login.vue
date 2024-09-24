@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row items-center justify-evenly">
+  <centered-page>
     <q-card>
       <q-card-section class="bg-grey-8 text-white">
         <q-item>
@@ -13,33 +13,28 @@
       </q-card-section>
 
       <q-card-section>
-        <LoginForm
-          v-model:server="server"
-          v-model:username="username"
-          v-model:password="password"
-          @login="login"
-        />
+        <LoginForm v-model:server="server" v-model:username="username" v-model:password="password" @login="login" />
       </q-card-section>
 
       <q-card-actions align="right">
         <q-btn flat data-cy="login" @click="login">{{ $t('login') }}</q-btn>
       </q-card-actions>
     </q-card>
-  </q-page>
+  </centered-page>
 </template>
 
 <script setup lang="ts">
-  import { useQuasar } from 'quasar'
-
+  import { useQuasar, useMeta } from 'quasar'
   import { useRouter } from 'vue-router'
   import { ref } from 'vue'
-
   import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
-  import { Utils } from 'src/util'
   import { useAxiosStore } from 'src/stores/axios-store'
-  import { syncWithBackend } from 'src/hackerman/sync'
-
+  import { syncWithBackend } from 'src/utils/sync-utils'
   import LoginForm from 'src/components/forms/LoginForm.vue'
+  import CenteredPage from 'src/components/CenteredPage.vue'
+  import { handleError } from 'src/utils/notification-utils'
+
+  useMeta(() => ({ title: 'Login | TDL App' }))
 
   const authenticationStore = useAuthenticationStore()
   const $q = useQuasar()
@@ -67,8 +62,8 @@
         })
         syncWithBackend().then(
           () => $router.push({ path: '/' }),
-          Utils.handleError('Failed to fetch data')
+          handleError('Failed to fetch data')
         )
-      }, Utils.handleError('Failed to log in'))
+      }, handleError('Failed to log in'))
   }
 </script>

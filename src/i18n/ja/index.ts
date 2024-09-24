@@ -1,4 +1,5 @@
 export default {
+  server: 'サーバ',
   username: 'ユーザー名',
   password: 'パスワード',
   login: 'ログイン',

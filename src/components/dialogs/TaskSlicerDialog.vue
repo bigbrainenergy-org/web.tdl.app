@@ -17,7 +17,7 @@
               @touchstart.stop
               @mousedown.stop
             />
-            <br />
+            <br>
             <div class="row">
               <div class="col-grow">
                 <q-btn icon="fas fa-plus" label="Slice Task" color="primary" @click="sliceTask" />
@@ -33,8 +33,8 @@
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
-  import { Task } from 'src/stores/tasks/task'
-  import { Utils } from 'src/util'
+  import { handleError } from 'src/utils/notification-utils'
+  import { Task } from 'src/stores/tasks/task-model'
 
   const props = defineProps<{ task: Task }>()
 
@@ -45,6 +45,6 @@
   const slices = ref(0)
 
   const sliceTask = async () => {
-    await props.task.split(slices.value).then(onDialogOK, Utils.handleError('Error slicing task.'))
+    await props.task.split(slices.value).then(onDialogOK, handleError('Error slicing task.'))
   }
 </script>

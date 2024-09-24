@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/first-attribute-linebreak -->
 <template>
   <q-item class="q-my-sm">
     <q-item-section v-if="typeof props.beginIcon !== 'undefined'" side>
@@ -26,7 +27,7 @@
   </q-item>
 </template>
 <script setup lang="ts">
-  import { GloriousSliderProp } from 'src/glorious'
+  import { GloriousSliderProp } from 'src/utils/glorious-utils'
   import { computed } from 'vue'
 
   const props = withDefaults(defineProps<GloriousSliderProp>(), {
@@ -36,12 +37,14 @@
     max: 100,
     step: 1,
     cuteName: undefined,
+    unit: undefined,
     color: 'primary'
   })
   const val = defineModel<number>()
   const emit = defineEmits(['change'])
   const cuteNamePortion = computed(() =>
-    typeof props.cuteName === 'undefined' ? '' : `${props.cuteName} `
+    typeof props.cuteName === 'undefined' ? '' : props.cuteName
   )
-  const label = computed(() => `${cuteNamePortion.value}${val.value}%`)
+  const unitPortion = computed(() => (typeof props.unit === 'undefined' ? '' : ` ${props.unit}`))
+  const label = computed(() => `${cuteNamePortion.value} ${val.value}${unitPortion.value}`)
 </script>

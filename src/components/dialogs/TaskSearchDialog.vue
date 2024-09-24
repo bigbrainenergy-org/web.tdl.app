@@ -4,14 +4,16 @@
     ref="dialogRef"
     :maximized="$q.screen.lt.md"
     backdrop-filter="blur(4px)"
-    @hide="hideDialog">
+    @hide="hideDialog"
+  >
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
         <SettingsButton
           v-model:settings="taskSearchSettings"
           name="Task Search Settings"
-          color="white" />
+          color="white"
+        />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -22,7 +24,8 @@
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
         :debounce="debounceAmount"
-        @do-a-search="searchForTasks" />
+        @do-a-search="searchForTasks"
+      />
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
@@ -39,14 +42,16 @@
                     icon="fas fa-plus"
                     label="Create A New Task"
                     color="primary"
-                    @click="createTask" />
+                    @click="createTask"
+                  />
                 </q-item>
                 <q-item
                   v-for="task in results"
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
-                  @click="selectTask(task as Task)">
+                  @click="selectTask(task as Task)"
+                >
                   <q-item-section>
                     <q-item-label lines="2">
                       {{ task.title }}
@@ -64,23 +69,20 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-
   import { computed, ref, watch } from 'vue'
-
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
-  import { Utils } from 'src/util'
   // import { useRepo } from 'pinia-orm'
   // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import TaskSearchResults from '../search/TaskSearchResults.vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { λ } from 'src/types'
+  import { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { useRepo } from 'pinia-orm'
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { brushY, filter } from 'd3'
   import Fuse, { FuseResult } from 'fuse.js'
-  import { timeThis, timeThisB } from 'src/perf'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import { hardCheck } from 'src/utils/type-utils'
+  import { timeThisB } from 'src/utils/performance-utils'
 
   interface Props {
     dialogTitle: string
@@ -110,7 +112,7 @@
 
   const key = ref(0)
 
-  Utils.hardCheck(props.dialogTitle, 'Dialog title must be given a value')
+  hardCheck(props.dialogTitle, 'Dialog title must be given a value')
   useLoadingStateStore().busy = true
 
   const emit = defineEmits([
@@ -138,7 +140,7 @@
   //   keys: ['title']
   // }
 
-  const tr = useRepo(TaskRepo)
+  // const tr = useRepo(TaskRepo)
   // const usr = useLocalSettingsStore()
 
   const usr = useLocalSettingsStore()
@@ -152,30 +154,30 @@
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
    */
-  const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
-    if (typeof props.batchFilter !== 'undefined') {
-      return props.batchFilter(taskID)(tasks)
-    }
-    return tasks
-  }
+  // const defaultBatchFilter = (taskID: number | undefined) => (tasks: Task[]) => {
+  //   if (typeof props.batchFilter !== 'undefined') {
+  //     return props.batchFilter(taskID)(tasks)
+  //   }
+  //   return tasks
+  // }
 
   const selectTask = (task: Task) => {
-    emit('select', { task: task })
+    emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
   }
-  const onCancelClick = () => {
-    useLoadingStateStore().busy = false
-    onDialogCancel()
-  }
+  // const onCancelClick = () => {
+  //   useLoadingStateStore().busy = false
+  //   onDialogCancel()
+  // }
 
   const createTask = async () => {
     if (typeof searchString.value === 'undefined') return
     const toCreate: CreateTaskOptions = {
       title: searchString.value
     }
-    const newTask = await tr.add(toCreate)
-    selectTask(newTask)
+    const newTask = await useTaskStore().apiCreate(toCreate)
+    if (newTask !== null) selectTask(newTask)
   }
 
   const hideDialog = () => {
@@ -201,7 +203,7 @@
   const getTasks = () => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+    const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)

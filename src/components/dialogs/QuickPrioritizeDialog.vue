@@ -41,11 +41,9 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { Task } from 'src/stores/tasks/task'
-  import { TDLAPP } from 'src/TDLAPP'
   import { ref } from 'vue'
-  import { cachedTask, useAllTasksStore } from 'src/stores/performance/all-tasks'
-import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
 
   interface Props {
     task: Task
@@ -55,28 +53,31 @@ import { useLayerZeroStore } from 'src/stores/performance/layer-zero'
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
-  const layerZero: { selected: boolean; obj: cachedTask }[] = useLayerZeroStore().typed
-    .filter((x: cachedTask) => {
-      if (x.id === prop.task.id) return false
-      if (prop.task.isIDBelow(x.id, { incompleteOnly: true, useStore: false })) return false
-      return true
-    })
-    .map((x: cachedTask) => ({ selected: false, obj: x }))
-  const saveNewRules = async () => {
-    const selectedTasks = layerZero.filter((x) => x.selected)
+  const layerZero = ref<{ selected: boolean; obj: Task }[]>(
+    useTaskStore()
+      .layerZero.filter((x: Task) => {
+        if (x.id === prop.task.id) return false
+        if (prop.task.anyIDsBelow([x.id])) return false
+        return true
+      })
+      .map((x: Task) => ({ selected: false, obj: x }))
+  )
+  const saveNewRules = () => {
+    const selectedTasks = layerZero.value.filter((x) => x.selected)
     saveProgress.value = 0
     // TODO: batch update this!
     for (let i = 0; i < selectedTasks.length; i++) {
-      const element = layerZero[i]
-      await TDLAPP.addPost(prop.task, element.obj.id).then(
-        () => (saveProgress.value = (i + 1) / selectedTasks.length)
-      )
+      const element = layerZero.value[i]
+      useTaskStore()
+        .addRule(prop.task.id, element.obj.id)
+        .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))
     }
     onDialogCancel()
   }
   const selectAll = () => {
-    if (layerZero.some((x) => !x.selected)) layerZero.forEach((x) => (x.selected = true))
-    else layerZero.forEach((x) => (x.selected = false))
+    if (layerZero.value.some((x) => !x.selected))
+      layerZero.value.forEach((x) => (x.selected = true))
+    else layerZero.value.forEach((x) => (x.selected = false))
   }
 
   const onCancelClick = onDialogCancel

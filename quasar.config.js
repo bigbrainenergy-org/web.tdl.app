@@ -10,9 +10,11 @@
 
 import { configure } from 'quasar/wrappers'
 import { resolve } from 'path'
+import { mergeConfig } from 'vite'
 
 export default configure(function (/* ctx */) {
   return {
+    // https://quasar.dev/quasar-cli-vite/supporting-ts
     supportTS: {
       tsCheckerConfig: {
         eslint: {
@@ -33,7 +35,7 @@ export default configure(function (/* ctx */) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['i18n', 'recaptcha'],
+    boot: ['i18n'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ['app.sass'],
@@ -63,14 +65,18 @@ export default configure(function (/* ctx */) {
       // analyze: true,
       env: {
         RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY
-      }
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+      extendViteConf (viteConf) {
+        viteConf.build = mergeConfig(viteConf.build, {
+          sourcemap: true
+        })
+      },
       // viteVuePluginOptions: {},
 
       // vitePlugins: [
@@ -102,7 +108,7 @@ export default configure(function (/* ctx */) {
         loadingBar: {
           color: 'purple',
           position: 'bottom',
-          size: '15px'
+          size: '5px'
         }
       },
 
@@ -140,41 +146,6 @@ export default configure(function (/* ctx */) {
     //   electronMain: 'src-electron/electron-main',
     //   electronPreload: 'src-electron/electron-preload'
     // },
-
-    // https://v2.quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
-    // ssr: {
-    //   // ssrPwaHtmlFilename: 'offline.html', // do NOT use index.html as name!
-    //                                       // will mess up SSR
-
-    //   // extendSSRWebserverConf (esbuildConf) {},
-    //   // extendPackageJson (json) {},
-
-    //   pwa: false,
-
-    //   // manualStoreHydration: true,
-    //   // manualPostHydrationTrigger: true,
-
-    //   prodPort: 3000, // The default port that the production server should use
-    //                   // (gets superseded if process.env.PORT is specified at runtime)
-
-    //   middlewares: [
-    //     'render' // keep this as last one
-    //   ]
-    // },
-
-    // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
-    pwa: {
-      workboxMode: 'generateSW', // or 'injectManifest'
-      injectPwaMetaTags: true,
-      swFilename: 'sw.js',
-      manifestFilename: 'manifest.json',
-      useCredentialsForManifestTag: false
-      // useFilenameHashes: true,
-      // extendGenerateSWOptions (cfg) {}
-      // extendInjectManifestOptions (cfg) {},
-      // extendManifestJson (json) {}
-      // extendPWACustomSWConf (esbuildConf) {}
-    },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-cordova-apps/configuring-cordova
     cordova: {

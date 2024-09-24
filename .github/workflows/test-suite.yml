@@ -2,8 +2,9 @@ name: Test Suite
 
 # Run against all commits and pull requests.
 on:
-  #schedule:
-  #  - cron: '0 0 * * *'
+  # Schedule will always run against the latest commit on the default branch (main)
+  schedule:
+   - cron: '0 0 * * MON' # Once a week on monday
   push:
   pull_request:
 

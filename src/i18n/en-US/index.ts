@@ -1,6 +1,7 @@
 export default {
   name: 'Name',
   email: 'Email',
+  server: 'Server',
   username: 'Username',
   password: 'Password',
   reasonForInterest: 'Why are you interested in TDL App?',

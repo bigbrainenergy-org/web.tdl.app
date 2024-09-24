@@ -40,7 +40,7 @@
   import { useQuasar } from 'quasar'
   import { useRepo } from 'pinia-orm'
   import { UserRepo } from 'src/stores/users/user'
-  import { Utils } from 'src/util'
+  import { handleError } from 'src/utils/notification-utils'
 
   const $q = useQuasar()
   const userRepo = computed(() => useRepo(UserRepo))
@@ -75,6 +75,6 @@
           position: 'top',
           message: 'Password changed!'
         })
-      }, Utils.handleError('Failed to change password.'))
+      }, handleError('Failed to change password.'))
   }
 </script>

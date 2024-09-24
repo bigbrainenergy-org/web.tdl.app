@@ -69,3 +69,9 @@ Results will be displayed in CLI directly
 ```
 yarn test:unit
 ```
+
+## Troubleshooting
+
+eslint keeps crashing on first load (doesn't work until window reload):
+
+https://github.com/microsoft/vscode-eslint/issues/1156

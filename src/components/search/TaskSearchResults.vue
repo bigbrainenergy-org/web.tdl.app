@@ -39,12 +39,12 @@
 
 <script setup lang="ts">
   import Fuse, { FuseResult } from 'fuse.js'
-  import { useRepo } from 'pinia-orm'
-  import { CreateTaskOptions, Task, TaskRepo } from 'src/stores/tasks/task'
   import { computed, ref } from 'vue'
-  import type { λ } from '../../types'
-  import { timeThis, timeThisABAsync, timeThisB } from 'src/perf'
-  import { Utils } from 'src/util'
+  import type { λ } from '../../utils/types'
+  import { timeThis, timeThisB } from 'src/utils/performance-utils'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 
   interface Prop {
     search: string | undefined
@@ -59,24 +59,24 @@
 
   const emit = defineEmits(['select', 'create'])
 
-  const checkTaskRelation = (task: Task) => {
-    return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
-  }
+  // TODO: re-introduce functionality to hide redundant tasks from search list when doing things like adding pres and posts
+  // const checkTaskRelation = (task: Task) => {
+  //   return typeof props.taskID === 'undefined' ? false : task.hasRelationTo(props.taskID)
+  // }
 
   const redundantTasks = ref<Map<number, boolean>>(new Map())
   const colorize = (id: number) => (redundantTasks.value.get(id) ? 'color: orange' : 'color: black')
 
-  type HasID = { id: number }
-  const byRedundancy = (a: HasID, b: HasID) =>
-    redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
+  // const byRedundancy = (a: HasID, b: HasID) =>
+  //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
 
   // can't set this in withDefaults... don't even try
   // DON'T
   const defaultFilter = (currentTaskID: number | undefined) => {
     const simplestFilter = (x: Task) => !x.completed
     if (typeof currentTaskID === 'undefined') return simplestFilter
-    const ct = useRepo(TaskRepo).find(currentTaskID)
-    if (ct === null) {
+    const ct = useTaskStore().mapp.get(currentTaskID)
+    if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
       return (x: Task) => {
@@ -90,8 +90,6 @@
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
 
-  const tr = useRepo(TaskRepo)
-
   const props = withDefaults(defineProps<Prop>(), {
     showCreateButton: true,
     resultsTitle: 'Search Results',
@@ -99,7 +97,7 @@
   })
 
   const currentTask = ref(
-    typeof props.taskID !== 'undefined' ? tr.withAll().find(props.taskID) : null
+    typeof props.taskID !== 'undefined' ? useTaskStore().mapp.get(props.taskID) : null
   )
 
   const results = ref<Task[]>([])
@@ -114,7 +112,7 @@
     timeThisB(
       () => {
         console.debug('recalculating tasks list for task search results')
-        const allTasks = tr.withAll().where(filterish.value(props.taskID)).get()
+        const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
         if (typeof props.batchFilter !== 'undefined')
           return props.batchFilter(props.taskID)(allTasks)
         return allTasks
@@ -160,16 +158,14 @@
     // todo: instead of doing this all separate, traversed tasks can be stored in a shared Set<number> and iteration will become much faster.
     // note: I tried storing the traversed Set in pinia but it was running into lockups.
     redundantTasks.value =
-      currentTask.value?.BulkHasRelationTo(
-        results.value.map((x) => x.id),
-        { incompleteOnly: true, useStore: true }
-      ) ?? new Map()
+      currentTask.value?.hasRelationToAny(results.value.map((x) => x.id)) ?? new Map()
   }
 
   const createTask = async () => {
     if (typeof props.search === 'undefined') return
     const toCreate: CreateTaskOptions = { title: props.search }
-    const newTask = await timeThisABAsync(tr.addAndCache, 'addAndCache', 400)(toCreate)
+    const newTask = await useTaskStore().apiCreate(toCreate)
+    if (newTask === null) throw new Error('Error creating task.')
     if (typeof props.taskID !== 'undefined') selectTask(newTask)
   }
 

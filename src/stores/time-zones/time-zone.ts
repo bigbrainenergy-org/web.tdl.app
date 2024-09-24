@@ -19,12 +19,12 @@ export interface UpdateTimeZoneOptions extends iOptions {
 }
 
 export class TimeZone extends Model implements iRecord {
-  static entity = 'time-zones'
-  static primaryKey = 'value'
+  static override entity = 'time-zones'
+  static override primaryKey = 'value'
   @Uid() declare id: number
   @Str('') declare name: string
   @Str('') declare value: string
-  static piniaOptions = {
+  static override piniaOptions = {
     persist: true
   }
 }
@@ -34,6 +34,6 @@ export class TimeZoneRepo extends GenericRepo<
   UpdateTimeZoneOptions,
   TimeZone
 > {
-  use = TimeZone
-  apidir = TimeZone.entity
+  override use = TimeZone
+  override apidir = TimeZone.entity
 }

@@ -20,17 +20,15 @@ export type Singular = Obj | SingularPrimitive
 
 export type WTF = SingularPrimitive | SingularPrimitive[] | Obj | Obj[]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isArray(value: any): value is WTF[] {
   return Array.isArray(value)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isNotArray(value: Singular | Singular[]): value is Singular {
   return !Array.isArray(value)
 }
 
-export function isSingularObject(x: unknown | unknown[]): x is object {
+export function isSingularObject(x: unknown): x is object {
   return typeof x === 'object' && isNotArray(x)
 }
 
@@ -40,7 +38,7 @@ export function isNotObject(
   return typeof x !== 'object' || isArray(x)
 }
 
-export function isSingularPrimitive(x: unknown | unknown[]): x is SingularPrimitive {
+export function isSingularPrimitive(x: unknown): x is SingularPrimitive {
   return (
     typeof x === 'boolean' ||
     typeof x === 'number' ||
