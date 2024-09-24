@@ -24,6 +24,9 @@ RUN yarn
 # Build the app
 RUN yarn build
 
+# Show installed dependencies for debugging purposes
+RUN yarn list
+
 # Starting the production / final image
 FROM node:20-slim AS final
 
