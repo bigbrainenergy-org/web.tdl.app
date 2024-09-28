@@ -13,6 +13,8 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}
+  # Get the docker image tag, e.g. `v0.0.1`
+  TAG_NAME: ${{ github.ref_name }}
 
 jobs:
   build:
@@ -97,4 +99,4 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           upload-release-assets: true
-          image: ghcr.io/bigbrainenergy-org/web.tdl.app:main
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_NAME }}
