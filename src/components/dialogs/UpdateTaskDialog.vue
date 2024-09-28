@@ -15,7 +15,7 @@
             <q-item-label class="text-h4 text-primary" lines="3" data-cy="task_title">
               {{ currentTask.title }}
             </q-item-label>
-            <TaskInputTitle :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputTitle :key="currentTask.id" v-model:task="currentTask as Task" @update:task="updateTask(currentTask.id, { title: currentTask.title })" />
             <TaskInputList :key="currentTask.id" v-model:task="currentTask as Task" />
             <TaskInputProcedures :key="currentTask.id" v-model:task="currentTask as Task" />
             <TaskInputRemindMeAt :key="currentTask.id" v-model:task="currentTask as Task" />
@@ -105,6 +105,7 @@
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { Task } from 'src/stores/tasks/task-model'
   import { arrayDelete } from 'src/utils/array-utils'
+  import { updateTask } from 'src/utils/task-utils'
 
   // HACK: The `:key="currentTask.id"` works for refreshing on task change, but isn't ideal
   // FIXME: Find a better way to switch between tasks
