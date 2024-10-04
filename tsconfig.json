@@ -1,9 +1,23 @@
 {
   "extends": "@quasar/app-vite/tsconfig-preset",
   "compilerOptions": {
-    "typeRoots": ["node_modules/@types"],
+    // `baseUrl` should be set to the current folder to allow Quasar TypeScript preset to manage paths on your behalf
     "baseUrl": ".",
+    // Pull in all type roots in node modules
+    "typeRoots": ["node_modules/@types"],
+    // Fix pinia-orm decorators: https://github.com/CodeDredd/pinia-orm/issues/1896
     "experimentalDecorators": true,
+    // Enable upcoming syntax behavior: https://www.typescriptlang.org/tsconfig/#useDefineForClassFields
     "useDefineForClassFields": true
-  }
+  },
+  "exclude": [
+    "./dist",
+    "./.quasar",
+    "./node_modules",
+    "./src-capacitor",
+    "./src-cordova",
+    "./quasar.config.*.temporary.compiled*",
+    // https://stackoverflow.com/a/72663546/1424662
+    "./cypress.config.ts"
+  ]
 }

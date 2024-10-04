@@ -12,13 +12,13 @@ export default tseslint.config(
   // NOTE: Global ignores MUST be COMPLETELY by itself, or it won't work.
   {
     ignores: [
-      '**/dist/*',
-      '**/node_modules/*',
-      '**/src-capacitor/*',
-      '**/src-electron/*',
-      '**/src-pwa/*',
-      '**/*.d.ts',
-      '.quasar',
+      './dist/**/*',
+      './node_modules/**/*',
+      './src-capacitor/**/*',
+      './src-electron/**/*',
+      './src-pwa/**/*',
+      './**/*.d.ts',
+      './.quasar/**/*',
       '.postcssrc.js',
     ]
   },
