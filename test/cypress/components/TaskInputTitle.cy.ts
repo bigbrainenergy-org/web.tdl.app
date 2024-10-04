@@ -3,12 +3,11 @@ import { Task } from 'src/stores/tasks/task-model'
 
 describe('<TaskInputTitle/>', () => {
   beforeEach(() => {
-    const task = new Task({ title: 'Example Task' })
     // FIXME: Cypress doesn't support onUpdate:task for some godsforsaken reason
     const onChangeSpy = cy.spy().as('onChangeSpy')
     cy.mount(TaskInputTitle, {
       props: {
-        task: task,
+        task: new Task({ title: 'Example Task' }),
         onChange: onChangeSpy
       }
     })
