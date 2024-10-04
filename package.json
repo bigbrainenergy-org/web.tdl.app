@@ -74,6 +74,9 @@
     "typescript-eslint": "latest",
     "vitest": "latest"
   },
+  "resolutions": {
+    "cookie": ">= 0.7.0"
+  },
   "engines": {
     "node": "20.x",
     "npm": "latest",
