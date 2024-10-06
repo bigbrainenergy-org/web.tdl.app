@@ -324,7 +324,12 @@
         throw new Error('There is already a layer zero task that is big')
     }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
-    return layerZero.value.slice(0, howManyToSelect).map((x) => x.t)
+    const shuffled = [...layerZero.value]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled.slice(0, howManyToSelect).map((x) => x.t)
   }
 
   let firstPair
