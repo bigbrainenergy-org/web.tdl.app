@@ -24,8 +24,9 @@ export default tseslint.config(
   },
   // Import recommendations for all plugins
   eslint.configs.recommended,
-  // tseslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  tseslint.configs.recommended,
+  // FIXME: recommendedTypeChecked is slow af
+  // ...tseslint.configs.recommendedTypeChecked,
   cypress.configs.recommended,
   ...vue.configs['flat/recommended'],
   {
