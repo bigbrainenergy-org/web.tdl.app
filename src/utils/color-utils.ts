@@ -8,7 +8,7 @@ export function autoContrastTextColor(backgroundColor: string) {
       // console.debug('Invalid backgroundColor hex code, returning default')
       return '#000000'
     } else {
-      const red = parseInt(input.substring(0, 0 + 2), 16)
+      const red = parseInt(input.substring(0, 0 + 2), 16);
       const green = parseInt(input.substring(2, 2 + 2), 16)
       const blue = parseInt(input.substring(4, 4 + 2), 16)
       // console.debug({ red, green, blue })
