@@ -11,27 +11,44 @@ import { useLoadingStateStore } from './stores/performance/loading-state'
 import { Procedure } from './stores/procedures/procedure'
 import { useT2Store } from './stores/t2/t2-store'
 import QuickSortLayerZeroDialog from './components/dialogs/QuickSortLayerZeroDialog.vue'
-import { storeToRefs } from 'pinia'
 import { T2 } from './stores/t2/t2-model'
 
 export class TDLAPP {
+  static openQuickSortDialog = () => {
+    return Dialog.create({
+      component: QuickSortLayerZeroDialog,
+      componentProps: {
+        objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+      }
+    })
+  }
+
   static considerOpeningQuickSort = (src: string) => {
-    const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
-      useLocalSettingsStore()
-    const { quickSortDialogActive } = storeToRefs(useLoadingStateStore())
-    if (quickSortDialogActive.value) return
+    const {
+      disableQuickSort,
+      enableQuickSortOnLayerZeroQTY,
+      enableQuickSortOnNewTask,
+      enableQuickSortBailOnBigTask,
+      quickSortBailOnTaskSize
+    } = useLocalSettingsStore()
+    const { quickSortDialogActive } = useLoadingStateStore()
+    if (quickSortDialogActive) return
     if (disableQuickSort) return
-    if (enableQuickSortOnLayerZeroQTY > 0) {
-      const layerZeroQTY = useT2Store().layerZero.length
-      if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
-        this.openQuickSortDialog()
-      }
-      if (
-        enableQuickSortOnNewTask &&
-        useT2Store().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
-      ) {
-        this.openQuickSortDialog()
-      }
+    const layerZero = useT2Store().layerZero
+    if (
+      enableQuickSortBailOnBigTask &&
+      layerZero.some((x) => x.incomplete_postreqs.length >= quickSortBailOnTaskSize)
+    ) {
+      return
+    }
+    if (layerZero.length > enableQuickSortOnLayerZeroQTY) {
+      this.openQuickSortDialog()
+    }
+    if (
+      enableQuickSortOnNewTask &&
+      useT2Store().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
+    ) {
+      this.openQuickSortDialog()
     }
   }
 
@@ -47,14 +64,6 @@ export class TDLAPP {
       component: UpdateProcedureDialog,
       componentProps: {
         procedure
-      }
-    })
-  }
-  static openQuickSortDialog = () => {
-    return Dialog.create({
-      component: QuickSortLayerZeroDialog,
-      componentProps: {
-        objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
       }
     })
   }

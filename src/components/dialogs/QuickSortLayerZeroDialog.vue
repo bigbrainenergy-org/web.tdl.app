@@ -140,7 +140,9 @@
     // enableDeeperQuickSort,
     enableQuickSortOnLayerZeroQTY,
     // enableQuickSortOnNewTask,
-    quickSortDialogMaxToShow
+    quickSortDialogMaxToShow,
+    enableQuickSortBailOnBigTask,
+    quickSortBailOnTaskSize
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: T2) => new PostWeightedTask(x)
@@ -235,6 +237,22 @@
     TDLAPP.openTask(x.id).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
+  const doASAP = (mvp: T2) => {
+    loading.value = true
+    const allOtherLayerZero = layerZero.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
+    // TODO: write a bulk_add_posts action on the model
+    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
+    allOtherLayerZero.forEach((x: PostWeightedTask) => {
+      x.t.hard_prereq_ids.push(mvp.id)
+    })
+    useT2Store()
+      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+      .then(() => {
+        tryNewPair()
+        loading.value = false
+      })
+  }
+
   const menuItems: SimpleMenuItem<T2>[] = [
     {
       label: 'Mark Complete',
@@ -255,6 +273,11 @@
       label: 'Add Prerequisite',
       icon: 'fa-solid fa-square-plus',
       action: addPres
+    },
+    {
+      label: 'Do This ASAP',
+      icon: 'fa-solid fa-fire',
+      action: doASAP
     }
   ]
 
@@ -292,6 +315,14 @@
   const generateNewPair = (): T2[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
+    if (enableQuickSortBailOnBigTask.value) {
+      if (
+        layerZero.value.filter(
+          (x) => x.t.incomplete_postreqs.length > quickSortBailOnTaskSize.value
+        ).length > 0
+      )
+        throw new Error('There is already a layer zero task that is big')
+    }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
     return layerZero.value.slice(0, howManyToSelect).map((x) => x.t)
   }
