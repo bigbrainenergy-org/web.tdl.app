@@ -243,11 +243,11 @@
 
   const doASAP = (mvp: Task) => {
     loading.value = true
-    const allOtherLayerZero = layerZero.value.filter((x: Task) => x.id !== mvp.id)
+    const allOtherLayerZero = layerZero.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
     // TODO: write a bulk_add_posts action on the model
-    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: Task) => x.id))
-    allOtherLayerZero.forEach((x: Task) => {
-      x.hard_prereq_ids.push(mvp.id)
+    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
+    allOtherLayerZero.forEach((x: PostWeightedTask) => {
+      x.t.hard_prereq_ids.push(mvp.id)
     })
     useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
       .then(() => {
@@ -321,7 +321,7 @@
     if (enableQuickSortBailOnBigTask.value) {
       if (
         layerZero.value.filter(
-          (x) => x.t.incomplete_postreqs.length > enableQuickSortOnLayerZeroQTY.value
+          (x) => x.t.incomplete_postreqs.length > quickSortBailOnTaskSize.value
         ).length > 0
       )
         throw new Error('There is already a layer zero task that is big')

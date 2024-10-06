@@ -99,22 +99,24 @@ export function openQuickSortDialog() {
 }
 
 export function considerOpeningQuickSortDialog() {
-  const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
+  const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask, enableQuickSortBailOnBigTask, quickSortBailOnTaskSize } =
     useLocalSettingsStore()
   const { quickSortDialogActive } = useLoadingStateStore()
   if (quickSortDialogActive) return
   if (disableQuickSort) return
-  if (enableQuickSortOnLayerZeroQTY > 0) {
-    const layerZeroQTY = useTaskStore().layerZero.length
-    if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
-      openQuickSortDialog()
-    }
-    if (
-      enableQuickSortOnNewTask &&
-      useTaskStore().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
-    ) {
-      openQuickSortDialog()
-    }
+  const layerZero = useTaskStore().layerZero
+  if(enableQuickSortBailOnBigTask &&
+    layerZero.some(x => x.incomplete_postreqs.length >= quickSortBailOnTaskSize)) {
+    return
+  }
+  if (layerZero.length > enableQuickSortOnLayerZeroQTY) {
+    openQuickSortDialog()
+  }
+  if (
+    enableQuickSortOnNewTask &&
+    useTaskStore().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
+  ) {
+    openQuickSortDialog()
   }
 }
 
