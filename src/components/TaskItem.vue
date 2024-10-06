@@ -14,9 +14,41 @@
       <q-item-label data-cy="task_item_title" lines="2">
         {{ task.title }}
       </q-item-label>
+      <q-item-label caption lines="2" v-if="task.notes">
+        {{ task.notes }}
+      </q-item-label>
+      <q-item-label caption v-if="showMetadata">
+        <TaskMetadata
+          v-if="!!task.remind_me_at"
+          icon="notifications_active"
+          :content="datetimeToString(task.remind_me_at)"
+        />
+        <TaskMetadata
+          v-if="!!task.deadline_at"
+          icon="fa fa-calendar-day"
+          content="Today"
+        />
+        <TaskMetadata
+          icon="description"
+          content="Notes"
+          tooltip="Has additional notes! Click to view."
+        />
+        <TaskMetadata
+          icon="fa fa-tag"
+          content="Tag here"
+          clickable
+          @metadata-clicked="alert"
+        />
+        <TaskMetadata
+          icon="fa fa-list"
+          :content="task.list?.title || 'List Name Here'"
+          clickable
+          @metadata-clicked="alert"
+        />
+      </q-item-label>
     </q-item-section>
 
-    <q-item-section v-if="task.notes" side data-cy="notes_indicator">
+    <!-- <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
           Has additional notes! Click to view.
@@ -28,18 +60,20 @@
       <q-chip v-if="taskIncompletePostreqLength" :style="taskPostreqColor">
         {{ taskIncompletePostreqLength }}
       </q-chip>
-    </q-item-section>
-    <q-item-section side>
-      <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPrerequisitesDialog(task)" />
-    </q-item-section>
+    </q-item-section> -->
+    <TaskContextMenu :task="task" />
   </q-item>
 </template>
 
 <script setup lang="ts">
+  import TaskMetadata from './TaskMetadata.vue'
+  import TaskContextMenu from './TaskContextMenu.vue'
+
   import { computed, toRef } from 'vue'
   import { usePostreqWarning } from 'src/composables/use-postreq-warning'
-  import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'
+  import { useQuasar } from 'quasar'
+import { datetimeToString } from 'src/utils/luxon-utils'
 
   const props = withDefaults(
     defineProps<{
@@ -64,6 +98,30 @@
       : 'background-color: gray;'
   )
   const { postreqQuantityWarningThreshold } = usePostreqWarning()
+
+  const showMetadata = computed(
+    () => {
+      return (
+        !!(task.value.notes) ||
+        !!(task.value.remind_me_at)
+    )
+    }
+  )
+
+  const $q = useQuasar()
+
+  function alert () {
+    $q.dialog({
+      title: 'Alert',
+      message: 'Some message'
+    }).onOk(() => {
+      // console.log('OK')
+    }).onCancel(() => {
+      // console.log('Cancel')
+    }).onDismiss(() => {
+      // console.log('I am triggered on both OK and Cancel')
+    })
+  }
 </script>
 
 <style>

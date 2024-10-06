@@ -1,21 +1,13 @@
 import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
 import DialogWrapper from '../../wrappers/DialogWrapper.vue'
 import { Task } from 'src/stores/tasks/task-model'
-// import { createTask } from 'src/utils/task-utils'
-// import { createPinia, setActivePinia } from 'pinia'
-// import { useTaskStore } from 'src/stores/tasks/task-store'
 
 describe('UpdateTaskDialog', () => {
   beforeEach(() => {
-    // setActivePinia(createPinia())
-    // cy.intercept('POST', '/tasks', { fixture: 'create_task_success.json' })
-    // const task = createTask({ title: 'Task 1' }) // FIXME: This should be returning the task created, but it doesn't
     cy.mount(DialogWrapper, {
       props: {
         component: UpdateTaskDialog,
         componentProps: {
-          // task: task
-          // task: useTaskStore().hardGet(1) // This is way too tightly coupled atm
           task: new Task({ title: 'Task 1' })
         }
       }
