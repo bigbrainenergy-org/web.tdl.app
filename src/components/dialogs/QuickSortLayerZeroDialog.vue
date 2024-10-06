@@ -241,6 +241,21 @@
     openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
+  const doASAP = (mvp: Task) => {
+    loading.value = true
+    const allOtherLayerZero = layerZero.value.filter((x: Task) => x.id !== mvp.id)
+    // TODO: write a bulk_add_posts action on the model
+    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: Task) => x.id))
+    allOtherLayerZero.forEach((x: Task) => {
+      x.hard_prereq_ids.push(mvp.id)
+    })
+    useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+      .then(() => {
+        tryNewPair()
+        loading.value = false
+      })
+  }
+
   const menuItems: SimpleMenuItem<Task>[] = [
     {
       label: 'Mark Complete',
@@ -354,21 +369,6 @@
     })
     useTaskStore()
       .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(() => {
-        tryNewPair()
-        loading.value = false
-      })
-  }
-
-  const doASAP = (mvp: Task) => {
-    loading.value = true
-    const allOtherLayerZero = layerZero.value.filter((x: Task) => x.id !== mvp.id)
-    // TODO: write a bulk_add_posts action on the model
-    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: Task) => x.id))
-    allOtherLayerZero.forEach((x: Task) => {
-      x.hard_prereq_ids.push(mvp.id)
-    })
-    useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
       .then(() => {
         tryNewPair()
         loading.value = false
