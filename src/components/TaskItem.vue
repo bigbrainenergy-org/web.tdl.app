@@ -24,11 +24,8 @@
       </q-avatar>
     </q-item-section>
 
-    <q-item-section v-if="taskIncompletePostreqLength" side>
-      <q-chip v-if="taskIncompletePostreqLength" :style="taskPostreqColor">
-        {{ taskIncompletePostreqLength }}
-      </q-chip>
-    </q-item-section>
+    <TaskPostreqInfoChip :task="task" />
+    
     <q-item-section side>
       <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPrerequisitesDialog(task)" />
     </q-item-section>
@@ -36,10 +33,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, toRef } from 'vue'
-  import { usePostreqWarning } from 'src/composables/use-postreq-warning'
+  import { toRef } from 'vue'
   import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'
+import TaskPostreqInfoChip from './TaskPostreqInfoChip.vue'
 
   const props = withDefaults(
     defineProps<{
@@ -54,16 +51,6 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
-  const taskIncompletePostreqLength = computed(
-    // REVIEW: grabPostreqs is likely a source of significant lag
-    () => task.value.incomplete_postreqs.length
-  )
-  const taskPostreqColor = computed(
-    () => taskIncompletePostreqLength.value > postreqQuantityWarningThreshold.value
-      ? 'background-color: red;'
-      : 'background-color: gray;'
-  )
-  const { postreqQuantityWarningThreshold } = usePostreqWarning()
 </script>
 
 <style>

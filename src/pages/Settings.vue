@@ -39,6 +39,8 @@
           @click="openToolbarSettingsDialog"
         />
 
+        <q-btn class="q-ma-md" icon="settings" color="indigo" label="Task Appearance Settings" @click="openTaskAppearanceSettingsDialog" />
+
         <q-separator class="q-my-md" />
 
         <PasswordChangeForm />
@@ -73,6 +75,7 @@
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
   import DefaultPageSwitcher from 'src/components/inputs/DefaultPageSwitcher.vue'
   import CurrentTimeIndicator from 'src/components/CurrentTimeIndicator.vue'
+import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 
@@ -96,6 +99,12 @@
   const openToolbarSettingsDialog = () => {
     $q.dialog({
       component: ToolbarSettingsDialog
+    })
+  }
+
+  const openTaskAppearanceSettingsDialog = () => {
+    $q.dialog({
+      component: TaskAppearanceSetting
     })
   }
 </script>

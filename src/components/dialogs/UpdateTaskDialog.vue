@@ -224,9 +224,11 @@
     })
   }
 
+  // FIXME: currently these do not update the pres/posts lists in the update task dialog.
   const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value as Task)
   const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
 
+  // FIXME: this destroys everything
   const mvpPostrequisite = async (post: Task) => {
     console.debug(post)
     const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)

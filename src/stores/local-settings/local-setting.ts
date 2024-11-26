@@ -10,7 +10,7 @@ interface LocalSettingsState {
   taskSearch: string
   currentBaseQueryMode: string
   currentFilteringMode: string
-  currentSortingMode: string
+  currentSortingMode: 'sortByPostreqs' | 'sortByAgenda'
   selectedList: string
   selectedTags: Array<string>
   tagsFilter: string
@@ -52,6 +52,7 @@ interface LocalSettingsState {
   toolbarButtons: RouteTab[]
   enableQuickSortBailOnBigTask: boolean
   quickSortBailOnTaskSize: number
+  taskPostreqInfoView: 'Quantity' | 'Strict'
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -127,7 +128,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       quickSortDialogMaxToShow: 2,
       toolbarButtons: originalToolbarButtons,
       enableQuickSortBailOnBigTask: false,
-      quickSortBailOnTaskSize: 9
+      quickSortBailOnTaskSize: 9,
+      taskPostreqInfoView: 'Quantity'
     }
   },
   persist: true,

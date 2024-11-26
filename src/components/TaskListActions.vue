@@ -1,5 +1,6 @@
 <template>
   <SettingsButton v-model:settings="tasksPageSettings" />
+  <q-btn text-color="primary" icon="sort" @click="toggleAgenda" />
   <q-space />
   <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
   <q-space />
@@ -14,16 +15,21 @@
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { openQuickSortDialog, openSearchDialog } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'
-
+  
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
 
   const localSettingsStore = useLocalSettingsStore()
 
-  const { layerZeroOnly, hideCompleted, autoScalePriority } = storeToRefs(localSettingsStore)
+  const { layerZeroOnly, hideCompleted, autoScalePriority, currentSortingMode } = storeToRefs(localSettingsStore)
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
     'Incomplete Only': hideCompleted,
     'Auto Scale Priority': autoScalePriority
   })
+
+  const toggleAgenda = () => {
+    if(currentSortingMode.value === 'sortByAgenda') currentSortingMode.value = 'sortByPostreqs'
+    else currentSortingMode.value = 'sortByAgenda'
+  }
 </script>

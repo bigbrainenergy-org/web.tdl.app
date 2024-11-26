@@ -22,5 +22,7 @@
   }
   const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task)
 
+  // FIXME: useTasks recalculates tasks for every list item on-screen.
+  // This should only be recalculated once on the page.
   const { tasks } = useTasks()
 </script>
