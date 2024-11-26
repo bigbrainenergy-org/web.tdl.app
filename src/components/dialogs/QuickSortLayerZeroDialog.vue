@@ -99,22 +99,18 @@
 <script setup lang="ts">
   import { Notify, useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { SimpleMenuItem } from 'src/utils/types'
   import { onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { useElementSize } from '@vueuse/core'
-  import {
-    addPrerequisitesDialog,
-    openTaskSlicerDialog,
-    openUpdateTaskDialog
-  } from 'src/utils/dialog-utils'
-  import { notifySuccess } from 'src/utils/notification-utils'
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
-  import { Task } from 'src/stores/tasks/task-model'
-  import { useTaskStore } from 'src/stores/tasks/task-store'
+import { useTaskStore } from 'src/stores/tasks/task-store'
+import { Task } from 'src/stores/tasks/task-model'
+import { notifySuccess } from 'src/utils/notification-utils'
+import { SimpleMenuItem } from 'src/utils/types'
+import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -241,6 +237,22 @@
     openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
+  const doASAP = (mvp: Task) => {
+    loading.value = true
+    const allOtherLayerZero = layerZero.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
+    // TODO: write a bulk_add_posts action on the model
+    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
+    allOtherLayerZero.forEach((x: PostWeightedTask) => {
+      x.t.hard_prereq_ids.push(mvp.id)
+    })
+    useTaskStore()
+      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+      .then(() => {
+        tryNewPair()
+        loading.value = false
+      })
+  }
+
   const menuItems: SimpleMenuItem<Task>[] = [
     {
       label: 'Mark Complete',
@@ -306,13 +318,18 @@
     if (enableQuickSortBailOnBigTask.value) {
       if (
         layerZero.value.filter(
-          (x) => x.t.incomplete_postreqs.length > enableQuickSortOnLayerZeroQTY.value
+          (x) => x.t.incomplete_postreqs.length > quickSortBailOnTaskSize.value
         ).length > 0
       )
         throw new Error('There is already a layer zero task that is big')
     }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
-    return layerZero.value.slice(0, howManyToSelect).map((x) => x.t)
+    const shuffled = [...layerZero.value]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled.slice(0, howManyToSelect).map((x) => x.t)
   }
 
   let firstPair
@@ -354,21 +371,6 @@
     })
     useTaskStore()
       .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(() => {
-        tryNewPair()
-        loading.value = false
-      })
-  }
-
-  const doASAP = (mvp: Task) => {
-    loading.value = true
-    const allOtherLayerZero = layerZero.value.filter((x: Task) => x.id !== mvp.id)
-    // TODO: write a bulk_add_posts action on the model
-    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: Task) => x.id))
-    allOtherLayerZero.forEach((x: Task) => {
-      x.hard_prereq_ids.push(mvp.id)
-    })
-    useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
       .then(() => {
         tryNewPair()
         loading.value = false

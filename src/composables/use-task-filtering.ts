@@ -5,9 +5,11 @@ import { filterByAgenda, filterByList } from 'src/utils/task-utils'
 
 export function useTaskFiltering() {
   const localSettingsStore = useLocalSettingsStore()
-  const { currentFilteringMode, selectedList } = storeToRefs(localSettingsStore)
+  const { currentFilteringMode, selectedList, hideCompleted } = storeToRefs(localSettingsStore)
 
   function filterTasks(tasks: Task[]): Task[] {
+    if(hideCompleted.value) tasks = tasks.filter(x => !x.completed)
+    // todo: must respond to incompleteOnly and possibly other local settings too.
     if (currentFilteringMode.value === 'filterByList') {
       return filterByList(tasks, selectedList.value)
     } else if (currentFilteringMode.value === 'filterByAgenda') {
