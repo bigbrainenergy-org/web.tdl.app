@@ -151,7 +151,8 @@
         return qkeys.length > 0
       }
       while (hasKeys()) {
-        if (hundos > 4 * addedToQueue.size) {
+        // if (hundos > 4 * addedToQueue.size) { // get back to this speed
+        if (hundos > 32 * addedToQueue.size) {
           console.warn('agenda calc is taking too long. bailing out. Also TODO')
           break
         }

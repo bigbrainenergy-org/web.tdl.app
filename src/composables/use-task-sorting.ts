@@ -10,7 +10,7 @@ export function useTaskSorting() {
   function sortTasks(tasks: Task[]): Task[] {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
-    } else if(currentSortingMode.value === 'sortByAgenda') {
+    } else if(currentSortingMode.value === 'sortByAgenda') { // bug: currently adding and removing rules puts task store in an un-agendaable state. new as of use task sort directive
       const firstLayer = tasks.filter(x => !x.completed && x.incomplete_prereqs.length === 0)
       firstLayer.sort((a, b) => b.incomplete_postreqs.length - a.incomplete_postreqs.length)
       const finalList = new Set<Task>()
@@ -39,7 +39,7 @@ export function useTaskSorting() {
           return qkeys.length > 0
         }
         while (hasKeys()) {
-          if (hundos > 4 * addedToQueue.size) {
+          if (hundos > 4 * addedToQueue.size) { // bug: this is where it bails out after adding or removing a rule
             console.warn('agenda calc is taking too long. baling out. Add to TODOS')
             break
           }

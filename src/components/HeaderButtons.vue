@@ -6,7 +6,7 @@
       color="green"
       icon="fa-solid fa-plus"
       data-cy="create_task_button"
-      @click="openCreateTaskDialog()"
+      @click="openCreateTaskDialog().onDismiss(considerOpeningQuickSortDialog)"
     />
     <q-btn
       v-if="currentRouteName === 'Settings'"
@@ -38,7 +38,8 @@
   import {
     openCreateTaskDialog,
     //openQuickSortDialog,
-    openCreateProcedureDialog
+    openCreateProcedureDialog,
+    considerOpeningQuickSortDialog
   } from 'src/utils/dialog-utils'
   import { pullFresh } from 'src/utils/sync-utils'
   // import { useLoadingStateStore } from 'src/stores/performance/loading-state'

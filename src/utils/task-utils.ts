@@ -85,7 +85,7 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
       return qkeys.length > 0
     }
     while (hasKeys()) {
-      if (hundos > 4 * addedToQueue.size) {
+      if (hundos > 4 * addedToQueue.size) { // bug: this was working
         console.warn('agenda calc is taking too long. bailing out. Also TODO')
         break
       }

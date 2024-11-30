@@ -3,7 +3,7 @@
   <q-dialog ref="dialogRef" maximized data-cy="update_task_dialog" @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
-        <div class="text-h6">Task Details</div>
+        <div class="text-h6">Task {{currentTask.id}} Details</div>
         <ButtonBarComponent :buttons="topButtonBar" :target="currentTask as Task" />
       </q-card-section>
 
@@ -11,17 +11,17 @@
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
-          <div class="col-12 col-md">
+          <div class="col-12 col-md" :key="currentTask.id">
             <q-item-label class="text-h4 text-primary" lines="3" data-cy="task_title">
               {{ currentTask.title }}
             </q-item-label>
-            <TaskInputTitle :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputList :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputProcedures :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputRemindMeAt :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputEnergy :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputTitle v-model:task="currentTask as Task" />
+            <TaskInputList v-model:task="currentTask as Task" />
+            <TaskInputProcedures v-model:task="currentTask as Task" />
+            <TaskInputRemindMeAt v-model:task="currentTask as Task" />
+            <TaskInputEnergy v-model:task="currentTask as Task" />
             <br>
-            <TaskInputNotes :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputNotes v-model:task="currentTask as Task" />
           </div>
           <div class="col-12 col-md">
             <IncompleteOnlyToggle />
@@ -71,11 +71,9 @@
   import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
   import { computed, ref } from 'vue'
   import DependencyList from '../DependencyList.vue'
-  import { syncWithBackend } from 'src/utils/sync-utils'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
   import {
-    errorNotification,
     handleError,
     handleSuccess,
     notifySuccess
@@ -104,7 +102,6 @@
 
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { Task } from 'src/stores/tasks/task-model'
-  import { arrayDelete } from 'src/utils/array-utils'
 
   // HACK: The `:key="currentTask.id"` works for refreshing on task change, but isn't ideal
   // FIXME: Find a better way to switch between tasks
@@ -194,8 +191,9 @@
 
   const { hideCompleted } = storeToRefs(usr)
 
-  const allPres = computed(() => currentTask.value.grabPrereqs(hideCompleted.value))
-  const allPosts = computed(() => currentTask.value.grabPostreqs(hideCompleted.value))
+  const currentTaskFromStore = computed(() => useTaskStore().hardGet(currentTask.value.id))
+  const allPres = computed(() => currentTaskFromStore.value.grabPrereqs(hideCompleted.value))
+  const allPosts = computed(() => currentTaskFromStore.value.grabPostreqs(hideCompleted.value))
 
   function setCurrentTask(newTask: Task) {
     console.debug('setCurrentTask')
@@ -231,22 +229,32 @@
   // FIXME: this destroys everything
   const mvpPostrequisite = async (post: Task) => {
     console.debug(post)
-    const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)
-    for (let i = 0; i < allOtherPosts.length; i++) {
-      const pid = allOtherPosts[i].id
-      arrayDelete(currentTask.value.hard_postreq_ids, pid)
-      post.hard_postreq_ids.push(pid)
+    const allPostreqs = currentTaskFromStore.value.grabPostreqs(false)
+    for (let i = 0; i < allPostreqs.length; i++) {
+      const tmp = allPostreqs[i]
+      console.debug(`now evaluating ${tmp.title}`)
+      if(tmp.id === post.id) {
+        console.debug(`skipping this task because it is the post being promoted to mvp: ${tmp.title}`)
+        continue
+      }
+      if(tmp.completed) {
+        console.debug(`skipping this task because it is already completed: ${tmp.title}`)
+        continue
+      }
+      allPostreqs.splice(i--, 1)
+      if(post.hard_postreq_ids.includes(tmp.id)) {
+        console.debug(`removed postreq from original, but not adding to mvp as it is already a postreq of mvp: ${tmp.title}`)
+      }
+      else post.hard_postreq_ids.push(tmp.id)
     }
 
-    await useTaskStore().apiUpdate(currentTask.value.id, {
-      hard_postreq_ids: currentTask.value.hard_postreq_ids
-    })
+    await useTaskStore().apiUpdate(currentTask.value.id, { hard_postreq_ids: [post.id] })
     await useTaskStore().apiUpdate(post.id, { hard_postreq_ids: post.hard_postreq_ids })
 
-    const syncResult = await syncWithBackend()
-    if (syncResult === 1)
-      errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
-    else notifySuccess('Refreshed All')
+    // const syncResult = await syncWithBackend()
+    // if (syncResult === 1)
+    //   errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+    // else notifySuccess('Refreshed All')
   }
 
   const insertBetweenPre = async (payload: { task: Task }) => {

@@ -217,14 +217,19 @@ export const useTaskStore = defineStore('tasks', {
         notifySuccess('Added the dependency.')
       }, handleError('Failed to add the dependency.'))
     },
-    removeRule(first_id: number, second_id: number) {
+    removeRule(first_id: number, second_id: number) { // BUG: when used for remove Pre on the updateTaskDialog, the pres list isn't updating. addPre works; removePre doesn't. removePost works.
       const first = this.hardGet(first_id)
       const second = this.hardGet(second_id)
       arrayDelete(first.hard_postreq_ids, second_id)
       arrayDelete(second.hard_prereq_ids, first_id)
       const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       return this.apiUpdate(first.id, first_payload).then(
-        handleSuccess('Removed the dependency.'),
+        () => {
+          notifySuccess('Removed the dependency')
+          const updatedSecond = this.updateSingle(second)
+          updatedSecond.fullSyncPosts()
+          updatedSecond.fullSyncPres()
+        },
         handleError('Failed to remove the dependency.')
       )
     }

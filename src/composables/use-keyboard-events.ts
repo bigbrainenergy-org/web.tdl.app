@@ -20,7 +20,7 @@ export function useKeyboardEvents(keyDownActions: KeyActionMap, keyUpActions: Ke
 
   function handleKeyDown(event: KeyboardEvent) {
     const normalizedKey = normalizeKey(event)
-    console.log('KeyDown: ' + normalizedKey)
+    // console.log('KeyDown: ' + normalizedKey)
     const action = keyDownActions[normalizedKey]
     if (action) {
       action(event)
@@ -29,7 +29,7 @@ export function useKeyboardEvents(keyDownActions: KeyActionMap, keyUpActions: Ke
 
   function handleKeyUp(event: KeyboardEvent) {
     const normalizedKey = normalizeKey(event)
-    console.log('KeyUp: ' + normalizedKey)
+    // console.log('KeyUp: ' + normalizedKey)
     const action = keyUpActions[normalizedKey]
     if (action) {
       action(event)

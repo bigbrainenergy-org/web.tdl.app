@@ -5,7 +5,7 @@
   <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
   <q-space />
   <q-btn icon="fa-solid fa-signs-post" class="text-primary" @click="openQuickSortDialog" />
-  <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
+  <q-btn icon="fa-solid fa-search" class="text-primary" @click="openBespokeSearchDialog()" />
 </template>
 
 <script setup lang="ts">
@@ -13,7 +13,7 @@
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import { openQuickSortDialog, openSearchDialog } from 'src/utils/dialog-utils'
+  import { openQuickSortDialog, openBespokeSearchDialog } from 'src/utils/dialog-utils'
   import { Task } from 'src/stores/tasks/task-model'
   
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
