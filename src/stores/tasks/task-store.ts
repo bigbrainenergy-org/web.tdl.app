@@ -11,7 +11,7 @@ import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
 import { retrieve } from './task-utils'
 import { hardCheck } from 'src/utils/type-utils'
-import { handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
+import { handleError, notifySuccess } from 'src/utils/notification-utils'
 import { arrayDelete } from 'src/utils/array-utils'
 import { Queue } from 'src/utils/types'
 
@@ -227,6 +227,8 @@ export const useTaskStore = defineStore('tasks', {
         () => {
           notifySuccess('Removed the dependency')
           const updatedSecond = this.updateSingle(second)
+          // updatedSecond.hard_prereqs.forEach((x) => x.fullSyncPosts())
+          // updatedSecond.hard_postreqs.forEach((x) => x.fullSyncPres())
           updatedSecond.fullSyncPosts()
           updatedSecond.fullSyncPres()
         },

@@ -10,7 +10,7 @@
 
   import { useMeta } from 'quasar'
   import { useTasks } from 'src/composables/use-tasks'
-  import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { considerOpeningQuickSortDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { playCheckboxSound } from 'src/utils/sound-utils'
   import { Task } from 'src/stores/tasks/task-model'
 
@@ -20,7 +20,7 @@
     playCheckboxSound(task.completed)
     task.updateTaskCompletionStatus()
   }
-  const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task)
+  const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task).onDismiss(considerOpeningQuickSortDialog)
 
   // FIXME: useTasks recalculates tasks for every list item on-screen.
   // This should only be recalculated once on the page.
