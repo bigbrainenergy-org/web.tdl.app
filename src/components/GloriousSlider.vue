@@ -27,7 +27,7 @@
   </q-item>
 </template>
 <script setup lang="ts">
-  import { GloriousSliderProp } from 'src/utils/glorious-utils'
+  import { GloriousSliderProp } from '../utils/glorious-utils'
   import { computed } from 'vue'
 
   const props = withDefaults(defineProps<GloriousSliderProp>(), {
