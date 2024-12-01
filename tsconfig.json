@@ -1,9 +1,3 @@
 {
-  "extends": "./.quasar/tsconfig.json",
-  "compilerOptions": {
-    "typeRoots": ["node_modules/@types"],
-    "baseUrl": ".",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": true
-  }
+  "extends": "./.quasar/tsconfig.json"
 }
