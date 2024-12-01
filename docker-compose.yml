@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   web-tdl-app:
     image: joshbuker/web-tdl-app:latest
