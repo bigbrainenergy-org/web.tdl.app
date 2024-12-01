@@ -1,5 +1,6 @@
 {
   "name": "web-tdl-app",
+  "type": "module",
   "version": "0.0.1",
   "description": "TDL App by Big Brain Energy",
   "productName": "TDL App",
@@ -26,7 +27,8 @@
     "test:e2e:ci": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://127.0.0.1:8080 \"cypress run --e2e\"",
     "test:component": "cross-env NODE_ENV=test cypress open --component",
     "test:component:ci": "cross-env NODE_ENV=test cypress run --component",
-    "test:everything": "yarn audit && yarn lint && yarn test:unit:ci && yarn test:component:ci && yarn test:e2e:ci"
+    "test:everything": "yarn audit && yarn lint && yarn test:unit:ci && yarn test:component:ci && yarn test:e2e:ci",
+    "postinstall": "quasar prepare"
   },
   "dependencies": {
     "@capacitor/core": "latest",
@@ -72,7 +74,9 @@
     "prettier": "latest",
     "typescript": "5.5.x",
     "typescript-eslint": "latest",
-    "vitest": "latest"
+    "vite-plugin-checker": "^0.8.0",
+    "vitest": "latest",
+    "vue-tsc": "2"
   },
   "engines": {
     "node": "20.x",

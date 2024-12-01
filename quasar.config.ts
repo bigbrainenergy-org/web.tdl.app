@@ -11,8 +11,9 @@
 import { configure } from 'quasar/wrappers'
 import { resolve } from 'path'
 import { mergeConfig } from 'vite'
+import { defineConfig } from '#q-app/wrappers'
 
-export default configure(function (/* ctx */) {
+export default defineConfig((/* ctx */) => {
   return {
     // https://quasar.dev/quasar-cli-vite/supporting-ts
     supportTS: {
@@ -54,6 +55,14 @@ export default configure(function (/* ctx */) {
         node: 'node20'
       },
 
+      typescript: {
+        strict: true,
+        vueShim: true,
+        extendTSConfig (tsConfig) {
+          // hooks for tsconfig
+        }
+      },
+
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
@@ -79,7 +88,7 @@ export default configure(function (/* ctx */) {
       },
       // viteVuePluginOptions: {},
 
-      // vitePlugins: [
+      vitePlugins: [
       //   ['@intlify/unplugin-vue-i18n', {
       //     // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
       //     // compositionOnly: false,
@@ -91,7 +100,13 @@ export default configure(function (/* ctx */) {
       //     // you need to set i18n resource including paths !
       //     include: resolve(__dirname, './src/i18n/**')
       //   }]
-      // ]
+        ['vite-plugin-checker', {
+          vueTsc: true,
+          eslint: {
+            lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"'
+          }
+        }, { server: false }]
+      ]
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
@@ -186,7 +201,8 @@ export default configure(function (/* ctx */) {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-browser-extensions/configuring-bex
     bex: {
-      contentScripts: ['my-content-script']
+      extraScripts: []
+      // contentScripts: ['my-content-script']
 
       // extendBexScriptsConf (esbuildConf) {}
       // extendBexManifestJson (json) {}

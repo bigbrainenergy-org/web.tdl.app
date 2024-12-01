@@ -20,6 +20,8 @@ export default tseslint.config(
       '**/*.d.ts',
       '.quasar',
       '.postcssrc.js',
+      '.eslintrc.cjs',
+      '/quasar.config.*.temporary.compiled*'
     ]
   },
   // Import recommendations for all plugins
@@ -63,6 +65,10 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports' }
+      ],
       'vue/attribute-hyphenation': 'off',
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',
