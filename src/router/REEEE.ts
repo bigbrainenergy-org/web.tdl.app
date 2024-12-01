@@ -1,12 +1,12 @@
-import { Override } from 'src/utils/type-utils'
-import {
+import type { Override } from 'src/utils/type-utils'
+import type {
   RouteRecordMultipleViews,
   RouteRecordMultipleViewsWithChildren,
   RouteRecordRedirect,
   RouteRecordSingleView,
   RouteRecordSingleViewWithChildren
 } from 'vue-router'
-import { RouteName, RoutePath } from './routes'
+import type { RouteName, RoutePath } from './routes'
 
 export const PageNameBuiltins = ['', '/'] as const
 

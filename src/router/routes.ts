@@ -1,4 +1,5 @@
-import { PageNameBuiltins, StronglyTypedRouteRecordRaw } from './REEEE'
+import type { StronglyTypedRouteRecordRaw } from './REEEE'
+import { PageNameBuiltins } from './REEEE'
 
 // Add your page names here. Formatting:
 // - Capitalize first letter
@@ -10,7 +11,6 @@ const PageNames = [
   'Tree',
   'Settings',
   'Graph',
-  'Agenda',
   'Routines',
   'Login',
   'Empty',

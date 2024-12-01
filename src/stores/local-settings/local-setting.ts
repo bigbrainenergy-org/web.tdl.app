@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { RouteTab } from 'src/utils/types'
+import type { RouteTab } from 'src/utils/types'
 // import { Model } from 'pinia-orm'
 // import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
 
@@ -67,13 +67,6 @@ const originalToolbarButtons: RouteTab[] = [
     icon: 'self_improvement',
     to: '/focus',
     label: 'Focus',
-    enabled: true,
-    default: false
-  },
-  {
-    icon: 'fa-solid fa-inbox',
-    to: '/agenda',
-    label: 'Agenda',
     enabled: true,
     default: false
   },
