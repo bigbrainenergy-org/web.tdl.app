@@ -207,11 +207,11 @@ export function addPostrequisiteDialog(currentTask: Task) {
   })
 }
 
-export function quickSortPostreqsDialog(parentTask: Task) {
+export function quickSortPostreqsDialog(parentTaskId: number) {
   return Dialog.create({
     component: QuickSortPostsOfTaskDialog,
     componentProps: {
-      parentTask
+      parentTaskId
     }
   })
 }

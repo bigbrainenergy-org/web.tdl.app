@@ -6,7 +6,6 @@
     "exactOptionalPropertyTypes": false // exactOptionalPropertyTypes false is best false
   },
   "exclude": [
-    "*.config.mts",
-    "*.config.ts"
+    "*.config.mts"
   ]
 }

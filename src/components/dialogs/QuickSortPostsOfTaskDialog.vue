@@ -9,30 +9,14 @@
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
         <div class="text-h6">Which task should come first?</div>
-        <div class="text-h6">{{ postreqsToSort.length }} Layer Zero Tasks</div>
+        <div class="text-h6">{{ postreqsToSort.length }} Postrequisites</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
           <q-btn icon="fa-solid fa-gear" class="text-white">
-            <q-popup-proxy class="q-pa-md">
+            <q-popup-proxy class="q-pa-md" style="width: 200px;">
               <q-item-section>
                 <q-item-label lines="2">{{ 'Settings' }}</q-item-label>
               </q-item-section>
-              <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
-              <!-- <GloriousToggle
-                v-model:model-value="enableDeeperQuickSort"
-                label="Deeper Quick Sort"
-              /> -->
-              <GloriousSlider
-                v-model:model-value="enableQuickSortOnLayerZeroQTY"
-                :min="1"
-                :max="15"
-                :step="1"
-                cute-name="Max Layer Zero Tasks"
-              />
-              <!-- <GloriousToggle
-                v-model:model-value="enableQuickSortOnNewTask"
-                label="Quick Sort on Any Task w/o Postreqs"
-              /> -->
               <GloriousSlider
                 v-model:model-value="quickSortDialogMaxToShow"
                 :min="2"
@@ -112,6 +96,7 @@
   import type { SimpleMenuItem } from 'src/utils/types'
   import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { hardCheck } from 'src/utils/type-utils'
+  import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
 
   interface qspotdProps {
     parentTaskId: number
@@ -168,6 +153,8 @@
   })
 
   const loading = ref(false)
+  // const userMax = ref(6)
+  // const samplesPerSample = computed(() => Math.min(Math.max(2, Math.ceil(postreqsToSort.value.length/2)), userMax.value))
 
   // type pair<T> = { a: T; b: T }
   // let skippedPairs: pair<Task>[] = []
@@ -305,7 +292,6 @@
   const generateNewPair = (): Task[] => {
     const metLayerZeroLengthObjective = l0len.value <= 1
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
-    
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
     const shuffled = [...postreqsToSort.value]
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -344,21 +330,19 @@
     }
   }
 
-  const makeSelection = (mvp: Task) => { // TODO: probably time to genericize the mvp task function
+  const makeSelection = async (mvp: Task) => { // TODO: probably time to genericize the mvp task function
     loading.value = true
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     const selected_ids = selected_tasks.map((x) => x.id)
     mvp.hard_postreq_ids.push(...selected_ids)
-    parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => selected_ids.includes(x))
+    parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => !selected_ids.includes(x))
+    await useTaskStore().apiUpdate(parentTask.value.id, { hard_postreq_ids: parentTask.value.hard_postreq_ids })
     selected_tasks.forEach((x) => {
       x.hard_prereq_ids.push(mvp.id)
     })
-    useTaskStore()
-      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(() => {
-        tryNewPair()
-        loading.value = false
-      })
+    await useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+    tryNewPair()
+    loading.value = false
   }
 
   const skip = () => {

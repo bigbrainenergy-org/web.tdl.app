@@ -227,7 +227,7 @@
   // FIXME: currently these do not update the pres/posts lists in the update task dialog.
   const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value as Task)
   const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
-  const openSortPostreqsDialog = () => quickSortPostreqsDialog(currentTask.value as Task)
+  const openSortPostreqsDialog = () => quickSortPostreqsDialog(currentTask.value.id)
 
   // FIXME: this destroys everything
   const mvpPostrequisite = async (post: Task) => {

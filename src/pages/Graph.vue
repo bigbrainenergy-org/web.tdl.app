@@ -1,23 +1,25 @@
 <template>
-  <TaskPage :tasks="tasks">
-    <TaskGraph :tasks="tasks" />
-  </TaskPage>
+  <div>
+    <!-- <TaskPage :tasks="tasks">
+      <TaskGraph :tasks="tasks" />
+    </TaskPage> -->
 
-  <q-page class="q-pa-lg">
-    <div class="row items-stretch justify-evenly">
-      <div class="full-height">
-        <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
-          <q-card-actions>
-            <SettingsButton v-model:settings="graphSettings" name="Graph Settings" />
-            <q-space />
-            <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
-            <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
-          </q-card-actions>
-          <svg id="graphElement" ref="graphRef" />
-        </q-card>
+    <q-page class="q-pa-lg">
+      <div class="row items-stretch justify-evenly">
+        <div class="full-height">
+          <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
+            <q-card-actions>
+              <SettingsButton v-model:settings="graphSettings" name="Graph Settings" />
+              <q-space />
+              <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
+              <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
+            </q-card-actions>
+            <svg id="graphElement" ref="graphRef" />
+          </q-card>
+        </div>
       </div>
-    </div>
-  </q-page>
+    </q-page>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -32,6 +34,7 @@
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import TaskPage from 'src/components/TaskPage.vue'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
 
