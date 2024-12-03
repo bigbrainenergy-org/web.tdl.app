@@ -34,7 +34,7 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { handleError } from 'src/utils/notification-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   const props = defineProps<{ task: Task }>()
 

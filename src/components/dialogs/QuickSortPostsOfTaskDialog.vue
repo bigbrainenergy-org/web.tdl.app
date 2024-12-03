@@ -107,17 +107,18 @@
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
-  import { SimpleMenuItem } from 'src/utils/types'
+  import type { SimpleMenuItem } from 'src/utils/types'
   import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
-import { hardCheck } from 'src/utils/type-utils'
+  import { hardCheck } from 'src/utils/type-utils'
 
   interface qspotdProps {
-    parentTask: Task
+    parentTaskId: number
   }
 
   const props = defineProps<qspotdProps>()
+  const parentTask = ref(useTaskStore().hardGet(props.parentTaskId))
 
   const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
   const emit = defineEmits([...useDialogPluginComponent.emits])
@@ -150,7 +151,7 @@ import { hardCheck } from 'src/utils/type-utils'
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-  const postreqsToSort = computed(() => (props.parentTask.incomplete_postreqs as Task[]).map(postWeightedTask))
+  const postreqsToSort = computed(() => (parentTask.value.incomplete_postreqs as Task[]).map(postWeightedTask))
 
   // const layerZero = computed(() => {
   //   const layerZeroTasks = useTaskStore().layerZero
@@ -227,10 +228,10 @@ import { hardCheck } from 'src/utils/type-utils'
     // TODO: write a bulk_add_posts action on the model
     mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
     // remove all the other tasks from parent task, leaving only the mvp id
-    props.parentTask.hard_postreq_ids = [mvp.id]
+    parentTask.value.hard_postreq_ids = [mvp.id]
     allOtherLayerZero.forEach((x: PostWeightedTask) => {
       x.t.hard_prereq_ids.push(mvp.id)
-      const parentTaskIndex = x.t.hard_prereq_ids.findIndex(y => y === props.parentTask.id)
+      const parentTaskIndex = x.t.hard_prereq_ids.findIndex(y => y === parentTask.value.id)
       if(parentTaskIndex >= 0) x.t.hard_prereq_ids.splice(parentTaskIndex, 1)
     })
     // todo: figure out what all we should save here.
@@ -348,7 +349,7 @@ import { hardCheck } from 'src/utils/type-utils'
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     const selected_ids = selected_tasks.map((x) => x.id)
     mvp.hard_postreq_ids.push(...selected_ids)
-    props.parentTask.hard_postreq_ids = props.parentTask.hard_postreq_ids.filter(x => selected_ids.includes(x))
+    parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => selected_ids.includes(x))
     selected_tasks.forEach((x) => {
       x.hard_prereq_ids.push(mvp.id)
     })

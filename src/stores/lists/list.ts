@@ -1,9 +1,10 @@
 import { Model } from 'pinia-orm'
-import iRecord, { iOptions } from '../generics/i-record'
+import type { iOptions } from '../generics/i-record'
+import type iRecord from '../generics/i-record'
 import { Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 export interface CreateListOptions {
   title: string

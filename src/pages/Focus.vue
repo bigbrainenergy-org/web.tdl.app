@@ -101,7 +101,7 @@
   import { useMeta } from 'quasar'
   // import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { computed } from 'vue'
   import {
@@ -125,7 +125,7 @@
   })
 
   const currentTask = computed((): Task | null =>
-    layerZero.value.length ? layerZero.value[0] : null
+    layerZero.value.length ? layerZero.value[0]! : null // todo: seriously we need to figure out why ! is suddenly needed everywhere
   )
   const nextUp = computed((): Task | null => {
     let arr: Array<Task> = Array.from(layerZero.value)
@@ -136,6 +136,6 @@
       arr = arr.filter((x) => x.id !== currentTask.value!.id)
     }
     arr.sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)
-    return arr.length > 0 ? arr[0] : null
+    return arr.length > 0 ? arr[0]! : null // arr[0]! with ! is dumb!! ts, come on!
   })
 </script>

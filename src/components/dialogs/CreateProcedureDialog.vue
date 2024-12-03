@@ -86,11 +86,13 @@
 </template>
 
 <script setup lang="ts">
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult } from 'fuse.js'
+  import Fuse from 'fuse.js'
   import { useRepo } from 'pinia-orm'
   import { useDialogPluginComponent } from 'quasar'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+  import type { Procedure} from 'src/stores/procedures/procedure'
+  import { ProcedureRepo } from 'src/stores/procedures/procedure'
   import { openProcedureDetailsDialog } from 'src/utils/dialog-utils'
   import { timeThisB } from 'src/utils/performance-utils'
   import { computed, onMounted, ref } from 'vue'

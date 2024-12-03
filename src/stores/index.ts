@@ -1,6 +1,6 @@
 import { store } from 'quasar/wrappers'
 import { createPinia } from 'pinia'
-import { Router } from 'vue-router'
+import type { Router } from 'vue-router'
 import { createORM } from 'pinia-orm'
 import { createPersistedState } from 'pinia-plugin-persistedstate'
 

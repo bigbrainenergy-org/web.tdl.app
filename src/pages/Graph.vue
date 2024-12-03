@@ -23,13 +23,14 @@
 <script setup lang="ts">
   import * as d3 from 'd3'
   import { onMounted, ref, watch } from 'vue'
-  import { CustomForceGraph, d3Node } from 'src/models/d3-interfaces'
+  import type { d3Node } from 'src/models/d3-interfaces'
+  import { CustomForceGraph } from 'src/models/d3-interfaces'
   import { useMeta } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { λ } from 'src/utils/types'
+  import type { λ } from 'src/utils/types'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
@@ -82,7 +83,7 @@
     allTaskNodes = []
     links = []
     for (let i = 0; i < allTasks.length; i++) {
-      allTaskNodes.push(allTasks[i].d3forceNode(i))
+      allTaskNodes.push(allTasks[i]!.d3forceNode(i)) // todo fix ts suddenly being dumb about array index
     }
     const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
     allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))

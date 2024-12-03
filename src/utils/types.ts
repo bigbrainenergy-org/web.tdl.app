@@ -1,5 +1,5 @@
-import { AxiosError } from 'axios'
-import { RouteTo } from 'src/router/routes'
+import type { AxiosError } from 'axios'
+import type { RouteTo } from 'src/router/routes'
 
 // hahaha.... started as a joke but I kindof like it.
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents

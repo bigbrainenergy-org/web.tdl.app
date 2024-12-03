@@ -11,7 +11,7 @@
 <script setup lang="ts">
   import GloriousTextInput from 'src/components/GloriousTextInput.vue'
 
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { updateTask } from 'src/utils/task-utils'
   import { ref } from 'vue'
 

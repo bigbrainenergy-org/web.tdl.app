@@ -106,11 +106,11 @@
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
-import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
-import { notifySuccess } from 'src/utils/notification-utils'
-import { SimpleMenuItem } from 'src/utils/types'
-import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import { notifySuccess } from 'src/utils/notification-utils'
+  import type { SimpleMenuItem } from 'src/utils/types'
+  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1

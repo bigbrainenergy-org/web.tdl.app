@@ -86,7 +86,7 @@
     openSearchDialog,
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const $q = useQuasar()
@@ -159,10 +159,10 @@
         let bail = false
         const start = performance.now()
         for (let i = 0; i < qkeys.length; i++) {
-          const k = qkeys[i]
+          const k = qkeys[i]!
           const qk = queue.get(k)!
           for (let j = 0; j < qk.length; j++) {
-            const t = qk[j]
+            const t = qk[j]!
             const ip = t.incomplete_prereqs
             if (ip.every((y) => finalList.has(y))) {
               finalList.add(t)
@@ -189,11 +189,11 @@
     const sampleSize = Math.min(tasks.value.length, 11)
     const samplePriorities = []
     for (let i = 0; i < sampleSize; i++) {
-      samplePriorities.push(tasks.value[i].incomplete_postreqs.length)
+      samplePriorities.push(tasks.value[i]!.incomplete_postreqs.length)
     }
     samplePriorities.sort((a, b) => a - b)
     const sampleIndex = Math.max(Math.floor(sampleSize / 2), 1)
-    return samplePriorities[sampleIndex]
+    return samplePriorities[sampleIndex]! // todo: figure out how to avoid ! here.
   })
 
   const sortQty = computed(() => {

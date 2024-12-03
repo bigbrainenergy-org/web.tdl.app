@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { updateTask } from 'src/utils/task-utils'
   import { ref } from 'vue'
 

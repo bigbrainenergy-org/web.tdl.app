@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 import { filterByAgenda, filterByList } from 'src/utils/task-utils'
 
 export function useTaskFiltering() {

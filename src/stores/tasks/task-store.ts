@@ -1,12 +1,13 @@
-import { defineStore, PiniaPluginContext, StateTree } from 'pinia'
-import {
+import type { PiniaPluginContext, StateTree } from 'pinia'
+import { defineStore } from 'pinia'
+import type {
   AllOptionalTaskProperties,
   CreateTaskOptions,
   TaskState,
   TaskLike
 } from './task-interfaces-types'
 import { Task } from './task-model'
-import { AxiosResponse } from 'axios'
+import type { AxiosResponse } from 'axios'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
 import { retrieve } from './task-utils'

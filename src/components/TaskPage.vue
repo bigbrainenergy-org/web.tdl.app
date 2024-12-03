@@ -22,7 +22,7 @@
   import TaskListActions from 'src/components/TaskListActions.vue'
   import PainHeader from 'src/components/PainHeader.vue'
 
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   // TODO: This should probably be a layout instead
 

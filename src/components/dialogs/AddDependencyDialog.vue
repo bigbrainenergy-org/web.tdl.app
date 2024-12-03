@@ -73,17 +73,18 @@
   import { useDialogPluginComponent } from 'quasar'
   import { computed, onMounted, ref, watch } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { λ } from 'src/utils/types'
+  import type { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult } from 'fuse.js'
+  import Fuse from 'fuse.js'
   import { hardCheck } from 'src/utils/type-utils'
   import { handleError } from 'src/utils/notification-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 
   interface Props {
     dialogTitle: string

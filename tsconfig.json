@@ -2,6 +2,11 @@
   "extends": "./.quasar/tsconfig.json",
   "compilerOptions": {
     "experimentalDecorators": true,
-    "useDefineForClassFields": true
-  }
+    "useDefineForClassFields": true,
+    "exactOptionalPropertyTypes": false // exactOptionalPropertyTypes false is best false
+  },
+  "exclude": [
+    "*.config.mts",
+    "*.config.ts"
+  ]
 }

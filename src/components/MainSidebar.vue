@@ -125,7 +125,8 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRepo } from 'pinia-orm'
-  import { List, ListRepo } from 'src/stores/lists/list'
+  import type { List} from 'src/stores/lists/list'
+  import { ListRepo } from 'src/stores/lists/list'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { autoContrastTextColor } from 'src/utils/color-utils'

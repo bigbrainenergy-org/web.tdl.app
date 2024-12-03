@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import { useKeyboardEvents, KeyActionMap } from './use-keyboard-events'
+import type { KeyActionMap } from './use-keyboard-events'
+import { useKeyboardEvents } from './use-keyboard-events'
 import { openCreateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
 export function useTaskShortcuts() {

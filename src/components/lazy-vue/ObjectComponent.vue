@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { GenericPropStructure, WTF, isNotObject } from './lazyVueUtils'
+  import type { GenericPropStructure, WTF} from './lazyVueUtils'
+  import { isNotObject } from './lazyVueUtils'
   import EditModeSwitch from './EditModeSwitch.vue'
   import { ref } from 'vue'
   import LazyVueComponent from './LazyVueComponent.vue'
@@ -31,7 +32,7 @@
         <LazyVueComponent
           :key="key"
           v-model:data="data[item]"
-          :name="Object.keys(data)[key]"
+          :name="Object.keys(data)[key]!"
           :edit="edit"
           :show-edit="false"
           @update:data="(x: WTF) => customUpdate(/*item, x*/)"

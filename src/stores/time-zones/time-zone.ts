@@ -1,5 +1,6 @@
 import { Model } from 'pinia-orm'
-import iRecord, { iOptions } from '../generics/i-record'
+import type { iOptions } from '../generics/i-record'
+import type iRecord from '../generics/i-record'
 import { Str, Uid } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 

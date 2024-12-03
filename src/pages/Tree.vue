@@ -69,11 +69,12 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useMeta } from 'quasar'
-  import { details, QTreeComponent, SimpleTreeNode } from 'src/utils/quasar-interfaces'
+  import type { details, QTreeComponent, SimpleTreeNode } from 'src/utils/quasar-interfaces'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   // import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
   import SettingsButton from 'src/components/SettingsButton.vue'
-  import { NodeKey, λ } from 'src/utils/types'
+  import type { λ } from 'src/utils/types'
+  import { NodeKey } from 'src/utils/types'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
   import { notifySuccess } from 'src/utils/notification-utils'
@@ -81,7 +82,7 @@
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => ({ title: 'Tree | TDL App' }))
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 
   // const tr = computed(() => useRepo(TaskRepo))

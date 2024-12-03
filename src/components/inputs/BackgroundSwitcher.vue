@@ -10,7 +10,8 @@
 </template>
 <script setup lang="ts">
   import { storeToRefs } from 'pinia'
-  import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import type { BackgroundMode} from 'src/stores/local-settings/local-setting'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
   const { backgroundMode } = storeToRefs(useLocalSettingsStore())
   const backgroundOptions: { label: string; value: BackgroundMode }[] = [

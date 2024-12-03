@@ -12,7 +12,7 @@
   import { useTasks } from 'src/composables/use-tasks'
   import { considerOpeningQuickSortDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { playCheckboxSound } from 'src/utils/sound-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   useMeta(() => ({ title: 'List | TDL App' }))
 

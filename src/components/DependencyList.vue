@@ -75,8 +75,8 @@
 <script setup lang="ts">
   import { useElementSize } from '@vueuse/core'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task } from 'src/stores/tasks/task-model'
-  import { SimpleMenuItem } from 'src/utils/types'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import type { SimpleMenuItem } from 'src/utils/types'
   import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
   import { ref } from 'vue'

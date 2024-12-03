@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { QBadge } from 'quasar'
-  import { PropStructure } from './lazyVueUtils'
+  import type { PropStructure } from './lazyVueUtils'
   import { computed, onBeforeUpdate, ref } from 'vue'
 
   // todo: don't do a badge once the item length gets really long

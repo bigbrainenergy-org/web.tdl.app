@@ -2,12 +2,12 @@ import { useRepo } from 'pinia-orm'
 import { ListRepo } from '../lists/list'
 import { ProcedureRepo } from '../procedures/procedure'
 import { ExpandedStateRepo } from '../task-meta/expanded-state'
-import { TaskLike, CreateTaskOptions } from './task-interfaces-types'
+import type { TaskLike, CreateTaskOptions } from './task-interfaces-types'
 import { useTaskStore } from './task-store'
-import { d3Node } from 'src/models/d3-interfaces'
+import type { d3Node } from 'src/models/d3-interfaces'
 import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
-import { SimpleTreeNode } from 'src/utils/quasar-interfaces'
+import type { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { taskLike } from './task-utils'
 
 export class Task implements TaskLike {
@@ -70,6 +70,7 @@ export class Task implements TaskLike {
         if (isNaN(Number(prop))) return target[prop as any]
         const val = target[prop as any]
         if (this.hard_prereqs[prop as any] === null) {
+          if(typeof val === 'undefined') return undefined
           const obj = useTaskStore().hardGet(val)
           this.hard_prereqs[prop as any] = obj
           if (!obj.completed) {
@@ -119,6 +120,7 @@ export class Task implements TaskLike {
         if (isNaN(Number(prop))) return target[prop as any]
         const val = target[prop as any]
         if (this.hard_postreqs[prop as any] === null) {
+          if(typeof val === 'undefined') return undefined
           const obj = useTaskStore().hardGet(val)
           this.hard_postreqs[prop as any] = obj
           if (!obj.completed) {
@@ -154,7 +156,7 @@ export class Task implements TaskLike {
     const hp = []
     for (let i = 0; i < this._hard_prereq_ids.length; i++) {
       try {
-        const pre = useTaskStore().hardGet(this._hard_prereq_ids[i])
+        const pre = useTaskStore().hardGet(this._hard_prereq_ids[i]!)
         hp.push(pre)
       } catch (e) {
         console.warn(`tried to get pres for ${this.title} but encountered an error.`)
@@ -168,7 +170,7 @@ export class Task implements TaskLike {
     const hp = []
     for (let i = 0; i < this._hard_postreq_ids.length; i++) {
       try {
-        const post = useTaskStore().hardGet(this._hard_postreq_ids[i])
+        const post = useTaskStore().hardGet(this._hard_postreq_ids[i]!)
         hp.push(post)
       } catch (e) {
         console.warn(`tried to get posts for ${this.title} but encountered an error.`)
@@ -361,7 +363,7 @@ export class Task implements TaskLike {
     // copy the prereq and postreq id arrays
     const prereq_ids = Array.from(this.hard_prereq_ids)
     for (let i = 0; i < prereq_ids.length; i++) {
-      useTaskStore().removeRule(prereq_ids[i], this.id)
+      useTaskStore().removeRule(prereq_ids[i]!, this.id)
     }
     // make a template object (strip away title, prereqs, and postreqs)
     const templateTaskSliceObj = (number: number): CreateTaskOptions => ({
@@ -385,17 +387,19 @@ export class Task implements TaskLike {
     for (let i = 0; i < slices - 1; i++) {
       newSlices.push(templateTaskSliceObj(i + 1))
     }
+    // todo: review everything from here down
     for (let i = 0; i < newSlices.length; i++) {
-      const tmp = await ts.apiCreate(newSlices[i])
+      const tmp = await ts.apiCreate(newSlices[i]!)
       if (tmp !== null) resultTasks.push(tmp)
     }
+    // todo: actually possibly an issue with resultTasks being out of bounds here.
     for (let i = 0; i < prereq_ids.length; i++) {
-      await ts.addRule(prereq_ids[i], resultTasks[0].id)
+      await ts.addRule(prereq_ids[i]!, resultTasks[0]!.id)
     }
     for (let i = 1; i < resultTasks.length; i++) {
-      await ts.addRule(resultTasks[i - 1].id, resultTasks[i].id)
+      await ts.addRule(resultTasks[i - 1]!.id, resultTasks[i]!.id)
       // await ts.addPre(resultTasks[i], resultTasks[i - 1].id)
     }
-    await ts.addRule(resultTasks[resultTasks.length - 1].id, this.id)
+    await ts.addRule(resultTasks[resultTasks.length - 1]!.id, this.id)
   }
 }

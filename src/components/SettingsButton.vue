@@ -1,7 +1,7 @@
 <template>
   <q-btn icon="fa-solid fa-gear" :class="iconClass">
     <q-popup-proxy class="q-pa-md" @update:model-value="console.log(settings)">
-      <LazyVueComponent :data="settings" :edit="true" :name="name" :show-edit="false" />
+      <LazyVueComponent :data="settings" :edit="true" :name="nameComputed" :show-edit="false" />
     </q-popup-proxy>
   </q-btn>
 </template>
@@ -18,5 +18,6 @@
     name: 'Settings',
     color: 'primary'
   })
+  const nameComputed = computed(() => prop.name ?? 'Settings')
   const iconClass = computed(() => `text-${prop.color}`)
 </script>

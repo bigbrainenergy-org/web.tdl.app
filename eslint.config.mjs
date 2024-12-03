@@ -18,10 +18,13 @@ export default tseslint.config(
       '**/src-electron/*',
       '**/src-pwa/*',
       '**/*.d.ts',
+      '**/test/*', // adding temporarily
       '.quasar',
       '.postcssrc.js',
       '.eslintrc.cjs',
-      '/quasar.config.*.temporary.compiled*'
+      '/quasar.config.*.temporary.compiled*',
+      '*.config.mjs',
+      '*.config.mts'
     ]
   },
   // Import recommendations for all plugins

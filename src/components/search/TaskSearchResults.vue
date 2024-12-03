@@ -38,13 +38,14 @@
 </template>
 
 <script setup lang="ts">
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult } from 'fuse.js'
+  import Fuse from 'fuse.js'
   import { computed, ref } from 'vue'
   import type { λ } from '../../utils/types'
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 
   interface Prop {
     search: string | undefined

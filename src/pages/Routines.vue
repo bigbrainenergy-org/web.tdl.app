@@ -74,7 +74,8 @@
 <script setup lang="ts">
   import { defineComponent, ref, computed } from 'vue'
   import { useRepo } from 'pinia-orm'
-  import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+  import type { Procedure} from 'src/stores/procedures/procedure'
+  import { ProcedureRepo } from 'src/stores/procedures/procedure'
   import { openProcedureDetailsDialog } from 'src/utils/dialog-utils'
 
   defineComponent({

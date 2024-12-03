@@ -75,7 +75,7 @@
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
   import DefaultPageSwitcher from 'src/components/inputs/DefaultPageSwitcher.vue'
   import CurrentTimeIndicator from 'src/components/CurrentTimeIndicator.vue'
-import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
+  import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 

@@ -3,7 +3,7 @@
   <q-dialog ref="dialogRef" maximized data-cy="update_task_dialog" @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
-        <div class="text-h6">Task {{currentTask.id}} Details</div>
+        <div class="text-h6">Task {{ currentTask.id }} Details</div>
         <ButtonBarComponent :buttons="topButtonBar" :target="currentTask as Task" />
       </q-card-section>
 
@@ -11,7 +11,7 @@
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
-          <div class="col-12 col-md" :key="currentTask.id">
+          <div :key="currentTask.id" class="col-12 col-md">
             <q-item-label class="text-h4 text-primary" lines="3" data-cy="task_title">
               {{ currentTask.title }}
             </q-item-label>
@@ -80,7 +80,7 @@
     notifySuccess
   } from 'src/utils/notification-utils'
   import TaskSearchDialog from './TaskSearchDialog.vue'
-  import { Button, unknownishλ, λ } from 'src/utils/types'
+  import type { Button, unknownishλ, λ } from 'src/utils/types'
   import { onMounted } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
@@ -103,7 +103,7 @@
   import { blockingFunc } from 'src/utils/performance-utils'
 
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   // HACK: The `:key="currentTask.id"` works for refreshing on task change, but isn't ideal
   // FIXME: Find a better way to switch between tasks

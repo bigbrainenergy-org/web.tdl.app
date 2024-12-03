@@ -1,4 +1,4 @@
-import { Task } from './task-model'
+import type { Task } from './task-model'
 
 export interface TaskState {
   mapp: Map<number, Task>

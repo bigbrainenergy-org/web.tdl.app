@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { useTaskFiltering } from './use-task-filtering'
 import { useTaskSorting } from './use-task-sorting'
 import { useTaskFetching } from './use-task-fetching'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 // TODO: unblockedOnly is unused, use it
 export function useTasks() {

@@ -44,12 +44,12 @@ export async function syncWithBackend(): Promise<number> {
   ]
 
   while (queue.length && tries > 0) {
-    await useRepo(queue[queue.length - 1].repo)
+    await useRepo(queue[queue.length - 1]!.repo)
       .fetch()
       .then(queue.pop())
       .catch(() => {
         handleError(
-          `Failed to fetch from repo ${queue[0].repo.apidir}; MAKING ${tries} MORE ATTEMPTS`
+          `Failed to fetch from repo ${queue[0]!.repo.apidir}; MAKING ${tries} MORE ATTEMPTS`
         )
         tries--
       })

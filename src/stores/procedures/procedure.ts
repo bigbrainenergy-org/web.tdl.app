@@ -1,9 +1,10 @@
 import { Model } from 'pinia-orm'
-import iRecord, { iOptions } from '../generics/i-record'
+import type { iOptions } from '../generics/i-record'
+import type iRecord from '../generics/i-record'
 import { Num, Str, Attr } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 import { hardCheck } from 'src/utils/type-utils'
 import { handleError } from 'src/utils/notification-utils'
 
@@ -70,10 +71,10 @@ export class ProcedureRepo extends GenericRepo<
         const tmp = hardCheck(this.find(id))
         const tasks = tmp.grabTasks()
         for (let i = 0; i < tasks.length; i++) {
-          const ti = tasks[i]
+          const ti = tasks[i]!
           ti.completed = false
-          for (let j = 0; j < ti.hard_prereqs.length; j++) ti.hard_prereqs[j].fullSyncPosts()
-          for (let j = 0; j < ti.hard_postreqs.length; j++) ti.hard_postreqs[j].fullSyncPres()
+          for (let j = 0; j < ti.hard_prereqs.length; j++) ti.hard_prereqs[j]!.fullSyncPosts()
+          for (let j = 0; j < ti.hard_postreqs.length; j++) ti.hard_postreqs[j]!.fullSyncPres()
           ti.fullSyncPres()
           ti.fullSyncPosts()
         }

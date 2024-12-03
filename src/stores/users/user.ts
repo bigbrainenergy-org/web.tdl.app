@@ -1,5 +1,6 @@
 import { Model } from 'pinia-orm'
-import iRecord, { iOptions } from '../generics/i-record'
+import type { iOptions } from '../generics/i-record'
+import type iRecord from '../generics/i-record'
 import { Attr, BelongsTo, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'

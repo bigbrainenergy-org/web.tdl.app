@@ -1,4 +1,5 @@
-import { BackgroundMode, useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import type { BackgroundMode} from 'src/stores/local-settings/local-setting'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { computed, ref, watch } from 'vue'
 
 export function useBackgroundMode() {

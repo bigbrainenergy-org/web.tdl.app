@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { QBadge } from 'quasar'
-  import { PropStructure } from './lazyVueUtils'
+  import type { PropStructure } from './lazyVueUtils'
   const data = defineModel<boolean>('data', {
     set: (x) => {
       emit('updateme')

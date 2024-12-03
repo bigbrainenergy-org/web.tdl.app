@@ -46,7 +46,7 @@
   // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   //import { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { RouteName } from 'src/router/routes'
+  import type { RouteName } from 'src/router/routes'
 
   const $route = useRoute()
   const $router = useRouter()

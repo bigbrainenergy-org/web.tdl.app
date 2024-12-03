@@ -1,4 +1,4 @@
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 /**
  * If the key is not associated with a value yet, this initializes and sets the value and returns it.

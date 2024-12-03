@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 import { safeAccess } from 'src/utils/map-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
 
@@ -111,7 +111,7 @@ export function useTaskSorting() {
              * This is the current qkey in the iteration. Again, the qkeys represent queue keys
              * - queue keys are an amount of incomplete postreqs that the value Tasks share
              */
-            const k = qkeys[i]
+            const k = qkeys[i]!
             /**
              * # qk
              * The Task[] value of the current queue key.
@@ -128,7 +128,7 @@ export function useTaskSorting() {
                * 
                * You really expect me to type that every time?
                */
-              const t = qk[j]
+              const t = qk[j]!
               /**
                * # ip
                * The incomplete postreqs of t

@@ -1,6 +1,6 @@
-import { Notification as NotificationInterface } from 'src/models/Notification'
+import type { Notification as NotificationInterface } from 'src/models/Notification'
 import { DateTime } from 'luxon'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 // TODO: Merge with notification utils?
 

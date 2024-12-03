@@ -14,7 +14,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import SettingsButton from 'src/components/SettingsButton.vue'
   import { openQuickSortDialog, openBespokeSearchDialog } from 'src/utils/dialog-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
 

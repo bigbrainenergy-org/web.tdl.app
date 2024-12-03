@@ -55,7 +55,7 @@
 
   import { computed, toRef } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   console.debug('loaded task list')
 

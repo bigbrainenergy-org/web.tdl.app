@@ -1,8 +1,8 @@
-import { AxiosError } from 'axios'
+import type { AxiosError } from 'axios'
 import { Notify } from 'quasar'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { λ } from './types'
-import { Task } from 'src/stores/tasks/task-model'
+import type { λ } from './types'
+import type { Task } from 'src/stores/tasks/task-model'
 
 export function errorNotification(error: Error | AxiosError, fallbackMessage: string) {
   const errorMessage = `${fallbackMessage}: ${error.message}`

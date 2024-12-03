@@ -50,19 +50,21 @@
   import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
   import { computed, ref } from 'vue'
   import DependencyList from '../DependencyList.vue'
-  import {
+  import type {
     AllOptionalProcedureProperties,
     Procedure,
-    ProcedureRepo,
     UpdateProcedureOptions
+  } from 'src/stores/procedures/procedure'
+  import {
+    ProcedureRepo
   } from 'src/stores/procedures/procedure'
   import { useRepo } from 'pinia-orm'
   import GloriousTextInput from '../GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { hardCheck } from 'src/utils/type-utils'
-  import { Button, λ } from 'src/utils/types'
+  import type { Button, λ } from 'src/utils/types'
   import { handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
   import {
     openBespokeSearchDialog,

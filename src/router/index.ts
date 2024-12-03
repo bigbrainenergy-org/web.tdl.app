@@ -42,7 +42,7 @@ export default route(function (/* { store, ssrContext } */) {
     if (to.path === '' || to.path === '/') {
       const localSettingsStore = useLocalSettingsStore()
       const defaultRoutes = localSettingsStore.toolbarButtons.filter((x) => x.default === true)
-      if (defaultRoutes.length > 0) next({ path: defaultRoutes[0].to.substring(1) })
+      if (defaultRoutes.length > 0) next({ path: defaultRoutes[0]!.to.substring(1) })
       else next({ name: 'Tasks' })
     } else next()
   })

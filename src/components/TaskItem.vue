@@ -35,8 +35,8 @@
 <script setup lang="ts">
   import { toRef } from 'vue'
   import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
-  import { Task } from 'src/stores/tasks/task-model'
-import TaskPostreqInfoChip from './TaskPostreqInfoChip.vue'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import TaskPostreqInfoChip from './TaskPostreqInfoChip.vue'
 
   const props = withDefaults(
     defineProps<{

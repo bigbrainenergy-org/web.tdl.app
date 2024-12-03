@@ -43,7 +43,7 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   interface Props {
     task: Task
@@ -67,7 +67,7 @@
     saveProgress.value = 0
     // TODO: batch update this!
     for (let i = 0; i < selectedTasks.length; i++) {
-      const element = layerZero.value[i]
+      const element = layerZero.value[i]!
       useTaskStore()
         .addRule(prop.task.id, element.obj.id)
         .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))

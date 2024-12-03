@@ -1,7 +1,7 @@
 import { handleError, notifySuccess } from './notification-utils'
-import { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+import type { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 // FIXME: This should (probably) return the task created
 export function createTask(payload: CreateTaskOptions) {
@@ -92,10 +92,10 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
       let bail = false
       const start = performance.now()
       for (let i = 0; i < qkeys.length; i++) {
-        const k = qkeys[i]
-        const qk = queue.get(k)!
+        const k = qkeys[i]! // todo: ! should not be needed imho
+        const qk = queue.get(k)! // todo: ! should not be needed imho
         for (let j = 0; j < qk.length; j++) {
-          const t = qk[j]
+          const t = qk[j]! // todo: ! should not be needed imho
           const ip = t.incomplete_prereqs
           if (ip.every((y) => finalList.has(y))) {
             finalList.add(t)

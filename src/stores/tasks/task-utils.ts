@@ -1,5 +1,5 @@
-import { CreateTaskOptions, TaskLike } from './task-interfaces-types'
-import { Task } from './task-model'
+import type { CreateTaskOptions, TaskLike } from './task-interfaces-types'
+import type { Task } from './task-model'
 import { useTaskStore } from './task-store'
 
 export const retrieve = (id: number): Task => useTaskStore().hardGet(id)
