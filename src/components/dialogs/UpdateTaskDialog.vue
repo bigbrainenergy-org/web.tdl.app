@@ -36,6 +36,7 @@
               @select-item="setCurrentTask"
               @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
             />
+            <q-btn label="Sort Postreqs" @click="openSortPostreqsDialog" />
             <DependencyList
               :items="allPosts"
               :dependency-type="postDepType"
@@ -96,7 +97,8 @@
   import {
     addPostrequisiteDialog,
     addPrerequisitesDialog,
-    openTaskSlicerDialog
+    openTaskSlicerDialog,
+    quickSortPostreqsDialog
   } from 'src/utils/dialog-utils'
   import { blockingFunc } from 'src/utils/performance-utils'
 
@@ -225,13 +227,14 @@
   // FIXME: currently these do not update the pres/posts lists in the update task dialog.
   const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value as Task)
   const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
+  const openSortPostreqsDialog = () => quickSortPostreqsDialog(currentTask.value as Task)
 
   // FIXME: this destroys everything
   const mvpPostrequisite = async (post: Task) => {
     console.debug(post)
     const allPostreqs = currentTaskFromStore.value.grabPostreqs(false)
     for (let i = 0; i < allPostreqs.length; i++) {
-      const tmp = allPostreqs[i]
+      const tmp = allPostreqs[i]! // for some reason new ts/eslint thinks this could be undefined, TODO figure out a way to explicitly state i will be within range of allPostreqs index
       console.debug(`now evaluating ${tmp.title}`)
       if(tmp.id === post.id) {
         console.debug(`skipping this task because it is the post being promoted to mvp: ${tmp.title}`)
@@ -401,7 +404,7 @@
       (x) => payload.below.has(x.id) && !payload.above.has(x.id)
     )
     for (let i = 0; i < toRemove.length; i++) {
-      await useTaskStore().removeRule(currentTask.value.id, toRemove[i].id)
+      await useTaskStore().removeRule(currentTask.value.id, toRemove[i]!.id)
     }
     useLoadingStateStore().busy = false
   })
@@ -415,7 +418,7 @@
     })
     console.log('pruning prerequisites', { payload, toRemove })
     for (let i = 0; i < toRemove.length; i++) {
-      await useTaskStore().removeRule(toRemove[i].id, currentTask.value.id)
+      await useTaskStore().removeRule(toRemove[i]!.id, currentTask.value.id)
     }
   })
 

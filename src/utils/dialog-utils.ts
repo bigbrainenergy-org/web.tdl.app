@@ -9,14 +9,17 @@ import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroD
 import AddDependencyDialog from 'src/components/dialogs/AddDependencyDialog.vue'
 import TaskSlicerDialog from 'src/components/dialogs/TaskSlicerDialog.vue'
 import { useRepo } from 'pinia-orm'
-import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
-import { Task } from 'src/stores/tasks/task-model'
+import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { CreateListOptions, ListRepo } from 'src/stores/lists/list'
+import type { CreateListOptions} from 'src/stores/lists/list'
+import { ListRepo } from 'src/stores/lists/list'
 import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
-import { CreateProcedureOptions, Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+import type { CreateProcedureOptions, Procedure} from 'src/stores/procedures/procedure'
+import { ProcedureRepo } from 'src/stores/procedures/procedure'
 import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.vue'
-import { λ } from './types'
+import type { λ } from './types'
+import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
 
 export function openCreateTaskDialog() {
   return Dialog.create({
@@ -200,6 +203,15 @@ export function addPostrequisiteDialog(currentTask: Task) {
         const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
         return tasks.filter((x) => relationInfo.get(x.id) !== true)
       }
+    }
+  })
+}
+
+export function quickSortPostreqsDialog(parentTask: Task) {
+  return Dialog.create({
+    component: QuickSortPostsOfTaskDialog,
+    componentProps: {
+      parentTask
     }
   })
 }

@@ -9,7 +9,7 @@
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">Quick Arrange Next Actions</div>
         <div class="text-h6">Which task should come first?</div>
-        <div class="text-h6">{{ layerZero.length }} Layer Zero Tasks</div>
+        <div class="text-h6">{{ postreqsToSort.length }} Layer Zero Tasks</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
           <q-btn icon="fa-solid fa-gear" class="text-white">
@@ -106,15 +106,18 @@
   import GloriousSlider from '../GloriousSlider.vue'
   import GloriousToggle from '../GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
-import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
-import { notifySuccess } from 'src/utils/notification-utils'
-import { SimpleMenuItem } from 'src/utils/types'
-import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { Task } from 'src/stores/tasks/task-model'
+  import { notifySuccess } from 'src/utils/notification-utils'
+  import { SimpleMenuItem } from 'src/utils/types'
+  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+import { hardCheck } from 'src/utils/type-utils'
 
-  const props = withDefaults(defineProps<{ objective?: number }>(), {
-    objective: 1
-  })
+  interface qspotdProps {
+    parentTask: Task
+  }
+
+  const props = defineProps<qspotdProps>()
 
   const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent()
   const emit = defineEmits([...useDialogPluginComponent.emits])
@@ -147,40 +150,21 @@ import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } fr
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-  const layerZero = computed(() => {
-    const layerZeroTasks = useTaskStore().layerZero
-    return layerZeroTasks.map(postWeightedTask)
-  })
+  const postreqsToSort = computed(() => (props.parentTask.incomplete_postreqs as Task[]).map(postWeightedTask))
+
+  // const layerZero = computed(() => {
+  //   const layerZeroTasks = useTaskStore().layerZero
+  //   return layerZeroTasks.map(postWeightedTask)
+  // })
   const tasksWithoutPostreqs = computed(() =>
-    layerZero.value.filter((x) => !(x.t.incomplete_postreqs.length > 0))
+    postreqsToSort.value.filter((x) => !(x.t.incomplete_postreqs.length > 0))
   )
-  const l0len = computed(() => layerZero.value.length)
+  const l0len = computed(() => postreqsToSort.value.length)
   watch(l0len, (value: number) => {
     if (value < 2) {
       if (dialogRef !== null) onDialogOK()
     }
   })
-
-  //  const layerOne = computed(() =>
-  //     enableDeeperQuickSort.value
-  //       ? layerZero.value
-  //           .filter((x) => x.t.grabPostreqs(true).length > 1)
-  //           .map((x) => ({
-  //             id: x.t.id,
-  //             data: x.t.grabPostreqs(true).map(postWeightedTask2)
-  //           }))
-  //       : null
-  //   )
-
-  // const eq = (pairA: pair<Task>, pairB: pair<PostWeightedTask>): boolean => {
-  //   if (pairA.a.id === pairB.a.t.id) {
-  //     if (pairA.b.id === pairB.b.t.id) return true
-  //   }
-  //   if (pairA.a.id === pairB.b.t.id) {
-  //     if (pairA.b.id === pairB.a.t.id) return true
-  //   }
-  //   return false
-  // }
 
   const loading = ref(false)
 
@@ -239,12 +223,17 @@ import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } fr
 
   const doASAP = (mvp: Task) => {
     loading.value = true
-    const allOtherLayerZero = layerZero.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
+    const allOtherLayerZero = postreqsToSort.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
     // TODO: write a bulk_add_posts action on the model
     mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
+    // remove all the other tasks from parent task, leaving only the mvp id
+    props.parentTask.hard_postreq_ids = [mvp.id]
     allOtherLayerZero.forEach((x: PostWeightedTask) => {
       x.t.hard_prereq_ids.push(mvp.id)
+      const parentTaskIndex = x.t.hard_prereq_ids.findIndex(y => y === props.parentTask.id)
+      if(parentTaskIndex >= 0) x.t.hard_prereq_ids.splice(parentTaskIndex, 1)
     })
+    // todo: figure out what all we should save here.
     useTaskStore()
       .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
       .then(() => {
@@ -313,18 +302,11 @@ import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } fr
    * - select a new pair (or trio or quartet or n-tet)
    */
   const generateNewPair = (): Task[] => {
-    const metLayerZeroLengthObjective = l0len.value <= props.objective
+    const metLayerZeroLengthObjective = l0len.value <= 1
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
-    if (enableQuickSortBailOnBigTask.value) {
-      if (
-        layerZero.value.filter(
-          (x) => x.t.incomplete_postreqs.length > quickSortBailOnTaskSize.value
-        ).length > 0
-      )
-        throw new Error('There is already a layer zero task that is big')
-    }
+    
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
-    const shuffled = [...layerZero.value]
+    const shuffled = [...postreqsToSort.value]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
@@ -361,11 +343,12 @@ import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } fr
     }
   }
 
-  const makeSelection = (mvp: Task) => {
+  const makeSelection = (mvp: Task) => { // TODO: probably time to genericize the mvp task function
     loading.value = true
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     const selected_ids = selected_tasks.map((x) => x.id)
     mvp.hard_postreq_ids.push(...selected_ids)
+    props.parentTask.hard_postreq_ids = props.parentTask.hard_postreq_ids.filter(x => selected_ids.includes(x))
     selected_tasks.forEach((x) => {
       x.hard_prereq_ids.push(mvp.id)
     })
