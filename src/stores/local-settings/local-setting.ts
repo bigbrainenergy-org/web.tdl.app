@@ -53,6 +53,7 @@ interface LocalSettingsState {
   enableQuickSortBailOnBigTask: boolean
   quickSortBailOnTaskSize: number
   taskPostreqInfoView: 'Quantity' | 'Strict'
+  strictModeMaxPostreqs: 1 | 2 | 3 | 4 | 5 | 6
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -122,7 +123,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       toolbarButtons: originalToolbarButtons,
       enableQuickSortBailOnBigTask: false,
       quickSortBailOnTaskSize: 9,
-      taskPostreqInfoView: 'Quantity'
+      taskPostreqInfoView: 'Quantity',
+      strictModeMaxPostreqs: 1
     }
   },
   persist: true,

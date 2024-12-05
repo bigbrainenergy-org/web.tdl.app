@@ -131,7 +131,8 @@
     // enableQuickSortOnNewTask,
     quickSortDialogMaxToShow,
     enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize
+    quickSortBailOnTaskSize,
+    strictModeMaxPostreqs
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
@@ -147,7 +148,7 @@
   )
   const l0len = computed(() => postreqsToSort.value.length)
   watch(l0len, (value: number) => {
-    if (value < 2) {
+    if (value <= strictModeMaxPostreqs.value ) {
       if (dialogRef !== null) onDialogOK()
     }
   })
@@ -284,6 +285,8 @@
 
   // const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
 
+  const priorMVPs = new Set<number>()
+
   /**
    * generateNewPair:
    * - throw an error if sorting is done
@@ -293,7 +296,10 @@
     const metLayerZeroLengthObjective = l0len.value <= 1
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
-    const shuffled = [...postreqsToSort.value]
+    let toGenerateFrom = [] // this will filter out all previously selected tasks when possible in order to make the sorting process more effective.
+    if(postreqsToSort.value.length - priorMVPs.size > howManyToSelect) toGenerateFrom = postreqsToSort.value.filter(x => !priorMVPs.has(x.t.id))
+    else toGenerateFrom = postreqsToSort.value
+    const shuffled = [...toGenerateFrom]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
@@ -332,6 +338,7 @@
 
   const makeSelection = async (mvp: Task) => { // TODO: probably time to genericize the mvp task function
     loading.value = true
+    priorMVPs.add(mvp.id)
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     const selected_ids = selected_tasks.map((x) => x.id)
     mvp.hard_postreq_ids.push(...selected_ids)

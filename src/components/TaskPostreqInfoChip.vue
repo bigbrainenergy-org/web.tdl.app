@@ -4,8 +4,8 @@
       {{ taskIncompletePostreqLength }}
     </q-chip>
     <div v-if="taskPostreqInfoView === 'Strict'">
-      <q-icon v-if="taskIncompletePostreqLength > 1" name="warning" color="red" />
-      <q-icon v-if="taskIncompletePostreqLength === 1" name="rocket_launch" />
+      <q-icon v-if="taskIncompletePostreqLength > strictModeMaxPostreqs" name="warning" color="red" />
+      <q-icon v-if="taskIncompletePostreqLength <= strictModeMaxPostreqs && taskIncompletePostreqLength > 0" name="rocket_launch" />
     </div>
   </q-item-section>
 </template>
@@ -20,7 +20,7 @@
     task: Task
   }
   const props = defineProps<Prop>()
-  const { taskPostreqInfoView } = storeToRefs(useLocalSettingsStore())
+  const { taskPostreqInfoView, strictModeMaxPostreqs } = storeToRefs(useLocalSettingsStore())
   const taskIncompletePostreqLength = computed(() => props.task.incomplete_postreqs.length)
   const taskPostreqColor = computed(
     () => taskIncompletePostreqLength.value > postreqQuantityWarningThreshold.value
