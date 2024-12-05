@@ -307,6 +307,8 @@
 
   // const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
 
+  const priorMVPs = new Set<number>()
+
   /**
    * generateNewPair:
    * - throw an error if sorting is done
@@ -324,7 +326,10 @@
         throw new Error('There is already a layer zero task that is big')
     }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
-    const shuffled = [...layerZero.value]
+    let toGenerateFrom = []
+    if(layerZero.value.length - priorMVPs.size > howManyToSelect) toGenerateFrom = layerZero.value.filter(x => !priorMVPs.has(x.t.id))
+    else toGenerateFrom = layerZero.value
+    const shuffled = [...toGenerateFrom]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
