@@ -2,7 +2,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useDialogPluginComponent } from 'quasar'
   import { storeToRefs } from 'pinia'
-  import GloriousSlider from './GloriousSlider.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
   
   const {
     taskPostreqInfoView,
