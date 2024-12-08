@@ -2,8 +2,8 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useDialogPluginComponent } from 'quasar'
   import { storeToRefs } from 'pinia'
-  import GloriousSlider from '../GloriousSlider.vue'
-  import GloriousToggle from '../GloriousToggle.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
 
   const {
     disableQuickSort,

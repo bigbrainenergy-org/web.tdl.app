@@ -59,7 +59,7 @@
     ProcedureRepo
   } from 'src/stores/procedures/procedure'
   import { useRepo } from 'pinia-orm'
-  import GloriousTextInput from '../GloriousTextInput.vue'
+  import GloriousTextInput from '../glorious/GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { Task } from 'src/stores/tasks/task-model'

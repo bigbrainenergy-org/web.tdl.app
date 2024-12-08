@@ -2,7 +2,7 @@
   import { storeToRefs } from 'pinia'
   import { useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import GloriousToggle from '../GloriousToggle.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   const { toolbarButtons } = storeToRefs(useLocalSettingsStore())
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
 </script>

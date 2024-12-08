@@ -9,11 +9,9 @@
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
-        <SettingsButton
-          v-model:settings="taskSearchSettings"
-          name="Task Search Settings"
-          color="white"
-        />
+        <GloriousSettingsPopup>
+          <GloriousToggle v-model:model-value="hideCompleted" label="Omit Completed Tasks" />
+        </GloriousSettingsPopup>
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -75,7 +73,6 @@
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import type { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { FuseResult } from 'fuse.js'
   import Fuse from 'fuse.js'
@@ -84,6 +81,8 @@
   import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
   import { hardCheck } from 'src/utils/type-utils'
   import { timeThisB } from 'src/utils/performance-utils'
+  import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from '../glorious/GloriousToggle.vue'
 
   interface Props {
     dialogTitle: string

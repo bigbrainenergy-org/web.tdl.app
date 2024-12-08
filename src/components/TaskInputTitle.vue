@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-  import GloriousTextInput from 'src/components/GloriousTextInput.vue'
+  import GloriousTextInput from 'src/components/glorious/GloriousTextInput.vue'
 
   import type { Task } from 'src/stores/tasks/task-model'
   import { updateTask } from 'src/utils/task-utils'

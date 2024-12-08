@@ -4,7 +4,13 @@
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
+            <GloriousSettingsPopup>
+              <GloriousToggle v-model:model-value="layerZeroOnly" label="Unblocked Only" />
+              <GloriousToggle v-model:model-value="hideCompleted" label="Hide Completed Tasks" />
+              <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+              <GloriousSlider v-if="!disableQuickSort" v-model:model-value="enableQuickSortOnLayerZeroQTY" label="Quick Sort When Layer Zero Has x Tasks" />
+              <GloriousToggle v-model:model-value="autoScalePriority" label="Auto Scale Priority Coloring" />
+            </GloriousSettingsPopup>
             <q-space />
             <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
@@ -88,6 +94,9 @@
   } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
 
   const $q = useQuasar()
 

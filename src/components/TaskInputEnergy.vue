@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-  import GloriousSlider from 'src/components/GloriousSlider.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
 
   import { updateTask } from 'src/utils/task-utils'
   import { storeToRefs } from 'pinia'

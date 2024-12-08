@@ -1,5 +1,9 @@
 <template>
-  <SettingsButton v-model:settings="tasksPageSettings" />
+  <GloriousSettingsPopup>
+    <GloriousToggle v-model:model-value="layerZeroOnly" label="Unblocked Tasks Only" />
+    <GloriousToggle v-model:model-value="hideCompleted" label="Incomplete Tasks Only" />
+    <GloriousToggle v-model:model-value="autoScalePriority" label="Auto Scale Priority" />
+  </GloriousSettingsPopup>
   <q-btn text-color="primary" icon="sort" @click="toggleAgenda" />
   <q-space />
   <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
@@ -12,9 +16,10 @@
   import { ref } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import SettingsButton from 'src/components/SettingsButton.vue'
   import { openQuickSortDialog, openBespokeSearchDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
+  import GloriousToggle from './glorious/GloriousToggle.vue'
+  import GloriousSettingsPopup from './glorious/GloriousSettingsPopup.vue'
   
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
 

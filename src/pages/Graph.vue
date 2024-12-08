@@ -9,7 +9,10 @@
         <div class="full-height">
           <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
             <q-card-actions>
-              <SettingsButton v-model:settings="graphSettings" name="Graph Settings" />
+              <GloriousSettingsPopup>
+                <GloriousSlider v-model:model-value="taskNodeMaxSize" label="Task Node Max Size" :min="100" :max="1000" :step="20" />
+                <GloriousToggle v-model:model-value="incompleteOnly" label="Hide Completed Tasks" />
+              </GloriousSettingsPopup>
               <q-space />
               <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
               <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
@@ -30,11 +33,15 @@
   import { useMeta } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import type { λ } from 'src/utils/types'
-  import SettingsButton from 'src/components/SettingsButton.vue'
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import TaskPage from 'src/components/TaskPage.vue'
+  import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
+  import GloriousTextInput from 'src/components/glorious/GloriousTextInput.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
+  import { storeToRefs } from 'pinia'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
 
