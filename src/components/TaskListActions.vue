@@ -9,7 +9,26 @@
   <q-space />
   <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
   <q-space />
-  <q-btn icon="fa-solid fa-signs-post" class="text-primary" @click="openQuickSortDialog" />
+  <q-btn dense flat no-wrap>
+    <q-icon name="arrow_drop_down" />
+    <q-menu auto-close>
+      <q-list>
+        <q-item clickable @click="openQuickSortDialog">
+          <q-item-section>Quick Sort</q-item-section>
+          <q-item-section avatar>
+            <q-icon name="fa-solid fa-signs-post" />
+          </q-item-section>
+        </q-item>
+        <q-item clickable @click="openLargestTask">
+          <q-item-section>Open Largest Task</q-item-section>
+          <q-item-section avatar>
+            <q-icon name="fa-solid fa-weight-hanging" />
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-menu>
+  </q-btn>
+  
   <q-btn icon="fa-solid fa-search" class="text-primary" @click="openBespokeSearchDialog()" />
 </template>
 
@@ -56,6 +75,21 @@
       notifySuccess('Sort The Postreqs of this Task.')
       let largest = tasks.value[0]!
       for(let i = 1; i < Math.min(9, tasks.value.length); i++) {
+        if(tasks.value[i]!.incomplete_postreqs.length > largest.incomplete_postreqs.length) {
+          largest = tasks.value[i]!
+        }
+      }
+      openUpdateTaskDialog(largest)
+    }
+  }
+
+  const openLargestTask = () => {
+    if(tasks.value.length === 0) notifySuccess('Nothing to do here!')
+    if(tasks.value.length === 1) openUpdateTaskDialog(tasks.value[0]!)
+    else {
+      notifySuccess('Sort The Postreqs of this Task.')
+      let largest = tasks.value[0]!
+      for(let i = 1; i < tasks.value.length; i++) {
         if(tasks.value[i]!.incomplete_postreqs.length > largest.incomplete_postreqs.length) {
           largest = tasks.value[i]!
         }
