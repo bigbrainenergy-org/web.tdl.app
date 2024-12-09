@@ -2,7 +2,7 @@
   <FullPage>
     <TransparentCard>
       <template #actions>
-        <TaskListActions :tasks="tasks" />
+        <TaskListActions v-model:filtered="filteredTasks as Task[]" :tasks="tasks" />
       </template>
 
       <template #header>
@@ -10,7 +10,7 @@
       </template>
 
       <template #body>
-        <slot />
+        <slot name="body" :tasklist="filteredTasks"><q-icon size="8rem" name="fa-solid fa-dumpster-fire" /><q-btn class="text-primary">{{ filteredTasks.length }}</q-btn></slot>
       </template>
     </TransparentCard>
   </FullPage>
@@ -23,8 +23,10 @@
   import PainHeader from 'src/components/PainHeader.vue'
 
   import type { Task } from 'src/stores/tasks/task-model'
+  import { ref, watch } from 'vue'
 
   // TODO: This should probably be a layout instead
 
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
+  const filteredTasks = ref<Task[]>([])
 </script>

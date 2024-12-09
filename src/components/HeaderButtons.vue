@@ -2,13 +2,6 @@
   <div>
     <q-btn flat round dense icon="menu" size="lg" class="q-mr-sm" @click="drawer = !drawer" />
     <q-btn
-      v-if="pagesWithNewTaskButton.includes(currentRouteName)"
-      color="green"
-      icon="fa-solid fa-plus"
-      data-cy="create_task_button"
-      @click="openCreateTaskDialog().onDismiss(considerOpeningQuickSortDialog)"
-    />
-    <q-btn
       v-if="currentRouteName === 'Settings'"
       color="green"
       label="Go Back"
@@ -22,13 +15,6 @@
       @click="openCreateProcedureDialog('header button')"
     />
     <q-btn class="q-ma-md" color="yellow" icon="fa-solid fa-refresh" @click="pullFresh" />
-    <q-btn
-      class="q-ma-md"
-      color="white"
-      text-color="black"
-      icon="fa-solid fa-explosion"
-      @click="wreak"
-    />
   </div>
 </template>
 
@@ -59,14 +45,6 @@
   // 2024-09-17: updated to use a string literal type as a source of truth
   const pagesWithNewTaskButton: RouteName[] = ['List', 'Calendar', 'Tree', 'Graph', 'Focus']
   const currentRouteName = computed(() => $route.name as RouteName)
-
-  const wreak = async () => {
-    const tr = useTaskStore()
-    const autoTaskName = 'auto task for testing purposes'
-    for (let i = 1; i < 10; i++) {
-      await tr.apiCreate({ title: `${autoTaskName} ${i}` })
-    }
-  }
 
   // todo: storeToRefs
   // const hasTooManyInLayerZero = () =>

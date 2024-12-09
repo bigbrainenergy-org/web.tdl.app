@@ -7,6 +7,7 @@ export function useTaskFiltering() {
   const localSettingsStore = useLocalSettingsStore()
   const { currentFilteringMode, selectedList, hideCompleted } = storeToRefs(localSettingsStore)
 
+  // todo: perhaps add Fuse here
   function filterTasks(tasks: Task[]): Task[] {
     if(hideCompleted.value) tasks = tasks.filter(x => !x.completed)
     // todo: must respond to incompleteOnly and possibly other local settings too.

@@ -57,8 +57,6 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { Task } from 'src/stores/tasks/task-model'
 
-  console.debug('loaded task list')
-
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
     defineProps<{
@@ -73,9 +71,13 @@
     }
   )
 
+  console.debug('loaded task list')
+  console.debug({ tasks: props.tasks })
+
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
-  const tasks = toRef(props, 'tasks')
+  // commenting this out for now - is this different from defineModel somehow? is this necessary? is this useful?
+  //const tasks = toRef(props, 'tasks')
 
   const loading = computed(() => useLoadingStateStore().busy)
 </script>
