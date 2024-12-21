@@ -24,10 +24,29 @@ export function useTasks() {
       return []
     }
     console.debug('recalculating tasks')
-    let baseQuery = fetchTasks()
-    console.debug({ baseQuery })
-    baseQuery = filterTasks(baseQuery)
-    baseQuery = sortTasks(baseQuery)
+    let baseQuery: Task[] = []
+    try { 
+      baseQuery = fetchTasks()
+      console.log('baseQuery done')
+    } catch(baseQueryEx) {
+      console.warn({ msg: 'base query exception', baseQueryEx })
+      baseQuery = []
+    }
+    try {
+      baseQuery = filterTasks(baseQuery)
+      console.log('filterTasks done')
+    } catch(filterTasksEx) {
+      console.warn({ msg: 'filter tasks exception', filterTasksEx })
+      baseQuery = []
+    }
+    try {
+      baseQuery = sortTasks(baseQuery)
+      console.log('sortTasks done')
+    } catch(sortTasksEx) {
+      console.warn({ msg: 'sort tasks exception', sortTasksEx })
+      baseQuery = []
+    }
+    console.debug('yay')
     return baseQuery
   })
 

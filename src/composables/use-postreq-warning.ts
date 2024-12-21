@@ -11,6 +11,8 @@ export function usePostreqWarning() {
 
   // const notCompleted = (x: Task) => x.completed === false
 
+  console.debug('hello from usePostreqWarning')
+
   const { tasks } = useTasks()
 
   const autoThreshold = computed(() => {

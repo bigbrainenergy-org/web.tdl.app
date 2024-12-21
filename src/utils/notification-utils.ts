@@ -48,7 +48,7 @@ export function gracefulError(error: Error | AxiosError, memo = 'Error') {
 
 export function handleError(memo: string): λ<Error | AxiosError, null> {
   return (error: Error | AxiosError) => {
-    console.warn(error)
+    console.warn(error, memo)
     errorNotification(error, memo)
     return null
   }

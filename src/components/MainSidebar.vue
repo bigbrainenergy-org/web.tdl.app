@@ -1,5 +1,5 @@
 <template>
-  <q-drawer v-model="drawer" side="left" elevated dark show-if-above :width="200" :breakpoint="500">
+  <q-drawer v-model="drawer" side="left" elevated dark :width="200" :breakpoint="500">
     <q-list padding>
       <q-item v-ripple clickable @click="openCreateTaskDialog">
         <q-item-section avatar>

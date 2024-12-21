@@ -1,7 +1,11 @@
 <template>
   <TaskPage :tasks="tasks">
     <template #body="{ tasklist }">
-      <TaskList :tasks="tasklist as Task[]" @task-completion-toggled="updateTask" @task-clicked="openTask" />
+      <TaskList
+        :tasks="tasklist as Task[]"
+        @task-completion-toggled="updateTask"
+        @task-clicked="openTask"
+      />
     </template>
   </TaskPage>
 </template>

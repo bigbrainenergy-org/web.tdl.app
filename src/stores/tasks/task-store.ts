@@ -215,7 +215,7 @@ export const useTaskStore = defineStore('tasks', {
       second.hard_prereq_ids.push(first_id)
       // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       return this.apiUpdate(first.id, { hard_postreq_ids: first.hard_postreq_ids }).then(() => {
-        notifySuccess('Added the dependency.')
+        console.debug('Added the dependency.')
       }, handleError('Failed to add the dependency.'))
     },
     removeRule(first_id: number, second_id: number) { // BUG: when used for remove Pre on the updateTaskDialog, the pres list isn't updating. addPre works; removePre doesn't. removePost works.
@@ -239,8 +239,18 @@ export const useTaskStore = defineStore('tasks', {
   },
   getters: {
     incompleteOnly: (state) => state.array.filter((x) => !x.completed),
-    layerZero: (state): Task[] =>
-      (state.array as Task[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0),
+    layerZero: (state): Task[] => {
+      return (state.array as Task[]).filter((x) => {
+        if(x.completed) return false
+        try {
+          if(x.incomplete_prereqs.length > 0) return false
+        } catch(ex) {
+          console.warn({ msg: 'while computing layer zero', ex })
+          return false
+        }
+        return true
+      })
+    },
     allTasks: (state): Task[] =>
       (state.array as Task[])
   }

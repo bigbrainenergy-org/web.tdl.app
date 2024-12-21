@@ -137,7 +137,12 @@
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-  const postreqsToSort = computed(() => (parentTask.value.incomplete_postreqs as Task[]).map(postWeightedTask))
+  // 2024-12-20 hotfix: filtering out any postreqs that are part of a procedure when parentTask is part of a procedure.
+  const postreqsEligibleForSort = (): Task[] => {
+    if((parentTask.value.procedure_ids ?? []).length > 0) return parentTask.value.incomplete_postreqs.filter(x => (x.procedure_ids ?? []).length === 0) as Task[]
+    return parentTask.value.incomplete_postreqs as Task[]
+  }
+  const postreqsToSort = computed(() => postreqsEligibleForSort().map(postWeightedTask))
 
   // const layerZero = computed(() => {
   //   const layerZeroTasks = useTaskStore().layerZero

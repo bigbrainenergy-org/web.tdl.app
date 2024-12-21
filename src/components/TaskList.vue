@@ -53,7 +53,7 @@
 <script setup lang="ts">
   import TaskItem from 'src/components/TaskItem.vue'
 
-  import { computed, toRef } from 'vue'
+  import { computed } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { Task } from 'src/stores/tasks/task-model'
 
@@ -76,8 +76,8 @@
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
-  // commenting this out for now - is this different from defineModel somehow? is this necessary? is this useful?
-  //const tasks = toRef(props, 'tasks')
+  // commenting this out for now - is this different from defineModel somehow? is this necessary? is this useful? TODO
+  // const tasks = toRef(props, 'tasks')
 
   const loading = computed(() => useLoadingStateStore().busy)
 </script>

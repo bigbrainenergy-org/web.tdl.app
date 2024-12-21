@@ -23,7 +23,7 @@
   import PainHeader from 'src/components/PainHeader.vue'
 
   import type { Task } from 'src/stores/tasks/task-model'
-  import { ref, watch } from 'vue'
+  import { ref } from 'vue'
 
   // TODO: This should probably be a layout instead
 

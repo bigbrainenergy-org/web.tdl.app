@@ -75,6 +75,7 @@
   }
 
   const agendaOnFire = computed(() => {
+    console.debug('hmmmmmm')
     let countFire = 0
     const fireAmt = localSettingsStore.strictModeMaxPostreqs
     tasks.value.slice(0, 9).forEach(x => {
@@ -89,9 +90,19 @@
     else {
       notifySuccess('Sort The Postreqs of this Task.')
       let largest = tasks.value[0]!
+      // 2024-12-20 hotfix: when task is part of a procedure, I am omitting the incomplete postreqs from the count who are themselves part of a procedure.
+      // this is to prevent procedures getting repeatedly shredded by overzealous list tidying
+      // UI/UX TODO FIXME - remake recurring tasks/procedures so that they are more robust
+      const postreqsForCount = (task: Task) => {
+        if((task.procedure_ids ?? []).length > 0) {
+          return task.incomplete_postreqs.filter(x => (x.procedure_ids ?? []).length === 0).length
+        }
+        return task.incomplete_postreqs.length
+      }
       for(let i = 1; i < Math.min(9, tasks.value.length); i++) {
-        if(tasks.value[i]!.incomplete_postreqs.length > largest.incomplete_postreqs.length) {
-          largest = tasks.value[i]!
+        const tmpTask = tasks.value[i]!
+        if(postreqsForCount(tmpTask) > postreqsForCount(largest)) {
+          largest = tmpTask
         }
       }
       openUpdateTaskDialog(largest)

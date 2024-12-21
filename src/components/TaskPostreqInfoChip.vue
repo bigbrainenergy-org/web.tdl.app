@@ -4,6 +4,7 @@
       {{ taskIncompletePostreqLength }}
     </q-chip>
     <div v-if="taskPostreqInfoView === 'Strict'">
+      <!-- <q-icon v-if="(task.procedure_ids ?? []).length" class="q-pr-sm" name="repeat" color="gray" /> -->
       <q-icon v-if="taskIncompletePostreqLength > strictModeMaxPostreqs" name="warning" color="red" />
       <q-icon v-if="taskIncompletePostreqLength <= strictModeMaxPostreqs && taskIncompletePostreqLength > 0" name="rocket_launch" />
     </div>
