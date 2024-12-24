@@ -3,7 +3,7 @@
     v-model="editNotes"
     filled
     autogrow
-    debounce="1000"
+    debounce="3000"
     label="Notes"
     @update:model-value="updateTask(task.id, { notes: editNotes })"
   />
