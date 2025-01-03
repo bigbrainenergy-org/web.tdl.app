@@ -28,5 +28,5 @@
   // TODO: This should probably be a layout instead
 
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
-  const filteredTasks = ref<Task[]>([])
+  const filteredTasks = ref<Task[]>(tasks.value)
 </script>

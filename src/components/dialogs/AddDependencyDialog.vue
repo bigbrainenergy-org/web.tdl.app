@@ -43,9 +43,10 @@
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <!-- <q-scroll-area v-else> -->
+              <!-- BUG: suddenly this q-list is extremely slow. -->
               <q-list v-else ref="el">
                 <q-item
-                  v-for="task in results"
+                  v-for="task in results.slice(0, 50)"
                   :key="task.id ?? -1"
                   v-ripple
                   clickable
@@ -75,7 +76,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
-  import type { FuseResult } from 'fuse.js'
+  import type { FuseResult, IFuseOptions } from 'fuse.js'
   import Fuse from 'fuse.js'
   import { hardCheck } from 'src/utils/type-utils'
   import { handleError } from 'src/utils/notification-utils'
@@ -207,7 +208,7 @@
   //   return tasks
   // }
 
-  const searchOptions = {
+  const searchOptions: IFuseOptions<Task> = {
     isCaseSensitive: false,
     ignoreLocation: true,
     keys: ['title']
@@ -225,7 +226,7 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str, { limit: 999 }), 'fuse search', 55)()
 
     results.value = run.map((x) => x.item)
     timeThis(kickOffRedundancyCheck, 'kickOffRedundancyCheck', 13)()

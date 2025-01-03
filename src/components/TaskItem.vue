@@ -27,14 +27,14 @@
     <TaskPostreqInfoChip :task="task" />
     
     <q-item-section side>
-      <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPrerequisitesDialog(task)" />
+      <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPre(task)" />
     </q-item-section>
   </q-item>
 </template>
 
 <script setup lang="ts">
   import { toRef } from 'vue'
-  import { addPrerequisitesDialog } from 'src/utils/dialog-utils'
+  import { addPrerequisitesDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskPostreqInfoChip from './TaskPostreqInfoChip.vue'
 
@@ -51,6 +51,8 @@
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
+
+  const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
 </script>
 
 <style>

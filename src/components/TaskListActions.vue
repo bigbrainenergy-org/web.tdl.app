@@ -53,6 +53,7 @@
   import Fuse from 'fuse.js'
   import TaskSearchInput from './search/TaskSearchInput.vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
   const filtered = defineModel<Array<Task>>('filtered', { required: true })
@@ -74,12 +75,28 @@
     else currentSortingMode.value = 'sortByAgenda'
   }
 
+  const { busy } = storeToRefs(useLoadingStateStore())
+
   const agendaOnFire = computed(() => {
+    if(busy.value === true) return false // <-- BUG for some reason without minding the busy signal, this goes very slow and Firefox calls us "Jank"
     console.debug('hmmmmmm')
     let countFire = 0
     const fireAmt = localSettingsStore.strictModeMaxPostreqs
-    tasks.value.slice(0, 9).forEach(x => {
-      if(x.incomplete_postreqs.length > fireAmt) countFire++
+    const t = tasks.value[0]
+    const qtyNonRecurringPostreqs = (x: Task) => x.incomplete_postreqs.filter(x => (x.procedure_ids ?? []).length === 0).length
+    if(typeof t === 'undefined') {
+      console.debug('task 0 was undefined')
+      return false
+    }
+    if(qtyNonRecurringPostreqs(t) > fireAmt) {
+      console.debug(`${t.title} has too many non procedure tasks`)
+      return true
+    }
+    tasks.value.slice(1, 9).forEach(x => {
+      if(qtyNonRecurringPostreqs(x) > fireAmt) {
+        console.debug(`${x.title} has too many non procedure tasks`)
+        countFire++
+      }
     })
     return countFire > 2
   })
@@ -137,10 +154,16 @@
     const start = performance.now()
     const str = searchString.value ?? ''
 
+    if(str.length === 0) {
+      filtered.value = tasks.value
+      return
+    }
+
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
     const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
+    // TODO - this conditional is an attempt to fix a bug where sometimes the page loads and the list has zero results until search box is blipped
     if(run.length === 0) {
       console.debug('zero results from search')
       filtered.value = tasks.value
