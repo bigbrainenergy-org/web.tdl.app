@@ -21,7 +21,7 @@ export function useTaskSorting() {
        * #todo is the sort necessary?
        */
       const firstLayer = tasks.filter(x => !x.completed && x.incomplete_prereqs.length === 0).sort((a, b) => b.incomplete_postreqs.length - a.incomplete_postreqs.length)
-      // console.debug({ firstLayer })
+      console.debug({ firstLayer })
       /**
        * # finalList
        * It's important to note that JS Set and Map has the following properties:

@@ -552,6 +552,11 @@
   dependencies:
     levn "^0.4.1"
 
+"@formkit/drag-and-drop@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@formkit/drag-and-drop/-/drag-and-drop-0.3.1.tgz#0bfd635a237a190aa9b42c83a75e974b8e96d1d1"
+  integrity sha512-a2IQpgOWtQRzZ+2Sd9LGOQ9UPg05KxgEMjZY7RcrXeUT0Ajv1oBJ/aFAKUDNZTzi8JkBeBvL3CkfYHI85jzBWg==
+
 "@hapi/hoek@^9.0.0", "@hapi/hoek@^9.3.0":
   version "9.3.0"
   resolved "https://registry.yarnpkg.com/@hapi/hoek/-/hoek-9.3.0.tgz#8368869dcb735be2e7f5cb7647de78e167a251fb"

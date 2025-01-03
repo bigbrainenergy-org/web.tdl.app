@@ -31,41 +31,74 @@
         </p>
       </q-card-section>
       <q-linear-progress v-if="loading" query stripe size="10px" />
-      <q-card-section v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-top">
-        <q-btn-dropdown
-          :disable="loading"
-          size="lg"
-          color="positive"
-          style="width: 100%"
-          split
-          auto-close
-          dropdown-icon="more_vert"
-          @click.stop="makeSelection(t as Task)"
-          @touchstart.stop
-          @mousedown.stop
-        >
-          <template #label>
-            <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped" :style="style">
-                {{ t.title }}
-              </q-item-label>
-            </q-item-section>
-          </template>
-          <q-list>
-            <q-item
-              v-for="(menuitem, index) in menuItems"
-              :key="index"
-              v-close-popup
-              clickable
-              @click.stop="menuitem.action(t as Task)"
-            >
-              <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-              <q-space />
-              <q-icon :name="menuitem.icon" />
+      <template v-if="loading">
+        <q-item v-for="index in currentPair.length" :key="index" v-ripple>
+          <q-skeleton type="QRadio" class="q-mr-md" />
+          <q-item-section>
+            <q-skeleton type="text" />
+          </q-item-section>
+
+          <q-item-section v-if="$q.screen.gt.sm" side>
+            <q-skeleton type="QRadio" />
+          </q-item-section>
+
+          <q-item-section v-if="$q.screen.gt.sm" side>
+            <q-skeleton type="QChip" />
+          </q-item-section>
+
+          <q-item-section v-if="$q.screen.gt.sm" side>
+            <q-skeleton type="QBtn" />
+          </q-item-section>
+        </q-item>
+        <q-inner-loading
+          :showing="loading"
+          label="Loading..."
+          label-class="text-teal"
+          label-style="font-size: 1.1em"
+        />
+      </template>
+      <template v-else>
+        <ul ref="parentRef" style="list-style-type: none; margin: 0; padding: 0;">
+          <li v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-middle" style="display: flex" color="positive" :disable="loading">
+            <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm" color="primary" />
+            <q-item clickable>
+              <q-item-section class="vertical-top" @click.stop="makeSelection(t as Task)">
+                <q-item-label lines="2" class="wrapped" :style="style">
+                  {{ t.title }}
+                </q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn
+                  flat
+                  :disable="loading"
+                  icon="more_vert"
+                  size="lg"
+                  color="white"
+                  auto-close
+                  @touchstart.stop
+                  @mousedown.stop
+                >
+                  <q-menu>
+                    <q-list>
+                      <q-item
+                        v-for="(menuitem, index) in menuItems"
+                        :key="index"
+                        v-close-popup
+                        clickable
+                        @click.stop="menuitem.action(t as Task)"
+                      >
+                        <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
+                        <q-space />
+                        <q-icon :name="menuitem.icon" />
+                      </q-item>
+                    </q-list>
+                  </q-menu>
+                </q-btn>
+              </q-item-section>
             </q-item>
-          </q-list>
-        </q-btn-dropdown>
-      </q-card-section>
+          </li>
+        </ul>
+      </template>
       <q-card-section class="q-ma-lg vertical-top text-center">
         <q-btn
           :disable="loading"
@@ -74,6 +107,14 @@
           color="grey"
           label="SKIP"
           @click="skip"
+        />
+        <q-btn
+          :disable="loading"
+          class="q-ma-lg"
+          size="lg"
+          color="positive"
+          label="CONFIRM ORDER"
+          @click="confirmOrder"
         />
       </q-card-section>
     </q-card>
@@ -97,6 +138,7 @@
   import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { hardCheck } from 'src/utils/type-utils'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
+  import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
 
   interface qspotdProps {
     parentTaskId: number
@@ -321,7 +363,10 @@
   }
   if (firstPair === null || typeof firstPair === 'undefined')
     throw new Error('Could not generate first pair')
-  const currentPair = ref(firstPair)
+
+  const [parentRef, currentPair] = useDragAndDrop(firstPair, {
+    dragHandle: '.drag-me' // IMPORTANT: the drag and drop plugin only searches maybe 2 elements deep for this class.
+  })
 
   // const forget = (id: number) => {
   //   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
@@ -353,6 +398,23 @@
       x.hard_prereq_ids.push(mvp.id)
     })
     await useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+    tryNewPair()
+    loading.value = false
+  }
+
+  const confirmOrder = async () => {
+    loading.value = true
+    const first_task = currentPair.value[0]!
+    priorMVPs.add(first_task.id)
+    const tasks_to_remove_from_parent_task = currentPair.value.slice(1).map(x => x.id)
+    // TODO: use a batch update api call for this!
+    parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => !tasks_to_remove_from_parent_task.includes(x))
+    await useTaskStore().apiUpdate(parentTask.value.id, { hard_postreq_ids: parentTask.value.hard_postreq_ids })
+    for(let i = 1; i < currentPair.value.length; i++) {
+      const a = currentPair.value[i-1]!
+      const b = currentPair.value[i]!
+      await useTaskStore().addRule(a.id, b.id)
+    }
     tryNewPair()
     loading.value = false
   }

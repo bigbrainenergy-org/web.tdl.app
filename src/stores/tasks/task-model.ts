@@ -192,19 +192,17 @@ export class Task implements TaskLike {
       .where((x) => ids.includes(x.id))
       .get()
   }
-  toggleCompleted() {
+  async toggleCompleted() {
     this.completed = !this.completed
-    return this.updateTaskCompletionStatus()
+    return await this.updateTaskCompletionStatus()
   }
   /**
    * A similar function but just sets up the api update to only have a payload containing the new completed status; does not actively switch the completed status
    */
-  updateTaskCompletionStatus() {
-    return useTaskStore()
-      .apiUpdate(this.id, { completed: this.completed })
-      .then(() => {
-        considerOpeningQuickSortDialog()
-      })
+  async updateTaskCompletionStatus() {
+    const newVal = await useTaskStore().apiUpdate(this.id, { completed: this.completed })
+    considerOpeningQuickSortDialog()
+    return newVal
   }
   grabPrereqs(incompleteOnly: boolean) {
     return incompleteOnly ? this.incomplete_prereqs : this.hard_prereqs

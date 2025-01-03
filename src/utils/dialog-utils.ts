@@ -20,6 +20,7 @@ import { ProcedureRepo } from 'src/stores/procedures/procedure'
 import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.vue'
 import type { λ } from './types'
 import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
+import QuickSortLayerZeroDialog2 from 'src/components/dialogs/QuickSortLayerZeroDialog2.vue'
 
 export function openCreateTaskDialog() {
   return Dialog.create({

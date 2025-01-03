@@ -35,6 +35,7 @@ export function useTasks() {
     try {
       baseQuery = filterTasks(baseQuery)
       console.log('filterTasks done')
+      console.debug({ filterTasks: baseQuery })
     } catch(filterTasksEx) {
       console.warn({ msg: 'filter tasks exception', filterTasksEx })
       baseQuery = []
@@ -42,6 +43,7 @@ export function useTasks() {
     try {
       baseQuery = sortTasks(baseQuery)
       console.log('sortTasks done')
+      console.debug({ sortTasks: baseQuery })
     } catch(sortTasksEx) {
       console.warn({ msg: 'sort tasks exception', sortTasksEx })
       baseQuery = []

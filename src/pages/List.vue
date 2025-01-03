@@ -22,13 +22,12 @@
 
   useMeta(() => ({ title: 'List | TDL App' }))
 
-  const updateTask = (_event: any, task: Task) => {
+  const updateTask = async (_event: any, task: Task) => {
     playCheckboxSound(task.completed)
-    task.updateTaskCompletionStatus()
+    await task.updateTaskCompletionStatus()
   }
   const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task).onDismiss(considerOpeningQuickSortDialog)
 
-  // FIXME: useTasks recalculates tasks for every list item on-screen.
-  // This should only be recalculated once on the page.
+  // BUG sometimes especially after adding deps or marking a task complete, the tasks returned here is not all of the tasks.
   const { tasks } = useTasks()
 </script>
