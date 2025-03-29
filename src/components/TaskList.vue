@@ -53,7 +53,7 @@
 <script setup lang="ts">
   import TaskItem from 'src/components/TaskItem.vue'
 
-  import { computed, toRef } from 'vue'
+  import { computed, ref, toRef } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { Task } from 'src/stores/tasks/task-model'
 
@@ -78,4 +78,6 @@
   const tasks = toRef(props, 'tasks')
 
   const loading = computed(() => useLoadingStateStore().busy)
+
+  const temp = ref(false)
 </script>

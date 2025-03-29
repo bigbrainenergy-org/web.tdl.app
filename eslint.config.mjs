@@ -12,20 +12,21 @@ export default tseslint.config(
   // NOTE: Global ignores MUST be COMPLETELY by itself, or it won't work.
   {
     ignores: [
-      '**/dist/*',
-      '**/node_modules/*',
-      '**/src-capacitor/*',
-      '**/src-electron/*',
-      '**/src-pwa/*',
-      '**/*.d.ts',
-      '.quasar',
+      './dist/**/*',
+      './node_modules/**/*',
+      './src-capacitor/**/*',
+      './src-electron/**/*',
+      './src-pwa/**/*',
+      './**/*.d.ts',
+      './.quasar/**/*',
       '.postcssrc.js',
     ]
   },
   // Import recommendations for all plugins
   eslint.configs.recommended,
-  // tseslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  tseslint.configs.recommended,
+  // FIXME: recommendedTypeChecked is slow af
+  // ...tseslint.configs.recommendedTypeChecked,
   cypress.configs.recommended,
   ...vue.configs['flat/recommended'],
   {

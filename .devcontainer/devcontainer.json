@@ -1,5 +1,5 @@
 {
-  "name": "Vue (Community)",
+  "name": "Quasar",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
