@@ -4,7 +4,11 @@
     <GloriousToggle v-model:model-value="hideCompleted" label="Incomplete Tasks Only" />
     <GloriousToggle v-model:model-value="autoScalePriority" label="Auto Scale Priority" />
   </GloriousSettingsPopup>
-  <q-btn text-color="primary" icon="sort" @click="toggleAgenda" />
+  <q-btn text-color="primary" icon="sort" @click="toggleAgenda">
+    <q-tooltip>
+      Toggle Agenda View Mode
+    </q-tooltip>
+  </q-btn>
   <q-btn v-if="agendaOnFire" text-color="red" icon="fa-solid fa-dumpster-fire" @click="openLargestOfFirstTenTasks" />
   <q-space />
   <q-item-label class="text-primary">{{ filtered.length }} tasks</q-item-label>
