@@ -39,7 +39,7 @@
         </q-item-section>
       </q-item>
       <!-- Otherwise, lazy render tasks -->
-      <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
+      <q-intersection v-for="(task, index) in tasks.slice(undefined, 200)" :key="index" once style="min-height: 48px">
         <TaskItem
           :task="task"
           @task-clicked="$emit('task-clicked', $event, task)"
