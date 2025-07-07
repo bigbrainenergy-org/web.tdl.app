@@ -18,6 +18,7 @@ export interface CreateTaskOptions {
   procedure_ids?: number[]
   mental_energy_required?: number
   physical_energy_required?: number
+  task_duration_in_minutes?: number
 }
 
 export interface TaskLike {
@@ -37,6 +38,7 @@ export interface TaskLike {
   procedure_ids?: number[]
   mental_energy_required: number
   physical_energy_required: number
+  task_duration_in_minutes?: number
 }
 
 export interface UpdateTaskLike {
@@ -60,4 +62,5 @@ export interface AllOptionalTaskProperties {
   mental_energy_required?: number
   physical_energy_required?: number
   procedure_ids?: number[]
+  task_duration_in_minutes?: number
 }

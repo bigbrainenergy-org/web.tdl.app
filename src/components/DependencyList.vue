@@ -53,17 +53,7 @@
               </q-item-section>
             </template>
             <q-list>
-              <q-item
-                v-for="(menuitem, index) in menuItems"
-                :key="index"
-                v-close-popup
-                clickable
-                @click.stop="menuitem.action(item)"
-              >
-                <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-                <q-space />
-                <q-icon :name="menuitem.icon" />
-              </q-item>
+              <MenuListItem v-for="(menuitem, index) in menuItems" :key="index" :item="item" :menu-item="menuitem" />
             </q-list>
           </q-btn-dropdown>
         </q-item>
@@ -80,6 +70,7 @@
   import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
   import { ref } from 'vue'
+  import MenuListItem from './MenuListItem.vue'
 
   export interface EntityType {
     singular: string

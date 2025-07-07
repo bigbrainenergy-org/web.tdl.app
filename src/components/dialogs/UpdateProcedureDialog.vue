@@ -22,6 +22,12 @@
               data-cy="task_title_input"
               @enter-key="updateProcedure({ title: editTitle })"
             />
+            <q-item-label class="text-h5 text-primary">
+              Est. {{ procedure.tasks.map(x => x.task_duration_in_minutes ?? 15).reduce((acc, cur) => acc += cur) }} minutes total
+            </q-item-label>
+            <q-item-label class="text-h5 text-primary">
+              Est. {{ procedure.tasks.filter(x => !x.completed).map(x => x.task_duration_in_minutes ?? 15).reduce((acc, cur) => acc += cur) }} minutes remaining
+            </q-item-label>
           </div>
           <div class="col-12 col-md">
             <q-toggle
@@ -71,6 +77,7 @@
     // openSearchDialog,
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
+  import { acceptHMRUpdate } from 'pinia'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)

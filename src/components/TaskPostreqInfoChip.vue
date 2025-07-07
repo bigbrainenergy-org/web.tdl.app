@@ -1,11 +1,24 @@
 <template>
+  <q-item-section v-if="(task.procedure_ids ?? []).length" side>
+    <q-icon v-if="(task.procedure_ids ?? []).length" class="q-pr-sm" name="repeat" color="gray">
+      <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
+        Part of {{ task.procedures.map(x => x.title).join(', ') }}
+      </q-tooltip>
+    </q-icon>
+  </q-item-section>
   <q-item-section v-if="taskIncompletePostreqLength" side>
     <q-chip v-if="taskPostreqInfoView === 'Quantity'" :style="taskPostreqColor">
       {{ taskIncompletePostreqLength }}
+      <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
+        This task has {{ taskIncompletePostreqLength }} incomplete postreqs!
+      </q-tooltip>
     </q-chip>
     <div v-if="taskPostreqInfoView === 'Strict'">
-      <q-icon v-if="(task.procedure_ids ?? []).length" class="q-pr-sm" name="repeat" color="gray" />
-      <q-icon v-if="taskIncompletePostreqLength > strictModeMaxPostreqs" name="warning" color="red" />
+      <q-icon v-if="taskIncompletePostreqLength > strictModeMaxPostreqs" name="warning" color="red">
+        <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
+          This task has {{ taskIncompletePostreqLength }} incomplete postreqs!
+        </q-tooltip>
+      </q-icon>
       <q-icon v-if="taskIncompletePostreqLength <= strictModeMaxPostreqs && taskIncompletePostreqLength > 0" name="rocket_launch" />
     </div>
   </q-item-section>

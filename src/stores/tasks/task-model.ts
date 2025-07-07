@@ -31,6 +31,7 @@ export class Task implements TaskLike {
   procedure_ids?: number[]
   mental_energy_required: number
   physical_energy_required: number
+  task_duration_in_minutes?: number
   constructor(data: TaskLike | CreateTaskOptions) {
     this._hard_prereq_ids = []
     this._hard_postreq_ids = []
@@ -150,6 +151,7 @@ export class Task implements TaskLike {
     this.procedure_ids = data.procedure_ids
     this.mental_energy_required = data.mental_energy_required ?? 50
     this.physical_energy_required = data.physical_energy_required ?? 50
+    this.task_duration_in_minutes = data.task_duration_in_minutes
   }
   fullSyncPres() {
     // TODO: make private if possible
@@ -248,7 +250,8 @@ export class Task implements TaskLike {
       notes: this.notes,
       list_id: this.list_id,
       deadline_at: this.deadline_at,
-      prioritize_at: this.prioritize_at
+      prioritize_at: this.prioritize_at,
+      task_duration_in_minutes: this.task_duration_in_minutes
     }
   }
   /// d3Node<Task>

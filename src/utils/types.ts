@@ -28,7 +28,8 @@ export class NodeKey {
 export type SimpleMenuItem<T> = {
   label: string
   icon: string
-  action: λ<T, Promise<T | void> | void>
+  action: λ<T, unknown>
+  items?: SimpleMenuItem<T>[]
 }
 
 export type ApiError = Error | AxiosError<unknown, any>

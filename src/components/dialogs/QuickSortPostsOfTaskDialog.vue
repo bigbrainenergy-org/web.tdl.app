@@ -362,7 +362,7 @@
     finishedSorting()
   }
   if (firstPair === null || typeof firstPair === 'undefined')
-    throw new Error('Could not generate first pair')
+    throw new Error('Could not generate first pair') //! FIXME there ought to be a better way
 
   const [parentRef, currentPair] = useDragAndDrop(firstPair, {
     dragHandle: '.drag-me' // IMPORTANT: the drag and drop plugin only searches maybe 2 elements deep for this class.

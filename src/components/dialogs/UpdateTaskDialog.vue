@@ -19,6 +19,7 @@
             <TaskInputList v-model:task="currentTask as Task" />
             <TaskInputProcedures v-model:task="currentTask as Task" />
             <TaskInputRemindMeAt v-model:task="currentTask as Task" />
+            <TaskInputDuration v-model:task="currentTask as Task" />
             <TaskInputEnergy v-model:task="currentTask as Task" />
             <br>
             <TaskInputNotes v-model:task="currentTask as Task" />
@@ -90,6 +91,7 @@
   import TaskInputRemindMeAt from 'src/components/TaskInputRemindMeAt.vue'
   import TaskInputEnergy from 'src/components/TaskInputEnergy.vue'
   import TaskInputNotes from 'src/components/TaskInputNotes.vue'
+  import TaskInputDuration from '../TaskInputDuration.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
 
   import { storeToRefs } from 'pinia'

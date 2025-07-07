@@ -21,6 +21,7 @@ import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.
 import type { λ } from './types'
 import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
 import QuickSortLayerZeroDialog2 from 'src/components/dialogs/QuickSortLayerZeroDialog2.vue'
+import TaskTimerDialog from 'src/components/dialogs/TaskTimerDialog.vue'
 
 export function openCreateTaskDialog() {
   return Dialog.create({
@@ -98,6 +99,15 @@ export function openQuickSortDialog() {
     component: QuickSortLayerZeroDialog,
     componentProps: {
       objective: useLocalSettingsStore().enableQuickSortOnLayerZeroQTY
+    }
+  })
+}
+
+export function openTimer(task: Task) {
+  return Dialog.create({
+    component: TaskTimerDialog,
+    componentProps: {
+      task
     }
   })
 }
