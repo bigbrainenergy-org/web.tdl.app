@@ -78,6 +78,7 @@
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
   import { acceptHMRUpdate } from 'pinia'
+  import { useTaskSorting } from 'src/composables/use-task-sorting'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)
@@ -151,7 +152,7 @@
   const editTitle = ref(procedureRef.value.title)
 
   const allTasks = computed<Task[]>(() =>
-    incompleteOnly.value ? procedureTasks.value.filter((x) => !x.completed) : procedureTasks.value
+    useTaskSorting().sortRoutineTasks(procedureTasks.value).filter(x => incompleteOnly.value ? !x.completed : true)
   )
 
   function deleteProcedure(procedure: Procedure) {

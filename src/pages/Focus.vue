@@ -42,6 +42,7 @@
           </q-tooltip>
         </q-btn>
         <q-btn dense flat icon="fa fa-check" @click="currentTask.toggleCompleted()" />
+        <q-btn dense flat icon="play_arrow" @click="openTimer(currentTask)" />
       </q-bar>
       <q-card-section v-if="currentTask" class="text-h4">
         {{ currentTask.title }}
@@ -88,6 +89,7 @@
           @touchstart.stop
           @mousedown.stop
         />
+        <q-btn dense flat icon="play_arrow" @click="openTimer(nextUp)" />
       </q-bar>
       <q-card-section v-if="nextUp" class="text-h4">
         {{ nextUp.title }}
@@ -107,6 +109,7 @@
   import {
     addPrerequisitesDialog,
     openTaskSlicerDialog,
+    openTimer,
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
 
@@ -120,7 +123,7 @@
 
   const layerZero = computed(() => {
     return useTaskStore().layerZero.sort(
-      (a, b) => b.incomplete_postreqs.length - a.incomplete_postreqs.length
+      (a, b) => (a.task_duration_in_minutes ?? 1440) - (b.task_duration_in_minutes ?? 1440)
     )
   })
 

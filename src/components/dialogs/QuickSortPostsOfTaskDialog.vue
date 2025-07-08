@@ -124,7 +124,7 @@
 <script setup lang="ts">
   import { Notify, useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { onMounted, watch } from 'vue'
+  import { onMounted, watch, nextTick } from 'vue'
   import { computed, ref } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { useElementSize } from '@vueuse/core'
@@ -138,7 +138,7 @@
   import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { hardCheck } from 'src/utils/type-utils'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
-  import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
+  import { useDragAndDrop, dragAndDrop } from '@formkit/drag-and-drop/vue'
 
   interface qspotdProps {
     parentTaskId: number
@@ -272,8 +272,8 @@
     // todo: figure out what all we should save here.
     useTaskStore()
       .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(() => {
-        tryNewPair()
+      .then(async () => {
+        await tryNewPair()
         loading.value = false
       })
   }
@@ -377,9 +377,41 @@
   //   skippedPairs = skippedPairs.filter(idInSkippedPair)
   // }
 
-  const tryNewPair = () => {
+
+  type ResolveFunc<T> = (value: T | PromiseLike<T>) => void
+
+  /**
+   * Wait for the input number of seconds.
+   * @param ms to idle/sleep
+   * @returns an awaitable Promise<void> that will resolve after the time has elapsed
+   * @example
+   * console.log("I need to be right back.")
+   * await idle_s(2)
+   * console.log("I am back after 2 seconds.")
+   */
+  const idle_ms = async (ms: number): Promise<void> => {
+    const timer_function = (resolve: ResolveFunc<void>) => setTimeout(resolve, ms)
+    return new Promise(timer_function)
+  }
+  const reinitializeDragAndDrop = async () => {
+    await idle_ms(200)
+    nextTick(() => {
+      // Force a reactive update by creating a new array reference
+      // if (currentPair.value && currentPair.value.length > 0) {
+      //   currentPair.value = [...currentPair.value]
+      // }
+      dragAndDrop({
+        parent: parentRef,
+        values: currentPair,
+        dragHandle: '.drag-me'
+      })
+    })
+  }
+
+  const tryNewPair = async() => {
     try {
       currentPair.value = generateNewPair()
+      await reinitializeDragAndDrop()
     } catch (e) {
       notifySuccess('Nothing more to sort')
       if (dialogRef !== null) onDialogOK()
@@ -398,7 +430,7 @@
       x.hard_prereq_ids.push(mvp.id)
     })
     await useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-    tryNewPair()
+    await tryNewPair()
     loading.value = false
   }
 
@@ -415,12 +447,12 @@
       const b = currentPair.value[i]!
       await useTaskStore().addRule(a.id, b.id)
     }
-    tryNewPair()
+    await tryNewPair()
     loading.value = false
   }
 
-  const skip = () => {
-    tryNewPair()
+  const skip = async () => {
+    await tryNewPair()
   }
 
   const onCancelClick = () => {
