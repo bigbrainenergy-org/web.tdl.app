@@ -1,11 +1,13 @@
 <template>
   <q-item-section side>
-    <q-btn v-if="task.task_duration_in_minutes" outline rounded @click.stop="startTimer(task)">
-      {{ task.task_duration_in_minutes }}m
-      <q-icon name="play_arrow" color="white" />
-    </q-btn>
-    <q-btn v-else icon="play_arrow" class="text-white" outline rounded @click.stop="() => {}">
-      <q-menu auto-close>
+    <q-btn outline rounded @click.stop="startTimer(task)">
+      <TheBestTransition>
+        <span v-if="hover" color="white">
+          {{ task.task_duration_in_minutes ? `${task.task_duration_in_minutes}m` : 'TIME TBD' }}
+        </span>
+      </TheBestTransition>
+      <q-icon :name="task.task_duration_in_minutes ? 'play_arrow' : 'fas fa-question'" color="white" />
+      <q-menu v-if="!task.task_duration_in_minutes" auto-close>
         <q-list style="min-width: 100px">
           <MenuListItem v-for="(menuItem, index) in menuitems" :key="index" :menu-item="menuItem" :item="task" />
         </q-list>
@@ -14,19 +16,23 @@
   </q-item-section>
 </template>
 <script setup lang="ts">
-  import type { Task } from 'src/stores/tasks/task-model'
   import { considerOpeningQuickSortDialog, openTimer } from 'src/utils/dialog-utils'
   import MenuListItem from './MenuListItem.vue'
   import type { SimpleMenuItem } from 'src/utils/types'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { handleError, notifySuccess } from 'src/utils/notification-utils'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import TheBestTransition from './TheBestTransition.vue'
 
   interface Prop {
     task: Task
+    hover: boolean
   }
   defineProps<Prop>()
 
-  const startTimer = (task: Task) => openTimer(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
+  const startTimer = (task: Task) => {
+    if(task.task_duration_in_minutes) openTimer(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog).onOk(considerOpeningQuickSortDialog)
+  }
 
   const updateEstimate = (est: number) => (task: Task) => {
     useTaskStore().apiUpdate(task.id, { task_duration_in_minutes: est }).then(() => {

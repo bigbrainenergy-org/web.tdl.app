@@ -22,6 +22,8 @@ import type { λ } from './types'
 import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
 import QuickSortLayerZeroDialog2 from 'src/components/dialogs/QuickSortLayerZeroDialog2.vue'
 import TaskTimerDialog from 'src/components/dialogs/TaskTimerDialog.vue'
+import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
+import SeamlessTimer from 'src/components/SeamlessTimer.vue'
 
 export function openCreateTaskDialog() {
   return Dialog.create({
@@ -104,11 +106,11 @@ export function openQuickSortDialog() {
 }
 
 export function openTimer(task: Task) {
+  const tts = useTaskTimerStore()
+  tts.startTimer(task)
+  tts.minimized = false
   return Dialog.create({
-    component: TaskTimerDialog,
-    componentProps: {
-      task
-    }
+    component: SeamlessTimer //! TODO: make sure ondismiss and on unmount are properly handled w/pinia state
   })
 }
 

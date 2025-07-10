@@ -5,6 +5,13 @@ export interface TaskState {
   array: Task[]
 }
 
+export interface TaskTimerState {
+  task: Task | null
+  minimized: boolean
+  timeRemaining: number
+  timer: any
+}
+
 export interface CreateTaskOptions {
   list_id?: number | null
   title: string

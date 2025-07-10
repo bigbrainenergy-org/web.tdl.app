@@ -41,8 +41,14 @@
             Add Prerequisites
           </q-tooltip>
         </q-btn>
-        <q-btn dense flat icon="fa fa-check" @click="currentTask.toggleCompleted()" />
-        <q-btn dense flat icon="play_arrow" @click="openTimer(currentTask)" />
+        <q-btn dense flat icon="fa fa-check" @click="currentTask.toggleCompleted().then(considerOpeningQuickSortDialog)" />
+        <q-btn dense flat icon="play_arrow" @click.stop="handleTimerClick(currentTask)">
+          <q-menu v-if="!currentTask.task_duration_in_minutes" auto-close>
+            <q-list style="min-width: 100px">
+              <MenuListItem v-for="(menuItem, index) in menuitems" :key="index" :menu-item="menuItem" :item="currentTask" />
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-bar>
       <q-card-section v-if="currentTask" class="text-h4">
         {{ currentTask.title }}
@@ -85,11 +91,17 @@
           dense
           flat
           icon="fa fa-check"
-          @click="nextUp.toggleCompleted()"
+          @click="nextUp.toggleCompleted().then(considerOpeningQuickSortDialog)"
           @touchstart.stop
           @mousedown.stop
         />
-        <q-btn dense flat icon="play_arrow" @click="openTimer(nextUp)" />
+        <q-btn dense flat icon="play_arrow" @click.stop="handleTimerClick(nextUp)">
+          <q-menu v-if="!nextUp.task_duration_in_minutes" auto-close>
+            <q-list style="min-width: 100px">
+              <MenuListItem v-for="(menuItem, index) in menuitems" :key="index" :menu-item="menuItem" :item="nextUp" />
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-bar>
       <q-card-section v-if="nextUp" class="text-h4">
         {{ nextUp.title }}
@@ -108,10 +120,14 @@
   import { computed } from 'vue'
   import {
     addPrerequisitesDialog,
+    considerOpeningQuickSortDialog,
     openTaskSlicerDialog,
     openTimer,
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
+  import type { SimpleMenuItem } from 'src/utils/types'
+  import { handleError, notifySuccess } from 'src/utils/notification-utils'
+  import MenuListItem from 'src/components/MenuListItem.vue'
 
   useMeta(() => ({ title: 'Focus | TDL App' }))
 
@@ -141,4 +157,55 @@
     arr.sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)
     return arr.length > 0 ? arr[0]! : null // arr[0]! with ! is dumb!! ts, come on!
   })
+
+  const startTimer = (task: Task) => {
+    openTimer(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog).onOk(considerOpeningQuickSortDialog)
+  }
+
+  const updateEstimate = (est: number) => (task: Task) => {
+    useTaskStore().apiUpdate(task.id, { task_duration_in_minutes: est }).then(() => {
+      notifySuccess('Task Duration was Updated')
+      task.task_duration_in_minutes = est
+      startTimer(task)
+    }, handleError('Error updating task'))
+  }
+
+  const menuitems: SimpleMenuItem<Task>[] = [
+    {
+      label: 'FAST',
+      icon: 'rocket',
+      action: updateEstimate(5)
+    },
+    {
+      label: '10 minutes',
+      icon: 'clock',
+      action: updateEstimate(10)
+    },
+    {
+      label: '15 minutes',
+      icon: 'clock',
+      action: updateEstimate(15)
+    },
+    {
+      label: '30 minutes',
+      icon: 'clock',
+      action: updateEstimate(30)
+    },
+    {
+      label: '45 minutes',
+      icon: 'clock',
+      action: updateEstimate(45)
+    },
+    {
+      label: '75 minutes',
+      icon: 'clock',
+      action: updateEstimate(75)
+    }
+  ]
+
+  const handleTimerClick = (task: Task) => {
+    if(task.task_duration_in_minutes) {
+      startTimer(task)
+    }
+  }
 </script>

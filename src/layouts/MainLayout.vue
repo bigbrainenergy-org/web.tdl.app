@@ -27,9 +27,11 @@
   import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
 
   const { sideBarOpen } = storeToRefs(useLocalSettingsStore())
   const { backgroundStyle } = useBackgroundMode()
+  const { timer } = storeToRefs(useTaskTimerStore())
 
   useTaskShortcuts()
 
