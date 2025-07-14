@@ -98,7 +98,7 @@
 
   const procedureTasks = computed<Task[]>(() => {
     console.log('fetching proceduretasks again!!')
-    const tasksArr = (useTaskStore().array as Task[]).filter((x) =>
+    const tasksArr = useTaskStore().allTasks.filter((x) =>
       x.procedure_ids?.includes(props.procedure.id)
     )
     // const prm_tasks = props.procedure.grabTasks()

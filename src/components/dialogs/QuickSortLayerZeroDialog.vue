@@ -154,6 +154,10 @@
   import type { SimpleMenuItem } from 'src/utils/types'
   import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { dragAndDrop, useDragAndDrop } from '@formkit/drag-and-drop/vue'
+  import { Logger } from 'src/utils/d'
+  import { dogFoodHarder } from 'src/stores/tasks/dogfood'
+
+  const quickSortLogger = new Logger('Quick Sort', '#3498db')
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -163,10 +167,10 @@
   const emit = defineEmits([...useDialogPluginComponent.emits])
 
   onMounted(() => {
-    console.log('busy for quick sort')
     useLoadingStateStore().busy = true
-    console.log('setting quick sort dialog active to true')
+    quickSortLogger.log('BUSY SIGNAL IS SET TO TRUE')
     useLoadingStateStore().quickSortDialogActive = true
+    quickSortLogger.log('QUICK SORT DIALOG IS ACTIVE')
   })
 
   class PostWeightedTask {
@@ -174,7 +178,7 @@
     constructor(t: Task) {
       this.t = t
     }
-    weight = () => 1 / Math.min(Math.max(1, this.t.incomplete_postreqs.length), 10)
+    weight = () => 1 / Math.min(Math.max(1, this.t.grabPostreqs(true).length), 10)
     shouldReroll = () => Math.random() - this.weight() > 0
   }
 
@@ -195,7 +199,7 @@
     return layerZeroTasks.map(postWeightedTask)
   })
   const tasksWithoutPostreqs = computed(() =>
-    layerZero.value.filter((x) => !(x.t.incomplete_postreqs.length > 0))
+    layerZero.value.filter((x) => !(x.t.grabPostreqs(true).length > 0))
   )
   const l0len = computed(() => layerZero.value.length)
   watch(l0len, (value: number) => {
@@ -233,15 +237,15 @@
   const addPres = (x: Task) => {
     addPrerequisitesDialog(x)
       .onOk(() => {
-        console.debug('getting a new pair now')
+        quickSortLogger.debug('getting a new pair now')
         skip()
       })
       .onCancel(() => {
-        console.debug('getting a new pair now')
+        quickSortLogger.debug('getting a new pair now')
         skip()
       })
       .onDismiss(() => {
-        console.debug('getting a new pair now')
+        quickSortLogger.debug('getting a new pair now')
         skip()
       })
   }
@@ -249,15 +253,15 @@
   const sliceTask = (x: Task) => {
     openTaskSlicerDialog(x)
       .onOk(() => {
-        console.debug('getting a new pair now')
+        quickSortLogger.debug('getting a new pair now')
         skip()
       })
       .onCancel(() => {
-        console.debug('getting a new pair now')
+        quickSortLogger.debug('getting a new pair now')
         skip()
       })
       .onDismiss(() => {
-        console.debug('getting a new pair now')
+        quickSortLogger.debug('getting a new pair now')
         skip()
       })
   }
@@ -272,11 +276,11 @@
       reloadTasks()
     } catch (error: any) {
       Notify.create('Failed to mark the task complete.')
-      console.error(error)
+      quickSortLogger.error(error)
     }
   }
   const taskDetails = (x: Task) => {
-    console.debug(`opening details for task ID ${x.id}`)
+    quickSortLogger.debug(`opening details for task ID ${x.id}`)
     openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
   }
 
@@ -362,7 +366,7 @@
     if (enableQuickSortBailOnBigTask.value) {
       if (
         layerZero.value.filter(
-          (x) => x.t.incomplete_postreqs.length > quickSortBailOnTaskSize.value
+          (x) => x.t.grabPostreqs(true).length > quickSortBailOnTaskSize.value
         ).length > 0
       )
         throw new Error('There is already a layer zero task that is big')
@@ -383,7 +387,7 @@
   try {
     firstPair = generateNewPair()
   } catch (e: any) {
-    console.warn(e)
+    quickSortLogger.warn(e)
     finishedSorting()
   }
   if (firstPair === null || typeof firstPair === 'undefined')
@@ -466,6 +470,7 @@
       const b = currentPair.value[i]!
       // todo use a batch update api call.
       await useTaskStore().addRule(a.id, b.id)
+        .then(() => dogFoodHarder().assertTaskLength('confirmOrder'))
     }
     await tryNewPair()
     loading.value = false
@@ -476,17 +481,17 @@
   }
 
   const onCancelClick = () => {
-    console.log('onCancelClick')
+    quickSortLogger.log('onCancelClick')
     useLoadingStateStore().busy = false
-    console.log('setting quick sort dialog active to false')
+    quickSortLogger.log('setting quick sort dialog active to false')
     useLoadingStateStore().quickSortDialogActive = false
     onDialogOK()
   }
 
   const hideDialog = () => {
-    console.log('hideDialog')
+    quickSortLogger.log('hideDialog')
     useLoadingStateStore().busy = false
-    console.log('setting quick sort dialog active to false')
+    quickSortLogger.log('setting quick sort dialog active to false')
     useLoadingStateStore().quickSortDialogActive = false
     onDialogHide()
   }

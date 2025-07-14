@@ -35,7 +35,7 @@
   }
   const props = defineProps<Prop>()
   const { taskPostreqInfoView, strictModeMaxPostreqs } = storeToRefs(useLocalSettingsStore())
-  const taskIncompletePostreqLength = computed(() => props.task.incomplete_postreqs.length)
+  const taskIncompletePostreqLength = computed(() => props.task.grabPostreqs(true).length)
   const taskPostreqColor = computed(
     () => taskIncompletePostreqLength.value > postreqQuantityWarningThreshold.value
       ? 'background-color: red;'

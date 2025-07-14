@@ -162,7 +162,7 @@
     constructor(t: Task) {
       this.t = t
     }
-    weight = () => 1 / Math.min(Math.max(1, this.t.incomplete_postreqs.length), 10)
+    weight = () => 1 / Math.min(Math.max(1, this.t.grabPostreqs(true).length), 10)
     shouldReroll = () => Math.random() - this.weight() > 0
   }
 
@@ -181,8 +181,8 @@
 
   // 2024-12-20 hotfix: filtering out any postreqs that are part of a procedure when parentTask is part of a procedure.
   const postreqsEligibleForSort = (): Task[] => {
-    if((parentTask.value.procedure_ids ?? []).length > 0) return parentTask.value.incomplete_postreqs.filter(x => (x.procedure_ids ?? []).length === 0) as Task[]
-    return parentTask.value.incomplete_postreqs as Task[]
+    if((parentTask.value.procedure_ids ?? []).length > 0) return parentTask.value.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0)
+    return parentTask.value.grabPostreqs(true)
   }
   const postreqsToSort = computed(() => postreqsEligibleForSort().map(postWeightedTask))
 
@@ -191,7 +191,7 @@
   //   return layerZeroTasks.map(postWeightedTask)
   // })
   const tasksWithoutPostreqs = computed(() =>
-    postreqsToSort.value.filter((x) => !(x.t.incomplete_postreqs.length > 0))
+    postreqsToSort.value.filter((x) => !(x.t.grabPostreqs(true).length > 0))
   )
   const l0len = computed(() => postreqsToSort.value.length)
   watch(l0len, (value: number) => {

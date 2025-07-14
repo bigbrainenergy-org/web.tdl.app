@@ -7,6 +7,7 @@ import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { Task } from 'src/stores/tasks/task-model'
 import { hardCheck } from 'src/utils/type-utils'
 import { handleError } from 'src/utils/notification-utils'
+import { dontLookAtMe } from '../tasks/look-i-dont-make-the-rules'
 
 export interface CreateProcedureOptions {
   title: string
@@ -45,7 +46,7 @@ export class Procedure extends Model implements iRecord {
   }
 
   grabTasks(): Task[] {
-    const tasks = (useTaskStore().array as Task[]).filter((x) => x.procedure_ids?.includes(this.id))
+    const tasks = useTaskStore().allTasks.filter((x) => x.procedure_ids?.includes(this.id))
     return tasks
   }
 
@@ -54,6 +55,8 @@ export class Procedure extends Model implements iRecord {
     return this.task_ids.map((x) => ts.hardGet(x))
   }
 }
+
+const ewww = dontLookAtMe()
 
 export class ProcedureRepo extends GenericRepo<
   CreateProcedureOptions,
@@ -73,10 +76,9 @@ export class ProcedureRepo extends GenericRepo<
         for (let i = 0; i < tasks.length; i++) {
           const ti = tasks[i]!
           ti.completed = false
-          for (let j = 0; j < ti.hard_prereqs.length; j++) ti.hard_prereqs[j]!.fullSyncPosts()
-          for (let j = 0; j < ti.hard_postreqs.length; j++) ti.hard_postreqs[j]!.fullSyncPres()
-          ti.fullSyncPres()
-          ti.fullSyncPosts()
+          ti.grabPrereqs(false).forEach(x => ewww.refresh(x))
+          ti.grabPostreqs(false).forEach(x => ewww.refresh(x))
+          ewww.refresh(ti)
         }
         return tmp
       }, handleError('Error restarting procedure.'))

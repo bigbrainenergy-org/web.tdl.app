@@ -24,6 +24,9 @@ import QuickSortLayerZeroDialog2 from 'src/components/dialogs/QuickSortLayerZero
 import TaskTimerDialog from 'src/components/dialogs/TaskTimerDialog.vue'
 import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
 import SeamlessTimer from 'src/components/SeamlessTimer.vue'
+import { Logger } from './d'
+
+const Dialogger = new Logger('Dialog Utils')
 
 export function openCreateTaskDialog() {
   return Dialog.create({
@@ -96,7 +99,7 @@ export function openQuickSortDialog() {
   if (useLoadingStateStore().quickSortDialogActive) return
   // todo fixme this is BAD.
   useLoadingStateStore().quickSortDialogActive = true
-  console.log('OPENING QUICK SORT')
+  Dialogger.log('OPENING QUICK SORT')
   return Dialog.create({
     component: QuickSortLayerZeroDialog,
     componentProps: {
@@ -127,7 +130,7 @@ export function considerOpeningQuickSortDialog() {
     }
     if (
       enableQuickSortOnNewTask &&
-      useTaskStore().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
+      useTaskStore().layerZero.filter((x) => x.grabPrereqs(true).length === 0).length > 0
     ) {
       openQuickSortDialog()
     }

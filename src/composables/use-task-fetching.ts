@@ -8,9 +8,9 @@ export function useTaskFetching() {
 
   function fetchTasks() {
     if (currentBaseQueryMode.value === 'allTasks' ) {
-      return useTaskStore().allTasks
+      return [...useTaskStore().allTasks]
     } else if(currentBaseQueryMode.value === 'layerZero') {
-      return useTaskStore().layerZero
+      return [...useTaskStore().layerZero]
     } else {
       return []
     }

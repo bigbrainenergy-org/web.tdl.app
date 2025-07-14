@@ -50,10 +50,10 @@
                     </q-avatar>
                   </q-item-section>
 
-                  <q-item-section v-if="currentTask.incomplete_postreqs.length" side>
+                  <q-item-section v-if="currentTask.grabPostreqs(true).length" side>
                     <q-chip
                       :style="
-                        currentTask.incomplete_postreqs.length > sortQty
+                        currentTask.grabPostreqs(true).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
                       "
@@ -97,6 +97,7 @@
   import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import { Logger } from 'src/utils/d'
 
   const $q = useQuasar()
 
@@ -122,18 +123,20 @@
     'Auto Scale Priority': autoScalePriority
   })
 
+  const AgendaLogger = new Logger('Agenda Page')
+
   // fancy footwork
   const tasks = computed(() => {
-    console.debug('recalculating agenda.')
-    const layerZero = (useTaskStore().array as Task[]).filter(
+    AgendaLogger.debug('recalculating agenda.')
+    const layerZero = useTaskStore().allTasks.filter(
       (task: Task) =>
         !task.completed &&
-        task.hard_prereqs.filter((prereq) => !prereq.completed).length === 0
+        task.grabPrereqs(false).filter((prereq) => !prereq.completed).length === 0
     )
     layerZero.sort(
-      (a: Task, b: Task) => b.incomplete_postreqs.length - a.incomplete_postreqs.length
+      (a: Task, b: Task) => b.grabPostreqs(true).length - a.grabPostreqs(true).length
     )
-    console.debug({ layerZero })
+    AgendaLogger.debug({ layerZero })
     const finalList = new Set<Task>()
     const queue: Map<number, Task[]> = new Map()
     const addedToQueue = new Set<number>()
@@ -143,7 +146,7 @@
     }
     const enqueue = (tasks: Task[]) => {
       tasks.forEach((x) => {
-        safeAccess(queue, x.incomplete_postreqs.length).push(x)
+        safeAccess(queue, x.grabPostreqs(true).length).push(x)
         addedToQueue.add(x.id)
       })
     }
@@ -156,13 +159,13 @@
         qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
         hundos++
         const duration = performance.now() - start
-        console.assert(duration < 10, 'checking keys took too long.')
+        AgendaLogger.assert(duration < 10, 'checking keys took too long.')
         return qkeys.length > 0
       }
       while (hasKeys()) {
         // if (hundos > 4 * addedToQueue.size) { // get back to this speed
         if (hundos > 32 * addedToQueue.size) {
-          console.warn('agenda calc is taking too long. bailing out. Also TODO')
+          AgendaLogger.warn('agenda calc is taking too long. bailing out. Also TODO')
           break
         }
         let bail = false
@@ -172,17 +175,17 @@
           const qk = queue.get(k)!
           for (let j = 0; j < qk.length; j++) {
             const t = qk[j]!
-            const ip = t.incomplete_prereqs
+            const ip = t.grabPrereqs(true)
             if (ip.every((y) => finalList.has(y))) {
               finalList.add(t)
-              enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
+              enqueue(t.grabPostreqs(true).filter((x) => !addedToQueue.has(x.id)))
               qk.splice(j, 1)
               if (qk.length === 0) {
                 queue.delete(k)
                 qkeys.splice(i, 1)
               }
               const duration = performance.now() - start
-              console.assert(duration < 8, 'agenda main loop is taking too long per task')
+              AgendaLogger.assert(duration < 8, 'agenda main loop is taking too long per task')
               bail = true
               break
             }
@@ -198,7 +201,7 @@
     const sampleSize = Math.min(tasks.value.length, 11)
     const samplePriorities = []
     for (let i = 0; i < sampleSize; i++) {
-      samplePriorities.push(tasks.value[i]!.incomplete_postreqs.length)
+      samplePriorities.push(tasks.value[i]!.grabPostreqs(true).length)
     }
     samplePriorities.sort((a, b) => a - b)
     const sampleIndex = Math.max(Math.floor(sampleSize / 2), 1)

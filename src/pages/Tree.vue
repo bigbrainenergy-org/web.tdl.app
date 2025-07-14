@@ -140,13 +140,13 @@
     innerWidth: '100%'
   })
 
-  const { array } = storeToRefs(useTaskStore())
+  const { allTasks: array } = storeToRefs(useTaskStore())
 
   const layerZero = computed(() =>
     array.value
       .filter((x) => (incompleteOnly.value ? !x.completed : true))
       .filter((x) =>
-        reverseOrder.value ? x.incomplete_postreqs.length === 0 : x.incomplete_prereqs.length === 0
+        reverseOrder.value ? x.grabPostreqs(true).length === 0 : x.grabPrereqs(true).length === 0
       )
       .map((x) => x.treeNode(reverseOrder.value, incompleteOnly.value))
   )

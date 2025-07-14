@@ -5,6 +5,9 @@ import { useTaskFiltering } from './use-task-filtering'
 import { useTaskSorting } from './use-task-sorting'
 import { useTaskFetching } from './use-task-fetching'
 import type { Task } from 'src/stores/tasks/task-model'
+import { Logger } from 'src/utils/d'
+
+const useTasksLogger = new Logger('Use-Tasks Composable', '#61A5FB')
 
 // TODO: unblockedOnly is unused, use it
 export function useTasks() {
@@ -16,39 +19,51 @@ export function useTasks() {
 
   const tasks = computed((): Task[] => {
     if (busy.value) {
-      console.debug('busy signal; skipping task recalc.')
+      useTasksLogger.debug('busy signal; skipping task recalc.')
       return []
     }
     if (quickSortDialogActive.value) {
-      console.debug('quick sort dialog is active; skipping task recalc')
+      useTasksLogger.debug('quick sort dialog is active; skipping task recalc')
       return []
     }
-    console.debug('recalculating tasks')
+    useTasksLogger.debug('recalculating tasks')
+    // const timings: any = {
+    //   baseQuery: performance.now()
+    // }
     let baseQuery: Task[] = []
     try { 
+      //timings.fetchTasks = performance.now()
       baseQuery = fetchTasks()
-      console.log('baseQuery done')
+      //timings.fetchTasks = performance.now() - timings.fetchTasks
+      useTasksLogger.log(`fetch: ${baseQuery.length} tasks`)
     } catch(baseQueryEx) {
-      console.warn({ msg: 'base query exception', baseQueryEx })
+      useTasksLogger.warn({ msg: 'base query exception', baseQueryEx })
       baseQuery = []
     }
     try {
+      //timings.filterTasks = performance.now()
+      const beforeLength = baseQuery.length
       baseQuery = filterTasks(baseQuery)
-      console.log('filterTasks done')
-      console.debug({ filterTasks: baseQuery })
+      //timings.filterTasks = performance.now() - timings.filterTasks
+      //useTasksLogger.debug({ filterTasks: baseQuery })
+      useTasksLogger.log(`filter: ${beforeLength} => ${baseQuery.length}`)
     } catch(filterTasksEx) {
-      console.warn({ msg: 'filter tasks exception', filterTasksEx })
+      useTasksLogger.warn({ msg: 'filter tasks exception', filterTasksEx })
       baseQuery = []
     }
     try {
+      const beforeLength = baseQuery.length
+      //timings.sortTasks = performance.now()
       baseQuery = sortTasks(baseQuery)
-      console.log('sortTasks done')
-      console.debug({ sortTasks: baseQuery })
+      //timings.sortTasks = performance.now() - timings.sortTasks
+      //useTasksLogger.debug({ sortTasks: baseQuery })
+      useTasksLogger.log(`sort: ${beforeLength} => ${baseQuery.length}`)
     } catch(sortTasksEx) {
-      console.warn({ msg: 'sort tasks exception', sortTasksEx })
+      useTasksLogger.warn({ msg: 'sort tasks exception', sortTasksEx })
       baseQuery = []
     }
-    console.debug('yay')
+    //timings.baseQuery = performance.now() - timings.baseQuery
+    //useTasksLogger.log(`TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
     return baseQuery
   })
 

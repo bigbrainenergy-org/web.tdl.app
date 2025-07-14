@@ -175,7 +175,7 @@
   const getTasks = (): Task[] => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
+    const allTasks = useTaskStore().allTasks.filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)

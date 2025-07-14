@@ -71,8 +71,8 @@
     }
   )
 
-  console.debug('loaded task list')
-  console.debug({ tasks: props.tasks })
+  //console.debug('loaded task list')
+  //console.debug({ tasks: props.tasks })
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 

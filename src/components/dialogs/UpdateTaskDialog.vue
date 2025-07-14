@@ -106,6 +106,9 @@
 
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { Task } from 'src/stores/tasks/task-model'
+  import { Logger } from 'src/utils/d'
+
+  const updateTaskDialogger = new Logger('Update Task Dialog', '#008800')
 
   // HACK: The `:key="currentTask.id"` works for refreshing on task change, but isn't ideal
   // FIXME: Find a better way to switch between tasks
@@ -174,33 +177,30 @@
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
 
-  // const tr = useRepo(TaskRepo)
-  const usr = useLocalSettingsStore()
-
-  onMounted(() => {
-    currentTask.value.hard_postreqs.sort(
-      (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-    )
-    currentTask.value.hard_prereqs.sort(
-      (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-    )
-  })
-
   let currentPre: Task | null = null
   // let currentPost: Task | null = null
 
-  console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
+  updateTaskDialogger.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 
   useMeta(() => ({ title: currentTask.value.title + ' | TDL App' }))
 
-  const { hideCompleted } = storeToRefs(usr)
+  const { hideCompleted } = storeToRefs(useLocalSettingsStore())
 
-  const currentTaskFromStore = computed(() => useTaskStore().hardGet(currentTask.value.id))
-  const allPres = computed(() => currentTaskFromStore.value.grabPrereqs(hideCompleted.value))
-  const allPosts = computed(() => currentTaskFromStore.value.grabPostreqs(hideCompleted.value))
+  const currentTaskFromStore = computed(() => {
+    const t = useTaskStore().hardGet(currentTask.value.id)
+    return t
+  })
+  const allPres = computed(() => {
+    const pres = currentTaskFromStore.value.grabPrereqs(hideCompleted.value)
+    return pres
+  })
+  const allPosts = computed(() => {
+    const posts = currentTaskFromStore.value.grabPostreqs(hideCompleted.value)
+    return posts
+  })
 
   function setCurrentTask(newTask: Task) {
-    console.debug('setCurrentTask')
+    updateTaskDialogger.debug('setCurrentTask')
     currentTask.value = newTask
   }
 
@@ -216,7 +216,7 @@
         color: 'grey'
       }
     }).onOk(() => {
-      console.debug('deleting task')
+      updateTaskDialogger.debug('deleting task')
       useTaskStore()
         .apiDelete(task.id)
         .then(
@@ -233,22 +233,22 @@
 
   // FIXME: this destroys everything
   const mvpPostrequisite = async (post: Task) => {
-    console.debug(post)
+    updateTaskDialogger.debug(post)
     const allPostreqs = currentTaskFromStore.value.grabPostreqs(false)
     for (let i = 0; i < allPostreqs.length; i++) {
       const tmp = allPostreqs[i]! // for some reason new ts/eslint thinks this could be undefined, TODO figure out a way to explicitly state i will be within range of allPostreqs index
-      console.debug(`now evaluating ${tmp.title}`)
+      updateTaskDialogger.debug(`now evaluating ${tmp.title}`)
       if(tmp.id === post.id) {
-        console.debug(`skipping this task because it is the post being promoted to mvp: ${tmp.title}`)
+        updateTaskDialogger.debug(`skipping this task because it is the post being promoted to mvp: ${tmp.title}`)
         continue
       }
       if(tmp.completed) {
-        console.debug(`skipping this task because it is already completed: ${tmp.title}`)
+        updateTaskDialogger.debug(`skipping this task because it is already completed: ${tmp.title}`)
         continue
       }
       allPostreqs.splice(i--, 1)
       if(post.hard_postreq_ids.includes(tmp.id)) {
-        console.debug(`removed postreq from original, but not adding to mvp as it is already a postreq of mvp: ${tmp.title}`)
+        updateTaskDialogger.debug(`removed postreq from original, but not adding to mvp as it is already a postreq of mvp: ${tmp.title}`)
       }
       else post.hard_postreq_ids.push(tmp.id)
     }
@@ -301,17 +301,17 @@
     //       initialFilter: insertBetweenFilter,
     //       batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
     //         if (typeof taskID === 'undefined') {
-    //           console.warn('task id is undefined')
+    //           updateTaskDialogger.warn('task id is undefined')
     //           return []
     //         }
     //         const ct = useTaskStore().hardGet(taskID)
     //         if (ct === null) {
-    //           console.warn('current task was not found (by id)')
+    //           updateTaskDialogger.warn('current task was not found (by id)')
     //           return []
     //         }
     //         const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
     //         if (currentPost === null) {
-    //           console.warn('current postrequisite info was not passed in')
+    //           updateTaskDialogger.warn('current postrequisite info was not passed in')
     //           return []
     //         }
     //         const postRelationInfo = currentPost.anyIDsBelow(tasks.map((x) => x.id))
@@ -337,17 +337,17 @@
         initialFilter: insertBetweenFilter,
         batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
           if (typeof taskID === 'undefined') {
-            console.warn('task id is undefined')
+            updateTaskDialogger.warn('task id is undefined')
             return []
           }
           const ct = useTaskStore().hardGet(taskID)
           if (ct === null) {
-            console.warn('current task was not found (by id)')
+            updateTaskDialogger.warn('current task was not found (by id)')
             return []
           }
           const relationInfo = ct.anyIDsBelow(tasks.map((x) => x.id))
           if (currentPre === null) {
-            console.warn('current prerequisite info was not passed in')
+            updateTaskDialogger.warn('current prerequisite info was not passed in')
             return []
           }
           const preRelationInfo = currentPre.anyIDsAbove(tasks.map((x) => x.id))
@@ -415,10 +415,10 @@
     const toRemove = allPres.value.filter((x) => {
       const hasRelationsAbove = payload.above.has(x.id)
       const hasRelationsBelow = payload.below.has(x.id)
-      console.log({ hasRelationsAbove, hasRelationsBelow, x })
+      updateTaskDialogger.log({ hasRelationsAbove, hasRelationsBelow, x })
       return hasRelationsAbove && !hasRelationsBelow
     })
-    console.log('pruning prerequisites', { payload, toRemove })
+    updateTaskDialogger.log('pruning prerequisites', { payload, toRemove })
     for (let i = 0; i < toRemove.length; i++) {
       await useTaskStore().removeRule(toRemove[i]!.id, currentTask.value.id)
     }

@@ -32,11 +32,11 @@ export class List extends Model implements iRecord {
 
   // @HasMany(() => Task, 'list_id') declare tasks: Task[]
   get tasks(): Task[] {
-    return (useTaskStore().array as Task[]).filter((x) => x.list_id === this.id)
+    return useTaskStore().allTasks.filter((x) => x.list_id === this.id)
   }
 
   get incompleteTaskCount() {
-    return this.tasks.filter((task) => !task.completed && task.incomplete_prereqs.length === 0).length
+    return this.tasks.filter((task) => !task.completed && task.grabPrereqs(true).length === 0).length
   }
 
   static override piniaOptions = {

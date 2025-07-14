@@ -19,12 +19,16 @@
   import { considerOpeningQuickSortDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { playCheckboxSound } from 'src/utils/sound-utils'
   import type { Task } from 'src/stores/tasks/task-model'
+  import { dogFoodHarder } from 'src/stores/tasks/dogfood'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   useMeta(() => ({ title: 'List | TDL App' }))
 
   const updateTask = async (_event: any, task: Task) => {
+    dogFoodHarder().taskLength = useTaskStore().allTasks.length
     playCheckboxSound(task.completed)
     await task.updateTaskCompletionStatus()
+      .then(() => dogFoodHarder().assertTaskLength('task-completion-toggled'))
   }
   const openTask = (_event: any, task: Task) => openUpdateTaskDialog(task).onDismiss(considerOpeningQuickSortDialog)
 

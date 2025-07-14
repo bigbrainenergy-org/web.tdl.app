@@ -113,7 +113,7 @@
     timeThisB(
       () => {
         console.debug('recalculating tasks list for task search results')
-        const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
+        const allTasks = useTaskStore().allTasks.filter(filterish.value(props.taskID))
         if (typeof props.batchFilter !== 'undefined')
           return props.batchFilter(props.taskID)(allTasks)
         return allTasks

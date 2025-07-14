@@ -11,7 +11,7 @@
   </q-btn>
   <q-btn v-if="agendaOnFire" text-color="red" icon="fa-solid fa-dumpster-fire" @click="openLargestOfFirstTenTasks" />
   <q-space />
-  <q-item-label class="text-primary">{{ filtered.length }} tasks</q-item-label>
+  <q-item-label class="text-primary">{{ filtered.length }} tasks, {{ layerZeroFiltered }} ready to go</q-item-label>
   <q-space />
   
   <!-- <q-btn icon="fa-solid fa-search" class="text-primary" @click="openBespokeSearchDialog()" /> -->
@@ -58,9 +58,16 @@
   import TaskSearchInput from './search/TaskSearchInput.vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
+  import { Logger } from 'src/utils/d'
+  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+
+  const taskListActionsLogger = new Logger('Task List Actions', '#555555')
   
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
   const filtered = defineModel<Array<Task>>('filtered', { required: true })
+
+  const ewww = dontLookAtMe()
+  const layerZeroFiltered = computed(() => filtered.value.filter(x => !x.completed && ewww.grabIncompletePres(x.id).size === 0).length)
 
   const emit = defineEmits(['search'])
 
@@ -81,27 +88,32 @@
 
   const { busy } = storeToRefs(useLoadingStateStore())
 
+  const firstTenTasks = computed(() => {
+    taskListActionsLogger.log('firstTenTasks repaint')
+    return tasks.value.slice(0, 9)
+  })
+
   const agendaOnFire = computed(() => {
-    if(busy.value === true) return false // <-- BUG for some reason without minding the busy signal, this goes very slow and Firefox calls us "Jank"
-    console.debug('hmmmmmm')
+    if(busy.value) return false
+    taskListActionsLogger.debug('inspecting agenda.')
     let countFire = 0
     const fireAmt = localSettingsStore.strictModeMaxPostreqs
-    const t = tasks.value[0]
-    const qtyNonRecurringPostreqs = (x: Task) => x.incomplete_postreqs.filter(x => (x.procedure_ids ?? []).length === 0).length
+    const t = firstTenTasks.value[0]
+    const qtyNonRecurringPostreqs = (x: Task) => x.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0).length
     if(typeof t === 'undefined') {
-      console.debug('task 0 was undefined')
+      taskListActionsLogger.debug('task 0 was undefined')
       return false
     }
     if(qtyNonRecurringPostreqs(t) > fireAmt) {
-      console.debug(`${t.title} has too many non procedure tasks`)
+      //taskListActionsLogger.debug(`${t.title} has too many non procedure tasks`)
       return true
     }
-    tasks.value.slice(1, 9).forEach(x => {
-      if(qtyNonRecurringPostreqs(x) > fireAmt) {
-        console.debug(`${x.title} has too many non procedure tasks`)
+    for(let i = 1; i < firstTenTasks.value.length; i++) {
+      if(qtyNonRecurringPostreqs(firstTenTasks.value[i]!) > fireAmt) {
+        //taskListActionsLogger.debug(`${firstTenTasks.value[i]!.title} has too many non procedure tasks`)
         countFire++
       }
-    })
+    }
     return countFire > 2
   })
 
@@ -116,9 +128,9 @@
       // UI/UX TODO FIXME - remake recurring tasks/procedures so that they are more robust
       const postreqsForCount = (task: Task) => {
         if((task.procedure_ids ?? []).length > 0) {
-          return task.incomplete_postreqs.filter(x => (x.procedure_ids ?? []).length === 0).length
+          return task.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0).length
         }
-        return task.incomplete_postreqs.length
+        return task.grabPostreqs(true).length
       }
       for(let i = 1; i < Math.min(9, tasks.value.length); i++) {
         const tmpTask = tasks.value[i]!
@@ -137,7 +149,7 @@
       notifySuccess('Sort The Postreqs of this Task.')
       let largest = tasks.value[0]!
       for(let i = 1; i < tasks.value.length; i++) {
-        if(tasks.value[i]!.incomplete_postreqs.length > largest.incomplete_postreqs.length) {
+        if(tasks.value[i]!.grabPostreqs(true).length > largest.grabPostreqs(true).length) {
           largest = tasks.value[i]!
         }
       }
@@ -152,9 +164,17 @@
     ignoreLocation: true,
     keys: ['title']
   }
-  const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+  const fuse = computed(() => {
+    taskListActionsLogger.log('new fuse')
+    return new Fuse([...tasks.value], searchOptions)
+  })
   const searchForTasks = () => {
-    console.debug({ searching: searchString.value })
+    if(busy.value) {
+      taskListActionsLogger.log('busy signal; skipping task search.')
+      filtered.value = tasks.value
+      return
+    }
+    taskListActionsLogger.debug({ searching: searchString.value })
     const start = performance.now()
     const str = searchString.value ?? ''
 
@@ -169,18 +189,18 @@
 
     // TODO - this conditional is an attempt to fix a bug where sometimes the page loads and the list has zero results until search box is blipped
     if(run.length === 0) {
-      console.debug('zero results from search')
+      taskListActionsLogger.debug('zero results from search')
       filtered.value = tasks.value
       return
     }
     const results = run.map((x) => x.item)
-    console.debug({ results })
+    taskListActionsLogger.debug({ results })
     filtered.value = results
     const duration = Math.floor(performance.now() - start)
-    console.log(`task search took ${Math.floor(duration)}ms`)
+    taskListActionsLogger.log(`task search took ${Math.floor(duration)}ms`)
     if (duration * 2 > debounceAmount.value) {
       const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
-      console.warn(`rolling back debounce to ${newDebounce}`)
+      taskListActionsLogger.warn(`rolling back debounce to ${newDebounce}`)
       debounceAmount.value = newDebounce
     }
   }

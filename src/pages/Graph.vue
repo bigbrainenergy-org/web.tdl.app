@@ -48,7 +48,7 @@
   interface Prop {
     tasks: Task[]
   }
-  const props = withDefaults(defineProps<Prop>(), { tasks: () => useTaskStore().array as Task[] })
+  const props = withDefaults(defineProps<Prop>(), { tasks: () => useTaskStore().allTasks })
 
   const ts = useTaskStore()
   const usr = useLocalSettingsStore()
@@ -99,7 +99,7 @@
     allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
     links = links.concat(
       allTaskNodes.flatMap((x: d3Node<Task>) =>
-        x.obj.hard_postreqs
+        x.obj.grabPostreqs(false)
           .filter((y) => (y.completed ? !usr.hideCompleted : true))
           .map(
             (y) =>
@@ -136,7 +136,7 @@
     const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (
       currentTaskNode: d3Node<Task>
     ) =>
-      currentTaskNode.obj.hard_postreqs
+      currentTaskNode.obj.grabPostreqs(false)
         .filter(incomplete)
         .map(generateD3LinkToPostreq(currentTaskNode))
 
@@ -270,7 +270,7 @@
       .filter(
         (x: d3Node<Task>) =>
           !x.obj.completed &&
-          (x.radius >= 12 || x.obj.hard_prereqs.filter((x) => !x.completed).length === 0)
+          (x.radius >= 12 || x.obj.grabPrereqs(false).filter((x) => !x.completed).length === 0)
       )
       .append('text')
       .text((d: d3Node<Task>) => d.obj.title)

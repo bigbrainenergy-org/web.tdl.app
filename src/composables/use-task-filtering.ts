@@ -12,7 +12,7 @@ export function useTaskFiltering() {
     if(hideCompleted.value) tasks = tasks.filter(x => !x.completed)
     // todo: must respond to incompleteOnly and possibly other local settings too.
     if (currentFilteringMode.value === 'filterByList') {
-      if(layerZeroOnly.value) tasks = tasks.filter(x => x.incomplete_prereqs.length === 0)
+      if(layerZeroOnly.value) tasks = tasks.filter(x => x.grabPrereqs(true).length === 0)
       return filterByList(tasks, selectedList.value)
     } else if (currentFilteringMode.value === 'filterByAgenda') {
       return filterByAgenda(tasks)

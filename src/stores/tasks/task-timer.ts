@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia'
 import type { TaskTimerState } from './task-interfaces-types'
 import type { Task } from './task-model'
+import { Logger } from 'src/utils/d'
+
+const TaskTimerLogger = new Logger('Task Timer')
 
 export const useTaskTimerStore = defineStore('task-timer', {
   state: (): TaskTimerState => ({
@@ -14,19 +17,19 @@ export const useTaskTimerStore = defineStore('task-timer', {
       if(this.timer === null) return
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       clearInterval(this.timer)
-      console.warn('cleared interval using state function.')
+      TaskTimerLogger.warn('cleared interval using state function.')
       this.timer = null
     },
     startTimer(task?: Task) {
       if(this.timer) {
-        console.log('reseting previous timer')
+        TaskTimerLogger.log('reseting previous timer')
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         clearInterval(this.timer)
         this.timer = null
       }
       const t = task ?? this.task
       if(t === null) {
-        console.warn('task is null.')
+        TaskTimerLogger.warn('task is null.')
         return
       }
       this.timeRemaining = (t.task_duration_in_minutes ?? 15) * 60
@@ -34,7 +37,7 @@ export const useTaskTimerStore = defineStore('task-timer', {
       this.timer = setInterval(() => {
         if(this.timeRemaining > 0) {
           this.timeRemaining--
-          console.log({ timeRemaining: this.timeRemaining })
+          TaskTimerLogger.log({ timeRemaining: this.timeRemaining })
         } else this.resetTimer()
       }, 1000)
     }

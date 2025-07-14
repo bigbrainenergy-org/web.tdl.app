@@ -1,7 +1,7 @@
 <template>
   <q-header elevated>
     <q-toolbar>
-      <HeaderButtons v-model:drawer="drawer" v-model:tasks="tasks" />
+      <HeaderButtons v-model:drawer="drawer" />
 
       <q-space />
 
@@ -21,5 +21,4 @@
   const { minimized } = storeToRefs(useTaskTimerStore())
 
   const drawer = defineModel<boolean>('drawer')
-  const tasks = defineModel<Array<Task>>('tasks', { required: true })
 </script>

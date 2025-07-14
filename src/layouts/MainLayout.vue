@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh LpR fFf" :style="backgroundStyle">
-    <MainHeader v-model:drawer="sideBarOpen" v-model:tasks="tasks" />
+    <MainHeader v-model:drawer="sideBarOpen" />
 
     <MainSidebar v-model:drawer="sideBarOpen" />
 
@@ -35,7 +35,7 @@
 
   useTaskShortcuts()
 
-  const { tasks } = useTasks()
+  //const { tasks } = useTasks()
 
   considerOpeningQuickSortDialog()
 </script>

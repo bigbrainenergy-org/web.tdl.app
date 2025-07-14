@@ -9,16 +9,18 @@ import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
 import type { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { taskLike } from './task-utils'
+import { useLoadingStateStore } from '../performance/loading-state'
+import { Logger } from 'src/utils/d'
+import { dontLookAtMe } from './look-i-dont-make-the-rules'
+
+const debuggingCzar = new Logger('Czar', '#FF0000')
+const ewww = dontLookAtMe()
 
 export class Task implements TaskLike {
   hard_prereq_ids: number[]
   hard_postreq_ids: number[]
   _hard_prereq_ids: number[]
   _hard_postreq_ids: number[]
-  hard_prereqs: Task[]
-  hard_postreqs: Task[]
-  incomplete_prereqs: Task[]
-  incomplete_postreqs: Task[]
   completed: boolean
   id: number
   title: string
@@ -35,10 +37,6 @@ export class Task implements TaskLike {
   constructor(data: TaskLike | CreateTaskOptions) {
     this._hard_prereq_ids = []
     this._hard_postreq_ids = []
-    this.hard_prereqs = [] // this._hard_prereq_ids.map(retrieve)
-    this.hard_postreqs = [] // this._hard_postreq_ids.map(retrieve)
-    this.incomplete_prereqs = []
-    this.incomplete_postreqs = []
     this.hard_prereq_ids = new Proxy(this._hard_prereq_ids, {
       set: (target, property, value: number) => {
         target[property as any] = value
@@ -57,11 +55,9 @@ export class Task implements TaskLike {
           })
           return true
         }
-        const obj = useTaskStore().mapp.get(value)
-        if (typeof obj !== 'undefined') {
-          this.hard_prereqs[property as any] = obj as Task
-          if (!obj.completed) this.incomplete_prereqs.push(obj as Task)
-        }
+        //debuggingCzar.log(`setting hard prereq ids of ${this.title}`)
+        const obj = useTaskStore().mapp.get(value) as Task | undefined | null
+        if (obj) ewww.upsertPre(this.id, obj)
         return true
       },
       get: (target, prop) => {
@@ -70,21 +66,18 @@ export class Task implements TaskLike {
         if (prop === null || prop === '') return target
         if (isNaN(Number(prop))) return target[prop as any]
         const val = target[prop as any]
-        if (this.hard_prereqs[prop as any] === null) {
-          if(typeof val === 'undefined') return undefined
-          const obj = useTaskStore().hardGet(val)
-          this.hard_prereqs[prop as any] = obj
-          if (!obj.completed) {
-            if (this.incomplete_prereqs.findIndex((x) => x.id === obj.id) < 0) {
-              this.incomplete_prereqs.push(obj)
-            }
-          }
+        if(typeof val === 'undefined') {
+          debuggingCzar.log('val was undefined wtf')
+          return undefined
         }
+        //debuggingCzar.log(`hard prereqs FORCE SYNC ${this.title}`)
+        const obj = useTaskStore().mapp.get(val) as Task | undefined | null
+        if(obj) ewww.upsertPre(this.id, obj)
         return val
       },
       apply: (target, thisArg, argumentsList) => {
         const result = (target as any).apply(thisArg, argumentsList)
-        this.fullSyncPres()
+        ewww.refresh(this)
         return result
       }
     })
@@ -107,11 +100,8 @@ export class Task implements TaskLike {
           })
           return true
         }
-        const obj = useTaskStore().mapp.get(value) // FIXME: this used to be hardGet but it runs into issues when adding tasks one by one to an empty store.
-        if (typeof obj !== 'undefined') {
-          this.hard_postreqs[property as any] = obj as Task
-          if (!obj.completed) this.incomplete_postreqs.push(obj as Task)
-        }
+        const obj = useTaskStore().mapp.get(value) as Task | undefined | null // FIXME: this used to be hardGet but it runs into issues when adding tasks one by one to an empty store.
+        if(obj) ewww.upsertPost(this.id, obj)
         return true
       },
       get: (target, prop) => {
@@ -120,21 +110,17 @@ export class Task implements TaskLike {
         if (prop === null || prop === '') return target
         if (isNaN(Number(prop))) return target[prop as any]
         const val = target[prop as any]
-        if (this.hard_postreqs[prop as any] === null) {
-          if(typeof val === 'undefined') return undefined
-          const obj = useTaskStore().hardGet(val)
-          this.hard_postreqs[prop as any] = obj
-          if (!obj.completed) {
-            if (this.incomplete_postreqs.findIndex((x) => x.id === obj.id) < 0) {
-              this.incomplete_postreqs.push(obj)
-            }
-          }
+        if(typeof val === 'undefined') {
+          debuggingCzar.log('kinda weird - val was undefined')
+          return undefined
         }
+        const obj = useTaskStore().mapp.get(val) as Task
+        if(obj) ewww.upsertPost(this.id, obj)
         return val
       },
       apply: (target, thisArg, argumentsList) => {
         const result = (target as any).apply(thisArg, argumentsList)
-        this.fullSyncPosts()
+        ewww.refresh(this)
         return result
       }
     })
@@ -154,33 +140,37 @@ export class Task implements TaskLike {
     this.task_duration_in_minutes = data.task_duration_in_minutes
   }
   fullSyncPres() {
+    //debuggingCzar.log('fullsyncpres NOP')
+    return
     // TODO: make private if possible
-    const hp = []
-    for (let i = 0; i < this._hard_prereq_ids.length; i++) {
-      try {
-        const pre = useTaskStore().hardGet(this._hard_prereq_ids[i]!)
-        hp.push(pre)
-      } catch (e) {
-        console.warn(`tried to get pres for ${this.title} but encountered an error.`)
-        continue
-      }
-    }
-    this.hard_prereqs = hp
-    this.incomplete_prereqs = this.hard_prereqs.filter((x) => !x.completed)
+    // const hp = []
+    // for (let i = 0; i < this._hard_prereq_ids.length; i++) {
+    //   try {
+    //     const pre = useTaskStore().hardGet(this._hard_prereq_ids[i]!)
+    //     hp.push(pre)
+    //   } catch (e) {
+    //     console.warn(`tried to get pres for ${this.title} but encountered an error.`)
+    //     continue
+    //   }
+    // }
+    // this.hard_prereqs = hp
+    // this.incomplete_prereqs = this.hard_prereqs.filter((x) => !x.completed)
   }
   fullSyncPosts() {
-    const hp = []
-    for (let i = 0; i < this._hard_postreq_ids.length; i++) {
-      try {
-        const post = useTaskStore().hardGet(this._hard_postreq_ids[i]!)
-        hp.push(post)
-      } catch (e) {
-        console.warn(`tried to get posts for ${this.title} but encountered an error.`)
-        continue
-      }
-    }
-    this.hard_postreqs = hp
-    this.incomplete_postreqs = this.hard_postreqs.filter((x) => !x.completed)
+    //debuggingCzar.log('fullsyncposts NOP')
+    return
+    // const hp = []
+    // for (let i = 0; i < this._hard_postreq_ids.length; i++) {
+    //   try {
+    //     const post = useTaskStore().hardGet(this._hard_postreq_ids[i]!)
+    //     hp.push(post)
+    //   } catch (e) {
+    //     console.warn(`tried to get posts for ${this.title} but encountered an error.`)
+    //     continue
+    //   }
+    // }
+    // this.hard_postreqs = hp
+    // this.incomplete_postreqs = this.hard_postreqs.filter((x) => !x.completed)
   }
   get list() {
     const id = this.list_id
@@ -202,15 +192,17 @@ export class Task implements TaskLike {
    * A similar function but just sets up the api update to only have a payload containing the new completed status; does not actively switch the completed status
    */
   async updateTaskCompletionStatus() {
+    useLoadingStateStore().busy = true
     const newVal = await useTaskStore().apiUpdate(this.id, { completed: this.completed })
+    useLoadingStateStore().busy = false
     considerOpeningQuickSortDialog()
     return newVal
   }
   grabPrereqs(incompleteOnly: boolean) {
-    return incompleteOnly ? this.incomplete_prereqs : this.hard_prereqs
+    return [...(incompleteOnly ? ewww.grabIncompletePres(this.id) : ewww.grabPres(this.id)).values()]
   }
   grabPostreqs(incompleteOnly: boolean) {
-    return incompleteOnly ? this.incomplete_postreqs : this.hard_postreqs
+    return [...(incompleteOnly ? ewww.grabIncompletePosts(this.id) : ewww.grabPosts(this.id)).values()]
   }
   anyIDsAbove(ids: number[]): Map<number, boolean> {
     const ts = useTaskStore()
@@ -238,8 +230,8 @@ export class Task implements TaskLike {
   get rawData(): Pick<Task, keyof TaskLike> {
     return {
       id: this.id,
-      hard_prereq_ids: this.hard_prereq_ids,
-      hard_postreq_ids: this.hard_postreq_ids,
+      hard_prereq_ids: this._hard_prereq_ids,
+      hard_postreq_ids: this._hard_postreq_ids,
       completed: this.completed,
       title: this.title,
       mental_energy_required: this.mental_energy_required,
@@ -277,14 +269,14 @@ export class Task implements TaskLike {
         useLocalSettingsStore().maxGraphNodeRadius,
         Math.max(
           (useLocalSettingsStore().hideCompleted
-            ? this.hard_postreqs.filter((x) => !x.completed).length
+            ? this.grabPostreqs(false).filter((x) => !x.completed).length
             : this.hard_postreq_ids.length) ** 2.1,
-          this.hard_prereqs.filter((x) => !x.completed).length === 0 ? 16 : 8
+          this.grabPostreqs(true).filter((x) => !x.completed).length === 0 ? 16 : 8
         )
       ),
       color: this.completed
         ? '#003905'
-        : this.hard_prereqs.filter((x) => !x.completed).length === 0
+        : this.grabPrereqs(false).filter((x) => !x.completed).length === 0
           ? 'red'
           : 'gray',
       repel: -1000 / this.hard_prereq_ids.length ** 2
@@ -307,8 +299,8 @@ export class Task implements TaskLike {
       key: this.id + '.' + parentKey
     }
     if (reverse && hideCompleted) {
-      node.expandable = this.incomplete_prereqs.length > 0
-      node.lazy = this.incomplete_prereqs.length > 0
+      node.expandable = this.grabPrereqs(true).length > 0
+      node.lazy = this.grabPrereqs(true).length > 0
       return node
     }
     if (reverse) {
@@ -317,8 +309,8 @@ export class Task implements TaskLike {
       return node
     }
     if (hideCompleted) {
-      node.expandable = this.incomplete_postreqs.length > 0
-      node.lazy = this.incomplete_postreqs.length > 0
+      node.expandable = this.grabPostreqs(true).length > 0
+      node.lazy = this.grabPostreqs(true).length > 0
       return node
     }
     node.expandable = this.hasPostreqs

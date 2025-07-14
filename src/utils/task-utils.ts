@@ -2,6 +2,9 @@ import { handleError, notifySuccess } from './notification-utils'
 import type { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { Task } from 'src/stores/tasks/task-model'
+import { Logger } from './d'
+
+const TaskUtilsLogger = new Logger('Task Utils')
 
 // FIXME: This should (probably) return the task created
 export function createTask(payload: CreateTaskOptions) {
@@ -21,14 +24,14 @@ export function updateTask(id: number, options: AllOptionalTaskProperties) {
 }
 
 export async function addPre(task: Task, newPreID: number) {
-  console.log('addPre')
+  TaskUtilsLogger.log('addPre')
   const start = performance.now()
   return useTaskStore()
     .addRule(newPreID, task.id)
     .then(() => {
       const duration = performance.now() - start
       notifySuccess('Added Prerequisite', 'fa-solid fa-link')
-      console.assert(
+      TaskUtilsLogger.assert(
         duration < 800,
         `Adding a rule via API should ideally be faster than ${duration} ms`
       )
@@ -42,7 +45,7 @@ export async function addPost(task: Task, newPostID: number) {
     .then(() => {
       const duration = performance.now() - start
       notifySuccess('Added Postrequisite', 'fa-solid fa-link')
-      console.assert(
+      TaskUtilsLogger.assert(
         duration < 800,
         `Adding a postrequisite via API should ideally be faster than ${duration} ms`
       )
@@ -68,7 +71,7 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
   }
   const enqueue = (tasks: Task[]) => {
     tasks.forEach((x) => {
-      safeAccess(queue, x.incomplete_postreqs.length).push(x)
+      safeAccess(queue, x.grabPostreqs(true).length).push(x)
       addedToQueue.add(x.id)
     })
   }
@@ -81,12 +84,12 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
       qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
       hundos++
       const duration = performance.now() - start
-      console.assert(duration < 10, 'checking keys took too long.')
+      TaskUtilsLogger.assert(duration < 10, 'checking keys took too long.')
       return qkeys.length > 0
     }
     while (hasKeys()) {
       if (hundos > 4 * addedToQueue.size) { // bug: this was working
-        console.warn('agenda calc is taking too long. bailing out. Also TODO')
+        TaskUtilsLogger.warn('agenda calc is taking too long. bailing out. Also TODO')
         break
       }
       let bail = false
@@ -96,17 +99,17 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
         const qk = queue.get(k)! // todo: ! should not be needed imho
         for (let j = 0; j < qk.length; j++) {
           const t = qk[j]! // todo: ! should not be needed imho
-          const ip = t.incomplete_prereqs
+          const ip = t.grabPrereqs(true)
           if (ip.every((y) => finalList.has(y))) {
             finalList.add(t)
-            enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
+            enqueue(t.grabPostreqs(true).filter((x) => !addedToQueue.has(x.id)))
             qk.splice(j, 1)
             if (qk.length === 0) {
               queue.delete(k)
               qkeys.splice(i, 1)
             }
             const duration = performance.now() - start
-            console.assert(duration < 8, 'agenda main loop is taking too long per task')
+            TaskUtilsLogger.assert(duration < 8, 'agenda main loop is taking too long per task')
             bail = true
             break
           }
@@ -122,7 +125,7 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
 // - I shouldn't need to return; array.sort is in-place
 export function sortByPostreqs(tasks: Task[], hideCompleted = true): Task[] {
   const postreqs = hideCompleted
-    ? (t: Task) => t.hard_postreqs.filter((x) => !x.completed)
-    : (t: Task) => t.hard_postreqs
+    ? (t: Task) => t.grabPostreqs(true).filter((x) => !x.completed)
+    : (t: Task) => t.grabPostreqs(false)
   return tasks.sort((a, b) => postreqs(b).length - postreqs(a).length)
 }
