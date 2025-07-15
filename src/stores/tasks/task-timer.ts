@@ -37,7 +37,7 @@ export const useTaskTimerStore = defineStore('task-timer', {
       this.timer = setInterval(() => {
         if(this.timeRemaining > 0) {
           this.timeRemaining--
-          TaskTimerLogger.log({ timeRemaining: this.timeRemaining })
+          //TaskTimerLogger.log({ timeRemaining: this.timeRemaining })
         } else this.resetTimer()
       }, 1000)
     }
