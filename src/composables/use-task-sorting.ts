@@ -1,5 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
 import type { Task } from 'src/stores/tasks/task-model'
 import { Logger } from 'src/utils/d'
@@ -11,11 +12,17 @@ const TaskSortingLogger = new Logger('Task Sort')
 export function useTaskSorting() {
   const localSettingsStore = useLocalSettingsStore()
   const { currentSortingMode, hideCompleted } = storeToRefs(localSettingsStore)
+  const { busy } = storeToRefs(useLoadingStateStore())
 
   function sortTasks(tasks: Task[]): Task[] {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') { // bug: currently adding and removing rules puts task store in an un-agendaable state. new as of use task sort directive
+      if(busy.value) {
+        TaskSortingLogger.log('zzz')
+        return tasks
+      }
+      
       const ewww = dontLookAtMe()
       const timings: any = {
         agendaSort: performance.now(),

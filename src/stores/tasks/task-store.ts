@@ -19,13 +19,13 @@ import { Logger } from 'src/utils/d'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
 import { dogFoodHarder } from './dogfood'
 
-const TaskStoreLogger = new Logger('Task Store')
+const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
 const ewww = dontLookAtMe()
 
 export const useTaskStore = defineStore('tasks', {
   state: (): TaskState => ({
     mapp: new Map<number, Task>(),
-    _array: []
+    array: []
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
@@ -41,8 +41,7 @@ export const useTaskStore = defineStore('tasks', {
     serializer: {
       serialize: (value: StateTree) => {
         const time = performance.now()
-        TaskStoreLogger.log({ 'state value': value })
-        const json = JSON.stringify((value._array ?? []).map((x: Task) => x.rawData))
+        const json = JSON.stringify((value.array ?? []).map((x: Task) => x.rawData))
         TaskStoreLogger.log(`SERIALIZE took ${performance.now() - time}`)
         return json
       },
@@ -51,9 +50,9 @@ export const useTaskStore = defineStore('tasks', {
         const time = performance.now()
         const parsed = JSON.parse(value) as TaskLike[]
         const mapp: Map<number, Task> = new Map(parsed.map((x: TaskLike) => [x.id, new Task(x)]))
-        const _array = Array.from(mapp.values()) ?? []
+        const array = Array.from(mapp.values()) ?? []
         TaskStoreLogger.log(`DESERIALIZE took ${performance.now() - time}`)
-        return { _array, mapp }
+        return { array, mapp }
       }
     }
   },
@@ -63,12 +62,13 @@ export const useTaskStore = defineStore('tasks', {
       const inMap = this.mapp.get(data.id)
       if(!inMap) {
         this.mapp.set(newTask.id, newTask)
-        this._array.push(newTask)
+        this.array.push(newTask)
       }
       else Object.assign(inMap, newTask)
       return newTask
     },
     update(data: TaskLike[]) {
+      TaskStoreLogger.log('BULK UPDATE')
       data.forEach(x => this.updateSingle(x))
       //TaskStoreLogger.debug({ 'after bulk update': this.array })
       //return this.array
@@ -93,6 +93,7 @@ export const useTaskStore = defineStore('tasks', {
       }
     },
     apiGetAll() {
+      TaskStoreLogger.log('API GET ALL')
       return this.api()
         .get('/tasks', this.commonHeader())
         .then((result: AxiosResponse<TaskLike[]>) => {
@@ -161,7 +162,7 @@ export const useTaskStore = defineStore('tasks', {
           const theTask = this.hardGet(id)
           //arrayDelete(this.array, theTask, 'id')
           this.mapp.delete(id)
-          this._array = this._array.filter(x => x.id !== id)
+          this.array = this.array.filter(x => x.id !== id)
           notifySuccess('Task was deleted.')
         }, handleError('Error deleting task.'))
     },
@@ -220,7 +221,6 @@ export const useTaskStore = defineStore('tasks', {
       return allPosts
     },
     addRule(first_id: number, second_id: number) {
-      dogFoodHarder().taskLength = this.allTasks.length
       const timings: any = {
         addRuleTotal: performance.now()
       }
@@ -240,7 +240,7 @@ export const useTaskStore = defineStore('tasks', {
       // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       timings.apiUpdate = performance.now()
       return this.apiUpdate(first.id, { hard_postreq_ids: [...first.hard_postreq_ids, second_id] }).then(() => {
-        //second.hard_prereq_ids.push(first_id)
+        ewww.upsertPre(second_id, first_id)
         TaskStoreLogger.debug('Added the dependency.')
         timings.apiUpdate = performance.now() - timings.apiUpdate
         timings.addRuleTotal = performance.now() - timings.addRuleTotal
@@ -270,10 +270,8 @@ export const useTaskStore = defineStore('tasks', {
     incompleteOnly: (state) => ([...state.mapp.values()] as Task[]).filter((x) => !x.completed),
     layerZero: (state): Task[] => {
       const LayerZeroLogger = new Logger('Layer Zero Getter', '#FFFFFF')
-      LayerZeroLogger.log(`layerzero: tasks length = ${state.mapp.size}`)
       const alltasks = ([...state.mapp.values()] as Task[])
       const incompleteTasks = alltasks.filter((x) => !x.completed)
-      LayerZeroLogger.log(`layerzero: incomplete tasks length ${alltasks.length} => ${incompleteTasks.length}`)
       const noincompletepres = incompleteTasks.filter(x => {
         try {
           if(ewww.grabIncompletePres(x.id).size > 0) return false
@@ -284,7 +282,7 @@ export const useTaskStore = defineStore('tasks', {
         }
         return true
       })
-      LayerZeroLogger.log(`layerzero: noincompletepres length ${incompleteTasks.length} => ${noincompletepres.length}`)
+      LayerZeroLogger.log(`layerzero: (all: ${alltasks.length}) => (incomplete: ${incompleteTasks.length}) => (noincompletepres: ${noincompletepres.length})`)
       return noincompletepres
     },
     allTasks: (state): Task[] => [...state.mapp.values()] as Task[]

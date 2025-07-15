@@ -56,8 +56,7 @@ export class Task implements TaskLike {
           return true
         }
         //debuggingCzar.log(`setting hard prereq ids of ${this.title}`)
-        const obj = useTaskStore().mapp.get(value) as Task | undefined | null
-        if (obj) ewww.upsertPre(this.id, obj)
+        if(useTaskStore().mapp.has(value)) ewww.upsertPre(this.id, value)
         return true
       },
       get: (target, prop) => {
@@ -71,8 +70,7 @@ export class Task implements TaskLike {
           return undefined
         }
         //debuggingCzar.log(`hard prereqs FORCE SYNC ${this.title}`)
-        const obj = useTaskStore().mapp.get(val) as Task | undefined | null
-        if(obj) ewww.upsertPre(this.id, obj)
+        if(useTaskStore().mapp.has(val)) ewww.upsertPre(this.id, val)
         return val
       },
       apply: (target, thisArg, argumentsList) => {
@@ -100,8 +98,7 @@ export class Task implements TaskLike {
           })
           return true
         }
-        const obj = useTaskStore().mapp.get(value) as Task | undefined | null // FIXME: this used to be hardGet but it runs into issues when adding tasks one by one to an empty store.
-        if(obj) ewww.upsertPost(this.id, obj)
+        if(useTaskStore().mapp.has(value)) ewww.upsertPost(this.id, value)
         return true
       },
       get: (target, prop) => {
@@ -114,8 +111,7 @@ export class Task implements TaskLike {
           debuggingCzar.log('kinda weird - val was undefined')
           return undefined
         }
-        const obj = useTaskStore().mapp.get(val) as Task
-        if(obj) ewww.upsertPost(this.id, obj)
+        if(useTaskStore().mapp.has(val)) ewww.upsertPost(this.id, val)
         return val
       },
       apply: (target, thisArg, argumentsList) => {
@@ -185,8 +181,11 @@ export class Task implements TaskLike {
       .get()
   }
   async toggleCompleted() {
-    this.completed = !this.completed
-    return await this.updateTaskCompletionStatus()
+    useLoadingStateStore().busy = true
+    const newVal = await useTaskStore().apiUpdate(this.id, { completed: !this.completed })
+    useLoadingStateStore().busy = false
+    considerOpeningQuickSortDialog()
+    return newVal
   }
   /**
    * A similar function but just sets up the api update to only have a payload containing the new completed status; does not actively switch the completed status

@@ -154,7 +154,7 @@
       arr.push(...posts)
       arr = arr.filter((x) => x.id !== currentTask.value!.id)
     }
-    arr.sort((a, b) => b.grabPostreqs(true).length - a.grabPostreqs(true).length)
+    arr.sort((a, b) => (a.task_duration_in_minutes ?? 1440) - (b.task_duration_in_minutes ?? 1440))
     return arr.length > 0 ? arr[0]! : null // arr[0]! with ! is dumb!! ts, come on!
   })
 

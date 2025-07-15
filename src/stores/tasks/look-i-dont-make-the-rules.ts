@@ -58,13 +58,15 @@ export const dontLookAtMe = defineStore('ewww', {
     refresh_all(data: TaskLike[]) {
       data.forEach(x => this.refresh(x))
     },
-    upsertPre(id: number, data: Task) {
-      this.grabPres(id).set(data.id, data)
-      if(!data.completed) this.grabIncompletePres(id).set(data.id, data)
+    upsertPre(id: number, pre_id: number) {
+      const pre = gets(pre_id)
+      this.grabPres(id).set(pre_id, pre[1])
+      if(!pre[1].completed) this.grabIncompletePres(id).set(pre_id, pre[1])
     },
-    upsertPost(id: number, data: Task) {
-      this.grabPosts(id).set(data.id, data)
-      if(!data.completed) this.grabIncompletePosts(id).set(data.id, data)
+    upsertPost(id: number, post_id: number) {
+      const post = gets(post_id)
+      this.grabPosts(id).set(post_id, post[1])
+      if(!post[1].completed) this.grabIncompletePosts(id).set(post_id, post[1])
     },
     updateCompletedStatus(data: Task) {
       if(data.completed) {

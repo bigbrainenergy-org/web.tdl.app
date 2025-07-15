@@ -470,7 +470,7 @@
       const b = currentPair.value[i]!
       // todo use a batch update api call.
       await useTaskStore().addRule(a.id, b.id)
-        .then(() => dogFoodHarder().assertTaskLength('confirmOrder'))
+        .then(() => quickSortLogger.log(`successful api update: {${a.title.substring(0, 80)}} => {${b.title.substring(0, 80)}}`))
     }
     await tryNewPair()
     loading.value = false

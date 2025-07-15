@@ -2,7 +2,7 @@ import type { Task } from './task-model'
 
 export interface TaskState {
   mapp: Map<number, Task>
-  _array: Task[]
+  array: Task[]
 }
 
 export interface TaskTimerState {
