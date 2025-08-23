@@ -48,7 +48,7 @@
   interface Prop {
     tasks: Task[]
   }
-  const props = withDefaults(defineProps<Prop>(), { tasks: () => useTaskStore().allTasks })
+  const props = withDefaults(defineProps<Prop>(), { tasks: () => useTaskStore().array })
 
   const ts = useTaskStore()
   const usr = useLocalSettingsStore()
@@ -120,7 +120,7 @@
     const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
     allTasks = ts.incompleteOnly
     const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
-    allTasks.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
+    allTasks.value.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
 
     const generateD3LinkToPostreq: λ<d3Node<Task>, λ<Task, d3Link<Task>>> =
       (currentTaskNode: d3Node<Task>) => (currentPost: Task) =>

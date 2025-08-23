@@ -107,6 +107,7 @@
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { Task } from 'src/stores/tasks/task-model'
   import { Logger } from 'src/utils/d'
+  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
 
   const updateTaskDialogger = new Logger('Update Task Dialog', '#008800')
 
@@ -180,7 +181,7 @@
   let currentPre: Task | null = null
   // let currentPost: Task | null = null
 
-  updateTaskDialogger.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
+  // updateTaskDialogger.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 
   useMeta(() => ({ title: currentTask.value.title + ' | TDL App' }))
 
@@ -190,13 +191,16 @@
     const t = useTaskStore().hardGet(currentTask.value.id)
     return t
   })
+
+  const ewww = dontLookAtMe()
+
   const allPres = computed(() => {
-    const pres = currentTaskFromStore.value.grabPrereqs(hideCompleted.value)
-    return pres
+    const pres = hideCompleted.value ? ewww.grabIncompletePres(currentTaskFromStore.value.id) : ewww.grabPres(currentTaskFromStore.value.id)
+    return [...pres.values()]
   })
   const allPosts = computed(() => {
-    const posts = currentTaskFromStore.value.grabPostreqs(hideCompleted.value)
-    return posts
+    const posts = hideCompleted.value ? ewww.grabIncompletePosts(currentTaskFromStore.value.id) : ewww.grabPosts(currentTaskFromStore.value.id)
+    return [...posts.values()]
   })
 
   function setCurrentTask(newTask: Task) {
@@ -433,6 +437,6 @@
   const removePost = (task: Task, id_of_postreq: number) => {
     useTaskStore()
       .removeRule(task.id, id_of_postreq)
-      .then(handleSuccess('Removed a prerequisite'), handleError('Error removing the prerequisite'))
+      .then(handleSuccess('Removed a postrequisite'), handleError('Error removing the postrequisite'))
   }
 </script>

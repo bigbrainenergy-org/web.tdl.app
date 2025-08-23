@@ -140,7 +140,7 @@
     innerWidth: '100%'
   })
 
-  const { allTasks: array } = storeToRefs(useTaskStore())
+  const { array } = storeToRefs(useTaskStore())
 
   const layerZero = computed(() =>
     array.value

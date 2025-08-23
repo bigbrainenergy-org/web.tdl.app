@@ -9,7 +9,7 @@ import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroD
 import AddDependencyDialog from 'src/components/dialogs/AddDependencyDialog.vue'
 import TaskSlicerDialog from 'src/components/dialogs/TaskSlicerDialog.vue'
 import { useRepo } from 'pinia-orm'
-import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
 import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { CreateListOptions} from 'src/stores/lists/list'
@@ -124,13 +124,13 @@ export function considerOpeningQuickSortDialog() {
   if (quickSortDialogActive) return
   if (disableQuickSort) return
   if (enableQuickSortOnLayerZeroQTY > 0) {
-    const layerZeroQTY = useTaskStore().layerZero.length
+    const layerZeroQTY = useTaskStore().layerZero.value.length
     if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
       openQuickSortDialog()
     }
     if (
       enableQuickSortOnNewTask &&
-      useTaskStore().layerZero.filter((x) => x.grabPrereqs(true).length === 0).length > 0
+      useTaskStore().layerZero.value.filter((x) => x.grabPrereqs(true).length === 0).length > 0
     ) {
       openQuickSortDialog()
     }
@@ -162,7 +162,7 @@ export function addPrerequisitesDialog(currentTask: Task) {
       dialogTitle: 'Add Prerequisite',
       taskID: currentTask.id,
       showCreateButton: true,
-      onSelect: async (payload: { task: Task }) => {
+      onSelect: async (payload: { task: TaskLike }) => {
         await addPre(currentTask, payload.task.id)
       },
       initialFilter: (currentTaskID: number | undefined) => {

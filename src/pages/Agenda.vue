@@ -128,7 +128,7 @@
   // fancy footwork
   const tasks = computed(() => {
     AgendaLogger.debug('recalculating agenda.')
-    const layerZero = useTaskStore().allTasks.filter(
+    const layerZero = useTaskStore().array.filter(
       (task: Task) =>
         !task.completed &&
         task.grabPrereqs(false).filter((prereq) => !prereq.completed).length === 0
@@ -209,7 +209,7 @@
   })
 
   const sortQty = computed(() => {
-    const len0 = useTaskStore().layerZero.length
+    const len0 = useTaskStore().layerZero.value.length
     if (disableQuickSort.value) return len0
     return autoScalePriority.value
       ? autoThreshold.value

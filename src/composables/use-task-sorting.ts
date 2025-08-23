@@ -3,11 +3,12 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
 import type { Task } from 'src/stores/tasks/task-model'
+import { useTaskStore } from 'src/stores/tasks/task-store'
 import { Logger } from 'src/utils/d'
 import { safeAccess } from 'src/utils/map-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
 
-const TaskSortingLogger = new Logger('Task Sort')
+const TaskSortingLogger = new Logger('Task Sort', '#794A20')
 
 export function useTaskSorting() {
   const localSettingsStore = useLocalSettingsStore()
@@ -17,7 +18,7 @@ export function useTaskSorting() {
   function sortTasks(tasks: Task[]): Task[] {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
-    } else if(currentSortingMode.value === 'sortByAgenda') { // bug: currently adding and removing rules puts task store in an un-agendaable state. new as of use task sort directive
+    } else if(currentSortingMode.value === 'sortByAgenda') {
       if(busy.value) {
         TaskSortingLogger.log('zzz')
         return tasks
@@ -28,197 +29,134 @@ export function useTaskSorting() {
         agendaSort: performance.now(),
         enqueueTimeTotal: 0,
         hasKeysTotal: 0,
-        //qtyLoopRuns: 0
       }
-      /**
-       * # firstLayer
-       * The tasks that meet the following criteria:
-       * - incomplete
-       * - do not have incomplete prereqs
-       * sorted by quantity of incomplete postreqs.
-       * #todo is the sort necessary?
-       */
-      //TaskSortingLogger.log({ hideCompleted: hideCompleted.value })
-      const firstLayer = tasks.filter(x => (hideCompleted.value ? !x.completed : true) && ewww.grabIncompletePres(x.id).size === 0).sort((a, b) => (b.task_duration_in_minutes ?? 1440) - (a.task_duration_in_minutes ?? 1440))
-      //TaskSortingLogger.debug({ firstLayer })
-      /**
-       * # finalList
-       * It's important to note that JS Set and Map has the following properties:
-       * - maintains insertion order
-       * 
-       * The final output of the agenda sort is:
-       * 1. put together in this Map, then
-       * 2. converted to an array.
-       */
+
+      // Pre-filter tasks for better performance
+      const filteredTasks = hideCompleted.value ? tasks.filter(x => !x.completed) : tasks
+      const taskIds = new Set(filteredTasks.map(x => x.id)) // Use Set for O(1) lookups
+      
+      // Find first layer tasks (no incomplete prerequisites)
+      const firstLayer = filteredTasks.filter(x => ewww.grabIncompletePres(x.id).size === 0)
+        .sort((a, b) => (b.task_duration_in_minutes ?? 1440) - (a.task_duration_in_minutes ?? 1440))
+
       const finalList = new Map<number, Task>()
-      /**
-       * # queue
-       * A data structure that groups tasks together by qty of incomplete postreqs.
-       * - key: a quantity of incomplete postreqs
-       * - value: an array of enqueued Tasks that have that many incomplete postreqs.
-       */
-      const queue: Map<number, Task[]> = new Map()
-      /**
-       * # addedToQueue
-       * A set of IDs of any task that has been added to the queue.
-       * - number: Task ID
-       */
       const addedToQueue = new Set<number>()
-      /**
-       * # enqueue
-       * Take an array of tasks and push them into the queue map.
-       * @param tasks an array of tasks to enqueue
-       */
+      
+      // Use more efficient queue structure with sorted keys maintained
+      const queue: Map<number, Task[]> = new Map()
+      const sortedKeys: number[] = [] // Maintain sorted keys instead of recreating
+      
       const enqueue = (tasks: Task[]) => {
         let enqueuetime = performance.now()
-        tasks.forEach((x) => {
-          safeAccess(queue, ewww.grabIncompletePosts(x.id).size).push(x)
-          addedToQueue.add(x.id)
-        })
+        for (const task of tasks) {
+          const postCount = ewww.grabIncompletePosts(task.id).size
+          
+          if (!queue.has(postCount)) {
+            queue.set(postCount, [])
+            // Insert key in sorted position instead of sorting entire array
+            insertSorted(sortedKeys, postCount)
+          }
+          
+          queue.get(postCount)!.push(task)
+          addedToQueue.add(task.id)
+        }
         enqueuetime = performance.now() - enqueuetime
         timings.enqueueTimeTotal += enqueuetime
       }
-      enqueue(firstLayer)
-      {
-        /**
-         * # qkeys
-         * An array of just the keys of queue.
-         * - The keys of queue represent the quantities of incomplete postreqs.
-         * - The values of queue represent the Tasks that have that qty of incomplete postreqs.
-         * 
-         * This is a simple and effective way to get only the keys that have value in the Map.
-         */
-        let qkeys = Array.from(queue.keys())
-        /**
-         * # hundos
-         * Simply a way to track the number of times certain functions have been run, to check performance and bail out if infinite loop is suspected.
-         */
-        let hundos = 0
-        /**
-         * # hasKeys
-         * will determine if the agenda sorting loop should continue
-         * @returns true if queue is still populated
-         */
-        const hasKeys = () => {
-          let haskeys = performance.now()
-          qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
-          hundos++ // it's possible that valid max hundos will actually be tasks.length + 1
-          // TaskSortingLogger.debug({ qkeys, hundos })
-          haskeys = performance.now() - haskeys
-          timings.hasKeysTotal += haskeys
-          return qkeys.length > 0
+      
+      // Helper function to insert key in sorted position (O(log n) with binary search)
+      const insertSorted = (arr: number[], value: number) => {
+        let left = 0, right = arr.length
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2)
+          if (arr[mid]! > value) left = mid + 1
+          else right = mid
         }
-        while (hasKeys()) {
-          //timings.qtyLoopRuns++
-          /**
-           * check if the loop has run an abnormal number of times relative to queue size
-           */
-          if (hundos > 3 * addedToQueue.size) { // bug: this is where it bails out after adding or removing a rule
-            TaskSortingLogger.warn('agenda calc is taking too long. baling out. Add to TODOS')
-            qkeys.forEach(x => {
-              TaskSortingLogger.debug({ layer: queue.get(x) })
-            })
-            TaskSortingLogger.debug({ finalList: Array.from(finalList.values())})
-            TaskSortingLogger.debug({ addedToQueue: Array.from(addedToQueue) })
-            break
-          }
-          let bail = false
-          //const start = performance.now()
-          /**
-           * iterate the queue keys
-           * - the queue keys are sorted desc
-           */
-          for (let i = 0; i < qkeys.length; i++) {
-            /**
-             * # k
-             * This is the current qkey in the iteration. Again, the qkeys represent queue keys
-             * - queue keys are an amount of incomplete postreqs that the value Tasks share
-             */
-            const k = qkeys[i]!
-            /**
-             * # qk
-             * The Task[] value of the current queue key.
-             * - guaranteed to be defined because safeAccess was used in the enqueue function.
-             */
-            const qk = queue.get(k)!
-            //let timeSorting = performance.now()
-            //qk.sort((a, b) => (a.task_duration_in_minutes ?? 1440) - (b.task_duration_in_minutes ?? 1440))
-            //timeSorting = performance.now() - timeSorting
-            //timings.totalTimeSorting += timeSorting
-            /**
-             * iterate the Tasks in queue at key k
-             */
-            for (let j = 0; j < qk.length; j++) {
-              /**
-               * # t
-               * The Task at queue.get(qkeys[i])![j]
-               * 
-               * You really expect me to type that every time?
-               */
-              const t = qk[j]!
-              /**
-               * # ip
-               * The incomplete postreqs of t
-               * 
-               * At this point I just like having Markdown annotations for everything
-               */
-              const ips = ewww.grabIncompletePres(t.id)
-              //const ip = t.grabPrereqs(true)
-              /**
-               * Check if every incomplete postreq has been sorted and 'staged'
-               * - since we are iterating over the Task[] values of queue by incomplete postreqs qty (desc) we get the desired output:
-               * 1. place the layer zero task with the most qty postreqs first in the finalList
-               * 2. enqueue the rest (as well as the postreqs of finalList[0])
-               * 3. sort the queue by qty postreqs
-               * 4. place the next task (with the most qty postreqs in the queue) in the finalList
-               * 
-               * So, the output is the most 'important' task is listed as soon as all its dependencies have themselves been listed.
-               */
-              let allFinal = true
-              for(const incomplete_pre of ips.keys()) {
-                if(!finalList.has(incomplete_pre)) {
-                  allFinal = false
-                  break
-                }
-              }
-              if (allFinal) {
-                // TaskSortingLogger.debug(`adding task ${t.id} now!`)
-                finalList.set(t.id, t)
-                // enqueue the incomplete postreqs, but skip those who are already there.
-                enqueue([...ewww.grabIncompletePosts(t.id).values()].filter(x => !addedToQueue.has(x.id)))
-                //enqueue(t.grabPostreqs(true).filter((x) => !addedToQueue.has(x.id)))
-                // remove the Task t, at qk[j]
-                // TODO: ideally we need to decrement j here. see related TODO about decrement i too.
-                qk.splice(j--, 1) // trying decrement on i and j with no bail boolean
-                // if that's the last element of the array, then prune the empty array from the queue Map
-                if(qk.length === 0) {
-                  queue.delete(k)
-                  // TODO: ideally we need to decrement i here and maintain state of qkeys within the for loops.
-                  // this would have to include adding to qkeys during the enqueue step.
-                  qkeys.splice(i--, 1)
-                }
-                // complain in the case of poor performance
-                //const duration = performance.now() - start
-                //TaskSortingLogger.assert(duration < 8, 'agenda main loop is taking too long per task')
-                // TODO: remove this once qkeys and qk are properly managed in the for loops.
-                bail = true
+        arr.splice(left, 0, value)
+      }
+      
+      // Remove key from sorted array efficiently
+      const removeKey = (arr: number[], value: number) => {
+        const index = arr.indexOf(value)
+        if (index !== -1) arr.splice(index, 1)
+      }
+
+      enqueue(firstLayer)
+      
+      let hundos = 0
+      const maxIterations = 3 * useTaskStore().array.length
+      
+      // Main sorting loop - optimized
+      while (sortedKeys.length > 0 && hundos < maxIterations) {
+        hundos++
+        let processed = false
+        
+        // Process keys in descending order (already sorted)
+        for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
+          const postCount = sortedKeys[keyIndex]!
+          const queuedTasks = queue.get(postCount)!
+          
+          // Process tasks in this queue level
+          for (let taskIndex = queuedTasks.length - 1; taskIndex >= 0; taskIndex--) {
+            const task = queuedTasks[taskIndex]!
+            const incompletePres = ewww.grabIncompletePres(task.id)
+            
+            // Check if all prerequisites are satisfied (optimized)
+            let allPresSatisfied = true
+            for (const preId of incompletePres.keys()) {
+              if (!finalList.has(preId)) {
+                allPresSatisfied = false
                 break
               }
-              else {
-                // TaskSortingLogger.debug({ 'not adding': t.id, culprit: ip.filter(y => !finalList.has(y.id))[0].id, finalList: Array.from(finalList.values()) })
+            }
+            
+            if (allPresSatisfied) {
+              // Add task to final list
+              finalList.set(task.id, task)
+              
+              // Enqueue incomplete postrequisites efficiently
+              const newTasks: Task[] = []
+              for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
+                if (!addedToQueue.has(postId)) {
+                  newTasks.push(postTask)
+                }
               }
-            }
-            if(bail) {
-              break
-            }
-            else {
-              // TaskSortingLogger.debug(`iterating i. i is ${i}`)
+              
+              if (newTasks.length > 0) {
+                enqueue(newTasks)
+              }
+              
+              // Remove task from queue efficiently (swap with last element)
+              queuedTasks[taskIndex] = queuedTasks[queuedTasks.length - 1]!
+              queuedTasks.pop()
+              
+              processed = true
+              break // Process one task per iteration for stability
             }
           }
+          
+          // Clean up empty queue levels
+          if (queuedTasks.length === 0) {
+            queue.delete(postCount)
+            removeKey(sortedKeys, postCount)
+            keyIndex-- // Adjust index after removal
+          }
+          
+          if (processed) break
+        }
+        
+        if (!processed) {
+          TaskSortingLogger.warn('No progress made in sorting iteration - potential cycle detected')
+          break
         }
       }
+      
+      if (hundos >= maxIterations) {
+        TaskSortingLogger.warn('Agenda sorting exceeded maximum iterations - bailing out')
+      }
+      
       timings.agendaSort = performance.now() - timings.agendaSort
-      TaskSortingLogger.log(`SORTTASK TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
+      TaskSortingLogger.log(`OPTIMIZED SORTTASK TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
       return Array.from(finalList.values())
     } else {
       return tasks
@@ -228,185 +166,111 @@ export function useTaskSorting() {
   function sortRoutineTasks(tasks: Task[]): Task[] {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
-    } else if(currentSortingMode.value === 'sortByAgenda') { // bug: currently adding and removing rules puts task store in an un-agendaable state. new as of use task sort directive
+    } else if(currentSortingMode.value === 'sortByAgenda') {
       const ewww = dontLookAtMe()
-      /**
-       * # firstLayer
-       * The tasks that meet the following criteria:
-       * - incomplete
-       * - do not have incomplete prereqs
-       * sorted by quantity of incomplete postreqs.
-       * #todo is the sort necessary?
-       */
-      const ids = tasks.map(x => x.id)
-      const firstLayer = tasks.filter(x => x.hard_prereq_ids.every(y => !ids.includes(y)))//.sort((a, b) => (b.task_duration_in_minutes ?? 1440) - (a.task_duration_in_minutes ?? 1440))
-      //TaskSortingLogger.debug({ firstLayer })
-      /**
-       * # finalList
-       * It's important to note that JS Set and Map has the following properties:
-       * - maintains insertion order
-       * 
-       * The final output of the agenda sort is:
-       * 1. put together in this Map, then
-       * 2. converted to an array.
-       */
+      
+      // Pre-compute task IDs as Set for O(1) lookups
+      const taskIds = new Set(tasks.map(x => x.id))
+      
+      // Find first layer - tasks with no prerequisites in this set
+      const firstLayer = tasks.filter(x => 
+        x.hard_prereq_ids.every(preId => !taskIds.has(preId))
+      )
+
       const finalList = new Map<number, Task>()
-      /**
-       * # queue
-       * A data structure that groups tasks together by qty of incomplete postreqs.
-       * - key: a quantity of incomplete postreqs
-       * - value: an array of enqueued Tasks that have that many incomplete postreqs.
-       */
-      const queue: Map<number, Task[]> = new Map()
-      /**
-       * # addedToQueue
-       * A set of IDs of any task that has been added to the queue.
-       * - number: Task ID
-       */
       const addedToQueue = new Set<number>()
-      /**
-       * # enqueue
-       * Take an array of tasks and push them into the queue map.
-       * @param tasks an array of tasks to enqueue
-       */
-      const enqueue = (tasks: Task[]) => {
-        tasks.forEach((x) => {
-          safeAccess(queue, x.grabPostreqs(true).length).push(x)
-          addedToQueue.add(x.id)
-        })
-      }
-      enqueue(firstLayer)
-      {
-        /**
-         * # qkeys
-         * An array of just the keys of queue.
-         * - The keys of queue represent the quantities of incomplete postreqs.
-         * - The values of queue represent the Tasks that have that qty of incomplete postreqs.
-         * 
-         * This is a simple and effective way to get only the keys that have value in the Map.
-         */
-        let qkeys = Array.from(queue.keys())
-        /**
-         * # hundos
-         * Simply a way to track the number of times certain functions have been run, to check performance and bail out if infinite loop is suspected.
-         */
-        let hundos = 0
-        /**
-         * # hasKeys
-         * will determine if the agenda sorting loop should continue
-         * @returns true if queue is still populated
-         */
-        const hasKeys = () => {
-          //const start = performance.now()
-          qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
-          hundos++ // it's possible that valid max hundos will actually be tasks.length + 1
-          //const duration = performance.now() - start
-          //TaskSortingLogger.assert(duration < 10, 'checking keys took too long.')
-          // TaskSortingLogger.debug({ qkeys, hundos })
-          return qkeys.length > 0
-        }
-        while (hasKeys()) {
-          /**
-           * check if the loop has run an abnormal number of times relative to queue size
-           */
-          if (hundos > 2 * addedToQueue.size) { // bug: this is where it bails out after adding or removing a rule
-            TaskSortingLogger.warn('agenda calc is taking too long. baling out. Add to TODOS')
-            qkeys.forEach(x => {
-              TaskSortingLogger.debug({ layer: queue.get(x) })
-            })
-            //TaskSortingLogger.debug({ finalList: Array.from(finalList.values())})
-            //TaskSortingLogger.debug({ addedToQueue: Array.from(addedToQueue) })
-            break
+      const queue: Map<number, Task[]> = new Map()
+      const sortedKeys: number[] = []
+      
+      const enqueue = (tasksToEnqueue: Task[]) => {
+        for (const task of tasksToEnqueue) {
+          const postCount = task.grabPostreqs(true).length
+          
+          if (!queue.has(postCount)) {
+            queue.set(postCount, [])
+            insertSorted(sortedKeys, postCount)
           }
-          let bail = false
-          //const start = performance.now()
-          /**
-           * iterate the queue keys
-           * - the queue keys are sorted desc
-           */
-          for (let i = 0; i < qkeys.length; i++) {
-            /**
-             * # k
-             * This is the current qkey in the iteration. Again, the qkeys represent queue keys
-             * - queue keys are an amount of incomplete postreqs that the value Tasks share
-             */
-            const k = qkeys[i]!
-            /**
-             * # qk
-             * The Task[] value of the current queue key.
-             * - guaranteed to be defined because safeAccess was used in the enqueue function.
-             */
-            const qk = queue.get(k)!
-            //qk.sort((a, b) => (a.task_duration_in_minutes ?? 1440) - (b.task_duration_in_minutes ?? 1440))
-            /**
-             * iterate the Tasks in queue at key k
-             */
-            for (let j = 0; j < qk.length; j++) {
-              /**
-               * # t
-               * The Task at queue.get(qkeys[i])![j]
-               * 
-               * You really expect me to type that every time?
-               */
-              const t = qk[j]!
-              /**
-               * # ip
-               * The incomplete postreqs of t
-               * 
-               * At this point I just like having Markdown annotations for everything
-               */
-              const ip = t.grabPrereqs(false).filter(y => ids.includes(y.id))
-              /**
-               * Check if every incomplete postreq has been sorted and 'staged'
-               * - since we are iterating over the Task[] values of queue by incomplete postreqs qty (desc) we get the desired output:
-               * 1. place the layer zero task with the most qty postreqs first in the finalList
-               * 2. enqueue the rest (as well as the postreqs of finalList[0])
-               * 3. sort the queue by qty postreqs
-               * 4. place the next task (with the most qty postreqs in the queue) in the finalList
-               * 
-               * So, the output is the most 'important' task is listed as soon as all its dependencies have themselves been listed.
-               */
-              if (ip.every((y) => finalList.has(y.id))) {
-                // TaskSortingLogger.debug(`adding task ${t.id} now!`)
-                finalList.set(t.id, t)
-                // enqueue the incomplete postreqs, but skip those who are already there.
-                const postreqs: Task[] = []
-                for(const postreq of ewww.grabIncompletePosts(t.id)) {
-                  if(!addedToQueue.has(postreq[0]) && ids.includes(postreq[0])) {
-                    postreqs.push(postreq[1])
-                  }
+          
+          queue.get(postCount)!.push(task)
+          addedToQueue.add(task.id)
+        }
+      }
+      
+      const insertSorted = (arr: number[], value: number) => {
+        let left = 0, right = arr.length
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2)
+          if (arr[mid]! > value) left = mid + 1
+          else right = mid
+        }
+        arr.splice(left, 0, value)
+      }
+      
+      const removeKey = (arr: number[], value: number) => {
+        const index = arr.indexOf(value)
+        if (index !== -1) arr.splice(index, 1)
+      }
+
+      enqueue(firstLayer)
+      
+      let hundos = 0
+      const maxIterations = 3 * tasks.length
+      
+      while (sortedKeys.length > 0 && hundos < maxIterations) {
+        hundos++
+        let processed = false
+        
+        for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
+          const postCount = sortedKeys[keyIndex]!
+          const queuedTasks = queue.get(postCount)!
+          
+          for (let taskIndex = queuedTasks.length - 1; taskIndex >= 0; taskIndex--) {
+            const task = queuedTasks[taskIndex]!
+            
+            // Check prerequisites efficiently
+            const prereqs = task.grabPrereqs(false).filter(y => taskIds.has(y.id))
+            const allPresSatisfied = prereqs.every(prereq => finalList.has(prereq.id))
+            
+            if (allPresSatisfied) {
+              finalList.set(task.id, task)
+              
+              // Enqueue postrequisites efficiently
+              const newTasks: Task[] = []
+              for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
+                if (!addedToQueue.has(postId) && taskIds.has(postId)) {
+                  newTasks.push(postTask)
                 }
-                enqueue(postreqs)
-                // remove the Task t, at qk[j]
-                // TODO: ideally we need to decrement j here. see related TODO about decrement i too.
-                qk.splice(j, 1) // trying decrement on i and j with no bail boolean
-                // if that's the last element of the array, then prune the empty array from the queue Map
-                if(qk.length === 0) {
-                  queue.delete(k)
-                  // TODO: ideally we need to decrement i here and maintain state of qkeys within the for loops.
-                  // this would have to include adding to qkeys during the enqueue step.
-                  qkeys.splice(i, 1)
-                }
-                // complain in the case of poor performance
-                //const duration = performance.now() - start
-                //TaskSortingLogger.assert(duration < 8, 'agenda main loop is taking too long per task')
-                // TODO: remove this once qkeys and qk are properly managed in the for loops.
-                bail = true
-                break
               }
-              else {
-                // TaskSortingLogger.debug({ 'not adding': t.id, culprit: ip.filter(y => !finalList.has(y.id))[0].id, finalList: Array.from(finalList.values()) })
+              
+              if (newTasks.length > 0) {
+                enqueue(newTasks)
               }
-            }
-            if(bail) {
+              
+              // Remove efficiently
+              queuedTasks[taskIndex] = queuedTasks[queuedTasks.length - 1]!
+              queuedTasks.pop()
+              
+              processed = true
               break
             }
-            else {
-              // TaskSortingLogger.debug(`iterating i. i is ${i}`)
-            }
           }
+          
+          if (queuedTasks.length === 0) {
+            queue.delete(postCount)
+            removeKey(sortedKeys, postCount)
+            keyIndex--
+          }
+          
+          if (processed) break
         }
+        
+        if (!processed) break
       }
+      
+      if (hundos >= maxIterations) {
+        TaskSortingLogger.warn('Routine task sorting exceeded maximum iterations')
+      }
+      
       return Array.from(finalList.values())
     } else {
       return tasks

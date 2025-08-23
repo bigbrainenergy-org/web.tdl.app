@@ -382,7 +382,7 @@ export class Task implements TaskLike {
     // todo: review everything from here down
     for (let i = 0; i < newSlices.length; i++) {
       const tmp = await ts.apiCreate(newSlices[i]!)
-      if (tmp !== null) resultTasks.push(tmp)
+      if (typeof tmp !== 'undefined' && tmp !== null) resultTasks.push(new Task(tmp))
     }
     // todo: actually possibly an issue with resultTasks being out of bounds here.
     for (let i = 0; i < prereq_ids.length; i++) {

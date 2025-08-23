@@ -46,8 +46,7 @@ export class Procedure extends Model implements iRecord {
   }
 
   grabTasks(): Task[] {
-    const tasks = useTaskStore().allTasks.filter((x) => x.procedure_ids?.includes(this.id))
-    return tasks
+    return useTaskStore().array.filter((x) => x.procedure_ids?.includes(this.id))
   }
 
   get tasks() {

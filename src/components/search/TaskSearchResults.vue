@@ -45,7 +45,7 @@
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
 
   interface Prop {
     search: string | undefined
@@ -113,7 +113,7 @@
     timeThisB(
       () => {
         console.debug('recalculating tasks list for task search results')
-        const allTasks = useTaskStore().allTasks.filter(filterish.value(props.taskID))
+        const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
         if (typeof props.batchFilter !== 'undefined')
           return props.batchFilter(props.taskID)(allTasks)
         return allTasks
@@ -166,11 +166,11 @@
     if (typeof props.search === 'undefined') return
     const toCreate: CreateTaskOptions = { title: props.search }
     const newTask = await useTaskStore().apiCreate(toCreate)
-    if (newTask === null) throw new Error('Error creating task.')
+    if (typeof newTask === 'undefined' || newTask === null) throw new Error('Error creating task.')
     if (typeof props.taskID !== 'undefined') selectTask(newTask)
   }
 
-  const selectTask = (task: Task) => {
+  const selectTask = (task: TaskLike) => {
     emit('select', { task, callback: searchForTasks })
   }
 

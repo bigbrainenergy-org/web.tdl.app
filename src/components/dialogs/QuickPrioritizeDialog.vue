@@ -53,14 +53,14 @@
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
+  const lzerotasks = useTaskStore().layerZero
   const layerZero = ref<{ selected: boolean; obj: Task }[]>(
-    useTaskStore()
-      .layerZero.filter((x: Task) => {
-        if (x.id === prop.task.id) return false
-        if (prop.task.anyIDsBelow([x.id])) return false
-        return true
-      })
-      .map((x: Task) => ({ selected: false, obj: x }))
+    lzerotasks.value.filter((x) => {
+      if (x.id === prop.task.id) return false
+      if (prop.task.anyIDsBelow([x.id])) return false
+      return true
+    })
+      .map((x) => ({ selected: false, obj: x }))
   )
   const saveNewRules = () => {
     const selectedTasks = layerZero.value.filter((x) => x.selected)

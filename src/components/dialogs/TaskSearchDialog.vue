@@ -78,7 +78,7 @@
   import Fuse from 'fuse.js'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { Task } from 'src/stores/tasks/task-model'
-  import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import { hardCheck } from 'src/utils/type-utils'
   import { timeThisB } from 'src/utils/performance-utils'
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
@@ -161,7 +161,7 @@
   //   return tasks
   // }
 
-  const selectTask = (task: Task) => {
+  const selectTask = (task: TaskLike) => {
     emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
@@ -177,7 +177,7 @@
       title: searchString.value
     }
     const newTask = await useTaskStore().apiCreate(toCreate)
-    if (newTask !== null) selectTask(newTask)
+    if (typeof newTask !== 'undefined' && newTask !== null) selectTask(newTask)
   }
 
   const hideDialog = () => {
@@ -203,7 +203,7 @@
   const getTasks = () => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = useTaskStore().allTasks.filter(filterish.value(props.taskID))
+    const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)

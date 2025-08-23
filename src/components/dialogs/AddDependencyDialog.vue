@@ -82,7 +82,7 @@
   import { handleError } from 'src/utils/notification-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
 
@@ -175,7 +175,7 @@
   const getTasks = (): Task[] => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = useTaskStore().allTasks.filter(filterish.value(props.taskID))
+    const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
@@ -240,7 +240,7 @@
     }
   }
 
-  const selectTask = (task: Task) => {
+  const selectTask = (task: TaskLike) => {
     emit('select', { task })
     searchForTasks()
     if (props.closeOnSelect) onDialogCancel()
@@ -263,7 +263,7 @@
     useTaskStore()
       .apiCreate(toCreate)
       .then((result) => {
-        if (result === null) return
+        if (typeof result === 'undefined' || result === null) return
         if (typeof props.taskID !== 'undefined') selectTask(result)
         const duration = Math.floor(performance.now() - start)
         if (duration > target)

@@ -32,7 +32,7 @@ export class List extends Model implements iRecord {
 
   // @HasMany(() => Task, 'list_id') declare tasks: Task[]
   get tasks(): Task[] {
-    return useTaskStore().allTasks.filter((x) => x.list_id === this.id)
+    return useTaskStore().array.filter((x) => x.list_id === this.id)
   }
 
   get incompleteTaskCount() {

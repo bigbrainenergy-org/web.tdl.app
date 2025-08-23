@@ -155,7 +155,6 @@
   import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import { dragAndDrop, useDragAndDrop } from '@formkit/drag-and-drop/vue'
   import { Logger } from 'src/utils/d'
-  import { dogFoodHarder } from 'src/stores/tasks/dogfood'
 
   const quickSortLogger = new Logger('Quick Sort', '#3498db')
 
@@ -194,10 +193,9 @@
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-  const layerZero = computed(() => {
-    const layerZeroTasks = useTaskStore().layerZero
-    return layerZeroTasks.map(postWeightedTask)
-  })
+  const lzerotasks = useTaskStore().layerZero
+
+  const layerZero = computed(() => lzerotasks.value.map(postWeightedTask))
   const tasksWithoutPostreqs = computed(() =>
     layerZero.value.filter((x) => !(x.t.grabPostreqs(true).length > 0))
   )

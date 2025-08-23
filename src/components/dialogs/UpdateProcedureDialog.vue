@@ -98,7 +98,7 @@
 
   const procedureTasks = computed<Task[]>(() => {
     console.log('fetching proceduretasks again!!')
-    const tasksArr = ([...useTaskStore().mapp.values()] as Task[]).filter((x) =>
+    const tasksArr = useTaskStore().array.filter((x) =>
       x.procedure_ids?.includes(props.procedure.id)
     )
     // const prm_tasks = props.procedure.grabTasks()
@@ -152,13 +152,14 @@
   const editTitle = ref(procedureRef.value.title)
 
   const allTasks = computed<Task[]>(() => {
-    const completedProcedureTasks = ([...useTaskStore().mapp.values()] as Task[])
+    const completedProcedureTasks = useTaskStore().array
       .filter(x => x.procedure_ids?.includes(props.procedure.id))
       .filter((a) => a.completed)
     //.filter(x => incompleteOnly.value ? !x.completed : true)
-    const incompleteProcedureTasks = useTaskSorting().sortTasks([...useTaskStore().mapp.values()] as Task[])
+    const incompleteProcedureTasks = useTaskSorting().sortTasks(useTaskStore().array
       .filter(x => x.procedure_ids?.includes(props.procedure.id))
       .filter((a) => !a.completed)
+    )
     return [...completedProcedureTasks, ...incompleteProcedureTasks]
   })
 

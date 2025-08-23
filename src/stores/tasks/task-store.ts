@@ -1,5 +1,6 @@
 import type { PiniaPluginContext, StateTree } from 'pinia'
 import { defineStore } from 'pinia'
+import { shallowRef, computed } from 'vue'
 import type {
   AllOptionalTaskProperties,
   CreateTaskOptions,
@@ -17,42 +18,42 @@ import { arrayDelete } from 'src/utils/array-utils'
 import { Queue } from 'src/utils/types'
 import { Logger } from 'src/utils/d'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
-import { dogFoodHarder } from './dogfood'
 
 const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
 const ewww = dontLookAtMe()
 
 export const useTaskStore = defineStore('tasks', {
   state: (): TaskState => ({
-    mapp: new Map<number, Task>(),
-    array: []
+    array: shallowRef([]) as any, // Use shallowRef for better performance with large arrays
+    mapp: new Map()
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
-      const timeToRestore = performance.now();
-      (context.store.mapp as Map<number, Task>).forEach((val: Task) => {
-          val.fullSyncPosts()
-          val.fullSyncPres()
-        })
-      TaskStoreLogger.log(`afterRestore timings: ${performance.now() - timeToRestore}`)
+      // Rebuild map from array efficiently
+      const map = new Map()
+      context.store.array.forEach((x: Task) => map.set(x.id, x))
+      context.store.mapp = map
+      
+      const timeToRestore = performance.now()
+      ewww.refresh_all(context.store.array as Task[])
+      TaskStoreLogger.log(`eww refresh_all timings: ${performance.now() - timeToRestore} ms`)
     },
-    paths: ['array'],
     debug: true,
     serializer: {
       serialize: (value: StateTree) => {
         const time = performance.now()
-        const json = JSON.stringify((value.array ?? []).map((x: Task) => x.rawData))
-        TaskStoreLogger.log(`SERIALIZE took ${performance.now() - time}`)
+        // Use more efficient serialization - avoid mapping if possible
+        const tasks = value.array ?? []
+        const json = JSON.stringify(tasks.map((x: Task) => x.rawData))
+        TaskStoreLogger.log(`SERIALIZE took ${performance.now() - time}ms for ${tasks.length} tasks`)
         return json
       },
       deserialize: (value: string): StateTree => {
-        //TaskStoreLogger.debug('DESERIALIZE: parsing local storage for tasks')
         const time = performance.now()
-        const parsed = JSON.parse(value) as TaskLike[]
-        const mapp: Map<number, Task> = new Map(parsed.map((x: TaskLike) => [x.id, new Task(x)]))
-        const array = Array.from(mapp.values()) ?? []
-        TaskStoreLogger.log(`DESERIALIZE took ${performance.now() - time}`)
-        return { array, mapp }
+        const rawTasks = JSON.parse(value) as TaskLike[]
+        const array = rawTasks.map(x => new Task(x))
+        TaskStoreLogger.log(`DESERIALIZE took ${performance.now() - time}ms for ${array.length} tasks`)
+        return { array: shallowRef(array) }
       }
     }
   },
@@ -61,17 +62,40 @@ export const useTaskStore = defineStore('tasks', {
       const newTask = new Task(data)
       const inMap = this.mapp.get(data.id)
       if(!inMap) {
-        this.mapp.set(newTask.id, newTask)
+        // Use more efficient array updates for shallowRef
         this.array.push(newTask)
+        this.mapp.set(data.id, newTask)
       }
-      else Object.assign(inMap, newTask)
-      return newTask
+      else {
+        Object.assign(inMap, newTask)
+      }
+      return inMap ?? newTask
     },
     update(data: TaskLike[]) {
-      TaskStoreLogger.log('BULK UPDATE')
-      data.forEach(x => this.updateSingle(x))
-      //TaskStoreLogger.debug({ 'after bulk update': this.array })
-      //return this.array
+      TaskStoreLogger.log(`BULK UPDATE: ${data.length} tasks`)
+      
+      // More efficient bulk update for large datasets
+      const newTasks: Task[] = []
+      const updatedTasks: Task[] = []
+      
+      data.forEach(x => {
+        const newTask = new Task(x)
+        const existing = this.mapp.get(x.id) as Task | undefined
+        if(!existing) {
+          newTasks.push(newTask)
+          this.mapp.set(x.id, newTask)
+        } else {
+          Object.assign(existing, newTask)
+          updatedTasks.push(existing)
+        }
+      })
+      
+      // Batch array updates to minimize reactivity overhead
+      if (newTasks.length > 0) {
+        this.array.push(...newTasks)
+      }
+      
+      TaskStoreLogger.log(`Added ${newTasks.length}, updated ${updatedTasks.length} tasks`)
     },
     hardGet(id: number): Task {
       return hardCheck(this.mapp.get(id) as Task, `attempted to access Task with ID of ${id}`)
@@ -160,8 +184,6 @@ export const useTaskStore = defineStore('tasks', {
         .delete(`/tasks/${id}`, this.commonHeader())
         .then(() => {
           const theTask = this.hardGet(id)
-          //arrayDelete(this.array, theTask, 'id')
-          this.mapp.delete(id)
           this.array = this.array.filter(x => x.id !== id)
           notifySuccess('Task was deleted.')
         }, handleError('Error deleting task.'))
@@ -239,52 +261,75 @@ export const useTaskStore = defineStore('tasks', {
       }
       // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       timings.apiUpdate = performance.now()
-      return this.apiUpdate(first.id, { hard_postreq_ids: [...first.hard_postreq_ids, second_id] }).then(() => {
-        ewww.upsertPre(second_id, first_id)
-        TaskStoreLogger.debug('Added the dependency.')
+      return this.apiPushChanges(first.id, { hard_postreq_ids: [...first.hard_postreq_ids, second_id] }).then(() => {
+        this.$patch(state => {
+          first.hard_postreq_ids = [...first.hard_postreq_ids, second_id]
+          second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
+        })
+        ewww.addRule(first_id, second_id)
+        TaskStoreLogger.debug(`Added the dependency ${first_id} -> ${second_id}`)
+        TaskStoreLogger.log({ first_postreqs: first.hard_postreq_ids, second_prereqs: second.hard_prereq_ids })
         timings.apiUpdate = performance.now() - timings.apiUpdate
         timings.addRuleTotal = performance.now() - timings.addRuleTotal
         //TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
       }, handleError('Failed to add the dependency.'))
     },
-    removeRule(first_id: number, second_id: number) { // BUG: when used for remove Pre on the updateTaskDialog, the pres list isn't updating. addPre works; removePre doesn't. removePost works.
+    removeRule(first_id: number, second_id: number) { 
       const first = this.hardGet(first_id)
       const second = this.hardGet(second_id)
-      arrayDelete(first.hard_postreq_ids, second_id)
-      arrayDelete(second.hard_prereq_ids, first_id)
-      const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
+      
+      // Create new arrays without the dependency (don't mutate original arrays)
+      const new_first_postreqs = first.hard_postreq_ids.filter(id => id !== second_id)
+      const first_payload = { hard_postreq_ids: new_first_postreqs }
+      
       return this.apiUpdate(first.id, first_payload).then(
         () => {
+          // Only update state after successful API call
+          this.$patch(state => {
+            first.hard_postreq_ids = new_first_postreqs
+            second.hard_prereq_ids = second.hard_prereq_ids.filter(id => id !== first_id)
+          })
           notifySuccess('Removed the dependency')
-          const updatedSecond = this.updateSingle(second)
-          // updatedSecond.hard_prereqs.forEach((x) => x.fullSyncPosts())
-          // updatedSecond.hard_postreqs.forEach((x) => x.fullSyncPres())
-          updatedSecond.fullSyncPosts()
-          updatedSecond.fullSyncPres()
+          ewww.removeRule(first_id, second_id)
         },
         handleError('Failed to remove the dependency.')
       )
     }
   },
   getters: {
-    incompleteOnly: (state) => ([...state.mapp.values()] as Task[]).filter((x) => !x.completed),
-    layerZero: (state): Task[] => {
-      const LayerZeroLogger = new Logger('Layer Zero Getter', '#FFFFFF')
-      const alltasks = ([...state.mapp.values()] as Task[])
-      const incompleteTasks = alltasks.filter((x) => !x.completed)
-      const noincompletepres = incompleteTasks.filter(x => {
-        try {
-          if(ewww.grabIncompletePres(x.id).size > 0) return false
-          //if(x.grabPrereqs(true).length > 0) return false
-        } catch(ex) {
-          LayerZeroLogger.warn({ msg: 'while computing layer zero', ex })
-          return false
-        }
-        return true
-      })
-      LayerZeroLogger.log(`layerzero: (all: ${alltasks.length}) => (incomplete: ${incompleteTasks.length}) => (noincompletepres: ${noincompletepres.length})`)
-      return noincompletepres
+    // Use computed for expensive filtering operations
+    incompleteOnly: (state) => {
+      return computed(() => state.array.filter(x => !x.completed))
     },
-    allTasks: (state): Task[] => [...state.mapp.values()] as Task[]
+    layerZero: (state) => {
+      return computed((): Task[] => {
+        const LayerZeroLogger = new Logger('Layer Zero Getter', '#FFFFFF')
+        const incompleteTasks = state.array.filter(x => !x.completed)
+        
+        const noincompletepres = incompleteTasks.filter(x => {
+          try {
+            if(ewww.grabIncompletePres(x.id).size > 0) return false
+          } catch(ex) {
+            LayerZeroLogger.warn({ msg: 'while computing layer zero', ex })
+            return false
+          }
+          return true
+        })
+        
+        LayerZeroLogger.log(`layerzero: (all: ${state.array.length}) => (incomplete: ${incompleteTasks.length}) => (noincompletepres: ${noincompletepres.length})`)
+        return noincompletepres
+      })
+    },
+    
+    // Add efficient lookup getters
+    taskCount: (state) => state.array.length,
+    completedCount: (state) => computed(() => state.array.filter(x => x.completed).length),
+    
+    // Paginated getter for UI performance
+    paginatedTasks: (state) => (page: number = 0, pageSize: number = 200) => {
+      const start = page * pageSize
+      const end = start + pageSize
+      return state.array.slice(start, end)
+    }
   }
 })

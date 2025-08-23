@@ -30,7 +30,7 @@ export function usePostreqWarning() {
 
   const postreqQuantityWarningThreshold = computed(() => {
     PostreqWarningLogger.log('meep postreq quantity warning')
-    const len0 = useTaskStore().layerZero.length
+    const len0 = useTaskStore().layerZero.value.length
     if (disableQuickSort.value) return len0
     return autoScalePriority.value
       ? autoThreshold.value

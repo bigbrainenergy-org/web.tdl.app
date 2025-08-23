@@ -1,8 +1,9 @@
 import type { Task } from './task-model'
+import { type ShallowRef } from 'vue'
 
 export interface TaskState {
+  array: ShallowRef<Task[]>,
   mapp: Map<number, Task>
-  array: Task[]
 }
 
 export interface TaskTimerState {

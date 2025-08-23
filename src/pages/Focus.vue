@@ -138,7 +138,7 @@
   const slice = openTaskSlicerDialog
 
   const layerZero = computed(() => {
-    return useTaskStore().layerZero.sort(
+    return useTaskStore().layerZero.value.sort(
       (a, b) => (a.task_duration_in_minutes ?? 1440) - (b.task_duration_in_minutes ?? 1440)
     )
   })
