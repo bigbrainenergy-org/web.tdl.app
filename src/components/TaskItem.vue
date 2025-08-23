@@ -19,7 +19,7 @@
     />
 
     <q-item-section>
-      <q-item-label data-cy="task_item_title" lines="2">
+      <q-item-label data-cy="task_item_title" lines="2" :style="task.grabPrereqs(true).length === 0 ? 'color: green' : undefined">
         {{ task.title }}
       </q-item-label>
     </q-item-section>
