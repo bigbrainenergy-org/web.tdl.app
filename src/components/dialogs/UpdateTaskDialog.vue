@@ -12,10 +12,19 @@
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
           <div :key="currentTask.id" class="col-12 col-md">
-            <q-item-label class="text-h4 text-primary" lines="3" data-cy="task_title">
-              {{ currentTask.title }}
-            </q-item-label>
-            <TaskInputTitle v-model:task="currentTask as Task" />
+            <div class="row items-center q-gutter-sm">
+              <q-btn 
+                :icon="useTaskStarredStore().isStarred(currentTask.id) ? 'fas fa-star' : 'far fa-star'"
+                flat
+                round
+                size="lg"
+                :color="useTaskStarredStore().isStarred(currentTask.id) ? 'yellow' : 'grey'" 
+                @click="useTaskStarredStore().toggle(currentTask.id)"
+              />
+              <div class="col">
+                <TaskInputTitle v-model:task="currentTask as Task" />
+              </div>
+            </div>
             <TaskInputList v-model:task="currentTask as Task" />
             <TaskInputProcedures v-model:task="currentTask as Task" />
             <TaskInputRemindMeAt v-model:task="currentTask as Task" />
@@ -108,6 +117,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import { Logger } from 'src/utils/d'
   import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 
   const updateTaskDialogger = new Logger('Update Task Dialog', '#008800')
 
