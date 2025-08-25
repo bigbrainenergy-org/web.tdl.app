@@ -10,6 +10,7 @@ import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
 import type { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { taskLike } from './task-utils'
 import { useLoadingStateStore } from '../performance/loading-state'
+import { useTaskStarredStore } from './task-starred'
 import { Logger } from 'src/utils/d'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
 
@@ -182,7 +183,15 @@ export class Task implements TaskLike {
   }
   async toggleCompleted() {
     useLoadingStateStore().busy = true
-    const newVal = await useTaskStore().apiUpdate(this.id, { completed: !this.completed })
+    const newCompleteStatus = !this.completed
+    const newVal = await useTaskStore().apiUpdate(this.id, { completed: newCompleteStatus })
+    
+    // If task is being marked as completed, remove it from starred set
+    if (newCompleteStatus) {
+      const starredStore = useTaskStarredStore()
+      starredStore.removeCompletedTask(this.id)
+    }
+    
     useLoadingStateStore().busy = false
     considerOpeningQuickSortDialog()
     return newVal

@@ -3,7 +3,9 @@ import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
 import type { Task } from 'src/stores/tasks/task-model'
+import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskStore } from 'src/stores/tasks/task-store'
+import { stuckTasks } from 'src/stores/tasks/task-utils'
 import { Logger } from 'src/utils/d'
 import { safeAccess } from 'src/utils/map-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
@@ -25,8 +27,13 @@ export function useTaskSorting() {
       }
       
       const ewww = dontLookAtMe()
+      const taskStarredStore = useTaskStarredStore()
+      const taskStore = useTaskStore()
+      const taskMap = taskStore.mapp
+      const totalIncompleteTasks = taskStore.incompleteOnly.value.length
       const timings: any = {
         agendaSort: performance.now(),
+        computeDescendantsTotal: 0,
         enqueueTimeTotal: 0,
         hasKeysTotal: 0,
       }
@@ -41,11 +48,46 @@ export function useTaskSorting() {
 
       const finalList = new Map<number, Task>()
       const addedToQueue = new Set<number>()
+      const visited = new Set<number>()
       
       // Use more efficient queue structure with sorted keys maintained
       const queue: Map<number, Task[]> = new Map()
-      const sortedKeys: number[] = [] // Maintain sorted keys instead of recreating
+      const sortedKeys: number[] = []
       
+      // Cache star weights to avoid recomputation during binary search
+      const starWeightCache = new Map<number, number>()
+      
+      // Helper to calculate star weight for a task (with caching)
+      const getStarWeight = (task: Task): number => {
+        const cached = starWeightCache.get(task.id)
+        if (cached !== undefined) return cached
+        
+        const isStarred = taskStarredStore.isStarred(task.id) ? 2 : 0
+        const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
+        const weight = isStarred + descendantCount // Higher weight = higher priority
+        
+        starWeightCache.set(task.id, weight)
+        return weight
+      }
+      
+      // Helper to insert task in priority order within a queue level
+      const insertTaskByPriority = (queuedTasks: Task[], newTask: Task) => {
+        const newWeight = getStarWeight(newTask)
+        
+        // Simple linear insertion for now to ensure correctness
+        // TODO: Optimize back to binary search once working correctly
+        let insertIndex = 0
+        for (let i = 0; i < queuedTasks.length; i++) {
+          const existingWeight = getStarWeight(queuedTasks[i]!)
+          if (existingWeight < newWeight) {
+            insertIndex = i
+            break
+          }
+          insertIndex = i + 1
+        }
+        queuedTasks.splice(insertIndex, 0, newTask)
+      }
+
       const enqueue = (tasks: Task[]) => {
         let enqueuetime = performance.now()
         for (const task of tasks) {
@@ -53,12 +95,16 @@ export function useTaskSorting() {
           
           if (!queue.has(postCount)) {
             queue.set(postCount, [])
-            // Insert key in sorted position instead of sorting entire array
             insertSorted(sortedKeys, postCount)
           }
           
-          queue.get(postCount)!.push(task)
+          // Insert task in priority order instead of just pushing
+          insertTaskByPriority(queue.get(postCount)!, task)
+          //queue.get(postCount)!.push(task) //testing raw push
           addedToQueue.add(task.id)
+          const computeDescendantsTime = performance.now()
+          taskStarredStore.computeDescendants(task.id, taskMap, visited)
+          timings.computeDescendantsTotal += performance.now() - computeDescendantsTime
         }
         enqueuetime = performance.now() - enqueuetime
         timings.enqueueTimeTotal += enqueuetime
@@ -90,6 +136,8 @@ export function useTaskSorting() {
       while (sortedKeys.length > 0 && hundos < maxIterations) {
         hundos++
         let processed = false
+
+        let task: Task | null = null
         
         // Process keys in descending order (already sorted)
         for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
@@ -97,8 +145,8 @@ export function useTaskSorting() {
           const queuedTasks = queue.get(postCount)!
           
           // Process tasks in this queue level
-          for (let taskIndex = queuedTasks.length - 1; taskIndex >= 0; taskIndex--) {
-            const task = queuedTasks[taskIndex]!
+          for (let taskIndex = 0; taskIndex < queuedTasks.length; taskIndex++) {
+            task = queuedTasks[taskIndex]!
             const incompletePres = ewww.grabIncompletePres(task.id)
             
             // Check if all prerequisites are satisfied (optimized)
@@ -111,10 +159,8 @@ export function useTaskSorting() {
             }
             
             if (allPresSatisfied) {
-              // Add task to final list
               finalList.set(task.id, task)
               
-              // Enqueue incomplete postrequisites efficiently
               const newTasks: Task[] = []
               for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
                 if (!addedToQueue.has(postId)) {
@@ -126,9 +172,9 @@ export function useTaskSorting() {
                 enqueue(newTasks)
               }
               
-              // Remove task from queue efficiently (swap with last element)
-              queuedTasks[taskIndex] = queuedTasks[queuedTasks.length - 1]!
-              queuedTasks.pop()
+              // Remove task from queue while preserving sorted order
+              queuedTasks.splice(taskIndex, 1)
+              taskIndex-- // Adjust index after removal
               
               processed = true
               break // Process one task per iteration for stability
@@ -147,6 +193,17 @@ export function useTaskSorting() {
         
         if (!processed) {
           TaskSortingLogger.warn('No progress made in sorting iteration - potential cycle detected')
+          const notInFinalArray = useTaskStore().incompleteOnly.value.filter(x => !finalList.has(x.id))
+          if(task !== null) {
+            //console.log(`task ${task.title} is not null`)
+            stuckTasks.value.add(task.id)
+            //console.log([...stuckTasks.value.values()])
+          }
+          // else {
+          //   //console.log('task is null')
+          // }
+          notInFinalArray.forEach(x => stuckTasks.value.add(x.id))
+          //console.log('not in final array', notInFinalArray.map(x => x.title))
           break
         }
       }
@@ -157,7 +214,15 @@ export function useTaskSorting() {
       
       timings.agendaSort = performance.now() - timings.agendaSort
       TaskSortingLogger.log(`OPTIMIZED SORTTASK TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
-      return Array.from(finalList.values())
+
+      const finalArray = Array.from(finalList.values())
+
+      useTaskStarredStore()._starredIds.forEach(x => {
+        const t = taskMap.get(x)
+        //console.log(`${t?.title} (${t?.completed ? 'completed' : 'not completed'}): ${finalArray.map(y => y.id).indexOf(x)}`)
+      })
+      
+      return finalArray
     } else {
       return tasks
     }
@@ -224,7 +289,7 @@ export function useTaskSorting() {
           const postCount = sortedKeys[keyIndex]!
           const queuedTasks = queue.get(postCount)!
           
-          for (let taskIndex = queuedTasks.length - 1; taskIndex >= 0; taskIndex--) {
+          for (let taskIndex = 0; taskIndex < queuedTasks.length; taskIndex++) {
             const task = queuedTasks[taskIndex]!
             
             // Check prerequisites efficiently
@@ -270,8 +335,10 @@ export function useTaskSorting() {
       if (hundos >= maxIterations) {
         TaskSortingLogger.warn('Routine task sorting exceeded maximum iterations')
       }
-      
-      return Array.from(finalList.values())
+
+      const finalArray = Array.from(finalList.values())
+
+      return finalArray
     } else {
       return tasks
     }

@@ -79,7 +79,7 @@
             <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm" color="primary" />
             <q-item clickable>
               <q-item-section class="vertical-top" @click.stop="makeSelection(t as Task)">
-                <q-item-label lines="2" class="wrapped" :style="style">
+                <q-item-label lines="2" class="wrapped" :style="getTaskStyle(t, style)">
                   {{ t.title }}
                 </q-item-label>
               </q-item-section>
@@ -149,6 +149,7 @@
   import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
   import type { SimpleMenuItem } from 'src/utils/types'
@@ -508,6 +509,35 @@
       'max-width': `${width.value - 152 - five_percent}px`
     }
   })
+
+  const starredStore = useTaskStarredStore()
+
+  const shouldHighlightGreen = (task: Task): boolean => {
+    // Check if task is starred
+    if (starredStore.ids.has(task.id)) {
+      return true
+    }
+    
+    // Check if any descendant (task below) is starred
+    const taskStore = useTaskStore()
+    const idsBelow = taskStore.idsAfter(task.id)
+    
+    for (const descendantId of idsBelow) {
+      if (starredStore.ids.has(descendantId)) {
+        return true
+      }
+    }
+    
+    return false
+  }
+
+  const getTaskStyle = (task: Task, baseStyle: any) => {
+    const isHighlighted = shouldHighlightGreen(task)
+    return {
+      ...baseStyle,
+      color: isHighlighted ? 'green' : undefined
+    }
+  }
 </script>
 
 <style>

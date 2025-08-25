@@ -25,6 +25,7 @@ import TaskTimerDialog from 'src/components/dialogs/TaskTimerDialog.vue'
 import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
 import SeamlessTimer from 'src/components/SeamlessTimer.vue'
 import { Logger } from './d'
+import StuckTasksDialog from 'src/components/dialogs/StuckTasksDialog.vue'
 
 const Dialogger = new Logger('Dialog Utils')
 
@@ -152,6 +153,12 @@ export function openProcedureDetailsDialog(procedure: Procedure) {
     componentProps: {
       procedure
     }
+  })
+}
+
+export function openStuckTasksDialog() {
+  return Dialog.create({
+    component: StuckTasksDialog
   })
 }
 

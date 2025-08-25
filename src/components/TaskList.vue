@@ -56,6 +56,8 @@
   import { computed } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { Task } from 'src/stores/tasks/task-model'
+  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
@@ -80,4 +82,5 @@
   // const tasks = toRef(props, 'tasks')
 
   const loading = computed(() => useLoadingStateStore().busy)
+  //console.log(useTaskStarredStore()._starredIds.map(id => useTaskStore().mapp.get(id)?.title))
 </script>

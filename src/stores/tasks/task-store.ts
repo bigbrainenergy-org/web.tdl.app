@@ -18,6 +18,7 @@ import { arrayDelete } from 'src/utils/array-utils'
 import { Queue } from 'src/utils/types'
 import { Logger } from 'src/utils/d'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
+import { useTaskStarredStore } from './task-starred'
 
 const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
 const ewww = dontLookAtMe()
@@ -37,6 +38,8 @@ export const useTaskStore = defineStore('tasks', {
       const timeToRestore = performance.now()
       ewww.refresh_all(context.store.array as Task[])
       TaskStoreLogger.log(`eww refresh_all timings: ${performance.now() - timeToRestore} ms`)
+      // Refresh starred cache after initial data loading
+      // context.store.refreshStarredCache()
     },
     debug: true,
     serializer: {
@@ -62,8 +65,8 @@ export const useTaskStore = defineStore('tasks', {
       const newTask = new Task(data)
       const inMap = this.mapp.get(data.id)
       if(!inMap) {
-        // Use more efficient array updates for shallowRef
-        this.array.push(newTask)
+        // Fix: Create new array reference for shallowRef reactivity
+        this.array = [...this.array, newTask]
         this.mapp.set(data.id, newTask)
       }
       else {
@@ -224,11 +227,11 @@ export const useTaskStore = defineStore('tasks', {
       const queue = new Queue<number>()
       const postIDs = incompleteOnly
         ? (t: Task) => {
-          const posts = task.hard_postreq_ids.map(retrieve).filter((x) => !x.completed)
+          const posts = t.hard_postreq_ids.map(retrieve).filter((x) => !x.completed)
           return posts.map((x) => x.id)
         }
         : (t: Task) => {
-          const posts = task.hard_postreq_ids.map(retrieve)
+          const posts = t.hard_postreq_ids.map(retrieve)
           return posts.map((x) => x.id)
         }
       const thisPosts = postIDs(task)
@@ -271,6 +274,8 @@ export const useTaskStore = defineStore('tasks', {
         TaskStoreLogger.log({ first_postreqs: first.hard_postreq_ids, second_prereqs: second.hard_prereq_ids })
         timings.apiUpdate = performance.now() - timings.apiUpdate
         timings.addRuleTotal = performance.now() - timings.addRuleTotal
+        // Refresh starred cache when task structure changes
+        this.refreshStarredCache()
         //TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
       }, handleError('Failed to add the dependency.'))
     },
@@ -291,10 +296,19 @@ export const useTaskStore = defineStore('tasks', {
           })
           notifySuccess('Removed the dependency')
           ewww.removeRule(first_id, second_id)
+          // Refresh starred cache when task structure changes
+          this.refreshStarredCache()
         },
         handleError('Failed to remove the dependency.')
       )
-    }
+    },
+    /**
+     * Refresh the starred descendant cache (called when task structure changes)
+     */
+    refreshStarredCache() {
+      const starredStore = useTaskStarredStore()
+      starredStore.recomputeDescendantCache(this.array)
+    },
   },
   getters: {
     // Use computed for expensive filtering operations

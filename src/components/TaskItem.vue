@@ -24,6 +24,19 @@
       </q-item-label>
     </q-item-section>
 
+    <!-- Star icon for starred tasks -->
+    <q-item-section v-if="isStarred" side>
+      <q-icon name="fas fa-crown" color="amber" size="sm" @click.stop="toggleStar(task)">
+        <q-tooltip>This task is starred</q-tooltip>
+      </q-icon>
+    </q-item-section>
+
+    <q-item-section v-if="!isStarred && hasStarredDescendants" side>
+      <q-icon name="far fa-star" color="amber" size="sm">
+        <q-tooltip>This task has starred descendants</q-tooltip>
+      </q-icon>
+    </q-item-section>
+
     <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
@@ -44,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, toRef } from 'vue'
+  import { ref, toRef, computed } from 'vue'
   import { addPrerequisitesDialog, considerOpeningQuickSortDialog, quickSortPostreqsDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskTimeEstimateInfoChip from './TaskTimeEstimateInfoChip.vue'
@@ -52,6 +65,8 @@
   import MenuListItem from './MenuListItem.vue'
   import { updateTask } from 'src/utils/task-utils'
   import TheBestTransition from './TheBestTransition.vue'
+  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const props = withDefaults(
     defineProps<{
@@ -69,10 +84,19 @@
 
   const task = toRef(props, 'task')
 
+  const starredStore = useTaskStarredStore()
+  
+  // Computed property to get current starred status
+  const isStarred = computed(() => starredStore.isStarred(task.value.id))
+  const hasStarredDescendants = computed(() => starredStore.getStarredDescendantCount(task.value.id))
   const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
 
   const updateEstimate = (est: number) => (task: Task) => {
     updateTask(task.id, { task_duration_in_minutes: est })
+  }
+
+  const toggleStar = (task: Task) => {
+    starredStore.toggle(task.id)
   }
 
   const menuItems: SimpleMenuItem<Task>[] = [
@@ -80,6 +104,11 @@
       label: 'Mark Complete',
       icon: 'fas fa-lightbulb',
       action: async x => await x.toggleCompleted()
+    },
+    {
+      label: 'Toggle Star',
+      icon: 'fas fa-star',
+      action: toggleStar
     },
     {
       label: 'Add Prerequisites...',

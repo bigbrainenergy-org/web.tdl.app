@@ -1,0 +1,35 @@
+<template>
+  <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" @hide="onDialogHide">
+    <q-card style="min-width: 350px">
+      <q-card-section>
+        <div class="text-h6">Stuck Tasks</div>
+        <q-list>
+          <TaskItem v-for="task in stuckTaskValues" :key="task.id" :task="task" @click="openTask(task.id)" />
+        </q-list>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script setup lang="ts">
+  import { useDialogPluginComponent } from 'quasar'
+  import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { stuckTasks } from 'src/stores/tasks/task-utils'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import TaskItem from 'src/components/TaskItem.vue'
+  import { computed } from 'vue'
+
+  const emit = defineEmits([...useDialogPluginComponent.emits])
+  const { dialogRef, onDialogHide } = useDialogPluginComponent()
+  const taskStore = useTaskStore()
+  const stuckTaskValues = computed(() => Array.from(stuckTasks.value.values()).map(x => taskStore.mapp.get(x)).filter(x => x !== undefined) as Task[])
+
+  function openTask(id: number) {
+    const task = stuckTaskValues.value.find(x => x.id === id)
+    if(task) {
+      openUpdateTaskDialog(task)
+    }
+  }
+
+</script>
