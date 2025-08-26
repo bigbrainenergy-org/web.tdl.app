@@ -194,6 +194,7 @@ export function useTaskSorting() {
         if (!processed) {
           TaskSortingLogger.warn('No progress made in sorting iteration - potential cycle detected')
           const notInFinalArray = useTaskStore().incompleteOnly.value.filter(x => !finalList.has(x.id))
+          stuckTasks.value.clear()
           if(task !== null) {
             //console.log(`task ${task.title} is not null`)
             stuckTasks.value.add(task.id)
