@@ -167,16 +167,12 @@ export const useTaskStarredStore = defineStore('task-starred', {
       }
     },
     
-    /**
-     * Mark cache as needing recomputation
-     */
     invalidateDescendantCache() {
-      if (this._cacheTimeout === null) {
-        this._cacheTimeout = setTimeout(() => {
-          this.starredDescendantCounts.clear()
-          this._cacheTimeout = null
-        }, 100)
-      }
+      clearTimeout(this._cacheTimeout)
+      this._cacheTimeout = setTimeout(() => {
+        this.starredDescendantCounts.clear()
+        this._cacheTimeout = null
+      }, 150)
     }
   },
   
