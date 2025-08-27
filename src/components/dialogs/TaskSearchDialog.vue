@@ -201,17 +201,17 @@
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
 
   const getTasks = () => {
-    console.debug('getting pre filtered task list.')
+    //console.debug('getting pre filtered task list.')
     const start = performance.now()
     const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
-      console.warn(
-        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
-          allTasks.length / 2
-        }ms`
-      )
+      // console.warn(
+      //   `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
+      //     allTasks.length / 2
+      //   }ms`
+      // )
     return allTasks
   }
 
@@ -233,14 +233,14 @@
     // FIXME: AKA this is a vuln waiting to happen, fix it.
     const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
-    console.log({ run })
+    //console.log({ run })
 
     results.value = run.map((x) => x.item)
     const duration = Math.floor(performance.now() - start)
-    console.log(`task search took ${Math.floor(duration)}ms`)
+    //console.log(`task search took ${Math.floor(duration)}ms`)
     if (duration * 2 > debounceAmount.value) {
       const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
-      console.warn(`rolling back debounce to ${newDebounce}`)
+      //console.warn(`rolling back debounce to ${newDebounce}`)
       debounceAmount.value = newDebounce
     }
   }
