@@ -3,9 +3,14 @@
     <q-card style="min-width: 350px">
       <q-card-section>
         <div class="text-h6">Stuck Tasks</div>
-        <q-list>
-          <TaskItem v-for="task in stuckTaskValues" :key="task.id" :task="task" @click="openTask(task.id)" />
-        </q-list>
+        <q-item v-if="!stuckTaskValues.length">
+          <q-item-section>
+            <strong>No stuck tasks</strong>
+          </q-item-section>
+        </q-item>
+        <q-intersection v-for="task in stuckTaskValues" :key="task.id" once style="min-height: 48px">
+          <TaskItem :task="task" @click="openTask(task.id)" />
+        </q-intersection>
       </q-card-section>
     </q-card>
   </q-dialog>
