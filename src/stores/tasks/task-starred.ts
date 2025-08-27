@@ -171,14 +171,12 @@ export const useTaskStarredStore = defineStore('task-starred', {
      * Mark cache as needing recomputation
      */
     invalidateDescendantCache() {
-      // Debounce recomputation to avoid excessive recalculation
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      clearTimeout(this._cacheTimeout)
-      this._cacheTimeout = setTimeout(() => {
-        // Cache will be recomputed externally when needed
-        // This avoids circular dependency issues
-        this.starredDescendantCounts.clear()
-      }, 100)
+      if (this._cacheTimeout === null) {
+        this._cacheTimeout = setTimeout(() => {
+          this.starredDescendantCounts.clear()
+          this._cacheTimeout = null
+        }, 100)
+      }
     }
   },
   
