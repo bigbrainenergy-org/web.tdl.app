@@ -7,3 +7,4 @@ export const incompleteOnly = (t: TaskLike) => !t.completed
 export const taskLike = (t: TaskLike | CreateTaskOptions, k: keyof TaskLike): t is TaskLike =>
   k in t
 export const stuckTasks = ref(new Set<number>())
+export const mostSuspiciousStuckTasks = ref(new Set<number>())

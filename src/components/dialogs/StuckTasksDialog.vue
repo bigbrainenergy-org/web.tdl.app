@@ -9,7 +9,7 @@
           </q-item-section>
         </q-item>
         <q-intersection v-for="task in stuckTaskValues" :key="task.id" once style="min-height: 48px">
-          <TaskItem :task="task" @click="openTask(task.id)" />
+          <TaskItem :task="task" @click="openTask(task.id)" :class="mostSuspiciousStuckTasks.has(task.id) ? 'bg-red-1' : ''"/>
         </q-intersection>
       </q-card-section>
     </q-card>
@@ -24,6 +24,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskItem from 'src/components/TaskItem.vue'
   import { computed } from 'vue'
+  import { mostSuspiciousStuckTasks } from 'src/stores/tasks/task-utils'
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide } = useDialogPluginComponent()

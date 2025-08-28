@@ -5,7 +5,7 @@ import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
 import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { stuckTasks } from 'src/stores/tasks/task-utils'
+import { mostSuspiciousStuckTasks, stuckTasks } from 'src/stores/tasks/task-utils'
 import { Logger } from 'src/utils/d'
 import { safeAccess } from 'src/utils/map-utils'
 import { errorNotification } from 'src/utils/notification-utils'
@@ -154,6 +154,9 @@ export function useTaskSorting() {
             let allPresSatisfied = true
             for (const preId of incompletePres.keys()) {
               if (!finalList.has(preId)) {
+                mostSuspiciousStuckTasks.value.clear()
+                mostSuspiciousStuckTasks.value.add(preId)
+                mostSuspiciousStuckTasks.value.add(task.id)
                 allPresSatisfied = false
                 break
               }
@@ -204,6 +207,7 @@ export function useTaskSorting() {
             .filter(x => !x.completed)
             .filter(x => ewww.grabIncompletePres(x.id).size > 0)
           stuckTasks.value.clear()
+          mostSuspiciousStuckTasks.value.forEach(x => stuckTasks.value.add(x))
           if(task !== null) {
             //console.log(`task ${task.title} is not null`)
             stuckTasks.value.add(task.id)
