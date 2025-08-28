@@ -1,8 +1,13 @@
 <template>
   <q-dialog ref="dialogRef" :maximized="$q.screen.lt.md" @hide="onDialogHide">
     <q-card style="min-width: 350px">
-      <q-card-section>
+      <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">Stuck Tasks</div>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup />
+      </q-card-section>
+      
+      <q-card-section>
         <q-item v-if="!stuckTaskValues.length">
           <q-item-section>
             <strong>No stuck tasks</strong>
@@ -30,6 +35,7 @@
   const { dialogRef, onDialogHide } = useDialogPluginComponent()
   const taskStore = useTaskStore()
   const stuckTaskValues = computed(() => Array.from(stuckTasks.value.values()).map(x => taskStore.mapp.get(x)).filter(x => x !== undefined) as Task[])
+  console.assert(!stuckTaskValues.value.some(x => x.completed), 'Stuck task is completed')
 
   function openTask(id: number) {
     const task = stuckTaskValues.value.find(x => x.id === id)

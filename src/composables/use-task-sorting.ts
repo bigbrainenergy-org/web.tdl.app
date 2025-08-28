@@ -218,6 +218,7 @@ export function useTaskSorting() {
           // }
           notInFinalArray.forEach(x => stuckTasks.value.add(x.id))
           //console.log('not in final array', notInFinalArray.map(x => x.title))
+          console.assert(stuckTasks.value.size + finalList.size <= totalIncompleteTasks, 'List sizes do not match')
           break
         }
       }
