@@ -8,6 +8,7 @@ import { useTaskStore } from 'src/stores/tasks/task-store'
 import { stuckTasks } from 'src/stores/tasks/task-utils'
 import { Logger } from 'src/utils/d'
 import { safeAccess } from 'src/utils/map-utils'
+import { errorNotification } from 'src/utils/notification-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
 
 const TaskSortingLogger = new Logger('Task Sort', '#794A20')
@@ -190,10 +191,18 @@ export function useTaskSorting() {
           
           if (processed) break
         }
+      
+        if (hundos >= maxIterations) {
+          TaskSortingLogger.warn('Agenda sorting exceeded maximum iterations - bailing out')
+          errorNotification(new Error('Agenda sorting exceeded maximum iterations - bailing out'), 'Agenda sorting exceeded maximum iterations')
+        }
         
         if (!processed) {
           TaskSortingLogger.warn('No progress made in sorting iteration - potential cycle detected')
-          const notInFinalArray = useTaskStore().incompleteOnly.value.filter(x => !finalList.has(x.id))
+          const { incompleteOnly } = useTaskStore()
+          const notInFinalArray = incompleteOnly.value.filter(x => !finalList.has(x.id))
+            .filter(x => !x.completed)
+            .filter(x => ewww.grabIncompletePres(x.id).size > 0)
           stuckTasks.value.clear()
           if(task !== null) {
             //console.log(`task ${task.title} is not null`)
@@ -209,19 +218,15 @@ export function useTaskSorting() {
         }
       }
       
-      if (hundos >= maxIterations) {
-        TaskSortingLogger.warn('Agenda sorting exceeded maximum iterations - bailing out')
-      }
-      
       timings.agendaSort = performance.now() - timings.agendaSort
       TaskSortingLogger.log(`OPTIMIZED SORTTASK TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
 
       const finalArray = Array.from(finalList.values())
 
-      useTaskStarredStore()._starredIds.forEach(x => {
-        const t = taskMap.get(x)
-        //console.log(`${t?.title} (${t?.completed ? 'completed' : 'not completed'}): ${finalArray.map(y => y.id).indexOf(x)}`)
-      })
+      // useTaskStarredStore()._starredIds.forEach(x => {
+      //   const t = taskMap.get(x)
+      //   //console.log(`${t?.title} (${t?.completed ? 'completed' : 'not completed'}): ${finalArray.map(y => y.id).indexOf(x)}`)
+      // })
       
       return finalArray
     } else {
