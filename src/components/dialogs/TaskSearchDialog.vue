@@ -212,7 +212,7 @@
       //     allTasks.length / 2
       //   }ms`
       // )
-    return allTasks
+      return allTasks
   }
 
   const tasks = computed(getTasks)
@@ -223,7 +223,7 @@
     keys: ['title']
   }
 
-  const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+  const fuse = computed(() => new Fuse(tasks.value ?? [], searchOptions))
 
   const searchForTasks = () => {
     const start = performance.now()

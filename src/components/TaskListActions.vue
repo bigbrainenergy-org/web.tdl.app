@@ -44,6 +44,12 @@
             <q-icon name="fa-solid fa-dumpster-fire" />
           </q-item-section>
         </q-item>
+        <q-item clickable @click="openQuickListDialog">
+          <q-item-section>Quick List</q-item-section>
+          <q-item-section avatar>
+            <q-icon name="fa-solid fa-list-check" />
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-menu>
   </q-btn>
@@ -53,7 +59,7 @@
   import { computed, ref, watch } from 'vue'
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { openQuickSortDialog, openUpdateTaskDialog, openStuckTasksDialog } from 'src/utils/dialog-utils'
+  import { openQuickSortDialog, openUpdateTaskDialog, openStuckTasksDialog, openQuickListDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import GloriousToggle from './glorious/GloriousToggle.vue'
   import GloriousSettingsPopup from './glorious/GloriousSettingsPopup.vue'

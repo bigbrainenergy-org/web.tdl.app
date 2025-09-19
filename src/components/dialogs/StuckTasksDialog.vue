@@ -4,7 +4,7 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">Stuck Tasks</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn v-close-popup icon="close" flat round dense />
       </q-card-section>
       
       <q-card-section>
@@ -14,7 +14,7 @@
           </q-item-section>
         </q-item>
         <q-intersection v-for="task in stuckTaskValues" :key="task.id" once style="min-height: 48px">
-          <TaskItem :task="task" @click="openTask(task.id)" :class="mostSuspiciousStuckTasks.has(task.id) ? 'bg-red-1' : ''"/>
+          <TaskItem :task="task" :class="mostSuspiciousStuckTasks.has(task.id) ? 'bg-red-1' : ''" @click="openTask(task.id)" />
         </q-intersection>
       </q-card-section>
     </q-card>
