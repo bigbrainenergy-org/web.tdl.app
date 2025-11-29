@@ -15,7 +15,7 @@
   <q-space />
   
   <!-- <q-btn icon="fa-solid fa-search" class="text-primary" @click="openBespokeSearchDialog()" /> -->
-  <TaskSearchInput v-model:model-value="searchString" search-label="Search or Create Tasks" :debounce="debounceAmount" @do-a-search="searchForTasks" @create-task="createTask" />
+  <TaskSearchInput v-model:model-value="searchInput" search-label="Search or Create Tasks" :debounce="debounceAmount" @do-a-search="searchForTasks" @create-task="createTask" />
   <q-btn dense flat no-wrap>
     <q-icon name="arrow_drop_down" />
     <q-menu auto-close>
@@ -72,6 +72,7 @@
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { Logger } from 'src/utils/d'
   import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+  import { searchInput } from 'src/stores/tasks/task-utils'
 
   const taskListActionsLogger = new Logger('Task List Actions', '#555555')
   
@@ -169,7 +170,6 @@
     }
   }
 
-  const searchString = ref<string | undefined>(undefined)
   const debounceAmount = ref(100)
   const searchOptions = {
     isCaseSensitive: false,
@@ -186,9 +186,9 @@
       filtered.value = tasks.value
       return
     }
-    taskListActionsLogger.debug({ searching: searchString.value })
+    taskListActionsLogger.debug({ searching: searchInput.value })
     const start = performance.now()
-    const str = searchString.value ?? ''
+    const str: string = searchInput.value ?? ''
 
     if(str.length === 0) {
       filtered.value = tasks.value

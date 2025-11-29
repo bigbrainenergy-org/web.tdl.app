@@ -6,6 +6,7 @@ import { useTaskSorting } from './use-task-sorting'
 import { useTaskFetching } from './use-task-fetching'
 import type { Task } from 'src/stores/tasks/task-model'
 import { Logger } from 'src/utils/d'
+import { searchInput } from 'src/stores/tasks/task-utils'
 
 const useTasksLogger = new Logger('Use-Tasks Composable', '#61A5FB')
 
@@ -54,7 +55,7 @@ export function useTasks() {
     try {
       const beforeLength = baseQuery.length
       //timings.sortTasks = performance.now()
-      baseQuery = sortTasks(baseQuery)
+      if(!searchInput.value || searchInput.value.length === 0) baseQuery = sortTasks(baseQuery)
       //timings.sortTasks = performance.now() - timings.sortTasks
       //useTasksLogger.debug({ sortTasks: baseQuery })
       useTasksLogger.log(`sort: ${beforeLength} => ${baseQuery.length}`)

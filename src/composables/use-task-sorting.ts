@@ -26,6 +26,8 @@ export function useTaskSorting() {
         TaskSortingLogger.log('zzz')
         return tasks
       }
+
+      console.log('sorting.')
       
       const ewww = dontLookAtMe()
       const taskStarredStore = useTaskStarredStore()
@@ -134,7 +136,7 @@ export function useTaskSorting() {
       const maxIterations = 3 * useTaskStore().array.length
       
       // Main sorting loop - optimized
-      while (sortedKeys.length > 0 && hundos < maxIterations) {
+      while (sortedKeys.length > 0 && hundos < maxIterations && finalList.size <= 200) {
         hundos++
         let processed = false
 
