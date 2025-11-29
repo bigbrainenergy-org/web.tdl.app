@@ -56,7 +56,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "latest",
     "@eslint/js": "latest",
-    "@quasar/app-vite": "^2.0.0-rc.4",
+    "@quasar/app-vite": "~2.3.0",
     "@quasar/quasar-app-extension-testing-e2e-cypress": "latest",
     "@quasar/quasar-app-extension-testing-unit-vitest": "^1.0.0",
     "@types/body-parser": "latest",
