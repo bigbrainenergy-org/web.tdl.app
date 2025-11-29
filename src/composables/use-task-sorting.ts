@@ -136,7 +136,7 @@ export function useTaskSorting() {
       const maxIterations = 3 * useTaskStore().array.length
       
       // Main sorting loop - optimized
-      while (sortedKeys.length > 0 && hundos < maxIterations && finalList.size <= 998) {
+      while (sortedKeys.length > 0 && hundos < maxIterations/* && finalList.size <= 998*/) {
         hundos++
         let processed = false
 
