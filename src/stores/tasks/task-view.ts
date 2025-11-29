@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { type Task } from './task-model'
 import { storeToRefs } from 'pinia'
 import { useLoadingStateStore } from '../performance/loading-state'
@@ -29,6 +29,12 @@ const shadow_state: {
   list: [],
   filtered_list: []
 }
+
+watch(searchInput, (v: string | undefined) => {
+  if(v && v.length > 0) { return }
+  console.log('recalculate')
+  recalculate()
+})
 
 export const recalculate = (caller?: string) => {
   if(caller) console.log(`recalculation triggered by ${caller}`)

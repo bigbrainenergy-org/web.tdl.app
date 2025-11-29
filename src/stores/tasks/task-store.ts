@@ -154,7 +154,9 @@ export const useTaskStore = defineStore('tasks', {
       return this.api()
         .post('/tasks', task, this.commonHeader())
         .then((result: AxiosResponse<TaskLike>) => {
-          return this.updateSingle(result.data)
+          const r = this.updateSingle(result.data)
+          recalculate()
+          return r
         }, handleError('Error creating a task.'))
     },
     /**
