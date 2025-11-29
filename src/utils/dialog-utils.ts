@@ -100,6 +100,7 @@ export function openSearchDialog() {
 export function openQuickSortDialog() {
   if (useLoadingStateStore().quickSortDialogActive) return
   // todo fixme this is BAD.
+  console.log('setting dialogactive to true')
   useLoadingStateStore().quickSortDialogActive = true
   Dialogger.log('OPENING QUICK SORT')
   return Dialog.create({

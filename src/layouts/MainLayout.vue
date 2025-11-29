@@ -22,20 +22,23 @@
   import MainFooter from 'src/components/MainFooter.vue'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
   import { useBackgroundMode } from 'src/composables/use-background-mode'
-  import { useTasks } from 'src/composables/use-tasks'
+  //import { useTasks } from 'src/composables/use-tasks'
   import { ref } from 'vue'
   import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
+  import { recalculate } from 'src/stores/tasks/task-view'
 
   const { sideBarOpen } = storeToRefs(useLocalSettingsStore())
   const { backgroundStyle } = useBackgroundMode()
   const { timer } = storeToRefs(useTaskTimerStore())
 
+  // recalculate('mainlayout')
+
   useTaskShortcuts()
 
   //const { tasks } = useTasks()
 
-  considerOpeningQuickSortDialog()
+  //considerOpeningQuickSortDialog()
 </script>

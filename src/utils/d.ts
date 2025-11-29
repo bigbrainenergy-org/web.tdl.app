@@ -9,6 +9,7 @@ export class Logger {
       `%c[ ${prefix} ]`,
       `background: ${this.bgColor}; color: ${autoContrastTextColor(this.bgColor)}; padding: 2px 6px; border-radius: 3px;`
     ]
+    this.debug(' ')
   }
   static randomColor() {
     const hue = Math.floor(Math.random() * 360)

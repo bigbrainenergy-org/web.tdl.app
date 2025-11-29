@@ -12,6 +12,9 @@
         <div class="text-h6">{{ layerZero.length }} Layer Zero Tasks</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
+          <q-btn icon="fa-solid fa-plus" class="text-white q-mr-sm" @click="openCreateTaskDialog">
+            <q-tooltip>Add Task [q]</q-tooltip>
+          </q-btn>
           <q-btn icon="fa-solid fa-gear" class="text-white">
             <q-popup-proxy class="q-pa-md">
               <q-item-section>
@@ -153,7 +156,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
   import type { SimpleMenuItem } from 'src/utils/types'
-  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog, openCreateTaskDialog } from 'src/utils/dialog-utils'
   import { dragAndDrop, useDragAndDrop } from '@formkit/drag-and-drop/vue'
   import { Logger } from 'src/utils/d'
 
@@ -464,13 +467,8 @@
 
   const confirmOrder = async () => {
     loading.value = true
-    for(let i = 1; i < currentPair.value.length; i++) {
-      const a = currentPair.value[i-1]!
-      const b = currentPair.value[i]!
-      // todo use a batch update api call.
-      await useTaskStore().addRule(a.id, b.id)
-        .then(() => quickSortLogger.log(`successful api update: {${a.title.substring(0, 80)}} => {${b.title.substring(0, 80)}}`))
-    }
+    const taskIds = currentPair.value.map(t => t.id)
+    await useTaskStore().stringTasks(taskIds)
     await tryNewPair()
     loading.value = false
   }

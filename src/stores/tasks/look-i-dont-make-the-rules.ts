@@ -3,9 +3,18 @@ import type { Task } from './task-model'
 import type { TaskLike } from './task-interfaces-types'
 import { useTaskStore } from './task-store'
 import { Logger } from 'src/utils/d'
+import { recalculate } from './task-view'
+import { ref, nextTick } from 'vue'
 
 const gets = (x: number): [number, Task] => [ x, useTaskStore().hardGet(x) ]
 const ewwwLogger = new Logger('🤮', '#6abc19')
+export const initialized = ref(false)
+
+// Fast lookup function for refresh_all - uses passed map instead of store lookups
+const fastGets = (taskMap: Map<number, Task>) => (x: number): [number, Task] | null => {
+  const task = taskMap.get(x)
+  return task ? [x, task] : null
+}
 
 export const dontLookAtMe = defineStore('ewww', {
   state: () => ({
@@ -76,11 +85,63 @@ export const dontLookAtMe = defineStore('ewww', {
       this.incomplete_posts.set(data.id, new Map(posts.filter(x => !x[1].completed)))
     },
     
-    refresh_all(data: Task[]) {
+    refresh_all(data: Task[], taskMap?: Map<number, Task>) {
       ewwwLogger.log(`Refreshing ${data.length} tasks in ewww store`)
       const start = performance.now()
-      data.forEach(x => this.refresh(x))
-      ewwwLogger.log(`ewww refresh_all completed in ${performance.now() - start}ms`)
+
+      // Fast path: if taskMap is provided, use it directly to avoid repeated hardGet calls
+      if (taskMap) {
+        const getter = fastGets(taskMap)
+
+        // Build Maps in local variables first to avoid triggering Pinia reactivity on every set
+        const buildStart = performance.now()
+        const newPres = new Map<number, Map<number, Task>>()
+        const newPosts = new Map<number, Map<number, Task>>()
+        const newIncompletePres = new Map<number, Map<number, Task>>()
+        const newIncompletePosts = new Map<number, Map<number, Task>>()
+
+        data.forEach(x => {
+          // Access underlying arrays directly to bypass Proxy traps
+          const presRaw = x._hard_prereq_ids.map(getter).filter(Boolean) as [number, Task][]
+          const postsRaw = x._hard_postreq_ids.map(getter).filter(Boolean) as [number, Task][]
+
+          newPres.set(x.id, new Map(presRaw))
+          newPosts.set(x.id, new Map(postsRaw))
+          newIncompletePres.set(x.id, new Map(presRaw.filter(([_, task]) => !task.completed)))
+          newIncompletePosts.set(x.id, new Map(postsRaw.filter(([_, task]) => !task.completed)))
+        })
+        ewwwLogger.log(`built shadow maps in ${performance.now() - buildStart}ms`)
+
+        // Batch update the store state - single reactivity trigger instead of 62k+
+        const storeUpdateStart = performance.now()
+        this.pres = newPres
+        this.posts = newPosts
+        this.incomplete_pres = newIncompletePres
+        this.incomplete_posts = newIncompletePosts
+        ewwwLogger.log(`updated store state in ${performance.now() - storeUpdateStart}ms`)
+
+        ewwwLogger.log(`ewww refresh_all (fast path) completed in ${performance.now() - start}ms`)
+        console.log(`[RAW] fast path done at ${performance.now()}`)
+      } else {
+        // Slow path: fall back to original implementation
+        data.forEach(x => this.refresh(x))
+        ewwwLogger.log(`ewww refresh_all (slow path) completed in ${performance.now() - start}ms`)
+        console.log(`[RAW] slow path done at ${performance.now()}`)
+      }
+
+      console.log(`[RAW] about to set initialized at ${performance.now()}`)
+      ewwwLogger.log('setting initialized to true...')
+      const initStart = performance.now()
+      initialized.value = true
+      ewwwLogger.log(`initialized set (took ${performance.now() - initStart}ms)`)
+      ewwwLogger.log('refresh_all complete, scheduling recalculate after next DOM update...')
+
+      // Use Vue's nextTick to defer recalculate until after Vue's DOM update cycle
+      nextTick(() => {
+        const recalcStart = performance.now()
+        recalculate('ewww refresh_all')
+        ewwwLogger.log(`recalculate after refresh_all took ${performance.now() - recalcStart}ms`)
+      })
     },
     
     addRule(first_id: number, second_id: number) {
@@ -112,10 +173,10 @@ export const dontLookAtMe = defineStore('ewww', {
         })
       } else {
         // Add back to incomplete collections when task becomes incomplete
-        this.grabPres(data.id).forEach((task, preId) => {
+        this.grabPres(data.id).forEach((_, preId) => {
           this.grabIncompletePosts(preId).set(data.id, data)
         })
-        this.grabPosts(data.id).forEach((task, postId) => {
+        this.grabPosts(data.id).forEach((_, postId) => {
           this.grabIncompletePres(postId).set(data.id, data)
         })
       }

@@ -75,7 +75,8 @@
   import { searchInput } from 'src/stores/tasks/task-utils'
 
   const taskListActionsLogger = new Logger('Task List Actions', '#555555')
-  
+  taskListActionsLogger.log('component mounting')
+
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
   const filtered = defineModel<Array<Task>>('filtered', { required: true })
 
@@ -102,19 +103,19 @@
   const { busy } = storeToRefs(useLoadingStateStore())
 
   const firstTenTasks = computed(() => {
-    taskListActionsLogger.log('firstTenTasks repaint')
+    // taskListActionsLogger.log('firstTenTasks repaint')
     return tasks.value.slice(0, 9)
   })
 
   const agendaOnFire = computed(() => {
     if(busy.value) return false
-    taskListActionsLogger.debug('inspecting agenda.')
+    // taskListActionsLogger.debug('inspecting agenda.')
     let countFire = 0
     const fireAmt = localSettingsStore.strictModeMaxPostreqs
     const t = firstTenTasks.value[0]
     const qtyNonRecurringPostreqs = (x: Task) => x.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0).length
     if(typeof t === 'undefined') {
-      taskListActionsLogger.debug('task 0 was undefined')
+      //taskListActionsLogger.debug('task 0 was undefined')
       return false
     }
     if(qtyNonRecurringPostreqs(t) > fireAmt) {
@@ -176,10 +177,22 @@
     ignoreLocation: true,
     keys: ['title']
   }
-  const fuse = computed(() => {
-    taskListActionsLogger.log('new fuse')
-    return new Fuse([...tasks.value], searchOptions)
-  })
+
+  // Lazy Fuse instance - only create when actually searching
+  let fuseInstance: Fuse<Task> | null = null
+  let fuseTasksVersion = 0
+
+  const getFuse = () => {
+    const currentVersion = tasks.value.length
+    if (!fuseInstance || fuseTasksVersion !== currentVersion) {
+      const fuseStart = performance.now()
+      fuseInstance = new Fuse(tasks.value, searchOptions) // Don't spread - Fuse doesn't mutate
+      fuseTasksVersion = currentVersion
+      taskListActionsLogger.log(`created new Fuse instance in ${performance.now() - fuseStart}ms for ${tasks.value.length} tasks`)
+    }
+    return fuseInstance
+  }
+
   const searchForTasks = () => {
     if(busy.value) {
       taskListActionsLogger.log('busy signal; skipping task search.')
@@ -192,12 +205,13 @@
 
     if(str.length === 0) {
       filtered.value = tasks.value
+      taskListActionsLogger.log(`searchForTasks completed in ${performance.now() - start}ms (no search)`)
       return
     }
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<Task>[]>(() => getFuse().search(str), 'fuse search', 55)()
 
     // TODO - this conditional is an attempt to fix a bug where sometimes the page loads and the list has zero results until search box is blipped
     if(run.length === 0) {
@@ -220,6 +234,9 @@
   const createTask = (title: string) => {
     useTaskStore().apiCreate({ title })
   }
+
+  // Track when component setup is complete
+  taskListActionsLogger.log('component setup complete')
   const wreak = async () => {
     const tr = useTaskStore()
     const autoTaskName = 'auto task for testing purposes'

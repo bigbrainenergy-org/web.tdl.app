@@ -12,6 +12,7 @@
         <div class="text-h6">{{ postreqsToSort.length }} Postrequisites</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
+          <q-btn icon="fa-solid fa-plus" class="text-white q-mr-sm" @click="addPostrequisiteDialog(parentTask as Task)" />
           <q-btn icon="fa-solid fa-gear" class="text-white">
             <q-popup-proxy class="q-pa-md" style="width: 200px;">
               <q-item-section>
@@ -135,7 +136,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
   import type { SimpleMenuItem } from 'src/utils/types'
-  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog, addPostrequisiteDialog } from 'src/utils/dialog-utils'
   import { hardCheck } from 'src/utils/type-utils'
   import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
   import { useDragAndDrop, dragAndDrop } from '@formkit/drag-and-drop/vue'
@@ -442,11 +443,8 @@
     // TODO: use a batch update api call for this!
     parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => !tasks_to_remove_from_parent_task.includes(x))
     await useTaskStore().apiUpdate(parentTask.value.id, { hard_postreq_ids: parentTask.value.hard_postreq_ids })
-    for(let i = 1; i < currentPair.value.length; i++) {
-      const a = currentPair.value[i-1]!
-      const b = currentPair.value[i]!
-      await useTaskStore().addRule(a.id, b.id)
-    }
+    const taskIds = currentPair.value.map(t => t.id)
+    await useTaskStore().stringTasks(taskIds)
     await tryNewPair()
     loading.value = false
   }

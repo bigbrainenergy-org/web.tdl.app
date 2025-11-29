@@ -36,8 +36,11 @@ export class Task implements TaskLike {
   physical_energy_required: number
   task_duration_in_minutes?: number
   constructor(data: TaskLike | CreateTaskOptions) {
-    this._hard_prereq_ids = []
-    this._hard_postreq_ids = []
+    // Populate underlying arrays first to avoid triggering Proxy traps during initial load
+    this._hard_prereq_ids = [...(data.hard_prereq_ids ?? [])]
+    this._hard_postreq_ids = [...(data.hard_postreq_ids ?? [])]
+
+    // Now create Proxies around the already-populated arrays
     this.hard_prereq_ids = new Proxy(this._hard_prereq_ids, {
       set: (target, property, value: number) => {
         target[property as any] = value
@@ -80,7 +83,6 @@ export class Task implements TaskLike {
         return result
       }
     })
-    this.hard_prereq_ids.push(...(data.hard_prereq_ids ?? []))
     this.hard_postreq_ids = new Proxy(this._hard_postreq_ids, {
       set: (target, property, value: number) => {
         target[property as any] = value
@@ -121,7 +123,6 @@ export class Task implements TaskLike {
         return result
       }
     })
-    this.hard_postreq_ids.push(...(data.hard_postreq_ids ?? []))
     this.completed = taskLike(data, 'completed') ? data.completed : false
     this.id = taskLike(data, 'id') ? data.id : -1
     this.title = data.title
@@ -182,7 +183,6 @@ export class Task implements TaskLike {
       .get()
   }
   async toggleCompleted() {
-    useLoadingStateStore().busy = true
     const newCompleteStatus = !this.completed
     const newVal = await useTaskStore().apiUpdate(this.id, { completed: newCompleteStatus })
     
@@ -191,8 +191,6 @@ export class Task implements TaskLike {
       const starredStore = useTaskStarredStore()
       starredStore.removeCompletedTask(this.id)
     }
-    
-    useLoadingStateStore().busy = false
     considerOpeningQuickSortDialog()
     return newVal
   }
@@ -200,9 +198,7 @@ export class Task implements TaskLike {
    * A similar function but just sets up the api update to only have a payload containing the new completed status; does not actively switch the completed status
    */
   async updateTaskCompletionStatus() {
-    useLoadingStateStore().busy = true
     const newVal = await useTaskStore().apiUpdate(this.id, { completed: this.completed })
-    useLoadingStateStore().busy = false
     considerOpeningQuickSortDialog()
     return newVal
   }

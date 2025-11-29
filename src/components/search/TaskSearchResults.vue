@@ -46,6 +46,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
+  import { filtered_tasks } from 'src/stores/tasks/task-view'
 
   interface Prop {
     search: string | undefined
@@ -128,7 +129,7 @@
       return
     } // Guard clause if search is empty
 
-    const fuse = new Fuse(tasks.value, searchOptions)
+    const fuse = new Fuse(filtered_tasks.value as Task[], searchOptions)
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.

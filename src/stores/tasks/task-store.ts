@@ -19,6 +19,7 @@ import { Queue } from 'src/utils/types'
 import { Logger } from 'src/utils/d'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
 import { useTaskStarredStore } from './task-starred'
+import { recalculate } from './task-view'
 
 const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
 const ewww = dontLookAtMe()
@@ -30,14 +31,17 @@ export const useTaskStore = defineStore('tasks', {
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
+      TaskStoreLogger.log('afterRestore starting')
       // Rebuild map from array efficiently
       const map = new Map()
       context.store.array.forEach((x: Task) => map.set(x.id, x))
       context.store.mapp = map
-      
+
       const timeToRestore = performance.now()
-      ewww.refresh_all(context.store.array as Task[])
-      TaskStoreLogger.log(`eww refresh_all timings: ${performance.now() - timeToRestore} ms`)
+      // Pass the map to avoid repeated hardGet calls during refresh
+      ewww.refresh_all(context.store.array as Task[], map)
+      TaskStoreLogger.log(`eww refresh_all fire timings: ${performance.now() - timeToRestore} ms`)
+      TaskStoreLogger.log('afterRestore complete')
       // Refresh starred cache after initial data loading
       // context.store.refreshStarredCache()
     },
@@ -53,10 +57,21 @@ export const useTaskStore = defineStore('tasks', {
       },
       deserialize: (value: string): StateTree => {
         const time = performance.now()
+        const parseStart = performance.now()
         const rawTasks = JSON.parse(value) as TaskLike[]
+        TaskStoreLogger.log(`JSON.parse took ${performance.now() - parseStart}ms`)
+
+        const taskCreationStart = performance.now()
         const array = rawTasks.map(x => new Task(x))
+        TaskStoreLogger.log(`Task creation took ${performance.now() - taskCreationStart}ms for ${array.length} tasks`)
+
+        const shallowRefStart = performance.now()
+        const result = { array: shallowRef(array) }
+        TaskStoreLogger.log(`shallowRef creation took ${performance.now() - shallowRefStart}ms`)
+
         TaskStoreLogger.log(`DESERIALIZE took ${performance.now() - time}ms for ${array.length} tasks`)
-        return { array: shallowRef(array) }
+        TaskStoreLogger.log('DESERIALIZE returning state to Pinia...')
+        return result
       }
     }
   },
@@ -172,6 +187,7 @@ export const useTaskStore = defineStore('tasks', {
             }
             timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
             TaskStoreLogger.log(`APIUPDATE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
+            recalculate('apiUpdate')
           })
       } catch (e) {
         TaskStoreLogger.error(e)
@@ -180,7 +196,8 @@ export const useTaskStore = defineStore('tasks', {
       return
     },
     async apiPushChanges(id: number, task: AllOptionalTaskProperties) {
-      return await this.api().patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
+      const result = await this.api().patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
+      return result
     },
     apiDelete(id: number) {
       return this.api()
@@ -188,6 +205,7 @@ export const useTaskStore = defineStore('tasks', {
         .then(() => {
           const theTask = this.hardGet(id)
           this.array = this.array.filter(x => x.id !== id)
+          recalculate('apiDelete')
           notifySuccess('Task was deleted.')
         }, handleError('Error deleting task.'))
     },
@@ -245,7 +263,8 @@ export const useTaskStore = defineStore('tasks', {
       }
       return allPosts
     },
-    addRule(first_id: number, second_id: number) {
+    addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, skipBatchOperations?: boolean } = {}) {
+      const { skipRecalculate = false, skipBatchOperations = false } = options
       const timings: any = {
         addRuleTotal: performance.now()
       }
@@ -265,28 +284,39 @@ export const useTaskStore = defineStore('tasks', {
       // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
       timings.apiUpdate = performance.now()
       return this.apiPushChanges(first.id, { hard_postreq_ids: [...first.hard_postreq_ids, second_id] }).then(() => {
-        this.$patch(state => {
-          first.hard_postreq_ids = [...first.hard_postreq_ids, second_id]
-          second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
-        })
+        if (!skipBatchOperations) {
+          // Normal path: update local state immediately
+          this.$patch(state => {
+            first.hard_postreq_ids = [...first.hard_postreq_ids, second_id]
+            second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
+          })
+        }
+        // Always update ewww (doesn't trigger persistence, needed for next iterations)
         ewww.addRule(first_id, second_id)
         TaskStoreLogger.debug(`Added the dependency ${first_id} -> ${second_id}`)
-        TaskStoreLogger.log({ first_postreqs: first.hard_postreq_ids, second_prereqs: second.hard_prereq_ids })
         timings.apiUpdate = performance.now() - timings.apiUpdate
         timings.addRuleTotal = performance.now() - timings.addRuleTotal
-        // Refresh starred cache when task structure changes
-        this.refreshStarredCache()
+
+        if (!skipBatchOperations) {
+          // Refresh starred cache when task structure changes
+          this.refreshStarredCache()
+          TaskStoreLogger.log({ first_postreqs: first.hard_postreq_ids, second_prereqs: second.hard_prereq_ids })
+        }
+
+        if (!skipRecalculate && !skipBatchOperations) {
+          recalculate('addRule')
+        }
         //TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
       }, handleError('Failed to add the dependency.'))
     },
-    removeRule(first_id: number, second_id: number) { 
+    removeRule(first_id: number, second_id: number) {
       const first = this.hardGet(first_id)
       const second = this.hardGet(second_id)
-      
+
       // Create new arrays without the dependency (don't mutate original arrays)
       const new_first_postreqs = first.hard_postreq_ids.filter(id => id !== second_id)
       const first_payload = { hard_postreq_ids: new_first_postreqs }
-      
+
       return this.apiUpdate(first.id, first_payload).then(
         () => {
           // Only update state after successful API call
@@ -308,6 +338,50 @@ export const useTaskStore = defineStore('tasks', {
     refreshStarredCache() {
       const starredStore = useTaskStarredStore()
       starredStore.recomputeDescendantCache(this.array)
+    },
+    /**
+     * String tasks together in order: creates dependencies task[0] -> task[1] -> task[2] -> ...
+     * Efficiently batches operations to avoid multiple serializations
+     * @param taskIds Array of task IDs to connect in sequence
+     */
+    async stringTasks(taskIds: number[]) {
+      if (taskIds.length < 2) return
+
+      TaskStoreLogger.log(`stringTasks: connecting ${taskIds.length} tasks in sequence`)
+      const startTime = performance.now()
+
+      // Create dependencies sequentially with batch mode enabled
+      // This only makes API calls and updates ewww, doesn't touch task objects
+      for (let i = 1; i < taskIds.length; i++) {
+        const first = taskIds[i - 1]!
+        const second = taskIds[i]!
+        await this.addRule(first, second, { skipRecalculate: true, skipBatchOperations: true })
+      }
+
+      // After all API calls complete, sync local task objects from ewww state in a single $patch
+      TaskStoreLogger.log('stringTasks: syncing task objects from ewww in single batch')
+      const syncStart = performance.now()
+      this.$patch(() => {
+        for (const taskId of taskIds) {
+          const task = this.hardGet(taskId)
+          const pres = ewww.grabPres(taskId)
+          const posts = ewww.grabPosts(taskId)
+          task.hard_prereq_ids = Array.from(pres.keys())
+          task.hard_postreq_ids = Array.from(posts.keys())
+        }
+      })
+      TaskStoreLogger.log(`stringTasks: sync took ${performance.now() - syncStart}ms`)
+
+      // Refresh cache and recalculate once
+      const cacheStart = performance.now()
+      this.refreshStarredCache()
+      TaskStoreLogger.log(`stringTasks: refreshStarredCache took ${performance.now() - cacheStart}ms`)
+
+      const recalcStart = performance.now()
+      recalculate('stringTasks batch complete')
+      TaskStoreLogger.log(`stringTasks: recalculate took ${performance.now() - recalcStart}ms`)
+
+      TaskStoreLogger.log(`stringTasks completed in ${performance.now() - startTime}ms`)
     },
   },
   getters: {

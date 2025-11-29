@@ -1,9 +1,9 @@
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
-import { useTasks } from './use-tasks'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { Logger } from 'src/utils/d'
+import { tasks } from 'src/stores/tasks/task-view'
 
 const PostreqWarningLogger = new Logger('Postreq Warning Composable')
 
@@ -16,7 +16,7 @@ export function usePostreqWarning() {
 
   PostreqWarningLogger.debug('hello from usePostreqWarning')
 
-  const { tasks } = useTasks()
+  //const { tasks } = useTasks()
 
   const autoThreshold = computed(() => {
     PostreqWarningLogger.log('meep autothreshold')
