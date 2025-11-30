@@ -53,6 +53,10 @@
   import { createTask } from 'src/utils/task-utils'
   import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { recalculate } from 'src/stores/tasks/task-view'
+  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+
+  const ewww = dontLookAtMe()
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide } = useDialogPluginComponent()
@@ -129,39 +133,61 @@
 
   async function submitTasks() {
     if (!hasValidItems.value) return
-    
-    let previousTaskId: number | null = null
-    
+
+    const createdTaskIds: number[] = []
+
+    // Phase 1: Create all tasks with deferred recalculation
     for (const text of items.value) {
       const trimmedText = text.trim()
       if (!trimmedText) continue
-      
+
       const taskOptions: CreateTaskOptions = {
         title: trimmedText,
         hard_prereq_ids: [],
         hard_postreq_ids: []
       }
-      
+
       try {
-        // Create the task directly using the store to get the created task
-        const createdTask = await taskStore.apiCreate(taskOptions)
-        
-        // If there was a previous task, update it to add the new task as a postrequisite
-        if (previousTaskId !== null && createdTask) {
-          const prevTask = taskStore.mapp.get(previousTaskId)
-          if (prevTask) {
-            await taskStore.addRule(prevTask.id, createdTask.id)
-          }
-        }
-        
+        const createdTask = await taskStore.apiCreate(taskOptions, { skipRecalculate: true })
         if (createdTask) {
-          previousTaskId = createdTask.id
+          createdTaskIds.push(createdTask.id)
         }
       } catch (error) {
         console.error('Error creating task:', error)
       }
     }
-    
+
+    // Phase 2: Add rules between tasks with batch operations deferred
+    for (let i = 1; i < createdTaskIds.length; i++) {
+      const prevTaskId = createdTaskIds[i - 1]!
+      const currentTaskId = createdTaskIds[i]!
+      try {
+        await taskStore.addRule(prevTaskId, currentTaskId, {
+          skipRecalculate: true,
+          skipBatchOperations: true
+        })
+      } catch (error) {
+        console.error('Error adding rule:', error)
+      }
+    }
+
+    // Phase 3: Single batch update of task objects
+    taskStore.$patch(() => {
+      for (const taskId of createdTaskIds) {
+        const task = taskStore.hardGet(taskId)
+        const pres = ewww.grabPres(taskId)
+        const posts = ewww.grabPosts(taskId)
+        task.hard_prereq_ids = Array.from(pres.keys())
+        task.hard_postreq_ids = Array.from(posts.keys())
+      }
+    })
+
+    // Phase 4: Single cache refresh
+    taskStore.refreshStarredCache()
+
+    // Phase 5: Single recalculation
+    recalculate('QuickListDialog batch complete')
+
     onDialogHide()
   }
 

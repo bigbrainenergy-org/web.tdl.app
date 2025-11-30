@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
   import { ref, toRef, computed } from 'vue'
-  import { addPrerequisitesDialog, considerOpeningQuickSortDialog, quickSortPostreqsDialog } from 'src/utils/dialog-utils'
+  import { addPrerequisitesDialog, considerOpeningQuickSortDialog, quickSortPostreqsDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskTimeEstimateInfoChip from './TaskTimeEstimateInfoChip.vue'
   import type { SimpleMenuItem } from 'src/utils/types'
@@ -118,6 +118,11 @@
   }
 
   const menuItems: SimpleMenuItem<Task>[] = [
+    {
+      label: 'Details',
+      icon: 'info',
+      action: openUpdateTaskDialog
+    },
     {
       label: 'Mark Complete',
       icon: 'fas fa-lightbulb',

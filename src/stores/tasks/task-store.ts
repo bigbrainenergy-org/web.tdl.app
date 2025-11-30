@@ -151,7 +151,7 @@ export const useTaskStore = defineStore('tasks', {
           return this.updateSingle(result.data)
         }, handleError('Error getting '))
     },
-    apiCreate(task: CreateTaskOptions) {
+    apiCreate(task: CreateTaskOptions, { skipRecalculate = false }: { skipRecalculate?: boolean } = {}) {
       return this.api()
         .post('/tasks', task, this.commonHeader())
         .then((result: AxiosResponse<TaskLike>) => {
@@ -159,7 +159,9 @@ export const useTaskStore = defineStore('tasks', {
           // Mark newly created tasks as needing refinement by default
           useTaskNeedsRefinementStore().markNeedsRefinement(result.data.id)
           notifySuccess('Task was created')
-          recalculate('apicreate')
+          if (!skipRecalculate) {
+            recalculate('apicreate')
+          }
           return r
         }, handleError('Error creating a task.'))
     },
@@ -169,7 +171,7 @@ export const useTaskStore = defineStore('tasks', {
      * @param task an object containing ONLY the properties getting updated.
      * @returns
      */
-    async apiUpdate(id: number, task: AllOptionalTaskProperties) {
+    async apiUpdate(id: number, task: AllOptionalTaskProperties, options: { skipRecalculate?: boolean } = { skipRecalculate: false }) {
       try {
         const timings: any = {
           apiUpdateTotal: performance.now(),
@@ -191,7 +193,7 @@ export const useTaskStore = defineStore('tasks', {
             if(typeof task.completed !== 'undefined') {
               ewww.updateCompletedStatus(tmp)
             }
-            recalculate('apiUpdate')
+            if(!options.skipRecalculate) recalculate('apiUpdate')
             timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
             TaskStoreLogger.log(`APIUPDATE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
           })
