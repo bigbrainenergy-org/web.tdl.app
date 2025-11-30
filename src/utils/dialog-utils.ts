@@ -27,6 +27,9 @@ import SeamlessTimer from 'src/components/SeamlessTimer.vue'
 import { Logger } from './d'
 import StuckTasksDialog from 'src/components/dialogs/StuckTasksDialog.vue'
 import QuickListDialog from 'src/components/dialogs/QuickListDialog.vue'
+import TaskBreakdownDialog from 'src/components/dialogs/TaskBreakdownDialog.vue'
+import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
+import { tasks } from 'src/stores/tasks/task-view'
 
 const Dialogger = new Logger('Dialog Utils')
 
@@ -120,20 +123,57 @@ export function openTimer(task: Task) {
   })
 }
 
+export function openTaskBreakdownDialog(task: Task) {
+  return Dialog.create({
+    component: TaskBreakdownDialog,
+    componentProps: {
+      task
+    }
+  }).onOk(() => {
+    // Re-run considerOpeningQuickSortDialog after breakdown is complete
+    considerOpeningQuickSortDialog()
+  })
+}
+
 export function considerOpeningQuickSortDialog() {
   const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
     useLocalSettingsStore()
   const { quickSortDialogActive } = useLoadingStateStore()
   if (quickSortDialogActive) return
   if (disableQuickSort) return
+
+  // First, check if any tasks in the sorted agenda view need refinement
+  const taskStore = useTaskStore()
+  const needsRefinementStore = useTaskNeedsRefinementStore()
+
+  // Get the sorted tasks from the task view (what's actually shown in the agenda)
+  const sortedTasks = tasks.value
+
+  // Check between 10-20 tasks: min(20, max(10, qty))
+  const checkLimit = Math.min(20, Math.max(10, sortedTasks.length))
+  const tasksToCheck = sortedTasks.slice(0, checkLimit)
+
+  // Find first task that needs refinement
+  const taskNeedingRefinement = tasksToCheck.find(task =>
+    needsRefinementStore.needsRefinement(task.id)
+  )
+
+  if (taskNeedingRefinement) {
+    // Open breakdown dialog instead of quick sort
+    openTaskBreakdownDialog(taskNeedingRefinement as Task)
+    return
+  }
+
+  // If no tasks need refinement, proceed with normal quick sort logic
   if (enableQuickSortOnLayerZeroQTY > 0) {
-    const layerZeroQTY = useTaskStore().layerZero.value.length
+    const layerZero = taskStore.layerZero.value
+    const layerZeroQTY = layerZero.length
     if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
       openQuickSortDialog()
     }
     if (
       enableQuickSortOnNewTask &&
-      useTaskStore().layerZero.value.filter((x) => x.grabPrereqs(true).length === 0).length > 0
+      layerZero.filter((x) => x.grabPrereqs(true).length === 0).length > 0
     ) {
       openQuickSortDialog()
     }

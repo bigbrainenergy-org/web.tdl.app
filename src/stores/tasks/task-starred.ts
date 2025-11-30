@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { type TaskLike } from './task-interfaces-types'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
 import { useTaskStore } from './task-store'
+import { recalculate } from './task-view'
 
 export const useTaskStarredStore = defineStore('task-starred', {
   state: () => ({
@@ -36,8 +37,9 @@ export const useTaskStarredStore = defineStore('task-starred', {
         this._starredSet.add(taskId)
       }
       this.invalidateDescendantCache()
+      recalculate('star')
     },
-    
+
     /**
      * Remove a task from the starred set
      */
@@ -50,6 +52,7 @@ export const useTaskStarredStore = defineStore('task-starred', {
         this._starredSet.delete(taskId)
       }
       this.invalidateDescendantCache()
+      recalculate('unstar')
     },
     
     /**

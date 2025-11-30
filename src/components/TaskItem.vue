@@ -37,6 +37,13 @@
       </q-icon>
     </q-item-section>
 
+    <!-- Needs refinement icon -->
+    <q-item-section v-if="needsRefinement" side>
+      <q-icon name="build" color="orange" size="sm" @click.stop="toggleNeedsRefinement(task)">
+        <q-tooltip>This task needs refinement/breakdown</q-tooltip>
+      </q-icon>
+    </q-item-section>
+
     <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
@@ -66,7 +73,9 @@
   import { updateTask } from 'src/utils/task-utils'
   import TheBestTransition from './TheBestTransition.vue'
   import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
+  import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { openTaskBreakdownDialog } from 'src/utils/dialog-utils'
 
   const props = withDefaults(
     defineProps<{
@@ -85,10 +94,15 @@
   const task = toRef(props, 'task')
 
   const starredStore = useTaskStarredStore()
-  
+  const needsRefinementStore = useTaskNeedsRefinementStore()
+
   // Computed property to get current starred status
   const isStarred = computed(() => starredStore.isStarred(task.value.id))
   const hasStarredDescendants = computed(() => starredStore.getStarredDescendantCount(task.value.id))
+
+  // Computed property to get needs refinement status
+  const needsRefinement = computed(() => needsRefinementStore.needsRefinement(task.value.id))
+
   const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
 
   const updateEstimate = (est: number) => (task: Task) => {
@@ -97,6 +111,10 @@
 
   const toggleStar = (task: Task) => {
     starredStore.toggle(task.id)
+  }
+
+  const toggleNeedsRefinement = (task: Task) => {
+    needsRefinementStore.toggle(task.id)
   }
 
   const menuItems: SimpleMenuItem<Task>[] = [
@@ -109,6 +127,16 @@
       label: 'Toggle Star',
       icon: 'fas fa-star',
       action: toggleStar
+    },
+    {
+      label: 'Needs Refinement',
+      icon: 'build',
+      action: toggleNeedsRefinement
+    },
+    {
+      label: 'Break Down Task...',
+      icon: 'call_split',
+      action: (task: Task) => openTaskBreakdownDialog(task)
     },
     {
       label: 'Add Prerequisites...',

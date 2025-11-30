@@ -22,10 +22,10 @@ export function useTaskSorting() {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') {
-      if(busy.value) {
-        TaskSortingLogger.log('zzz')
-        return tasks
-      }
+      // if(busy.value) {
+      //   TaskSortingLogger.log('zzz')
+      //   return tasks
+      // }
 
       console.log('sorting.')
       
@@ -38,13 +38,22 @@ export function useTaskSorting() {
         agendaSort: performance.now(),
         computeDescendantsTotal: 0,
         enqueueTimeTotal: 0,
+        enqueueLayerCalc: 0,
+        enqueueInitialCount: 0,
+        insertionTotal: 0,
+        prerequisiteCheckTotal: 0,
+        incrementCounterTotal: 0,
         hasKeysTotal: 0,
+        // Counters
+        mainLoopIterations: 0,
+        tasksChecked: 0,
+        tasksProcessed: 0,
+        tasksEnqueued: 0,
       }
 
       // Pre-filter tasks for better performance
       const filteredTasks = hideCompleted.value ? tasks.filter(x => !x.completed) : tasks
-      const taskIds = new Set(filteredTasks.map(x => x.id)) // Use Set for O(1) lookups
-      
+
       // Find first layer tasks (no incomplete prerequisites)
       const firstLayer = filteredTasks.filter(x => ewww.grabIncompletePres(x.id).size === 0)
         .sort((a, b) => (b.task_duration_in_minutes ?? 1440) - (a.task_duration_in_minutes ?? 1440))
@@ -52,58 +61,141 @@ export function useTaskSorting() {
       const finalList = new Map<number, Task>()
       const addedToQueue = new Set<number>()
       const visited = new Set<number>()
-      
+
       // Use more efficient queue structure with sorted keys maintained
       const queue: Map<number, Task[]> = new Map()
       const sortedKeys: number[] = []
-      
+
+      // Ready queue - tasks whose prerequisites are all satisfied, ready to process immediately
+      const readyQueue: Task[] = []
+
+      // Track layer/depth of each task (layer 0 = no prereqs, layer 1 = depends on layer 0, etc.)
+      const taskLayers = new Map<number, number>()
+
+      // Cache total incomplete prereqs count per task
+      const totalIncompletePrereqs = new Map<number, number>()
+
+      // Incremental prerequisite satisfaction tracking
+      // Maps task ID -> count of how many incomplete prereqs are already in finalList
+      const prereqsSatisfiedCount = new Map<number, number>()
+
       // Cache star weights to avoid recomputation during binary search
       const starWeightCache = new Map<number, number>()
-      
-      // Helper to calculate star weight for a task (with caching)
-      const getStarWeight = (task: Task): number => {
+
+      // Helper to calculate priority weight for a task (with caching)
+      // Priority = (layer_weight * 250) + (star_weight * 100)
+      // - Adjacent layers can swap based on stars (fuzzy)
+      // - Layer n ALWAYS beats layer n+2+ (guaranteed by 500pt gap > 300pt max star weight)
+      const getPriorityWeight = (task: Task): number => {
         const cached = starWeightCache.get(task.id)
         if (cached !== undefined) return cached
-        
+
+        const layer = taskLayers.get(task.id) ?? 0
+        // Each layer is worth 250 points - allows high-priority layer n+1 to beat low-priority layer n
+        const layerWeight = (100 - layer) * 250
+
         const isStarred = taskStarredStore.isStarred(task.id) ? 2 : 0
         const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
-        const weight = isStarred + descendantCount // Higher weight = higher priority
-        
+        const starWeight = (isStarred + descendantCount) * 100 // Max 300 points
+
+        const weight = layerWeight + starWeight
         starWeightCache.set(task.id, weight)
         return weight
       }
-      
-      // Helper to insert task in priority order within a queue level
+
+      // Binary search insertion by priority weight (O(log n))
       const insertTaskByPriority = (queuedTasks: Task[], newTask: Task) => {
-        const newWeight = getStarWeight(newTask)
-        
-        // Simple linear insertion for now to ensure correctness
-        // TODO: Optimize back to binary search once working correctly
-        let insertIndex = 0
-        for (let i = 0; i < queuedTasks.length; i++) {
-          const existingWeight = getStarWeight(queuedTasks[i]!)
-          if (existingWeight < newWeight) {
-            insertIndex = i
-            break
+        const insertTime = performance.now()
+        const newWeight = getPriorityWeight(newTask)
+
+        // Binary search for insertion point (descending order - higher weight first)
+        let left = 0
+        let right = queuedTasks.length
+
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2)
+          const midWeight = getPriorityWeight(queuedTasks[mid]!)
+
+          if (midWeight >= newWeight) {
+            left = mid + 1
+          } else {
+            right = mid
           }
-          insertIndex = i + 1
         }
-        queuedTasks.splice(insertIndex, 0, newTask)
+
+        queuedTasks.splice(left, 0, newTask)
+        timings.insertionTotal += performance.now() - insertTime
+      }
+
+      // Insert task into ready queue in priority order (for layer-based sorting)
+      const insertTaskInPriorityOrder = (queue: Task[], newTask: Task) => {
+        const insertTime = performance.now()
+        const newWeight = getPriorityWeight(newTask)
+
+        // Binary search for insertion point (descending order - higher priority/lower layer first)
+        let left = 0
+        let right = queue.length
+
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2)
+          const midWeight = getPriorityWeight(queue[mid]!)
+
+          if (midWeight >= newWeight) {
+            left = mid + 1
+          } else {
+            right = mid
+          }
+        }
+
+        queue.splice(left, 0, newTask)
+        timings.insertionTotal += performance.now() - insertTime
       }
 
       const enqueue = (tasks: Task[]) => {
         let enqueuetime = performance.now()
         for (const task of tasks) {
+          timings.tasksEnqueued++
+          // Compute layer based on max of incomplete prereqs' layers + 1
+          if (!taskLayers.has(task.id)) {
+            const layerCalcTime = performance.now()
+            const incompletePres = ewww.grabIncompletePres(task.id)
+            const totalPrereqs = incompletePres.size
+            totalIncompletePrereqs.set(task.id, totalPrereqs)
+            let maxPrereqLayer = -1
+            timings.enqueueLayerCalc += performance.now() - layerCalcTime
+
+            // Count how many prereqs are already satisfied
+            const initialCountTime = performance.now()
+            let initialSatisfiedCount = 0
+            for (const preId of incompletePres.keys()) {
+              const prereqLayer = taskLayers.get(preId) ?? 0
+              maxPrereqLayer = Math.max(maxPrereqLayer, prereqLayer)
+              // Check if this prereq is already in finalList
+              if (finalList.has(preId)) {
+                initialSatisfiedCount++
+              }
+            }
+            timings.enqueueInitialCount += performance.now() - initialCountTime
+
+            taskLayers.set(task.id, maxPrereqLayer + 1)
+            // Initialize prereq satisfied counter
+            prereqsSatisfiedCount.set(task.id, initialSatisfiedCount)
+
+            // If all prereqs already satisfied, add to ready queue immediately (in priority order)
+            if (initialSatisfiedCount === totalPrereqs) {
+              insertTaskInPriorityOrder(readyQueue, task)
+            }
+          }
+
           const postCount = ewww.grabIncompletePosts(task.id).size
-          
+
           if (!queue.has(postCount)) {
             queue.set(postCount, [])
             insertSorted(sortedKeys, postCount)
           }
-          
-          // Insert task in priority order instead of just pushing
+
+          // Insert task in priority order with binary search
           insertTaskByPriority(queue.get(postCount)!, task)
-          //queue.get(postCount)!.push(task) //testing raw push
           addedToQueue.add(task.id)
           const computeDescendantsTime = performance.now()
           taskStarredStore.computeDescendants(task.id, taskMap, visited)
@@ -135,94 +227,76 @@ export function useTaskSorting() {
       let hundos = 0
       const maxIterations = 3 * useTaskStore().array.length
       
-      // Main sorting loop - optimized
-      while (sortedKeys.length > 0 && hundos < maxIterations/* && finalList.size <= 998*/) {
+      // Main sorting loop - optimized with ready queue
+      while (readyQueue.length > 0 && hundos < maxIterations) {
         hundos++
-        let processed = false
+        timings.mainLoopIterations++
 
-        let task: Task | null = null
-        
-        // Process keys in descending order (already sorted)
-        for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
-          const postCount = sortedKeys[keyIndex]!
-          const queuedTasks = queue.get(postCount)!
-          
-          // Process tasks in this queue level
-          for (let taskIndex = 0; taskIndex < queuedTasks.length; taskIndex++) {
-            task = queuedTasks[taskIndex]!
-            const incompletePres = ewww.grabIncompletePres(task.id)
-            
-            // Check if all prerequisites are satisfied (optimized)
-            let allPresSatisfied = true
-            for (const preId of incompletePres.keys()) {
-              if (!finalList.has(preId)) {
-                mostSuspiciousStuckTasks.value.clear()
-                mostSuspiciousStuckTasks.value.add(preId)
-                mostSuspiciousStuckTasks.value.add(task.id)
-                allPresSatisfied = false
-                break
-              }
-            }
-            
-            if (allPresSatisfied) {
-              finalList.set(task.id, task)
-              
-              const newTasks: Task[] = []
-              for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
-                if (!addedToQueue.has(postId)) {
-                  newTasks.push(postTask)
-                }
-              }
-              
-              if (newTasks.length > 0) {
-                enqueue(newTasks)
-              }
-              
-              // Remove task from queue while preserving sorted order
-              queuedTasks.splice(taskIndex, 1)
-              taskIndex-- // Adjust index after removal
-              
-              processed = true
-              break // Process one task per iteration for stability
+        // Pop task from ready queue
+        const task = readyQueue.shift()!
+        timings.tasksChecked++
+
+        // Skip if already processed
+        if (finalList.has(task.id)) continue
+
+        const prereqCheckTime = performance.now()
+        const totalPrereqs = totalIncompletePrereqs.get(task.id) ?? 0
+        const satisfiedCount = prereqsSatisfiedCount.get(task.id) ?? 0
+
+        // O(1) check: are all prerequisites satisfied?
+        const allPresSatisfied = satisfiedCount === totalPrereqs
+        timings.prerequisiteCheckTotal += performance.now() - prereqCheckTime
+
+        if (allPresSatisfied) {
+          timings.tasksProcessed++
+          finalList.set(task.id, task)
+
+          // Incrementally update counters for all postrequisites
+          const incrementTime = performance.now()
+          for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
+            const currentCount = prereqsSatisfiedCount.get(postId) ?? 0
+            const newCount = currentCount + 1
+            prereqsSatisfiedCount.set(postId, newCount)
+
+            // Check if this task just became ready
+            const totalPrereqs = totalIncompletePrereqs.get(postId) ?? 0
+            if (newCount === totalPrereqs) {
+              insertTaskInPriorityOrder(readyQueue, postTask)
             }
           }
-          
-          // Clean up empty queue levels
-          if (queuedTasks.length === 0) {
-            queue.delete(postCount)
-            removeKey(sortedKeys, postCount)
-            keyIndex-- // Adjust index after removal
+          timings.incrementCounterTotal += performance.now() - incrementTime
+
+          const newTasks: Task[] = []
+          for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
+            if (!addedToQueue.has(postId)) {
+              newTasks.push(postTask)
+            }
           }
-          
-          if (processed) break
-        }
-      
-        if (hundos >= maxIterations) {
-          TaskSortingLogger.warn('Agenda sorting exceeded maximum iterations - bailing out')
-          errorNotification(new Error('Agenda sorting exceeded maximum iterations - bailing out'), 'Agenda sorting exceeded maximum iterations')
-        }
-        
-        if (!processed) {
-          TaskSortingLogger.warn('No progress made in sorting iteration - potential cycle detected')
-          const { incompleteOnly } = useTaskStore()
-          const notInFinalArray = incompleteOnly.value.filter(x => !finalList.has(x.id))
-            .filter(x => !x.completed)
-            .filter(x => ewww.grabIncompletePres(x.id).size > 0)
-          stuckTasks.value.clear()
-          mostSuspiciousStuckTasks.value.forEach(x => stuckTasks.value.add(x))
-          if(task !== null) {
-            //console.log(`task ${task.title} is not null`)
-            stuckTasks.value.add(task.id)
-            //console.log([...stuckTasks.value.values()])
+
+          if (newTasks.length > 0) {
+            enqueue(newTasks)
           }
-          // else {
-          //   //console.log('task is null')
-          // }
-          notInFinalArray.forEach(x => stuckTasks.value.add(x.id))
-          //console.log('not in final array', notInFinalArray.map(x => x.title))
-          console.assert(stuckTasks.value.size + finalList.size <= totalIncompleteTasks, 'List sizes do not match')
-          break
+        } else {
+          // Task not ready - this shouldn't happen with ready queue, but handle gracefully
+          TaskSortingLogger.warn(`Task ${task.id} in ready queue but prereqs not satisfied: ${satisfiedCount}/${totalPrereqs}`)
         }
+      }
+
+      if (hundos >= maxIterations) {
+        TaskSortingLogger.warn('Agenda sorting exceeded maximum iterations - bailing out')
+        errorNotification(new Error('Agenda sorting exceeded maximum iterations - bailing out'), 'Agenda sorting exceeded maximum iterations')
+      }
+
+      // Check for stuck tasks
+      const { incompleteOnly } = useTaskStore()
+      const notInFinalArray = incompleteOnly.value.filter(x => !finalList.has(x.id))
+        .filter(x => !x.completed)
+        .filter(x => ewww.grabIncompletePres(x.id).size > 0)
+
+      if (notInFinalArray.length > 0) {
+        TaskSortingLogger.warn(`${notInFinalArray.length} tasks not processed - potential cycle detected`)
+        stuckTasks.value.clear()
+        notInFinalArray.forEach(x => stuckTasks.value.add(x.id))
       }
       
       timings.agendaSort = performance.now() - timings.agendaSort

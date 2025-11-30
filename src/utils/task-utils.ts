@@ -11,7 +11,7 @@ export function createTask(payload: CreateTaskOptions) {
   useTaskStore()
     .apiCreate(payload)
     .then(() => {
-      notifySuccess('Successfully created a task')
+      // notifySuccess('Successfully created a task')
     }, handleError('Failed to create task.'))
 }
 

@@ -19,6 +19,7 @@ import { Queue } from 'src/utils/types'
 import { Logger } from 'src/utils/d'
 import { dontLookAtMe } from './look-i-dont-make-the-rules'
 import { useTaskStarredStore } from './task-starred'
+import { useTaskNeedsRefinementStore } from './task-needs-refinement'
 import { recalculate } from './task-view'
 
 const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
@@ -155,7 +156,10 @@ export const useTaskStore = defineStore('tasks', {
         .post('/tasks', task, this.commonHeader())
         .then((result: AxiosResponse<TaskLike>) => {
           const r = this.updateSingle(result.data)
-          recalculate()
+          // Mark newly created tasks as needing refinement by default
+          useTaskNeedsRefinementStore().markNeedsRefinement(result.data.id)
+          notifySuccess('Task was created')
+          recalculate('apicreate')
           return r
         }, handleError('Error creating a task.'))
     },
@@ -187,9 +191,9 @@ export const useTaskStore = defineStore('tasks', {
             if(typeof task.completed !== 'undefined') {
               ewww.updateCompletedStatus(tmp)
             }
+            recalculate('apiUpdate')
             timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
             TaskStoreLogger.log(`APIUPDATE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
-            recalculate('apiUpdate')
           })
       } catch (e) {
         TaskStoreLogger.error(e)

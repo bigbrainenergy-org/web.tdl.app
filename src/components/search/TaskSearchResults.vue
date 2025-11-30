@@ -18,17 +18,13 @@
                   @click="createTask"
                 />
               </q-item>
-              <q-item
+              <TaskItem
                 v-for="task in results"
                 :key="task.id ?? -1"
-                v-ripple
-                clickable
-                @click="selectTask(task as Task)"
-              >
-                <q-item-section :style="colorize(task.id)">
-                  {{ task.title }}
-                </q-item-section>
-              </q-item>
+                :task="task as Task"
+                @task-clicked="selectTask(task as Task)"
+                @task-completion-toggled="() => {}"
+              />
             </q-list>
           </template>
         </div>
@@ -47,6 +43,7 @@
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import { filtered_tasks } from 'src/stores/tasks/task-view'
+  import TaskItem from '../TaskItem.vue'
 
   interface Prop {
     search: string | undefined
@@ -67,7 +64,6 @@
   // }
 
   const redundantTasks = ref<Map<number, boolean>>(new Map())
-  const colorize = (id: number) => (redundantTasks.value.get(id) ? 'color: orange' : 'color: black')
 
   // const byRedundancy = (a: HasID, b: HasID) =>
   //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1

@@ -60,43 +60,15 @@
       </template>
       <template v-else>
         <ul ref="parentRef" style="list-style-type: none; margin: 0; padding: 0;">
-          <li v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-middle" style="display: flex" color="positive" :disable="loading">
-            <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm" color="primary" />
-            <q-item clickable>
-              <q-item-section class="vertical-top" @click.stop="makeSelection(t as Task)">
-                <q-item-label lines="2" class="wrapped" :style="style">
-                  {{ t.title }}
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-btn
-                  flat
-                  :disable="loading"
-                  icon="more_vert"
-                  size="lg"
-                  color="white"
-                  auto-close
-                  @touchstart.stop
-                  @mousedown.stop
-                >
-                  <q-menu>
-                    <q-list>
-                      <q-item
-                        v-for="(menuitem, index) in menuItems"
-                        :key="index"
-                        v-close-popup
-                        clickable
-                        @click.stop="menuitem.action(t as Task)"
-                      >
-                        <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-                        <q-space />
-                        <q-icon :name="menuitem.icon" />
-                      </q-item>
-                    </q-list>
-                  </q-menu>
-                </q-btn>
-              </q-item-section>
-            </q-item>
+          <li v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-middle" style="display: flex; align-items: center;" color="positive" :disable="loading">
+            <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm q-mr-sm" color="primary" style="cursor: grab;" />
+            <div style="flex: 1;">
+              <TaskItem
+                :task="t as Task"
+                @task-clicked="makeSelection(t as Task)"
+                @task-completion-toggled="(completed) => handleTaskCompletion(completed, t as Task)"
+              />
+            </div>
           </li>
         </ul>
       </template>
@@ -123,23 +95,19 @@
 </template>
 
 <script setup lang="ts">
-  import { Notify, useDialogPluginComponent } from 'quasar'
+  import { useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { onMounted, watch, nextTick } from 'vue'
   import { computed, ref } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { useElementSize } from '@vueuse/core'
   import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
-  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
-  import type { SimpleMenuItem } from 'src/utils/types'
-  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog, addPostrequisiteDialog } from 'src/utils/dialog-utils'
-  import { hardCheck } from 'src/utils/type-utils'
-  import { useTaskShortcuts } from 'src/composables/use-task-shortcuts'
+  import { addPostrequisiteDialog } from 'src/utils/dialog-utils'
   import { useDragAndDrop, dragAndDrop } from '@formkit/drag-and-drop/vue'
+  import TaskItem from '../TaskItem.vue'
 
   interface qspotdProps {
     parentTaskId: number
@@ -207,105 +175,6 @@
 
   // type pair<T> = { a: T; b: T }
   // let skippedPairs: pair<Task>[] = []
-
-  const addPres = (x: Task) => {
-    addPrerequisitesDialog(x)
-      .onOk(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onCancel(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onDismiss(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-  }
-
-  const sliceTask = (x: Task) => {
-    openTaskSlicerDialog(x)
-      .onOk(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onCancel(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onDismiss(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-  }
-
-  const reloadTasks = () => {
-    tryNewPair()
-  }
-
-  const complete = async (x: Task) => {
-    try {
-      await x.toggleCompleted()
-      reloadTasks()
-    } catch (error: any) {
-      Notify.create('Failed to mark the task complete.')
-      console.error(error)
-    }
-  }
-  const taskDetails = (x: Task) => {
-    console.debug(`opening details for task ID ${x.id}`)
-    openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
-  }
-
-  const doASAP = (mvp: Task) => {
-    loading.value = true
-    const allOtherLayerZero = postreqsToSort.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
-    // TODO: write a bulk_add_posts action on the model
-    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
-    // remove all the other tasks from parent task, leaving only the mvp id
-    parentTask.value.hard_postreq_ids = [mvp.id]
-    allOtherLayerZero.forEach((x: PostWeightedTask) => {
-      x.t.hard_prereq_ids.push(mvp.id)
-      const parentTaskIndex = x.t.hard_prereq_ids.findIndex(y => y === parentTask.value.id)
-      if(parentTaskIndex >= 0) x.t.hard_prereq_ids.splice(parentTaskIndex, 1)
-    })
-    // todo: figure out what all we should save here.
-    useTaskStore()
-      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(async () => {
-        await tryNewPair()
-        loading.value = false
-      })
-  }
-
-  const menuItems: SimpleMenuItem<Task>[] = [
-    {
-      label: 'Mark Complete',
-      icon: 'fa-solid fa-clipboard-check',
-      action: complete
-    },
-    {
-      label: 'Details',
-      icon: 'fa-solid fa-circle-info',
-      action: taskDetails
-    },
-    {
-      label: 'Slice Into Pieces',
-      icon: 'fa-solid fa-scissors',
-      action: sliceTask
-    },
-    {
-      label: 'Add Prerequisite',
-      icon: 'fa-solid fa-square-plus',
-      action: addPres
-    },
-    {
-      label: 'Do This ASAP',
-      icon: 'fa-solid fa-fire',
-      action: doASAP
-    }
-  ]
 
   const finishedSorting = (msg = 'Finished Sorting') => {
     notifySuccess(msg)
@@ -419,6 +288,51 @@
     }
   }
 
+  const handleTaskCompletion = async (completed: boolean, task: Task) => {
+    if (!completed) {
+      // Task was uncompleted, no need to do anything
+      return
+    }
+
+    console.debug(`Task ${task.id} completed, removing from quick sort`)
+
+    // The checkbox already toggled task.completed optimistically via v-model
+    // Now we need to persist it to the API and update the store
+    await task.updateTaskCompletionStatus()
+
+    // Wait for reactivity to update
+    await nextTick()
+
+    // Remove the completed task from the current pair
+    const remainingTasks = currentPair.value.filter((x) => x.id !== task.id)
+
+    // If we have less than 2 tasks left, get a whole new pair
+    if (remainingTasks.length < 2) {
+      console.debug('Less than 2 tasks remaining, getting new pair')
+      await tryNewPair()
+      return
+    }
+
+    // Try to find a replacement task from postreqsToSort that's not already in the current pair
+    const currentIds = new Set(currentPair.value.map(t => t.id))
+    const availableReplacements = postreqsToSort.value.filter(
+      (x) => !currentIds.has(x.t.id) && !x.t.completed && !priorMVPs.has(x.t.id)
+    )
+
+    if (availableReplacements.length > 0) {
+      // Pick a random replacement
+      const replacement = availableReplacements[Math.floor(Math.random() * availableReplacements.length)]!
+      console.debug(`Adding replacement task ${replacement.t.id}`)
+      currentPair.value = [...remainingTasks, replacement.t]
+    } else {
+      // No replacement available, just use the remaining tasks
+      console.debug('No replacement available, continuing with remaining tasks')
+      currentPair.value = remainingTasks
+    }
+
+    await reinitializeDragAndDrop()
+  }
+
   const makeSelection = async (mvp: Task) => { // TODO: probably time to genericize the mvp task function
     loading.value = true
     priorMVPs.add(mvp.id)
@@ -469,18 +383,6 @@
     onDialogHide()
   }
 
-  const el = ref()
-  const { width } = useElementSize(el)
-  // fixme - I could not get q-item-label lines="x" to work in dynamic-width parent elements. This is a workaround to bind a px width.
-  const style = computed(() => {
-    //margins are 2(24+16) = 80px
-    //dropdown section is 35px; total is 115px.
-
-    return {
-      width: `${width.value - 152}px`,
-      'max-width': `${width.value - 152}px`
-    }
-  })
 </script>
 
 <style>

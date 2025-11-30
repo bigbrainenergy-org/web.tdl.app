@@ -43,21 +43,14 @@
                 <q-item-section>No results found</q-item-section>
               </q-item>
               <!-- <q-scroll-area v-else> -->
-              <!-- BUG: suddenly this q-list is extremely slow. -->
               <q-list v-else ref="el">
-                <q-item
+                <TaskItem
                   v-for="task in results.slice(0, 50)"
                   :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as Task)"
-                >
-                  <q-item-section :style="colorize(task.id)">
-                    <q-item-label lines="2">
-                      {{ task.title }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
+                  :task="task as Task"
+                  @task-clicked="selectTask(task as Task)"
+                  @task-completion-toggled="() => {}"
+                />
               </q-list>
               <!-- </q-scroll-area> -->
             </template>
@@ -85,6 +78,7 @@
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
+  import TaskItem from '../TaskItem.vue'
 
   interface Props {
     dialogTitle: string
@@ -146,7 +140,6 @@
 
   const usr = useLocalSettingsStore()
   const omitRedundant = ref(usr.omitRedundantSearchResults)
-  const taskSearchSettings = ref({ 'Omit Redundant Tasks': omitRedundant })
 
   watch(omitRedundant, () => {
     usr.omitRedundantSearchResults = omitRedundant.value
@@ -280,8 +273,6 @@
 
   const results = ref<Task[]>([])
   const redundantTasks = ref<Map<number, boolean>>(new Map())
-  const colorize = (id: number) =>
-    redundantTasks.value.get(id) ? "color: 'warning'" : "color: 'primary'"
   // type HasID = { id: number }
   // const byRedundancy = (a: HasID, b: HasID) =>
   //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1

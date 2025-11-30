@@ -78,43 +78,15 @@
       </template>
       <template v-else>
         <ul ref="parentRef" style="list-style-type: none; margin: 0; padding: 0;">
-          <li v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-middle" style="display: flex" color="positive" :disable="loading">
-            <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm" color="primary" />
-            <q-item clickable>
-              <q-item-section class="vertical-top" @click.stop="makeSelection(t as Task)">
-                <q-item-label lines="2" class="wrapped" :style="getTaskStyle(t, style)">
-                  {{ t.title }}
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-btn
-                  flat
-                  :disable="loading"
-                  icon="more_vert"
-                  size="lg"
-                  color="white"
-                  auto-close
-                  @touchstart.stop
-                  @mousedown.stop
-                >
-                  <q-menu>
-                    <q-list>
-                      <q-item
-                        v-for="(menuitem, index) in menuItems"
-                        :key="index"
-                        v-close-popup
-                        clickable
-                        @click.stop="menuitem.action(t as Task)"
-                      >
-                        <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-                        <q-space />
-                        <q-icon :name="menuitem.icon" />
-                      </q-item>
-                    </q-list>
-                  </q-menu>
-                </q-btn>
-              </q-item-section>
-            </q-item>
+          <li v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-middle" style="display: flex; align-items: center;" color="positive" :disable="loading">
+            <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm q-mr-sm" color="primary" style="cursor: grab;" />
+            <div style="flex: 1;">
+              <TaskItem
+                :task="t as Task"
+                @task-clicked="makeSelection(t as Task)"
+                @task-completion-toggled="(completed) => handleTaskCompletion(completed, t as Task)"
+              />
+            </div>
           </li>
         </ul>
       </template>
@@ -142,23 +114,21 @@
 </template>
 
 <script setup lang="ts">
-  import { Notify, useDialogPluginComponent } from 'quasar'
+  import { useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { nextTick, onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { useElementSize } from '@vueuse/core'
   import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
   import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
-  import type { SimpleMenuItem } from 'src/utils/types'
-  import { addPrerequisitesDialog, openTaskSlicerDialog, openUpdateTaskDialog, openCreateTaskDialog } from 'src/utils/dialog-utils'
+  import { openCreateTaskDialog } from 'src/utils/dialog-utils'
   import { dragAndDrop, useDragAndDrop } from '@formkit/drag-and-drop/vue'
   import { Logger } from 'src/utils/d'
+  import TaskItem from '../TaskItem.vue'
 
   const quickSortLogger = new Logger('Quick Sort', '#3498db')
 
@@ -197,17 +167,25 @@
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-  const lzerotasks = useTaskStore().layerZero
-
-  const layerZero = computed(() => lzerotasks.value.map(postWeightedTask))
+  const taskStore = useTaskStore()
+  // Access the layerZero getter directly - it returns a computed ref
+  const layerZeroTasks = taskStore.layerZero
+  const layerZero = computed(() => layerZeroTasks.value.map(postWeightedTask))
   const tasksWithoutPostreqs = computed(() =>
     layerZero.value.filter((x) => !(x.t.grabPostreqs(true).length > 0))
   )
   const l0len = computed(() => layerZero.value.length)
-  watch(l0len, (value: number) => {
+  watch(l0len, (value: number, oldValue: number) => {
+    quickSortLogger.debug(`Layer zero length changed from ${oldValue} to ${value}`)
     if (value < 2) {
+      quickSortLogger.debug('Layer zero has less than 2 tasks, closing dialog')
       if (dialogRef !== null) onDialogOK()
     }
+  })
+
+  // Watch layerZero for changes to debug reactivity
+  watch(() => layerZero.value.length, (newLen, oldLen) => {
+    quickSortLogger.debug(`LayerZero length watch: ${oldLen} -> ${newLen}`)
   })
 
   //  const layerOne = computed(() =>
@@ -235,100 +213,6 @@
 
   // type pair<T> = { a: T; b: T }
   // let skippedPairs: pair<Task>[] = []
-
-  const addPres = (x: Task) => {
-    addPrerequisitesDialog(x)
-      .onOk(() => {
-        quickSortLogger.debug('getting a new pair now')
-        skip()
-      })
-      .onCancel(() => {
-        quickSortLogger.debug('getting a new pair now')
-        skip()
-      })
-      .onDismiss(() => {
-        quickSortLogger.debug('getting a new pair now')
-        skip()
-      })
-  }
-
-  const sliceTask = (x: Task) => {
-    openTaskSlicerDialog(x)
-      .onOk(() => {
-        quickSortLogger.debug('getting a new pair now')
-        skip()
-      })
-      .onCancel(() => {
-        quickSortLogger.debug('getting a new pair now')
-        skip()
-      })
-      .onDismiss(() => {
-        quickSortLogger.debug('getting a new pair now')
-        skip()
-      })
-  }
-
-  const reloadTasks = () => {
-    tryNewPair()
-  }
-
-  const complete = async (x: Task) => {
-    try {
-      await x.toggleCompleted()
-      reloadTasks()
-    } catch (error: any) {
-      Notify.create('Failed to mark the task complete.')
-      quickSortLogger.error(error)
-    }
-  }
-  const taskDetails = (x: Task) => {
-    quickSortLogger.debug(`opening details for task ID ${x.id}`)
-    openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
-  }
-
-  const doASAP = (mvp: Task) => {
-    loading.value = true
-    const allOtherLayerZero = layerZero.value.filter((x: PostWeightedTask) => x.t.id !== mvp.id)
-    // TODO: write a bulk_add_posts action on the model
-    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: PostWeightedTask) => x.t.id))
-    allOtherLayerZero.forEach((x: PostWeightedTask) => {
-      x.t.hard_prereq_ids.push(mvp.id)
-    })
-    useTaskStore()
-      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(async () => {
-        await tryNewPair()
-        loading.value = false
-      })
-  }
-
-  const menuItems: SimpleMenuItem<Task>[] = [
-    {
-      label: 'Mark Complete',
-      icon: 'fa-solid fa-clipboard-check',
-      action: complete
-    },
-    {
-      label: 'Details',
-      icon: 'fa-solid fa-circle-info',
-      action: taskDetails
-    },
-    {
-      label: 'Slice Into Pieces',
-      icon: 'fa-solid fa-scissors',
-      action: sliceTask
-    },
-    {
-      label: 'Add Prerequisite',
-      icon: 'fa-solid fa-square-plus',
-      action: addPres
-    },
-    {
-      label: 'Do This ASAP',
-      icon: 'fa-solid fa-fire',
-      action: doASAP
-    }
-  ]
 
   const finishedSorting = (msg = 'Finished Sorting') => {
     notifySuccess(msg)
@@ -449,6 +333,67 @@
     }
   }
 
+  const handleTaskCompletion = async (completed: boolean, task: Task) => {
+    if (!completed) {
+      // Task was uncompleted, no need to do anything
+      return
+    }
+
+    quickSortLogger.debug(`Task ${task.id} completed, removing from quick sort`)
+    quickSortLogger.debug(`Layer zero length before API update: ${layerZero.value.length}`)
+
+    // The checkbox already toggled task.completed optimistically via v-model
+    // Now we need to persist it to the API and update the store
+    await task.updateTaskCompletionStatus()
+
+    // Wait for reactivity to update
+    await nextTick()
+    quickSortLogger.debug(`Layer zero length after API update: ${layerZero.value.length}`)
+
+    // The task's completed status changed, so layerZero should eventually update
+    // But it might be async, so let's just work with what we know:
+    // This task is now completed and should be removed from currentPair
+
+    // Remove the completed task from the current pair
+    const remainingTasks = currentPair.value.filter((x) => x.id !== task.id)
+
+    // If we have less than 2 tasks left, get a whole new pair
+    if (remainingTasks.length < 2) {
+      quickSortLogger.debug('Less than 2 tasks remaining, getting new pair')
+      await tryNewPair()
+      return
+    }
+
+    // Try to find a replacement task from layerZero that's not already in the current pair
+    // Filter out completed tasks manually since layerZero might not have updated yet
+    const currentIds = new Set(currentPair.value.map(t => t.id))
+    const availableReplacements = taskStore.array.filter(task => {
+      // Must be incomplete
+      if (task.completed) return false
+      // Must not be in current pair
+      if (currentIds.has(task.id)) return false
+      // Must not have been a prior MVP
+      if (priorMVPs.has(task.id)) return false
+      // Must have no incomplete prereqs (layer zero)
+      const incompletePres = task.grabPrereqs(true).filter(p => !p.completed)
+      if (incompletePres.length > 0) return false
+      return true
+    })
+
+    if (availableReplacements.length > 0) {
+      // Pick a random replacement
+      const replacement = availableReplacements[Math.floor(Math.random() * availableReplacements.length)]!
+      quickSortLogger.debug(`Adding replacement task ${replacement.id}`)
+      currentPair.value = [...remainingTasks, replacement]
+    } else {
+      // No replacement available, just use the remaining tasks
+      quickSortLogger.debug('No replacement available, continuing with remaining tasks')
+      currentPair.value = remainingTasks
+    }
+
+    await reinitializeDragAndDrop()
+  }
+
   const makeSelection = (mvp: Task) => {
     loading.value = true
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
@@ -457,7 +402,7 @@
     selected_tasks.forEach((x) => {
       x.hard_prereq_ids.push(mvp.id)
     })
-    useTaskStore()
+    taskStore
       .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
       .then(async () => {
         await tryNewPair()
@@ -468,7 +413,7 @@
   const confirmOrder = async () => {
     loading.value = true
     const taskIds = currentPair.value.map(t => t.id)
-    await useTaskStore().stringTasks(taskIds)
+    await taskStore.stringTasks(taskIds)
     await tryNewPair()
     loading.value = false
   }
@@ -493,49 +438,6 @@
     onDialogHide()
   }
 
-  const el = ref()
-  const { width } = useElementSize(el)
-  // fixme - I could not get q-item-label lines="x" to work in dynamic-width parent elements. This is a workaround to bind a px width.
-  const style = computed(() => {
-    //margins are 2(24+16) = 80px
-    //dropdown section is 35px; total is 115px.
-
-    const five_percent = width.value / 20
-
-    return {
-      width: `${width.value - 152 - five_percent}px`,
-      'max-width': `${width.value - 152 - five_percent}px`
-    }
-  })
-
-  const starredStore = useTaskStarredStore()
-
-  const shouldHighlightGreen = (task: Task): boolean => {
-    // Check if task is starred
-    if (starredStore.ids.has(task.id)) {
-      return true
-    }
-    
-    // Check if any descendant (task below) is starred
-    const taskStore = useTaskStore()
-    const idsBelow = taskStore.idsAfter(task.id)
-    
-    for (const descendantId of idsBelow) {
-      if (starredStore.ids.has(descendantId)) {
-        return true
-      }
-    }
-    
-    return false
-  }
-
-  const getTaskStyle = (task: Task, baseStyle: any) => {
-    const isHighlighted = shouldHighlightGreen(task)
-    return {
-      ...baseStyle,
-      color: isHighlighted ? 'green' : undefined
-    }
-  }
 </script>
 
 <style>

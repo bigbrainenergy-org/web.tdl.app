@@ -43,19 +43,13 @@
                     @click="createTask"
                   />
                 </q-item>
-                <q-item
+                <TaskItem
                   v-for="task in results"
                   :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as Task)"
-                >
-                  <q-item-section>
-                    <q-item-label lines="2">
-                      {{ task.title }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
+                  :task="task as Task"
+                  @task-clicked="selectTask(task as Task)"
+                  @task-completion-toggled="() => {}"
+                />
               </q-list>
             </template>
           </div>
@@ -83,6 +77,7 @@
   import { timeThisB } from 'src/utils/performance-utils'
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
+  import TaskItem from '../TaskItem.vue'
 
   interface Props {
     dialogTitle: string
@@ -145,7 +140,6 @@
 
   const usr = useLocalSettingsStore()
   const hideCompleted = ref(usr.hideCompleted)
-  const taskSearchSettings = ref({ 'Omit Completed Tasks': hideCompleted })
 
   watch(hideCompleted, () => {
     usr.hideCompleted = hideCompleted.value
@@ -187,7 +181,7 @@
 
   // can't set this in withDefaults... don't even try
   // DON'T
-  const defaultFilter = (currentTaskID: number | undefined) => {
+  const defaultFilter = () => {
     const filterCompleted = useLocalSettingsStore().hideCompleted
     if (filterCompleted) {
       return (x: Task) => {
@@ -195,7 +189,7 @@
         return true
       }
     }
-    return (x: Task) => true
+    return () => true
   }
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
