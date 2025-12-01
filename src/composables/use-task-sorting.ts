@@ -127,9 +127,23 @@ export function useTaskSorting() {
         timings.insertionTotal += performance.now() - insertTime
       }
 
-      // Insert task into ready queue in priority order (for layer-based sorting)
-      const insertTaskInPriorityOrder = (queue: Task[], newTask: Task) => {
+      // Compute task layer based on max prereq layer + 1, then insert into ready queue
+      const computeLayerAndInsertIntoReadyQueue = (queue: Task[], newTask: Task) => {
         const insertTime = performance.now()
+
+        // Compute layer NOW, when all prereqs are guaranteed to be in finalList
+        if (!taskLayers.has(newTask.id)) {
+          const incompletePres = ewww.grabIncompletePres(newTask.id)
+          let maxPrereqLayer = -1
+
+          for (const preId of incompletePres.keys()) {
+            const prereqLayer = taskLayers.get(preId) ?? 0
+            maxPrereqLayer = Math.max(maxPrereqLayer, prereqLayer)
+          }
+
+          taskLayers.set(newTask.id, maxPrereqLayer + 1)
+        }
+
         const newWeight = getPriorityWeight(newTask)
 
         // Binary search for insertion point (descending order - higher priority/lower layer first)
@@ -155,21 +169,19 @@ export function useTaskSorting() {
         let enqueuetime = performance.now()
         for (const task of tasks) {
           timings.tasksEnqueued++
-          // Compute layer based on max of incomplete prereqs' layers + 1
-          if (!taskLayers.has(task.id)) {
+
+          // Initialize tracking for this task (don't compute layer yet - that happens at ready queue entry)
+          if (!totalIncompletePrereqs.has(task.id)) {
             const layerCalcTime = performance.now()
             const incompletePres = ewww.grabIncompletePres(task.id)
             const totalPrereqs = incompletePres.size
             totalIncompletePrereqs.set(task.id, totalPrereqs)
-            let maxPrereqLayer = -1
             timings.enqueueLayerCalc += performance.now() - layerCalcTime
 
             // Count how many prereqs are already satisfied
             const initialCountTime = performance.now()
             let initialSatisfiedCount = 0
             for (const preId of incompletePres.keys()) {
-              const prereqLayer = taskLayers.get(preId) ?? 0
-              maxPrereqLayer = Math.max(maxPrereqLayer, prereqLayer)
               // Check if this prereq is already in finalList
               if (finalList.has(preId)) {
                 initialSatisfiedCount++
@@ -177,13 +189,12 @@ export function useTaskSorting() {
             }
             timings.enqueueInitialCount += performance.now() - initialCountTime
 
-            taskLayers.set(task.id, maxPrereqLayer + 1)
             // Initialize prereq satisfied counter
             prereqsSatisfiedCount.set(task.id, initialSatisfiedCount)
 
-            // If all prereqs already satisfied, add to ready queue immediately (in priority order)
+            // If all prereqs already satisfied, compute layer and add to ready queue
             if (initialSatisfiedCount === totalPrereqs) {
-              insertTaskInPriorityOrder(readyQueue, task)
+              computeLayerAndInsertIntoReadyQueue(readyQueue, task)
             }
           }
 
@@ -258,10 +269,11 @@ export function useTaskSorting() {
             const newCount = currentCount + 1
             prereqsSatisfiedCount.set(postId, newCount)
 
-            // Check if this task just became ready
+            // Check if this task just became ready (all prereqs satisfied)
             const totalPrereqs = totalIncompletePrereqs.get(postId) ?? 0
             if (newCount === totalPrereqs) {
-              insertTaskInPriorityOrder(readyQueue, postTask)
+              // Compute layer and add to ready queue now that all prereqs are in finalList
+              computeLayerAndInsertIntoReadyQueue(readyQueue, postTask)
             }
           }
           timings.incrementCounterTotal += performance.now() - incrementTime
