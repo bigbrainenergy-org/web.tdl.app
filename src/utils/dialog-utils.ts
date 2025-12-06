@@ -3,6 +3,7 @@ import { addPost, addPre, createTask } from './task-utils'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
+import UpdateTaskDialog2 from 'src/components/dialogs/UpdateTaskDialog2.vue'
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
 import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
@@ -124,14 +125,21 @@ export function openTimer(task: Task) {
 }
 
 export function openTaskBreakdownDialog(task: Task) {
+  if (useLoadingStateStore().breakdownDialogActive) return
+  useLoadingStateStore().breakdownDialogActive = true
   return Dialog.create({
     component: TaskBreakdownDialog,
     componentProps: {
       task
     }
   }).onOk(() => {
+    useLoadingStateStore().breakdownDialogActive = false
     // Re-run considerOpeningQuickSortDialog after breakdown is complete
     considerOpeningQuickSortDialog()
+  }).onCancel(() => {
+    useLoadingStateStore().breakdownDialogActive = false
+  }).onDismiss(() => {
+    useLoadingStateStore().breakdownDialogActive = false
   })
 }
 
@@ -170,6 +178,7 @@ export function considerOpeningQuickSortDialog() {
     const layerZeroQTY = layerZero.length
     if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
       openQuickSortDialog()
+      return
     }
     if (
       enableQuickSortOnNewTask &&
@@ -183,6 +192,15 @@ export function considerOpeningQuickSortDialog() {
 export function openUpdateTaskDialog(task: Task) {
   return Dialog.create({
     component: UpdateTaskDialog,
+    componentProps: {
+      task: task
+    }
+  })
+}
+
+export function openUpdateTaskDialog2(task: Task) {
+  return Dialog.create({
+    component: UpdateTaskDialog2,
     componentProps: {
       task: task
     }

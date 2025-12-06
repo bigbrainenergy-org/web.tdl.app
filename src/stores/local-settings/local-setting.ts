@@ -19,6 +19,10 @@ interface LocalSettingsState {
   expandEnergyStats: boolean
   expandAllWithSameID: boolean
   maxGraphNodeRadius: number
+  graphTraversalDepth: number // 0 = layer zero only, 1+ = include prereqs at that depth
+  graphDepthPres: number // depth of prereqs to show in task dialog graph
+  graphDepthPosts: number // depth of postreqs to show in task dialog graph
+  graphTraverseThroughCompleted: boolean // include completed tasks but don't traverse their dependencies
   reverseTreeView: boolean
   disableQuickSort: boolean
   enableQuickSortOnNewTask: boolean
@@ -112,6 +116,10 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       expandEnergyStats: false,
       expandAllWithSameID: false,
       maxGraphNodeRadius: 100,
+      graphTraversalDepth: 4,
+      graphDepthPres: 2,
+      graphDepthPosts: 2,
+      graphTraverseThroughCompleted: false,
       reverseTreeView: false,
       disableQuickSort: true,
       enableQuickSortOnNewTask: false,

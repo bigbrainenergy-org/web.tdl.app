@@ -9,9 +9,30 @@
         </q-card-section>
 
         <q-card-section class="q-pt-md">
-          <div class="text-subtitle1 q-mb-md text-weight-medium">
+          <div class="text-subtitle1 q-mb-sm text-weight-medium">
             {{ task.title }}
           </div>
+
+          <!-- Incomplete Prerequisites -->
+          <div v-if="incompletePrereqs.length > 0" class="q-mb-md">
+            <div class="text-caption text-grey-6 q-mb-xs">Prerequisites ({{ incompletePrereqs.length }}):</div>
+            <div class="text-caption text-grey-8">
+              <div v-for="prereq in visiblePrereqs" :key="prereq.id" class="q-pl-sm">
+                • {{ prereq.title }}
+              </div>
+              <q-btn
+                v-if="incompletePrereqs.length > 3"
+                flat
+                dense
+                no-caps
+                size="sm"
+                :label="showAllPrereqs ? 'Show less' : `Show ${incompletePrereqs.length - 3} more`"
+                class="q-pl-sm text-grey-6"
+                @click="showAllPrereqs = !showAllPrereqs"
+              />
+            </div>
+          </div>
+
           <div class="text-caption text-grey-7 q-mb-md">
             Break this task into a list of smaller steps:
           </div>
@@ -26,10 +47,10 @@
                 outlined
                 dense
                 :placeholder="`Subtask ${index + 1}`"
-                style="flex: 1;"
+                style="flex: 1; pointer-events: auto; user-select: text;"
                 :class="{ 'existing-task-input': item.existingTask }"
                 :debounce="50"
-                @keydown.enter="onItemEnter(index)"
+                @keydown.enter.prevent="onItemEnter(index)"
                 @keydown.delete="(e: KeyboardEvent) => onItemDelete(index, e)"
                 @keydown.down="focusNext(index)"
                 @keydown.up="focusPrev(index)"
@@ -141,6 +162,13 @@
   const showSidebar = ref(false)
   const focusedItemIndex = ref<number | null>(null)
   const searchResults = ref<Task[]>([])
+  const showAllPrereqs = ref(false)
+
+  // Get incomplete prerequisites
+  const incompletePrereqs = computed(() => props.task.grabPrereqs(true))
+  const visiblePrereqs = computed(() =>
+    showAllPrereqs.value ? incompletePrereqs.value : incompletePrereqs.value.slice(0, 3)
+  )
 
   const hasValidItems = computed(() => {
     return items.value.some(item => item.text.trim() !== '' || item.existingTask)
@@ -176,15 +204,20 @@
   }
 
   // Watch for text changes to update search
+  const lastSearchText = ref('')
   watch(items, (newItems) => {
     if (focusedItemIndex.value !== null) {
       const item = newItems[focusedItemIndex.value]
       if (item && !item.existingTask) {
-        searchForTasks(item.text)
-        if (item.text.trim()) {
-          showSidebar.value = true
-        } else {
-          showSidebar.value = false
+        // Only search if the text actually changed
+        if (item.text !== lastSearchText.value) {
+          lastSearchText.value = item.text
+          searchForTasks(item.text)
+          if (item.text.trim()) {
+            showSidebar.value = true
+          } else {
+            showSidebar.value = false
+          }
         }
       }
     }
@@ -199,6 +232,7 @@
     showSidebar.value = false
     searchResults.value = []
     focusedItemIndex.value = null
+    lastSearchText.value = ''
 
     // Add a new blank item beneath the selected one
     items.value.splice(index + 1, 0, createNewItem())
@@ -211,8 +245,11 @@
     focusedItemIndex.value = index
     const item = items.value[index]
     if (item && !item.existingTask && item.text.trim()) {
+      lastSearchText.value = item.text
       showSidebar.value = true
       searchForTasks(item.text)
+    } else {
+      lastSearchText.value = ''
     }
   }
 
@@ -229,16 +266,18 @@
     const currentValue = item?.text.trim() || ''
 
     if (currentValue || item?.existingTask) {
-      // Add new item if this is the last item and has content
-      if (index === items.value.length - 1) {
-        items.value.push(createNewItem())
+      // Insert new item directly below the current item
+      const newIndex = index + 1
+      items.value.splice(newIndex, 0, createNewItem())
+
+      // Double nextTick to ensure refs are fully updated
+      nextTick(() => {
         nextTick(() => {
-          focusInput(items.value.length - 1)
+          if (inputRefs.value && inputRefs.value[newIndex]) {
+            inputRefs.value[newIndex].focus()
+          }
         })
-      } else {
-        // Move to next input if not the last one
-        focusNext(index)
-      }
+      })
     }
   }
 

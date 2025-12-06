@@ -42,17 +42,21 @@
               <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
               </q-item>
-              <!-- <q-scroll-area v-else> -->
-              <q-list v-else ref="el">
+              <q-virtual-scroll
+                v-slot="{ item }"
+                ref="el"
+                :items="resultsWithMetadata"
+                :virtual-scroll-item-size="48"
+                style="height: 600px"
+              >
                 <TaskItem
-                  v-for="task in results.slice(0, 50)"
-                  :key="task.id ?? -1"
-                  :task="task as Task"
-                  @task-clicked="selectTask(task as Task)"
+                  v-bind="item"
+                  :show-actions="false"
+                  :show-refinement-icon="false"
+                  @task-clicked="selectTask(item.task)"
                   @task-completion-toggled="() => {}"
                 />
-              </q-list>
-              <!-- </q-scroll-area> -->
+              </q-virtual-scroll>
             </template>
           </div>
         </div>
@@ -63,7 +67,7 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, onMounted, ref, shallowRef, watch } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import type { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
@@ -79,6 +83,7 @@
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
   import TaskItem from '../TaskItem.vue'
+  import { useTaskMetadata } from 'src/composables/use-task-metadata'
 
   interface Props {
     dialogTitle: string
@@ -226,8 +231,8 @@
     //results.value.sort(byRedundancy)
     const duration = Math.floor(performance.now() - start)
     // console.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value && debounceAmount.value < 500) {
-      const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+    if (duration * 2 > debounceAmount.value && debounceAmount.value < 600) {
+      const newDebounce = Math.min(600, Math.max(duration * 1.5, debounceAmount.value))
       console.warn(`rolling back debounce to ${newDebounce}`)
       debounceAmount.value = newDebounce
     }
@@ -271,7 +276,15 @@
     onDialogHide()
   }
 
-  const results = ref<Task[]>([])
+  // shallowRef: fast lists
+  // items don't change themselves
+  // replace whole array
+  const results = shallowRef<Task[]>([])
+
+  // Compute metadata once for all results, then v-bind to TaskItem
+  const { computeMetadataForTasks } = useTaskMetadata()
+  const resultsWithMetadata = computeMetadataForTasks(results)
+
   const redundantTasks = ref<Map<number, boolean>>(new Map())
   // type HasID = { id: number }
   // const byRedundancy = (a: HasID, b: HasID) =>
@@ -285,7 +298,7 @@
   const currentTask = ref(
     typeof props.taskID !== 'undefined' ? useTaskStore().hardGet(props.taskID) : null
   )
-  const debounceAmount = ref(100)
+  const debounceAmount = ref(150)
   // fuse.value
 
   const el = ref()

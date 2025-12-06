@@ -38,14 +38,20 @@
           <strong>{{ props.emptyListMessage }}</strong>
         </q-item-section>
       </q-item>
-      <!-- Otherwise, lazy render tasks -->
-      <q-intersection v-for="(task, index) in tasks.slice(undefined, 200)" :key="index" once style="min-height: 48px">
+      <!-- Virtual scroll for smooth rendering of large lists -->
+      <q-virtual-scroll
+        v-else
+        v-slot="{ item }"
+        :items="tasksWithMetadata"
+        :virtual-scroll-item-size="48"
+        style="height: calc(100vh - 200px); min-height: 400px"
+      >
         <TaskItem
-          :task="task"
-          @task-clicked="$emit('task-clicked', $event, task)"
-          @task-completion-toggled="$emit('task-completion-toggled', $event, task)"
+          v-bind="item"
+          @task-clicked="$emit('task-clicked', $event, item.task)"
+          @task-completion-toggled="$emit('task-completion-toggled', $event, item.task)"
         />
-      </q-intersection>
+      </q-virtual-scroll>
     </template>
   </q-list>
 </template>
@@ -53,11 +59,10 @@
 <script setup lang="ts">
   import TaskItem from 'src/components/TaskItem.vue'
 
-  import { computed } from 'vue'
+  import { computed, toRef } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { Task } from 'src/stores/tasks/task-model'
-  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
-  import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useTaskMetadata } from 'src/composables/use-task-metadata'
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
@@ -73,14 +78,14 @@
     }
   )
 
-  //console.debug('loaded task list')
-  //console.debug({ tasks: props.tasks })
-
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
-  // commenting this out for now - is this different from defineModel somehow? is this necessary? is this useful? TODO
-  // const tasks = toRef(props, 'tasks')
+  // Wrap props.tasks as a ref for the composable
+  const tasks = toRef(props, 'tasks')
+
+  // Compute metadata once for all tasks, then v-bind to TaskItem
+  const { computeMetadataForTasks } = useTaskMetadata()
+  const tasksWithMetadata = computeMetadataForTasks(tasks)
 
   const loading = computed(() => useLoadingStateStore().busy)
-  //console.log(useTaskStarredStore()._starredIds.map(id => useTaskStore().mapp.get(id)?.title))
 </script>

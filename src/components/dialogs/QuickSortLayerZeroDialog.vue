@@ -183,10 +183,46 @@
     }
   })
 
-  // Watch layerZero for changes to debug reactivity
-  watch(() => layerZero.value.length, (newLen, oldLen) => {
-    quickSortLogger.debug(`LayerZero length watch: ${oldLen} -> ${newLen}`)
-  })
+  // Watch layerZero for changes and filter out tasks no longer in layer zero
+  watch(() => layerZero.value.map(x => x.t.id), async (newIds) => {
+    quickSortLogger.debug(`LayerZero IDs changed: ${newIds}`)
+    const layerZeroIdSet = new Set(newIds)
+    const currentIds = new Set(currentPair.value.map(t => t.id))
+    const removedCount = currentPair.value.filter(t => !layerZeroIdSet.has(t.id)).length
+
+    if (removedCount > 0) {
+      quickSortLogger.debug(`${removedCount} tasks no longer in layer zero, finding replacements`)
+
+      // Find available replacements from layer zero that aren't already in currentPair
+      const availableReplacements = layerZero.value
+        .filter(x => !currentIds.has(x.t.id) && !priorMVPs.has(x.t.id))
+        .map(x => x.t)
+
+      // Rebuild the list, replacing removed tasks with new ones at the same positions
+      const newPair: Task[] = []
+      let replacementIdx = 0
+
+      for (const task of currentPair.value) {
+        if (layerZeroIdSet.has(task.id)) {
+          // Task is still valid, keep it
+          newPair.push(task)
+        } else if (replacementIdx < availableReplacements.length) {
+          // Task was removed, insert replacement at this position
+          newPair.push(availableReplacements[replacementIdx]!)
+          replacementIdx++
+        }
+        // If no replacement available, slot is just removed
+      }
+
+      if (newPair.length < 2) {
+        // Not enough tasks to continue, try getting a whole new pair or close
+        await tryNewPair()
+      } else {
+        currentPair.value = newPair
+        await reinitializeDragAndDrop()
+      }
+    }
+  }, { deep: true })
 
   //  const layerOne = computed(() =>
   //     enableDeeperQuickSort.value

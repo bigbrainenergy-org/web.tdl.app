@@ -4,9 +4,7 @@
       touch-position
       context-menu
     >
-      <q-list dense style="min-width: 180px">
-        <MenuListItem v-for="(menuitem, index) in menuItems" :key="index" :menu-item="menuitem" :item="task" />
-      </q-list>
+      <TaskItemMenu :task="task" />
     </q-menu>
     <q-checkbox
       v-model:model-value="task.completed"
@@ -19,7 +17,7 @@
     />
 
     <q-item-section>
-      <q-item-label data-cy="task_item_title" lines="2" :style="task.grabPrereqs(true).length === 0 ? 'color: green' : undefined">
+      <q-item-label data-cy="task_item_title" lines="2" :style="isLayerZero ? 'color: green' : undefined">
         {{ task.title }}
       </q-item-label>
     </q-item-section>
@@ -38,7 +36,7 @@
     </q-item-section>
 
     <!-- Needs refinement icon -->
-    <q-item-section v-if="needsRefinement" side>
+    <q-item-section v-if="needsRefinement && props.showRefinementIcon" side>
       <q-icon name="build" color="orange" size="sm" @click.stop="toggleNeedsRefinement(task)">
         <q-tooltip>This task needs refinement/breakdown</q-tooltip>
       </q-icon>
@@ -52,38 +50,52 @@
       </q-avatar>
     </q-item-section>
     
-    <TheBestTransition>
-      <q-item-section v-if="hovered" side>
-        <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPre(task)" />
-      </q-item-section>
-    </TheBestTransition>
+    <template v-if="props.showActions">
+      <TheBestTransition>
+        <q-item-section v-if="hovered" side>
+          <q-btn v-if="!task.completed" outline rounded label="ADD PRE" @click.stop="addPre(task)" />
+        </q-item-section>
+      </TheBestTransition>
 
-    <!-- <TaskPostreqInfoChip :task="task" /> -->
-    <TaskTimeEstimateInfoChip :task="task" :hover="hovered" />
+      <!-- <TaskPostreqInfoChip :task="task" /> -->
+      <TaskTimeEstimateInfoChip :task="task" :hover="hovered" />
+    </template>
   </q-item>
 </template>
 
 <script setup lang="ts">
   import { ref, toRef, computed } from 'vue'
-  import { addPrerequisitesDialog, considerOpeningQuickSortDialog, quickSortPostreqsDialog, openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { addPrerequisitesDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskTimeEstimateInfoChip from './TaskTimeEstimateInfoChip.vue'
-  import type { SimpleMenuItem } from 'src/utils/types'
-  import MenuListItem from './MenuListItem.vue'
-  import { updateTask } from 'src/utils/task-utils'
+  import TaskItemMenu from './TaskItemMenu.vue'
   import TheBestTransition from './TheBestTransition.vue'
   import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
   import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
-  import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { openTaskBreakdownDialog } from 'src/utils/dialog-utils'
 
+  // Props match TaskMetadata shape from use-task-metadata composable
+  // allowing direct v-bind spread: <TaskItem v-bind="metadata" />
   const props = withDefaults(
     defineProps<{
       task: Task
+      // Metadata props - when provided, skip store lookups
+      isLayerZero?: boolean
+      isStarred?: boolean
+      hasStarredDescendants?: boolean
+      needsRefinement?: boolean
+      // Display control props
       incompleteOnly?: boolean
+      showActions?: boolean
+      showRefinementIcon?: boolean
     }>(),
     {
-      incompleteOnly: false
+      isLayerZero: undefined,
+      isStarred: undefined,
+      hasStarredDescendants: undefined,
+      needsRefinement: undefined,
+      incompleteOnly: false,
+      showActions: true,
+      showRefinementIcon: true
     }
   )
 
@@ -93,21 +105,28 @@
 
   const task = toRef(props, 'task')
 
+  // Only access stores when metadata not provided via props
   const starredStore = useTaskStarredStore()
   const needsRefinementStore = useTaskNeedsRefinementStore()
 
-  // Computed property to get current starred status
-  const isStarred = computed(() => starredStore.isStarred(task.value.id))
-  const hasStarredDescendants = computed(() => starredStore.getStarredDescendantCount(task.value.id))
+  // Use prop if provided, otherwise compute from store/task
+  const isLayerZero = computed(() =>
+    props.isLayerZero ?? task.value.grabPrereqs(true).length === 0
+  )
 
-  // Computed property to get needs refinement status
-  const needsRefinement = computed(() => needsRefinementStore.needsRefinement(task.value.id))
+  const isStarred = computed(() =>
+    props.isStarred ?? starredStore.isStarred(task.value.id)
+  )
+
+  const hasStarredDescendants = computed(() =>
+    props.hasStarredDescendants ?? starredStore.getStarredDescendantCount(task.value.id) > 0
+  )
+
+  const needsRefinement = computed(() =>
+    props.needsRefinement ?? needsRefinementStore.needsRefinement(task.value.id)
+  )
 
   const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
-
-  const updateEstimate = (est: number) => (task: Task) => {
-    updateTask(task.id, { task_duration_in_minutes: est })
-  }
 
   const toggleStar = (task: Task) => {
     starredStore.toggle(task.id)
@@ -116,81 +135,6 @@
   const toggleNeedsRefinement = (task: Task) => {
     needsRefinementStore.toggle(task.id)
   }
-
-  const menuItems: SimpleMenuItem<Task>[] = [
-    {
-      label: 'Details',
-      icon: 'info',
-      action: openUpdateTaskDialog
-    },
-    {
-      label: 'Mark Complete',
-      icon: 'fas fa-lightbulb',
-      action: async x => await x.toggleCompleted()
-    },
-    {
-      label: 'Toggle Star',
-      icon: 'fas fa-star',
-      action: toggleStar
-    },
-    {
-      label: 'Needs Refinement',
-      icon: 'build',
-      action: toggleNeedsRefinement
-    },
-    {
-      label: 'Break Down Task...',
-      icon: 'call_split',
-      action: (task: Task) => openTaskBreakdownDialog(task)
-    },
-    {
-      label: 'Add Prerequisites...',
-      icon: 'fas fa-lightbulb',
-      action: addPre
-    },
-    {
-      label: 'Set Estimated Time...',
-      icon: 'fas fa-lightbulb',
-      action: () => {},
-      items: [
-        {
-          label: 'FAST',
-          icon: 'rocket',
-          action: updateEstimate(5)
-        },
-        {
-          label: '10 minutes',
-          icon: 'clock',
-          action: updateEstimate(10)
-        },
-        {
-          label: '15 minutes',
-          icon: 'clock',
-          action: updateEstimate(15)
-        },
-        {
-          label: '30 minutes',
-          icon: 'clock',
-          action: updateEstimate(30)
-        },
-        {
-          label: '45 minutes',
-          icon: 'clock',
-          action: updateEstimate(45)
-        },
-        {
-          label: '75 minutes',
-          icon: 'clock',
-          action: updateEstimate(75)
-        }
-      ]
-    },
-    {
-      label: 'Sort Postreqs...',
-      icon: 'fas fa-signs-post',
-      action: t => quickSortPostreqsDialog(t.id)
-    }
-  ]
 </script>
 
 <style>

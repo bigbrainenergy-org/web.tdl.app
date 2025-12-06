@@ -1,326 +1,216 @@
 <template>
   <div>
-    <!-- <TaskPage :tasks="tasks">
-      <TaskGraph :tasks="tasks" />
-    </TaskPage> -->
-
-    <q-page class="q-pa-lg">
-      <div class="row items-stretch justify-evenly">
-        <div class="full-height">
-          <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
-            <q-card-actions>
-              <GloriousSettingsPopup>
-                <GloriousSlider v-model:model-value="taskNodeMaxSize" label="Task Node Max Size" :min="100" :max="1000" :step="20" />
-                <GloriousToggle v-model:model-value="incompleteOnly" label="Hide Completed Tasks" />
-              </GloriousSettingsPopup>
-              <q-space />
-              <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
-              <q-btn icon="fa-solid fa-search" class="text-primary" @click="openSearchDialog" />
-            </q-card-actions>
-            <svg id="graphElement" ref="graphRef" />
-          </q-card>
+    <q-page class="graph-page">
+      <q-card class="graph-card text-primary">
+        <q-card-actions>
+          <GloriousSettingsPopup>
+            <GloriousSlider v-model:model-value="graphDepthPres" cute-name="Prereq Depth" :min="0" :max="5" :step="1" />
+            <GloriousSlider v-model:model-value="graphDepthPosts" cute-name="Postreq Depth" :min="0" :max="5" :step="1" />
+            <GloriousSlider v-model:model-value="taskNodeMaxSize" cute-name="Task Node Max Size" :min="100" :max="1000" :step="20" />
+            <GloriousToggle v-model:model-value="incompleteOnly" label="Hide Completed Tasks" />
+            <q-toggle v-model="graphTraverseThroughCompleted" label="Traverse through completed" dense />
+          </GloriousSettingsPopup>
+          <TaskSearchInput
+            v-model="searchQuery"
+            search-label="Search tasks..."
+            :debounce="300"
+            class="search-input q-mx-sm"
+            @do-a-search="onSearch"
+          />
+          <q-space />
+          <q-btn label="Open Largest Task" class="text-primary" @click="openLargest" />
+        </q-card-actions>
+        <div class="graph-container">
+          <TaskGraph
+            ref="taskGraphRef"
+            :nodes="nodes"
+            :links="links"
+            @node-click="onNodeClick"
+            @node-context-menu="onNodeContextMenu"
+          />
         </div>
-      </div>
+      </q-card>
     </q-page>
+
+    <q-dialog v-model="contextMenuVisible">
+      <q-card v-if="contextMenuTask" style="min-width: 250px">
+        <q-card-section class="q-pb-none">
+          <div class="text-h6">{{ contextMenuTask.title }}</div>
+        </q-card-section>
+        <q-card-section class="q-pt-sm">
+          <TaskItemMenu :task="(contextMenuTask as Task)" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-  import * as d3 from 'd3'
-  import { onMounted, ref, watch } from 'vue'
-  import type { d3Node } from 'src/models/d3-interfaces'
-  import { CustomForceGraph } from 'src/models/d3-interfaces'
+  import Fuse from 'fuse.js'
+  import { computed, ref, watch } from 'vue'
   import { useMeta } from 'quasar'
+  import { storeToRefs } from 'pinia'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import type { λ } from 'src/utils/types'
-  import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
+  import { openUpdateTaskDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import TaskPage from 'src/components/TaskPage.vue'
   import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
-  import GloriousTextInput from 'src/components/glorious/GloriousTextInput.vue'
   import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
   import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
-  import { storeToRefs } from 'pinia'
+  import TaskItemMenu from 'src/components/TaskItemMenu.vue'
+  import TaskSearchInput from 'src/components/search/TaskSearchInput.vue'
+  import TaskGraph from 'src/components/TaskGraph.vue'
+  import { useTaskGraphData } from 'src/composables/use-task-graph-data'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
 
-  interface Prop {
-    tasks: Task[]
-  }
-  const props = withDefaults(defineProps<Prop>(), { tasks: () => useTaskStore().array })
-
   const ts = useTaskStore()
   const usr = useLocalSettingsStore()
-  let allTasks
-  let allTaskNodes: d3Node<Task>[]
 
-  // size of the chart, not size of the viewport onto the chart
-  let width = 1000
-  let height = 1000
+  const {
+    hideCompleted: incompleteOnly,
+    graphDepthPres,
+    graphDepthPosts,
+    graphTraverseThroughCompleted,
+    maxGraphNodeRadius: taskNodeMaxSize
+  } = storeToRefs(usr)
 
-  type d3Link<T> = d3.SimulationLinkDatum<d3Node<T>> & {
-    slopeX: number
-    slopeY: number
-    angle: number
-    normalXoffset: number
-    normalYoffset: number
+  // Search state
+  const searchQuery = ref<string | undefined>('')
+  const searchResultIds = ref<Set<number>>(new Set())
+
+  // Fuse search options - stricter threshold for less fuzzy matching
+  const fuseOptions = {
+    isCaseSensitive: false,
+    ignoreLocation: true,
+    threshold: 0.29, // Lower = stricter matching (0 = exact, 1 = match anything)
+    keys: ['title']
   }
-  let links: d3Link<Task>[]
 
-  const incompleteOnly = ref(usr.hideCompleted)
-  const taskNodeMaxSize = ref(usr.maxGraphNodeRadius)
+  const onSearch = () => {
+    if (!searchQuery.value || searchQuery.value.trim() === '') {
+      searchResultIds.value = new Set()
+    } else {
+      const fuse = new Fuse(ts.array, fuseOptions)
+      const results = fuse.search(searchQuery.value)
+      searchResultIds.value = new Set(results.map(r => r.item.id))
+    }
+    buildGraphData()
+  }
 
-  const graphSettings = ref({
-    'Hide Completed Tasks': incompleteOnly,
-    'Max Task Node Size': taskNodeMaxSize
+  // Clear search results when query is cleared
+  watch(searchQuery, (val) => {
+    if (!val || val.trim() === '') {
+      searchResultIds.value = new Set()
+      buildGraphData()
+    }
   })
 
-  watch(incompleteOnly, () => {
-    usr.hideCompleted = incompleteOnly.value
-    reInitializeGraph()
+  // Context menu state
+  const contextMenuVisible = ref(false)
+  const contextMenuTask = ref<Task | null>(null)
+
+  const openContextMenu = (task: Task) => {
+    contextMenuTask.value = task
+    contextMenuVisible.value = true
+  }
+
+  // TaskGraph ref
+  const taskGraphRef = ref<InstanceType<typeof TaskGraph> | null>(null)
+
+  // Starting tasks: union of layer zero + search results
+  const startingTasks = computed(() => {
+    const tasks = [...ts.layerZero.value]
+
+    // Add search results to starting tasks
+    if (searchResultIds.value.size > 0) {
+      searchResultIds.value.forEach(id => {
+        const task = ts.mapp.get(id) as Task
+        if (task && !tasks.some(t => t.id === task.id)) {
+          tasks.push(task)
+        }
+      })
+    }
+
+    return tasks
   })
+
+  // Use the shared graph data composable
+  const { nodes, links, buildGraphData } = useTaskGraphData({
+    startingTasks,
+    searchResultIds,
+    hideCompleted: incompleteOnly
+  })
+
+  // Build initial data
+  buildGraphData()
+
+  // Watch for settings changes
+  watch([graphDepthPres, graphDepthPosts, graphTraverseThroughCompleted, incompleteOnly], () => {
+    buildGraphData()
+  })
+
+  // Watch for taskNodeMaxSize changes - requires reinit for radius recalculation
   watch(taskNodeMaxSize, () => {
     usr.maxGraphNodeRadius = taskNodeMaxSize.value
-    reInitializeGraph()
+    taskGraphRef.value?.reInitialize()
   })
 
-  // todo: merge with other populate function
-  // todo: make less weird
-  // todo: optimize
-  const populateGraphDataStructures = () => {
-    allTasks = props.tasks
-    allTaskNodes = []
-    links = []
-    for (let i = 0; i < allTasks.length; i++) {
-      allTaskNodes.push(allTasks[i]!.d3forceNode(i)) // todo fix ts suddenly being dumb about array index
-    }
-    const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
-    allTaskNodes.forEach((x) => taskNodeMap.set(x.id, x))
-    links = links.concat(
-      allTaskNodes.flatMap((x: d3Node<Task>) =>
-        x.obj.grabPostreqs(false)
-          .filter((y) => (y.completed ? !usr.hideCompleted : true))
-          .map(
-            (y) =>
-              ({
-                source: x,
-                target: taskNodeMap.get(y.id),
-                slopeX: 1,
-                slopeY: 1,
-                normalXoffset: 1,
-                normalYoffset: 1
-              }) as d3Link<Task>
-          )
-      )
+  const onNodeClick = (task: Task) => {
+    openUpdateTaskDialog(task).onDismiss(onDialogClose)
+  }
+
+  const onNodeContextMenu = (task: Task, _event: MouseEvent) => {
+    openContextMenu(task)
+  }
+
+  const onDialogClose = () => {
+    buildGraphData()
+    considerOpeningQuickSortDialog()
+  }
+
+  const openLargest = () => {
+    if (nodes.value.length === 0) return
+    const largest = nodes.value.reduce((prev, curr) =>
+      curr.radius > prev.radius ? curr : prev
     )
+    openUpdateTaskDialog(largest.obj as Task).onDismiss(onDialogClose)
   }
-
-  const populateGraphDataStructuresIncompleteOnly = () => {
-    const incomplete: λ<Task, boolean> = (x: Task) => !x.completed
-    allTasks = ts.incompleteOnly
-    const taskNodeMap: Map<number, d3Node<Task>> = new Map<number, d3Node<Task>>()
-    allTasks.value.forEach((x, i) => taskNodeMap.set(x.id, x.d3forceNode(i)))
-
-    const generateD3LinkToPostreq: λ<d3Node<Task>, λ<Task, d3Link<Task>>> =
-      (currentTaskNode: d3Node<Task>) => (currentPost: Task) =>
-        ({
-          source: currentTaskNode,
-          target: taskNodeMap.get(currentPost.id),
-          slopeX: 1,
-          slopeY: 1,
-          normalXoffset: 1,
-          normalYoffset: 1
-        }) as d3Link<Task>
-
-    const generateD3LinksToAllPostreqs: λ<d3Node<Task>, Array<d3Link<Task>>> = (
-      currentTaskNode: d3Node<Task>
-    ) =>
-      currentTaskNode.obj.grabPostreqs(false)
-        .filter(incomplete)
-        .map(generateD3LinkToPostreq(currentTaskNode))
-
-    allTaskNodes = Array.from(taskNodeMap.values())
-    links = allTaskNodes.flatMap(generateD3LinksToAllPostreqs)
-  }
-
-  const populate = () => {
-    if (incompleteOnly.value) populateGraphDataStructuresIncompleteOnly()
-    else populateGraphDataStructures()
-  }
-
-  populate()
-
-  const graphRef = ref<SVGSVGElement | null>(null)
-
-  let link: d3.Selection<SVGLineElement, d3Link<Task>, SVGSVGElement | null, unknown>
-  let node: d3.Selection<SVGCircleElement, d3Node<Task>, SVGSVGElement | null, unknown>
-  let label: d3.Selection<SVGTextElement, d3Node<Task>, SVGSVGElement | null, unknown>
-
-  const updateSlopes = () => {
-    links.forEach((d) => {
-      d.slopeY = (d.target as d3Node<Task>).y - (d.source as d3Node<Task>).y
-      d.slopeX = (d.target as d3Node<Task>).x - (d.source as d3Node<Task>).x
-      d.angle = Math.atan(d.slopeY / d.slopeX)
-      d.normalXoffset = Math.cos(d.angle)
-      d.normalYoffset = Math.sin(d.angle)
-    })
-  }
-
-  const ticked = () => {
-    node.attr('cx', (d) => d.x).attr('cy', (d) => d.y)
-
-    updateSlopes()
-
-    link
-      .attr(
-        'x1',
-        (d) =>
-          (d.source as d3Node<Task>).x +
-          (d.source as d3Node<Task>).radius * d.normalXoffset * (d.slopeX < 0 ? -1 : 1)
-      )
-      .attr(
-        'y1',
-        (d) =>
-          (d.source as d3Node<Task>).y +
-          (d.source as d3Node<Task>).radius * d.normalYoffset * (d.slopeX < 0 ? -1 : 1)
-      )
-      .attr(
-        'x2',
-        (d) =>
-          (d.target as d3Node<Task>).x +
-          (d.target as d3Node<Task>).radius * d.normalXoffset * (d.slopeX > 0 ? -1 : 1)
-      )
-      .attr(
-        'y2',
-        (d) =>
-          (d.target as d3Node<Task>).y +
-          (d.target as d3Node<Task>).radius * d.normalYoffset * (d.slopeX > 0 ? -1 : 1)
-      )
-
-    label.attr('x', (d) => d.x).attr('y', (d) => d.y - 10)
-  }
-
-  let simulation: d3.Simulation<d3Node<Task>, undefined>
-
-  let gnodes: any
-  let gg: any
-
-  let svg: d3.Selection<SVGSVGElement | null, unknown, null, undefined>
-
-  function raise(this: any) {
-    d3.select(this.parentNode).raise()
-  }
-
-  const initializeGraph = () => {
-    // updateSize()
-    simulation = d3
-      .forceSimulation(allTaskNodes)
-      .force('charge', d3.forceManyBody().strength(-128))
-      .force('link', d3.forceLink(links))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force(
-        'collision',
-        d3.forceCollide().radius((d: any) => d.radius + 4)
-      )
-      .force('x', d3.forceX().strength(0.08))
-      .force('y', d3.forceY().strength(0.08))
-      .on('tick', ticked)
-    svg = d3
-      .select(graphRef.value)
-      .attr('width', width)
-      .attr('height', height)
-      .attr('viewBox', [0, 0, width, height])
-      .attr('style', 'max-width: 100%; height: auto;')
-
-    gg = svg.append('g').attr('cursor', 'grab')
-
-    gnodes = gg.selectAll('gnode').data(allTaskNodes).enter().append('g').classed('gnode', true)
-
-    svg
-      .append('defs')
-      .append('marker')
-      .attr('id', 'arrowhead')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 8)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', '#AAA')
-
-    link = gg
-      .selectAll('line')
-      .data(links)
-      .join('line')
-      //.attr('stroke-width', (d: d3Link<Task>) => (d.source as d3Node<Task>).obj.hard_postreq_ids.length**2)
-      .attr('stroke', '#FFF')
-      .attr('stroke-opacity', '0.5')
-      .attr('marker-end', 'url(#arrowhead)')
-
-    node = gnodes
-      .append('circle')
-      .attr('r', (d: d3Node<Task>) => d.radius)
-      .attr('fill', (d: d3Node<Task>) => d.color)
-      .on('mouseover', raise)
-
-    label = gnodes
-      .filter(
-        (x: d3Node<Task>) =>
-          !x.obj.completed &&
-          (x.radius >= 12 || x.obj.grabPrereqs(false).filter((x) => !x.completed).length === 0)
-      )
-      .append('text')
-      .text((d: d3Node<Task>) => d.obj.title)
-      .style('font', '1.2em')
-      .attr('stroke', 'black')
-      .attr('stroke-width', '0.3em')
-      .attr('class', 'text-primary')
-      .attr('fill', '#DDD')
-      .attr('paint-order', 'stroke')
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    svg.call(CustomForceGraph.d3PanAndGeometricZoom(gg))
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    node.call(CustomForceGraph.d3DragDefaults(simulation))
-
-    node.on('click', (event) => {
-      openUpdateTaskDialog(event.target.__data__.obj as Task)
-        .onOk(reInitializeGraph)
-        .onCancel(reInitializeGraph)
-        .onDismiss(reInitializeGraph)
-    })
-  }
-
-  const reInitializeGraph = () => {
-    simulation.stop()
-    svg.selectAll('line').remove()
-    svg.selectAll('.gnode').remove()
-    svg.selectAll('defs').remove()
-    populate()
-    initializeGraph()
-    usr.hideCompleted = incompleteOnly.value
-  }
-
-  // const toggleIncompleteOnly = () => {
-  //   incompleteOnly.value = !incompleteOnly.value
-  //   reInitializeGraph()
-  // }
-
-  // const refresh = reInitializeGraph
-
-  onMounted(initializeGraph)
-
-  const biggest = (prev: d3Node<Task>, curr: d3Node<Task>) =>
-    curr.radius > prev.radius ? curr : prev
-  const openLargest = () =>
-    openUpdateTaskDialog(allTaskNodes.reduce(biggest).obj)
-      .onOk(reInitializeGraph)
-      .onCancel(reInitializeGraph)
-      .onDismiss(reInitializeGraph)
 </script>
+
+<style scoped>
+  .graph-page {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    height: 100%;
+  }
+
+  .graph-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: #1d1d1df6;
+    overflow: hidden;
+  }
+
+  .graph-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .graph-container svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .search-input {
+    min-width: 200px;
+    max-width: 300px;
+  }
+</style>
 
 <style>
   svg text {
