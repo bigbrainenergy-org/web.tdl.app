@@ -41,7 +41,7 @@
             Add Prerequisites
           </q-tooltip>
         </q-btn>
-        <q-btn dense flat icon="fa fa-check" @click="currentTask.toggleCompleted().then(considerOpeningQuickSortDialog)" />
+        <q-btn dense flat icon="fa fa-check" @click="currentTask.toggleCompleted()" />
         <q-btn dense flat icon="play_arrow" @click.stop="handleTimerClick(currentTask)">
           <q-menu v-if="!currentTask.task_duration_in_minutes" auto-close>
             <q-list style="min-width: 100px">

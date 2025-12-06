@@ -138,9 +138,9 @@ export function openTaskBreakdownDialog(task: Task) {
 export function considerOpeningQuickSortDialog() {
   const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
     useLocalSettingsStore()
-  const { quickSortDialogActive } = useLoadingStateStore()
-  if (quickSortDialogActive) return
   if (disableQuickSort) return
+  const { quickSortDialogActive, breakdownDialogActive } = useLoadingStateStore()
+  if (quickSortDialogActive || breakdownDialogActive) return
 
   // First, check if any tasks in the sorted agenda view need refinement
   const taskStore = useTaskStore()
