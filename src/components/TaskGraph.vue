@@ -96,8 +96,8 @@
 
     simulation = d3
       .forceSimulation(localNodes)
-      .alphaDecay(0.035)
-      .velocityDecay(0.45)
+      .alphaDecay(0.1)
+      .velocityDecay(0.6)
       .force('charge', d3.forceManyBody().strength(-200))
       .force('link', d3.forceLink(localLinks).distance(100))
       .force('center', d3.forceCenter(w / 2, h / 2))
@@ -194,7 +194,7 @@
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     svg.call(CustomForceGraph.d3PanAndGeometricZoom(gg))
-    node.call(CustomForceGraph.d3DragDefaults(simulation))
+    node.call(CustomForceGraph.d3DragDefaults(simulation, gg))
 
     node.on('click', (event: MouseEvent) => {
       const task = (event.target as any).__data__.obj as Task
@@ -310,13 +310,36 @@
           g.transition().duration(FADE_DURATION).style('opacity', 1)
           return g
         },
-        (update: any) => update,
+        (update: any) => {
+          // Update stroke colors for highlighting changes (center task, search results)
+          update.select('circle')
+            .attr('stroke', (d: GraphNode) => {
+              if (d.isSearchResult) return '#A855F7'
+              if (d.isCenterTask) return '#FFD700'
+              return 'none'
+            })
+          update.select('path')
+            .attr('stroke', (d: GraphNode) => {
+              if (d.isSearchResult) return '#A855F7'
+              if (d.obj.completed) return '#888'
+              if (d.isCenterTask) return '#FFD700'
+              return '#FFD700'
+            })
+          // Update label colors
+          update.select('text')
+            .attr('fill', (d: GraphNode) => {
+              if (d.isSearchResult) return '#A855F7'
+              if (d.isCenterTask) return '#FFD700'
+              return '#CCC'
+            })
+          return update
+        },
         (exit: any) => exit.transition().duration(FADE_DURATION).style('opacity', 0).remove()
       )
 
     // Update node selection and handlers
     node = gnodes.select('circle, path')
-    node.call(CustomForceGraph.d3DragDefaults(simulation))
+    node.call(CustomForceGraph.d3DragDefaults(simulation, gg))
     node.on('click', (event: MouseEvent) => {
       const task = (event.target as any).__data__.obj as Task
       emit('nodeClick', task)

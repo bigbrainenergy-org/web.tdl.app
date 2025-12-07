@@ -19,14 +19,14 @@ export interface d3Node<T> extends d3.SimulationNodeDatum {
 }
 
 export class CustomForceGraph {
-  static d3DragDefaults(sim: d3.Simulation<GraphNode, undefined>) {
+  static d3DragDefaults(sim: d3.Simulation<GraphNode, undefined>, container?: d3.Selection<any, any, any, any>) {
     // Reheat the simulation when drag starts, and fix the subject position.
     function dragstarted(
       this: SVGCircleElement,
       event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>,
       d: GraphNode
     ) {
-      if (!event.active) sim.alphaTarget(0.5).restart()
+      if (!event.active) sim.alphaTarget(0.3).restart()
       event.subject.fx = event.subject.x
       event.subject.fy = event.subject.y
     }
@@ -37,12 +37,19 @@ export class CustomForceGraph {
       event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>,
       d: GraphNode
     ) {
-      event.subject.fx = event.x
-      event.subject.fy = event.y
+      // Use d3.pointer with container to get coordinates in transformed space
+      if (container) {
+        const [x, y] = d3.pointer(event, container.node())
+        event.subject.fx = x
+        event.subject.fy = y
+      } else {
+        event.subject.fx = event.x
+        event.subject.fy = event.y
+      }
     }
 
     // Restore the target alpha so the simulation cools after dragging ends.
-    // Unfix the subject position now that it’s no longer being dragged.
+    // Unfix the subject position now that it's no longer being dragged.
     function dragended(
       this: SVGCircleElement,
       event: d3.D3DragEvent<SVGCircleElement, GraphNode, GraphNode>,
