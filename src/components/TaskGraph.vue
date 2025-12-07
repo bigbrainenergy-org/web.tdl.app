@@ -36,6 +36,9 @@
   let link: any = null
   let label: any = null
 
+  // Animation constants
+  const FADE_DURATION = 200 // ms
+
   // Local copies of data for D3 mutation
   let localNodes: GraphNode[] = []
   let localLinks: GraphLink[] = []
@@ -93,6 +96,8 @@
 
     simulation = d3
       .forceSimulation(localNodes)
+      .alphaDecay(0.035)
+      .velocityDecay(0.45)
       .force('charge', d3.forceManyBody().strength(-200))
       .force('link', d3.forceLink(localLinks).distance(100))
       .force('center', d3.forceCenter(w / 2, h / 2))
@@ -237,11 +242,12 @@
       .join(
         (enter: any) => enter.append('line')
           .attr('stroke', '#FFF')
-          .attr('stroke-opacity', 0)
+          .attr('stroke-opacity', 0.5)
           .attr('marker-end', 'url(#task-graph-arrow)')
-          .call((e: any) => e.transition().duration(300).attr('stroke-opacity', 0.5)),
+          .style('opacity', 0)
+          .call((e: any) => e.transition().duration(FADE_DURATION).style('opacity', 1)),
         (update: any) => update,
-        (exit: any) => exit.transition().duration(300).attr('stroke-opacity', 0).remove()
+        (exit: any) => exit.transition().duration(FADE_DURATION).style('opacity', 0).remove()
       )
 
     // Update gnodes with join
@@ -301,11 +307,11 @@
             .attr('x', 0)
             .attr('y', (d: GraphNode) => -d.radius - 5)
 
-          g.transition().duration(300).style('opacity', 1)
+          g.transition().duration(FADE_DURATION).style('opacity', 1)
           return g
         },
         (update: any) => update,
-        (exit: any) => exit.transition().duration(300).style('opacity', 0).remove()
+        (exit: any) => exit.transition().duration(FADE_DURATION).style('opacity', 0).remove()
       )
 
     // Update node selection and handlers

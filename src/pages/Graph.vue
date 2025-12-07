@@ -180,16 +180,18 @@
 
 <style scoped>
   .graph-page {
-    display: flex;
-    flex-direction: column;
+    position: relative;
     padding: 16px;
-    height: 100%;
   }
 
   .graph-card {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
     display: flex;
     flex-direction: column;
-    flex: 1;
     background-color: #1d1d1df6;
     overflow: hidden;
   }
