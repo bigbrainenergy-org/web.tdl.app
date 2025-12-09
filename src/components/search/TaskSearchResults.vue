@@ -44,6 +44,7 @@
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import { filtered_tasks } from 'src/stores/tasks/task-view'
   import TaskItem from '../TaskItem.vue'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   interface Prop {
     search: string | undefined
@@ -100,12 +101,6 @@
 
   const results = ref<Task[]>([])
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
   const tasks = computed(
     timeThisB(
       () => {
@@ -125,7 +120,7 @@
       return
     } // Guard clause if search is empty
 
-    const fuse = new Fuse(filtered_tasks.value as Task[], searchOptions)
+    const fuse = new Fuse(filtered_tasks.value as Task[], fuseOptions)
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.

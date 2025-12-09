@@ -15,7 +15,7 @@
   <q-space />
   
   <!-- <q-btn icon="fa-solid fa-search" class="text-primary" @click="openBespokeSearchDialog()" /> -->
-  <TaskSearchInput v-model:model-value="searchInput" search-label="Search or Create Tasks" :debounce="debounceAmount" @do-a-search="searchForTasks" @create-task="createTask" />
+  <TaskSearchInput v-model:model-value="searchInput" v-model:search-all-tasks="searchAllTasks" search-label="Search or Create Tasks" :debounce="debounceAmount" :show-all-checkbox="true" @do-a-search="searchForTasks" @create-task="createTask" />
   <q-btn dense flat no-wrap>
     <q-icon name="arrow_drop_down" />
     <q-menu auto-close>
@@ -73,6 +73,7 @@
   import { Logger } from 'src/utils/d'
   import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
   import { searchInput } from 'src/stores/tasks/task-utils'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   const taskListActionsLogger = new Logger('Task List Actions', '#555555')
   taskListActionsLogger.log('component mounting')
@@ -97,7 +98,10 @@
 
   const toggleAgenda = () => {
     if(currentSortingMode.value === 'sortByAgenda') currentSortingMode.value = 'sortByPostreqs'
-    else currentSortingMode.value = 'sortByAgenda'
+    else {
+      console.log('agenda mode is now on')
+      currentSortingMode.value = 'sortByAgenda'
+    }
   }
 
   const { busy } = storeToRefs(useLoadingStateStore())
@@ -172,23 +176,25 @@
   }
 
   const debounceAmount = ref(100)
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
+  const searchAllTasks = ref(false)
 
   // Lazy Fuse instance - only create when actually searching
   let fuseInstance: Fuse<Task> | null = null
   let fuseTasksVersion = 0
+  let fuseSearchAllMode = false
 
   const getFuse = () => {
-    const currentVersion = tasks.value.length
-    if (!fuseInstance || fuseTasksVersion !== currentVersion) {
+    // Use ALL tasks (including completed) if searchAllTasks is enabled
+    const searchSource = searchAllTasks.value ? useTaskStore().array : tasks.value
+    const currentVersion = searchSource.length
+    const modeChanged = fuseSearchAllMode !== searchAllTasks.value
+
+    if (!fuseInstance || fuseTasksVersion !== currentVersion || modeChanged) {
       const fuseStart = performance.now()
-      fuseInstance = new Fuse(tasks.value, searchOptions) // Don't spread - Fuse doesn't mutate
+      fuseInstance = new Fuse(searchSource, fuseOptions) // Don't spread - Fuse doesn't mutate
       fuseTasksVersion = currentVersion
-      taskListActionsLogger.log(`created new Fuse instance in ${performance.now() - fuseStart}ms for ${tasks.value.length} tasks`)
+      fuseSearchAllMode = searchAllTasks.value
+      taskListActionsLogger.log(`created new Fuse instance in ${performance.now() - fuseStart}ms for ${searchSource.length} tasks (searchAll=${searchAllTasks.value})`)
     }
     return fuseInstance
   }
