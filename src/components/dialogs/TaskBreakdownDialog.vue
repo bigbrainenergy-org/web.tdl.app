@@ -15,8 +15,8 @@
 
           <!-- Incomplete Prerequisites -->
           <div v-if="incompletePrereqs.length > 0" class="q-mb-md">
-            <div class="text-caption text-grey-6 q-mb-xs">Prerequisites ({{ incompletePrereqs.length }}):</div>
-            <div class="text-caption text-grey-8">
+            <div class="text-caption text-primary q-mb-xs">Prerequisites ({{ incompletePrereqs.length }}):</div>
+            <div class="text-caption text-primary">
               <div v-for="prereq in visiblePrereqs" :key="prereq.id" class="q-pl-sm">
                 • {{ prereq.title }}
               </div>
@@ -27,7 +27,7 @@
                 no-caps
                 size="sm"
                 :label="showAllPrereqs ? 'Show less' : `Show ${incompletePrereqs.length - 3} more`"
-                class="q-pl-sm text-grey-6"
+                class="q-pl-sm text-primary"
                 @click="showAllPrereqs = !showAllPrereqs"
               />
             </div>
