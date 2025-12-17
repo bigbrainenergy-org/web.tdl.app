@@ -235,8 +235,18 @@ export function addPrerequisitesDialog(currentTask: Task) {
       dialogTitle: 'Add Prerequisite',
       taskID: currentTask.id,
       showCreateButton: true,
-      onSelect: async (payload: { task: TaskLike }) => {
-        await addPre(currentTask, payload.task.id)
+      onSelect: async (payload: { task?: CreateTaskOptions, id?: number }) => {
+        Dialogger.log(`onSelect: Starting addPre for ${payload.id ? `task ${payload.id}...` : 'new task' }`)
+        const start = performance.now()
+        if(payload.id) {
+          await addPre(currentTask, payload.id)
+          Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
+        }
+        else if (payload.task) {
+          const newTask = await useTaskStore().apiCreate(payload.task)
+          Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
+        }
+        
       },
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')

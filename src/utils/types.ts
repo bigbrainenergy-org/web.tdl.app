@@ -98,6 +98,7 @@ const icons = [
   'fa-solid fa-star',
   'fa-solid fa-list-check',
   'fa-solid fa-calendar-day',
+  'fa-solid fa-folder-open',
   'hub',
   'self_improvement'
 ] as const

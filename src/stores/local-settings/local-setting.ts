@@ -92,6 +92,13 @@ const originalToolbarButtons: RouteTab[] = [
     default: false
   },
   {
+    icon: 'fa-solid fa-folder-open',
+    to: '/projects',
+    label: 'Projects',
+    enabled: true,
+    default: true
+  },
+  {
     icon: 'fa-solid fa-star',
     to: '/routines',
     label: 'Routines',

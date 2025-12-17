@@ -194,6 +194,7 @@
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     svg.call(CustomForceGraph.d3PanAndGeometricZoom(gg))
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     node.call(CustomForceGraph.d3DragDefaults(simulation, gg))
 
     node.on('click', (event: MouseEvent) => {
@@ -339,6 +340,7 @@
 
     // Update node selection and handlers
     node = gnodes.select('circle, path')
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     node.call(CustomForceGraph.d3DragDefaults(simulation, gg))
     node.on('click', (event: MouseEvent) => {
       const task = (event.target as any).__data__.obj as Task

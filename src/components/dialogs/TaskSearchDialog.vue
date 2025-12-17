@@ -78,6 +78,7 @@
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
   import TaskItem from '../TaskItem.vue'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   interface Props {
     dialogTitle: string
@@ -211,13 +212,7 @@
 
   const tasks = computed(getTasks)
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
-  const fuse = computed(() => new Fuse(tasks.value ?? [], searchOptions))
+  const fuse = computed(() => new Fuse(tasks.value ?? [], fuseOptions))
 
   const searchForTasks = () => {
     const start = performance.now()

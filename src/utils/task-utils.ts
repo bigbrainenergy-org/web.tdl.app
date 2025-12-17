@@ -24,12 +24,14 @@ export function updateTask(id: number, options: AllOptionalTaskProperties) {
 }
 
 export async function addPre(task: Task, newPreID: number) {
-  TaskUtilsLogger.log('addPre')
+  TaskUtilsLogger.log(`addPre called: adding ${newPreID} as prereq to ${task.id}`)
   const start = performance.now()
-  return useTaskStore()
-    .addRule(newPreID, task.id)
-    .then(() => {
+  const beforeAddRule = performance.now()
+  const result = useTaskStore().addRule(newPreID, task.id)
+  TaskUtilsLogger.log(`addRule returned promise in ${performance.now() - beforeAddRule}ms`)
+  return result.then(() => {
       const duration = performance.now() - start
+      TaskUtilsLogger.log(`addPre .then() fired after ${duration}ms total`)
       notifySuccess('Added Prerequisite', 'fa-solid fa-link')
       TaskUtilsLogger.assert(
         duration < 800,

@@ -402,30 +402,30 @@
 
     // Try to find a replacement task from layerZero that's not already in the current pair
     // Filter out completed tasks manually since layerZero might not have updated yet
-    const currentIds = new Set(currentPair.value.map(t => t.id))
-    const availableReplacements = taskStore.array.filter(task => {
-      // Must be incomplete
-      if (task.completed) return false
-      // Must not be in current pair
-      if (currentIds.has(task.id)) return false
-      // Must not have been a prior MVP
-      if (priorMVPs.has(task.id)) return false
-      // Must have no incomplete prereqs (layer zero)
-      const incompletePres = task.grabPrereqs(true).filter(p => !p.completed)
-      if (incompletePres.length > 0) return false
-      return true
-    })
+    // const currentIds = new Set(currentPair.value.map(t => t.id))
+    // const availableReplacements = taskStore.array.filter(task => {
+    //   // Must be incomplete
+    //   if (task.completed) return false
+    //   // Must not be in current pair
+    //   if (currentIds.has(task.id)) return false
+    //   // Must not have been a prior MVP
+    //   if (priorMVPs.has(task.id)) return false
+    //   // Must have no incomplete prereqs (layer zero)
+    //   const incompletePres = task.grabPrereqs(true).filter(p => !p.completed)
+    //   if (incompletePres.length > 0) return false
+    //   return true
+    // })
 
-    if (availableReplacements.length > 0) {
-      // Pick a random replacement
-      const replacement = availableReplacements[Math.floor(Math.random() * availableReplacements.length)]!
-      quickSortLogger.debug(`Adding replacement task ${replacement.id}`)
-      currentPair.value = [...remainingTasks, replacement]
-    } else {
-      // No replacement available, just use the remaining tasks
-      quickSortLogger.debug('No replacement available, continuing with remaining tasks')
-      currentPair.value = remainingTasks
-    }
+    // if (availableReplacements.length > 0) {
+    //   // Pick a random replacement
+    //   const replacement = availableReplacements[Math.floor(Math.random() * availableReplacements.length)]!
+    //   quickSortLogger.debug(`Adding replacement task ${replacement.id}`)
+    //   currentPair.value = [...remainingTasks, replacement]
+    // } else {
+    //   // No replacement available, just use the remaining tasks
+    //   quickSortLogger.debug('No replacement available, continuing with remaining tasks')
+    //   currentPair.value = remainingTasks
+    // }
 
     await reinitializeDragAndDrop()
   }

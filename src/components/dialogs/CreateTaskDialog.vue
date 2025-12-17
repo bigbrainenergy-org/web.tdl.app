@@ -90,7 +90,7 @@
   // onDialogCancel - Function to call to settle dialog with "cancel" outcome
 
   const title = ref('')
-  const notes = ref('')
+  const notes = ref('!!REFINE')
 
   const titleInput = ref()
   const notesInput = ref()

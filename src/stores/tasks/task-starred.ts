@@ -4,52 +4,94 @@ import { dontLookAtMe } from './look-i-dont-make-the-rules'
 import { useTaskStore } from './task-store'
 import { recalculate } from './task-view'
 
+const STAR_MARKER = '!!STAR'
+
+/**
+ * Add !!STAR marker to notes if not present
+ */
+function addStarMarker(notes: string | undefined): string {
+  if (!notes) return STAR_MARKER
+  if (notes.includes(STAR_MARKER)) return notes
+  return `${STAR_MARKER}\n${notes}`
+}
+
+/**
+ * Remove !!STAR marker from notes
+ */
+function removeStarMarker(notes: string | undefined): string {
+  if (!notes) return ''
+  return notes.replace(new RegExp(`${STAR_MARKER}\\n?`, 'g'), '').trim()
+}
+
 export const useTaskStarredStore = defineStore('task-starred', {
   state: () => ({
-    // Use array for persistence, convert to Set in getters
+    // Array for localStorage persistence (fast initial load)
     _starredIds: [] as number[],
-    // Maintain Set for O(1) performance (not persisted)
+    // Set for O(1) performance (synced from task notes on refresh_all)
     _starredSet: new Set<number>(),
     // Cache for count of starred descendants per task (for weighted prioritization)
     starredDescendantCounts: new Map<number, number>(),
     _cacheTimeout: null as any
   }),
-  
+
   getters: {
     // Return the performance Set for external consumers
     ids: (state): Set<number> => state._starredSet
   },
-  
+
   actions: {
     /**
-     * Initialize the Set from the persisted array (called after hydration)
+     * Initialize Set from localStorage array (called after hydration)
      */
     _syncSetFromArray() {
       this._starredSet = new Set(this._starredIds)
     },
-    
+
     /**
-     * Add a task to the starred set
+     * Sync from task notes - the DB source of truth (called during refresh_all)
+     */
+    initializeFromTasks(tasks: TaskLike[]) {
+      const starredIds = tasks.filter(t => t.notes?.includes(STAR_MARKER)).map(t => t.id)
+      this._starredIds = starredIds
+      this._starredSet = new Set(starredIds)
+    },
+
+    /**
+     * Add a task to the starred set and update its notes
      */
     star(taskId: number) {
       if (!this._starredSet.has(taskId)) {
         this._starredIds.push(taskId)
         this._starredSet.add(taskId)
+        // Update notes in DB (only if marker not already present)
+        const task = useTaskStore().mapp.get(taskId)
+        if (task) {
+          const newNotes = addStarMarker(task.notes)
+          if (newNotes !== task.notes) {
+            useTaskStore().apiUpdate(taskId, { notes: newNotes }, { skipRecalculate: true })
+          }
+        }
       }
       this.invalidateDescendantCache()
       recalculate('star')
     },
 
     /**
-     * Remove a task from the starred set
+     * Remove a task from the starred set and update its notes
      */
     unstar(taskId: number) {
       if (this._starredSet.has(taskId)) {
         const index = this._starredIds.indexOf(taskId)
-        if (index !== -1) {
-          this._starredIds.splice(index, 1)
-        }
+        if (index !== -1) this._starredIds.splice(index, 1)
         this._starredSet.delete(taskId)
+        // Update notes in DB (only if marker not already present)
+        const task = useTaskStore().mapp.get(taskId)
+        if (task) {
+          const newNotes = removeStarMarker(task.notes)
+          if (newNotes !== task.notes) {
+            useTaskStore().apiUpdate(taskId, { notes: newNotes }, { skipRecalculate: true })
+          }
+        }
       }
       this.invalidateDescendantCache()
       recalculate('unstar')
@@ -179,12 +221,10 @@ export const useTaskStarredStore = defineStore('task-starred', {
       }, 150)
     }
   },
-  
+
   persist: {
     key: 'task-starred',
-    // Persist the array, which can be properly serialized
     paths: ['_starredIds'],
-    // Sync Set from array after hydration
     afterRestore: (ctx) => {
       ctx.store._syncSetFromArray()
     }

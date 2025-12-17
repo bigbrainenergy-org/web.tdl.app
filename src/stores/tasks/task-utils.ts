@@ -9,3 +9,4 @@ export const taskLike = (t: TaskLike | CreateTaskOptions, k: keyof TaskLike): t 
 export const stuckTasks = ref(new Set<number>())
 export const mostSuspiciousStuckTasks = ref(new Set<number>())
 export const searchInput = ref<string | undefined>(undefined)
+export const searchAll = ref<boolean>(false)

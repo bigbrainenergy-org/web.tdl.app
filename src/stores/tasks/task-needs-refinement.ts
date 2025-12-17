@@ -1,10 +1,31 @@
 import { defineStore } from 'pinia'
+import { useTaskStore } from './task-store'
+import type { TaskLike } from './task-interfaces-types'
+
+const REFINE_MARKER = '!!REFINE'
+
+/**
+ * Add !!REFINE marker to notes if not present
+ */
+function addRefineMarker(notes: string | undefined): string {
+  if (!notes) return REFINE_MARKER
+  if (notes.includes(REFINE_MARKER)) return notes
+  return `${REFINE_MARKER}\n${notes}`
+}
+
+/**
+ * Remove !!REFINE marker from notes
+ */
+function removeRefineMarker(notes: string | undefined): string {
+  if (!notes) return ''
+  return notes.replace(new RegExp(`${REFINE_MARKER}\\n?`, 'g'), '').trim()
+}
 
 export const useTaskNeedsRefinementStore = defineStore('task-needs-refinement', {
   state: () => ({
-    // Use array for persistence, convert to Set in getters
+    // Array for localStorage persistence (fast initial load)
     _needsRefinementIds: [] as number[],
-    // Maintain Set for O(1) performance (not persisted)
+    // Set for O(1) performance (synced from task notes on refresh_all)
     _needsRefinementSet: new Set<number>()
   }),
 
@@ -15,32 +36,53 @@ export const useTaskNeedsRefinementStore = defineStore('task-needs-refinement', 
 
   actions: {
     /**
-     * Initialize the Set from the persisted array (called after hydration)
+     * Initialize Set from localStorage array (called after hydration)
      */
     _syncSetFromArray() {
       this._needsRefinementSet = new Set(this._needsRefinementIds)
     },
 
     /**
-     * Mark a task as needing refinement
+     * Sync from task notes - the DB source of truth (called during refresh_all)
+     */
+    initializeFromTasks(tasks: TaskLike[]) {
+      const refinementIds = tasks.filter(t => t.notes?.includes(REFINE_MARKER)).map(t => t.id)
+      this._needsRefinementIds = refinementIds
+      this._needsRefinementSet = new Set(refinementIds)
+    },
+
+    /**
+     * Mark a task as needing refinement and update its notes
      */
     markNeedsRefinement(taskId: number) {
       if (!this._needsRefinementSet.has(taskId)) {
         this._needsRefinementIds.push(taskId)
         this._needsRefinementSet.add(taskId)
+        // Update notes in DB (only if marker not already present)
+        const task = useTaskStore().mapp.get(taskId)
+        if (task) {
+          const newNotes = addRefineMarker(task.notes)
+          if (newNotes !== task.notes) {
+            useTaskStore().apiUpdate(taskId, { notes: newNotes }, { skipRecalculate: true })
+          }
+        }
       }
     },
 
     /**
-     * Unmark a task as needing refinement
+     * Unmark a task as needing refinement and update its notes
      */
     unmarkNeedsRefinement(taskId: number) {
       if (this._needsRefinementSet.has(taskId)) {
         const index = this._needsRefinementIds.indexOf(taskId)
-        if (index !== -1) {
-          this._needsRefinementIds.splice(index, 1)
-        }
+        if (index !== -1) this._needsRefinementIds.splice(index, 1)
         this._needsRefinementSet.delete(taskId)
+        // Update notes in DB
+        const task = useTaskStore().mapp.get(taskId)
+        if (task) {
+          const newNotes = removeRefineMarker(task.notes)
+          useTaskStore().apiUpdate(taskId, { notes: newNotes }, { skipRecalculate: true })
+        }
       }
     },
 
@@ -72,9 +114,7 @@ export const useTaskNeedsRefinementStore = defineStore('task-needs-refinement', 
 
   persist: {
     key: 'task-needs-refinement',
-    // Persist the array, which can be properly serialized
     paths: ['_needsRefinementIds'],
-    // Sync Set from array after hydration
     afterRestore: (ctx) => {
       ctx.store._syncSetFromArray()
     }

@@ -152,16 +152,34 @@ export const useTaskStore = defineStore('tasks', {
         }, handleError('Error getting '))
     },
     apiCreate(task: CreateTaskOptions, { skipRecalculate = false }: { skipRecalculate?: boolean } = {}) {
+      const createStart = performance.now()
+      TaskStoreLogger.log('apiCreate: starting POST...')
       return this.api()
         .post('/tasks', task, this.commonHeader())
         .then((result: AxiosResponse<TaskLike>) => {
+          TaskStoreLogger.log(`apiCreate: POST completed in ${performance.now() - createStart}ms`)
+
+          const updateStart = performance.now()
           const r = this.updateSingle(result.data)
+          TaskStoreLogger.log(`apiCreate: updateSingle took ${performance.now() - updateStart}ms`)
+
+          // Initialize ewww store for new task - critical for dependency tracking!
+          const ewwwStart = performance.now()
+          ewww.refresh(result.data)
+          TaskStoreLogger.log(`apiCreate: ewww.refresh took ${performance.now() - ewwwStart}ms`)
+
+          const refineStart = performance.now()
           // Mark newly created tasks as needing refinement by default
           useTaskNeedsRefinementStore().markNeedsRefinement(result.data.id)
+          TaskStoreLogger.log(`apiCreate: markNeedsRefinement took ${performance.now() - refineStart}ms`)
+
           notifySuccess('Task was created')
           if (!skipRecalculate) {
+            const recalcStart = performance.now()
             recalculate('apicreate')
+            TaskStoreLogger.log(`apiCreate: recalculate took ${performance.now() - recalcStart}ms`)
           }
+          TaskStoreLogger.log(`apiCreate: total .then() took ${performance.now() - createStart}ms`)
           return r
         }, handleError('Error creating a task.'))
     },
@@ -172,36 +190,68 @@ export const useTaskStore = defineStore('tasks', {
      * @returns
      */
     async apiUpdate(id: number, task: AllOptionalTaskProperties, options: { skipRecalculate?: boolean } = { skipRecalculate: false }) {
-      try {
-        const timings: any = {
-          apiUpdateTotal: performance.now(),
-          overNetwork: performance.now()
-        }
-        await this.apiPushChanges(id, task).then((result: AxiosResponse<TaskLike>) => {
-            timings.overNetwork = performance.now() - timings.overNetwork
-            this.updateSingle(result.data)
-            const tmp = this.hardGet(result.data.id)
-            ewww.refresh(result.data)
-            if(task.hard_prereq_ids) {
-              ewww.refreshPres(result.data)
-              ewww.grabPres(tmp.id).forEach(x => ewww.refreshPosts(x))
-            }
-            if(task.hard_postreq_ids) {
-              ewww.refreshPosts(result.data)
-              ewww.grabPosts(tmp.id).forEach(x => ewww.refreshPres(x))
-            }
-            if(typeof task.completed !== 'undefined') {
-              ewww.updateCompletedStatus(tmp)
-            }
-            if(!options.skipRecalculate) recalculate('apiUpdate')
-            timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
-            TaskStoreLogger.log(`APIUPDATE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
-          })
-      } catch (e) {
-        TaskStoreLogger.error(e)
+      const timings: any = {
+        apiUpdateTotal: performance.now(),
+        eagerUpdate: performance.now(),
+        overNetwork: 0
       }
-      //this.array = [...this.array] // deep reactivity more like deep apathy am I right
-      return
+
+      const existingTask = this.hardGet(id)
+
+      // Store old values for potential rollback
+      const oldValues: Partial<AllOptionalTaskProperties> = {}
+      for (const key of Object.keys(task) as (keyof AllOptionalTaskProperties)[]) {
+        oldValues[key] = existingTask[key] as any
+      }
+
+      // EAGER UPDATE: Apply changes locally first
+      Object.assign(existingTask, task)
+
+      // Update ewww for dependency/completion changes
+      ewww.refresh(existingTask)
+      if (task.hard_prereq_ids) {
+        ewww.refreshPres(existingTask)
+        ewww.grabPres(existingTask.id).forEach(x => ewww.refreshPosts(x))
+      }
+      if (task.hard_postreq_ids) {
+        ewww.refreshPosts(existingTask)
+        ewww.grabPosts(existingTask.id).forEach(x => ewww.refreshPres(x))
+      }
+      if (typeof task.completed !== 'undefined') {
+        ewww.updateCompletedStatus(existingTask)
+      }
+
+      timings.eagerUpdate = performance.now() - timings.eagerUpdate
+
+      if (!options.skipRecalculate) recalculate('apiUpdate')
+
+      // Sync with API in background
+      timings.overNetwork = performance.now()
+      try {
+        const result = await this.apiPushChanges(id, task)
+        timings.overNetwork = performance.now() - timings.overNetwork
+        // Update with server response (may have additional computed fields)
+        this.updateSingle(result.data)
+        timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
+        TaskStoreLogger.log(`APIUPDATE TIMINGS (eager): ${JSON.stringify(timings, undefined, '\n')}`)
+      } catch (e) {
+        // Rollback on API failure
+        TaskStoreLogger.error('apiUpdate API failed, rolling back local changes', e)
+        Object.assign(existingTask, oldValues)
+        ewww.refresh(existingTask)
+        if (task.hard_prereq_ids) {
+          ewww.refreshPres(existingTask)
+          ewww.grabPres(existingTask.id).forEach(x => ewww.refreshPosts(x))
+        }
+        if (task.hard_postreq_ids) {
+          ewww.refreshPosts(existingTask)
+          ewww.grabPosts(existingTask.id).forEach(x => ewww.refreshPres(x))
+        }
+        if (typeof task.completed !== 'undefined') {
+          ewww.updateCompletedStatus(existingTask)
+        }
+        if (!options.skipRecalculate) recalculate('apiUpdate-rollback')
+      }
     },
     async apiPushChanges(id: number, task: AllOptionalTaskProperties) {
       const result = await this.api().patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
@@ -229,11 +279,11 @@ export const useTaskStore = defineStore('tasks', {
       const queue = new Queue<number>()
       const preIDs = incompleteOnly
         ? (t: Task) => {
-          const pres = task.hard_prereq_ids.map(retrieve).filter((x) => !x.completed)
+          const pres = t.hard_prereq_ids.map(retrieve).filter((x) => !x.completed)
           return pres.map((x) => x.id)
         }
         : (t: Task) => {
-          const pres = task.hard_prereq_ids.map(retrieve)
+          const pres = t.hard_prereq_ids.map(retrieve)
           return pres.map((x) => x.id)
         }
       const thisPres = preIDs(task)
@@ -289,33 +339,49 @@ export const useTaskStore = defineStore('tasks', {
       if (ids_after_first.has(second_id)) {
         throw new Error('First task is already scheduled to happen before the second.')
       }
-      // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
+
+      // EAGER UPDATE: Apply changes locally first for instant UI feedback
+      timings.patchState = performance.now()
+      if (!skipBatchOperations) {
+        first.hard_postreq_ids = [...first.hard_postreq_ids, second_id]
+        second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
+      }
+      timings.patchState = performance.now() - timings.patchState
+
+      timings.ewwwAddRule = performance.now()
+      ewww.addRule(first_id, second_id)
+      timings.ewwwAddRule = performance.now() - timings.ewwwAddRule
+      TaskStoreLogger.debug(`Added the dependency ${first_id} -> ${second_id} (eager)`)
+
+      if (!skipBatchOperations) {
+        timings.refreshStarredCache = performance.now()
+        this.refreshStarredCache()
+        timings.refreshStarredCache = performance.now() - timings.refreshStarredCache
+      }
+
+      if (!skipRecalculate && !skipBatchOperations) {
+        recalculate('addRule')
+      }
+
+      // Sync with API in background - handle errors if they occur
       timings.apiUpdate = performance.now()
-      return this.apiPushChanges(first.id, { hard_postreq_ids: [...first.hard_postreq_ids, second_id] }).then(() => {
-        if (!skipBatchOperations) {
-          // Normal path: update local state immediately
-          this.$patch(state => {
-            first.hard_postreq_ids = [...first.hard_postreq_ids, second_id]
-            second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
-          })
-        }
-        // Always update ewww (doesn't trigger persistence, needed for next iterations)
-        ewww.addRule(first_id, second_id)
-        TaskStoreLogger.debug(`Added the dependency ${first_id} -> ${second_id}`)
+      return this.apiPushChanges(first.id, { hard_postreq_ids: first.hard_postreq_ids }).then(() => {
         timings.apiUpdate = performance.now() - timings.apiUpdate
         timings.addRuleTotal = performance.now() - timings.addRuleTotal
-
+        TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
+      }, (error) => {
+        // Rollback on API failure
+        TaskStoreLogger.error('addRule API failed, rolling back local changes', error)
         if (!skipBatchOperations) {
-          // Refresh starred cache when task structure changes
-          this.refreshStarredCache()
-          TaskStoreLogger.log({ first_postreqs: first.hard_postreq_ids, second_prereqs: second.hard_prereq_ids })
+          first.hard_postreq_ids = first.hard_postreq_ids.filter(id => id !== second_id)
+          second.hard_prereq_ids = second.hard_prereq_ids.filter(id => id !== first_id)
         }
-
+        ewww.removeRule(first_id, second_id)
         if (!skipRecalculate && !skipBatchOperations) {
-          recalculate('addRule')
+          recalculate('addRule-rollback')
         }
-        //TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
-      }, handleError('Failed to add the dependency.'))
+        handleError('Failed to add the dependency.')(error as Error)
+      })
     },
     removeRule(first_id: number, second_id: number) {
       const first = this.hardGet(first_id)

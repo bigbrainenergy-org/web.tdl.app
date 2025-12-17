@@ -84,12 +84,14 @@
   import GloriousToggle from '../glorious/GloriousToggle.vue'
   import TaskItem from '../TaskItem.vue'
   import { useTaskMetadata } from 'src/composables/use-task-metadata'
+  import { Logger } from 'src/utils/d'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   interface Props {
     dialogTitle: string
     searchLabel?: string
     resultsTitle?: string
-    taskID: number | undefined
+    taskID: number
     closeOnSelect?: boolean
     showCreateButton?: boolean
     initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
@@ -206,13 +208,7 @@
   //   return tasks
   // }
 
-  const searchOptions: IFuseOptions<Task> = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
-  const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+  const fuse = computed(() => new Fuse(tasks.value, fuseOptions))
 
   const searchForTasks = () => {
     if (busy.value) {
@@ -238,9 +234,18 @@
     }
   }
 
-  const selectTask = (task: TaskLike) => {
-    emit('select', { task })
+  const selectTask = (options: { id?: number, task?: CreateTaskOptions }) => {
+    if(options.id) emit('select', { id: options.id })
+    if(!options.task) return
+    else emit('select', { task: options.task })
     searchForTasks()
+    if (props.closeOnSelect) onDialogCancel()
+    else key.value++
+  }
+
+  // Fast path for newly created tasks - skip redundancy check since new tasks have no relations
+  const selectTaskQuick = (task: TaskLike) => {
+    emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
   }
@@ -252,22 +257,36 @@
 
   const busy = ref(false)
 
+  const CreateTaskLogger = new Logger('CreateTask', '#FF6B6B')
+
   const createTask = () => {
-    busy.value = true
-    if (typeof searchString.value === 'undefined') return
-    const toCreate: CreateTaskOptions = { title: searchString.value }
-    const start = performance.now()
-    const target = 400
-    useTaskStore()
-      .apiCreate(toCreate)
-      .then((result) => {
-        if (typeof result === 'undefined' || result === null) return
-        if (typeof props.taskID !== 'undefined') selectTask(result)
-        const duration = Math.floor(performance.now() - start)
-        if (duration > target)
-          console.warn(`createTask took ${duration} ms - target is ${target} ms`)
-      }, handleError('Error creating task.'))
-    busy.value = false
+    // busy.value = true
+    // if (typeof searchString.value === 'undefined') return
+    // const toCreate: CreateTaskOptions = { title: searchString.value, notes: '!!REFINE' }
+    // const start = performance.now()
+    // const target = 400
+    // CreateTaskLogger.log('Starting apiCreate...')
+    // useTaskStore()
+    //   .apiCreate(toCreate, { skipRecalculate: true })
+    //   .then((result) => {
+    //     CreateTaskLogger.log(`apiCreate resolved in ${performance.now() - start}ms`)
+    //     if (typeof result === 'undefined' || result === null) return
+    //     if (typeof props.taskID !== 'undefined') {
+    //       CreateTaskLogger.log('About to call selectTaskQuick...')
+    //       const beforeSelect = performance.now()
+    //       // Use selectTaskQuick to skip redundant searchForTasks after creating
+    //       selectTaskQuick(result)
+    //       CreateTaskLogger.log(`selectTaskQuick returned in ${performance.now() - beforeSelect}ms`)
+    //     }
+    //     const duration = Math.floor(performance.now() - start)
+    //     CreateTaskLogger.log(`Total: ${duration}ms`)
+    //     if (duration > target)
+    //       CreateTaskLogger.warn(`createTask took ${duration} ms - target is ${target} ms`)
+    //   }, handleError('Error creating task.'))
+    // busy.value = false
+    if(typeof searchString.value === 'undefined' || searchString.value === null || searchString.value.length === 0) return
+    const toCreate: CreateTaskOptions = { title: searchString.value, notes: '!!REFINE', hard_postreq_ids: [ props.taskID ]}
+    selectTask({ task: toCreate })
   }
 
   const hideDialog = () => {

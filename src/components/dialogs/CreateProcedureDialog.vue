@@ -95,6 +95,7 @@
   import { ProcedureRepo } from 'src/stores/procedures/procedure'
   import { openProcedureDetailsDialog } from 'src/utils/dialog-utils'
   import { timeThisB } from 'src/utils/performance-utils'
+  import { fuseOptions } from 'src/utils/search-utils'
   import { computed, onMounted, ref } from 'vue'
 
   const emit = defineEmits([
@@ -131,13 +132,7 @@
 
   const procedures = computed(() => useRepo(ProcedureRepo).all())
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
-  const fuse = computed(() => new Fuse(procedures.value, searchOptions))
+  const fuse = computed(() => new Fuse(procedures.value, fuseOptions))
 
   const searchForProcedures = () => {
     const start = performance.now()

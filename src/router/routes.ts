@@ -11,6 +11,7 @@ const PageNames = [
   'Tree',
   'Settings',
   'Graph',
+  'Projects',
   'Routines',
   'Login',
   'Empty',
@@ -56,6 +57,11 @@ const routes: StronglyTypedRouteRecordRaw[] = [
         path: 'graph',
         name: 'Graph',
         component: () => import('src/pages/Graph.vue')
+      },
+      {
+        path: 'projects',
+        name: 'Projects',
+        component: () => import('src/pages/Projects.vue')
       },
       {
         path: 'agenda',

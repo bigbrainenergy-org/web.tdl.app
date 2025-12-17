@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import type { Task } from './task-model'
 import type { TaskLike } from './task-interfaces-types'
 import { useTaskStore } from './task-store'
+import { useTaskStarredStore } from './task-starred'
+import { useTaskNeedsRefinementStore } from './task-needs-refinement'
 import { Logger } from 'src/utils/d'
 import { recalculate } from './task-view'
 import { ref, nextTick } from 'vue'
@@ -134,6 +136,13 @@ export const dontLookAtMe = defineStore('ewww', {
       const initStart = performance.now()
       initialized.value = true
       ewwwLogger.log(`initialized set (took ${performance.now() - initStart}ms)`)
+
+      // Sync starred/refinement sets from task notes (DB source of truth)
+      const syncStart = performance.now()
+      useTaskStarredStore().initializeFromTasks(data)
+      useTaskNeedsRefinementStore().initializeFromTasks(data)
+      ewwwLogger.log(`starred/refinement sync from notes took ${performance.now() - syncStart}ms`)
+
       ewwwLogger.log('refresh_all complete, scheduling recalculate after next DOM update...')
 
       // Use Vue's nextTick to defer recalculate until after Vue's DOM update cycle

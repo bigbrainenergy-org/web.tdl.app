@@ -61,6 +61,7 @@
   import TaskSearchInput from 'src/components/search/TaskSearchInput.vue'
   import TaskGraph from 'src/components/TaskGraph.vue'
   import { useTaskGraphData } from 'src/composables/use-task-graph-data'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   useMeta(() => ({ title: 'Graph | TDL App' }))
 
@@ -78,14 +79,6 @@
   // Search state
   const searchQuery = ref<string | undefined>('')
   const searchResultIds = ref<Set<number>>(new Set())
-
-  // Fuse search options - stricter threshold for less fuzzy matching
-  const fuseOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    threshold: 0.29, // Lower = stricter matching (0 = exact, 1 = match anything)
-    keys: ['title']
-  }
 
   const onSearch = () => {
     if (!searchQuery.value || searchQuery.value.trim() === '') {
