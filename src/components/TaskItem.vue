@@ -1,5 +1,5 @@
 <template>
-  <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task)" @mouseenter="hovered = true" @mouseleave="hovered = false">
+  <q-item v-ripple clickable data-cy="task_item" @click="$emit('task-clicked', $event, task)" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
     <q-menu
       touch-position
       context-menu
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
   import { ref, toRef, computed } from 'vue'
+  import { useQuasar } from 'quasar'
   import { addPrerequisitesDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskTimeEstimateInfoChip from './TaskTimeEstimateInfoChip.vue'
@@ -99,11 +100,33 @@
     }
   )
 
+  const $q = useQuasar()
   const hovered = ref(false)
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
   const task = toRef(props, 'task')
+
+  // Detect if device is touch-only (no hover capability)
+  // Uses both Quasar platform detection and CSS media query detection
+  const isTouchDevice = computed(() => {
+    // Check if device has touch AND doesn't support hover (like phone/tablet)
+    // Desktop with touchscreen will still have hover: hover capability
+    return $q.platform.has.touch && !window.matchMedia('(hover: hover)').matches
+  })
+
+  // Only enable hover on non-touch devices
+  const onMouseEnter = () => {
+    if (!isTouchDevice.value) {
+      hovered.value = true
+    }
+  }
+
+  const onMouseLeave = () => {
+    if (!isTouchDevice.value) {
+      hovered.value = false
+    }
+  }
 
   // Only access stores when metadata not provided via props
   const starredStore = useTaskStarredStore()
@@ -141,15 +164,31 @@
   .q-checkbox__icon {
     font-size: 0.75em;
   }
-  .fade-slide-enter-active, .fade-slide-leave-active {
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Enable transitions only on devices that support hover */
+  @media (hover: hover) {
+    .fade-slide-enter-active, .fade-slide-leave-active {
+      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .fade-slide-enter-from, .fade-slide-leave-to {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    .fade-slide-enter-to, .fade-slide-leave-from {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
-  .fade-slide-enter-from, .fade-slide-leave-to {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  .fade-slide-enter-to, .fade-slide-leave-from {
-    opacity: 1;
-    transform: translateX(0);
+
+  /* Disable transitions on touch devices */
+  @media (hover: none) {
+    .fade-slide-enter-active, .fade-slide-leave-active {
+      transition: none;
+    }
+    .fade-slide-enter-from, .fade-slide-leave-to,
+    .fade-slide-enter-to, .fade-slide-leave-from {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 </style>

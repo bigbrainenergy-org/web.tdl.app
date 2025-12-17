@@ -64,7 +64,7 @@
   useMeta(() => ({ title: 'Projects | TDL App' }))
 
   const ts = useTaskStore()
-  const hideCompleted = ref(false)
+  const hideCompleted = ref(true)
   const nodes = ref<Node[]>([])
   const edges = ref<Edge[]>([])
 
