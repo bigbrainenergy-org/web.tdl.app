@@ -36,7 +36,9 @@
             <TaskCard
               :task="data.task"
               :show-pre-post-count="true"
+              :show-prerequisites="true"
               @click="onNodeClick(data.task)"
+              @prereq-click="onNodeClick"
             />
           </template>
         </VueFlow>
@@ -46,9 +48,9 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed, onMounted, watch, nextTick } from 'vue'
   import { useMeta } from 'quasar'
-  import { VueFlow } from '@vue-flow/core'
+  import { VueFlow, useVueFlow } from '@vue-flow/core'
   import { Background } from '@vue-flow/background'
   import { Controls } from '@vue-flow/controls'
   import type { Node, Edge } from '@vue-flow/core'
@@ -56,6 +58,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskCard from 'src/components/TaskCard.vue'
   import { openUpdateTaskDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
+  import { useLayout } from 'src/composables/use-layout'
 
   // Import required styles
   import '@vue-flow/core/dist/style.css'
@@ -68,6 +71,9 @@
   const nodes = ref<Node[]>([])
   const edges = ref<Edge[]>([])
 
+  const { fitView } = useVueFlow()
+  const { layout } = useLayout()
+
   // Filter tasks that have !PROJECT in their notes
   const projectTasks = computed(() => {
     return ts.array.filter(task => {
@@ -77,8 +83,8 @@
     })
   })
 
-  // Create a layout using a simple hierarchical approach
-  const buildGraphData = () => {
+  // Build graph data and apply automatic layout
+  const buildGraphData = async () => {
     const tasks = projectTasks.value
     if (tasks.length === 0) {
       nodes.value = []
@@ -90,71 +96,22 @@
     const taskMap = new Map<number, Task>()
     tasks.forEach(task => taskMap.set(task.id, task))
 
-    // Find root tasks (tasks with no prerequisites or prerequisites not in project set)
-    const rootTasks = tasks.filter(task => {
-      const hasPrereqsInProject = task.hard_prereq_ids.some(id => taskMap.has(id))
-      return !hasPrereqsInProject
-    })
-
-    // Build nodes with a hierarchical layout
+    // Build nodes
     const newNodes: Node[] = []
     const newEdges: Edge[] = []
-    const positioned = new Set<number>()
-    const layers = new Map<number, Task[]>()
 
-    // Assign tasks to layers using BFS
-    const assignLayer = (task: Task, layer: number) => {
-      if (positioned.has(task.id)) return
-
-      if (!layers.has(layer)) {
-        layers.set(layer, [])
-      }
-      layers.get(layer)!.push(task)
-      positioned.add(task.id)
-
-      // Process postreqs
-      task.hard_postreq_ids.forEach(postId => {
-        const postTask = taskMap.get(postId)
-        if (postTask && !positioned.has(postId)) {
-          assignLayer(postTask, layer + 1)
-        }
-      })
-    }
-
-    // Start with root tasks
-    rootTasks.forEach(task => assignLayer(task, 0))
-
-    // Handle any remaining unpositioned tasks
+    // Create nodes with initial positions (will be updated by layout)
     tasks.forEach(task => {
-      if (!positioned.has(task.id)) {
-        assignLayer(task, 0)
-      }
-    })
-
-    // Create nodes with positions
-    const layerSpacing = 300
-    const nodeSpacing = 250
-    let maxLayerWidth = 0
-
-    layers.forEach((layerTasks, layerIndex) => {
-      maxLayerWidth = Math.max(maxLayerWidth, layerTasks.length)
-
-      layerTasks.forEach((task, indexInLayer) => {
-        const xOffset = (layerTasks.length - 1) * nodeSpacing / 2
-        newNodes.push({
-          id: task.id.toString(),
-          type: 'custom',
-          position: {
-            x: indexInLayer * nodeSpacing - xOffset,
-            y: layerIndex * layerSpacing
-          },
-          data: {
-            task: task
-          },
-          style: {
-            width: '250px'
-          }
-        })
+      newNodes.push({
+        id: task.id.toString(),
+        type: 'custom',
+        position: { x: 0, y: 0 },
+        data: {
+          task: task
+        },
+        style: {
+          width: '250px'
+        }
       })
     })
 
@@ -175,8 +132,13 @@
       })
     })
 
-    nodes.value = newNodes
+    // Apply layout algorithm (TB = top to bottom)
+    nodes.value = layout(newNodes, newEdges, 'TB')
     edges.value = newEdges
+
+    // Fit view after layout is complete
+    await nextTick()
+    fitView({ padding: 0.2, duration: 300 })
   }
 
   const refreshGraph = () => {

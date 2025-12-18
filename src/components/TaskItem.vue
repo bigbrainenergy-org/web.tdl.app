@@ -42,6 +42,13 @@
       </q-icon>
     </q-item-section>
 
+    <!-- Project icon -->
+    <q-item-section v-if="isProject" side>
+      <q-icon name="fa-solid fa-folder-open" color="primary" size="sm">
+        <q-tooltip>This is a project</q-tooltip>
+      </q-icon>
+    </q-item-section>
+
     <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
@@ -148,6 +155,10 @@
   const needsRefinement = computed(() =>
     props.needsRefinement ?? needsRefinementStore.needsRefinement(task.value.id)
   )
+
+  const isProject = computed(() => {
+    return task.value.notes?.includes('!PROJECT') ?? false
+  })
 
   const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
 

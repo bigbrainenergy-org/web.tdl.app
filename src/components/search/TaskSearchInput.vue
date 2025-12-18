@@ -16,7 +16,7 @@
         </template>
       </q-input>
     </div>
-    <div v-if="showAllCheckbox" class="col-auto">
+    <div v-if="showAllCheckbox && search?.length" class="col-auto">
       <q-checkbox
         v-model="searchAllTasks"
         label="All"

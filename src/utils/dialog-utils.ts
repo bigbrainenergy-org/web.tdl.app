@@ -155,7 +155,8 @@ export function considerOpeningQuickSortDialog() {
   const needsRefinementStore = useTaskNeedsRefinementStore()
 
   // Get the sorted tasks from the task view (what's actually shown in the agenda)
-  const sortedTasks = tasks.value
+  // Filter out projects from the refinement check
+  const sortedTasks = tasks.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
 
   // Check between 10-20 tasks: min(20, max(10, qty))
   const checkLimit = Math.min(20, Math.max(10, sortedTasks.length))
@@ -174,7 +175,8 @@ export function considerOpeningQuickSortDialog() {
 
   // If no tasks need refinement, proceed with normal quick sort logic
   if (enableQuickSortOnLayerZeroQTY > 0) {
-    const layerZero = taskStore.layerZero.value
+    // Filter out projects from layer zero
+    const layerZero = taskStore.layerZero.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
     const layerZeroQTY = layerZero.length
     if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
       openQuickSortDialog()
@@ -244,6 +246,9 @@ export function addPrerequisitesDialog(currentTask: Task) {
         }
         else if (payload.task) {
           const newTask = await useTaskStore().apiCreate(payload.task)
+          if (newTask) {
+            await addPre(currentTask, newTask.id)
+          }
           Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
         }
         
@@ -279,8 +284,20 @@ export function addPostrequisiteDialog(currentTask: Task) {
       dialogTitle: 'Add Postrequisite',
       taskID: currentTask.id,
       showCreateButton: true,
-      onSelect: (payload: { task: Task }) => {
-        addPost(currentTask, payload.task.id)
+      onSelect: async (payload: { task?: CreateTaskOptions, id?: number }) => {
+        Dialogger.log(`onSelect: Starting addPost for ${payload.id ? `task ${payload.id}...` : 'new task' }`)
+        const start = performance.now()
+        if(payload.id) {
+          await addPost(currentTask, payload.id)
+          Dialogger.log(`onSelect: addPost completed in ${performance.now() - start}ms`)
+        }
+        else if (payload.task) {
+          const newTask = await useTaskStore().apiCreate(payload.task)
+          if (newTask) {
+            await addPost(currentTask, newTask.id)
+          }
+          Dialogger.log(`onSelect: addPost completed in ${performance.now() - start}ms`)
+        }
       },
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')

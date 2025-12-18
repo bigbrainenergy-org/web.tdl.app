@@ -170,7 +170,11 @@
   const taskStore = useTaskStore()
   // Access the layerZero getter directly - it returns a computed ref
   const layerZeroTasks = taskStore.layerZero
-  const layerZero = computed(() => layerZeroTasks.value.map(postWeightedTask))
+  const layerZero = computed(() =>
+    layerZeroTasks.value
+      .filter(task => !(task.notes?.includes('!PROJECT') ?? false))
+      .map(postWeightedTask)
+  )
   const tasksWithoutPostreqs = computed(() =>
     layerZero.value.filter((x) => !(x.t.grabPostreqs(true).length > 0))
   )

@@ -150,8 +150,11 @@
 
   // 2024-12-20 hotfix: filtering out any postreqs that are part of a procedure when parentTask is part of a procedure.
   const postreqsEligibleForSort = (): Task[] => {
-    if((parentTask.value.procedure_ids ?? []).length > 0) return parentTask.value.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0)
-    return parentTask.value.grabPostreqs(true)
+    const basePostreqs = (parentTask.value.procedure_ids ?? []).length > 0
+      ? parentTask.value.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0)
+      : parentTask.value.grabPostreqs(true)
+    // Filter out projects from quick sort
+    return basePostreqs.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
   }
   const postreqsToSort = computed(() => postreqsEligibleForSort().map(postWeightedTask))
 

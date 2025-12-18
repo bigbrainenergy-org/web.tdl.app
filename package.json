@@ -33,6 +33,7 @@
   "dependencies": {
     "@capacitor/core": "latest",
     "@capacitor/local-notifications": "latest",
+    "@dagrejs/dagre": "^1.1.8",
     "@formkit/drag-and-drop": "^0.3.1",
     "@quasar/cli": "latest",
     "@quasar/extras": "latest",
