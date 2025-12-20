@@ -62,15 +62,19 @@
     })
       .map((x) => ({ selected: false, obj: x }))
   )
-  const saveNewRules = () => {
+  const saveNewRules = async () => {
     const selectedTasks = layerZero.value.filter((x) => x.selected)
+    if (selectedTasks.length === 0) {
+      onDialogCancel()
+      return
+    }
     saveProgress.value = 0
-    // TODO: batch update this!
+
+    // Sequential awaits - parallel would race since all rules share the same first task
     for (let i = 0; i < selectedTasks.length; i++) {
-      const element = layerZero.value[i]!
-      useTaskStore()
-        .addRule(prop.task.id, element.obj.id)
-        .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))
+      const element = selectedTasks[i]!
+      await useTaskStore().addRule(prop.task.id, element.obj.id)
+      saveProgress.value = (i + 1) / selectedTasks.length
     }
     onDialogCancel()
   }

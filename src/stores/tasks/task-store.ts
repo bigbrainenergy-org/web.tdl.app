@@ -192,20 +192,18 @@ export const useTaskStore = defineStore('tasks', {
     async apiUpdate(id: number, task: AllOptionalTaskProperties, options: { skipRecalculate?: boolean } = { skipRecalculate: false }) {
       const timings: any = {
         apiUpdateTotal: performance.now(),
-        eagerUpdate: performance.now(),
         overNetwork: 0
       }
 
       const existingTask = this.hardGet(id)
 
-      // Store old values for potential rollback
-      const oldValues: Partial<AllOptionalTaskProperties> = {}
-      for (const key of Object.keys(task) as (keyof AllOptionalTaskProperties)[]) {
-        oldValues[key] = existingTask[key] as any
-      }
+      // Make API call first, update local state only after success
+      timings.overNetwork = performance.now()
+      const result = await this.apiPushChanges(id, task)
+      timings.overNetwork = performance.now() - timings.overNetwork
 
-      // EAGER UPDATE: Apply changes locally first
-      Object.assign(existingTask, task)
+      // Update local state with server response
+      this.updateSingle(result.data)
 
       // Update ewww for dependency/completion changes
       ewww.refresh(existingTask)
@@ -221,37 +219,10 @@ export const useTaskStore = defineStore('tasks', {
         ewww.updateCompletedStatus(existingTask)
       }
 
-      timings.eagerUpdate = performance.now() - timings.eagerUpdate
-
       if (!options.skipRecalculate) recalculate('apiUpdate')
 
-      // Sync with API in background
-      timings.overNetwork = performance.now()
-      try {
-        const result = await this.apiPushChanges(id, task)
-        timings.overNetwork = performance.now() - timings.overNetwork
-        // Update with server response (may have additional computed fields)
-        this.updateSingle(result.data)
-        timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
-        TaskStoreLogger.log(`APIUPDATE TIMINGS (eager): ${JSON.stringify(timings, undefined, '\n')}`)
-      } catch (e) {
-        // Rollback on API failure
-        TaskStoreLogger.error('apiUpdate API failed, rolling back local changes', e)
-        Object.assign(existingTask, oldValues)
-        ewww.refresh(existingTask)
-        if (task.hard_prereq_ids) {
-          ewww.refreshPres(existingTask)
-          ewww.grabPres(existingTask.id).forEach(x => ewww.refreshPosts(x))
-        }
-        if (task.hard_postreq_ids) {
-          ewww.refreshPosts(existingTask)
-          ewww.grabPosts(existingTask.id).forEach(x => ewww.refreshPres(x))
-        }
-        if (typeof task.completed !== 'undefined') {
-          ewww.updateCompletedStatus(existingTask)
-        }
-        if (!options.skipRecalculate) recalculate('apiUpdate-rollback')
-      }
+      timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
+      TaskStoreLogger.log(`APIUPDATE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
     },
     async apiPushChanges(id: number, task: AllOptionalTaskProperties) {
       const result = await this.api().patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
@@ -321,7 +292,7 @@ export const useTaskStore = defineStore('tasks', {
       }
       return allPosts
     },
-    addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, skipBatchOperations?: boolean } = {}) {
+    async addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, skipBatchOperations?: boolean } = {}) {
       const { skipRecalculate = false, skipBatchOperations = false } = options
       const timings: any = {
         addRuleTotal: performance.now()
@@ -340,10 +311,16 @@ export const useTaskStore = defineStore('tasks', {
         throw new Error('First task is already scheduled to happen before the second.')
       }
 
-      // EAGER UPDATE: Apply changes locally first for instant UI feedback
+      // Make API call first
+      timings.apiUpdate = performance.now()
+      const newPostreqs = [...first.hard_postreq_ids, second_id]
+      await this.apiPushChanges(first.id, { hard_postreq_ids: newPostreqs })
+      timings.apiUpdate = performance.now() - timings.apiUpdate
+
+      // Update local state only after successful API call
       timings.patchState = performance.now()
       if (!skipBatchOperations) {
-        first.hard_postreq_ids = [...first.hard_postreq_ids, second_id]
+        first.hard_postreq_ids = newPostreqs
         second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
       }
       timings.patchState = performance.now() - timings.patchState
@@ -351,7 +328,7 @@ export const useTaskStore = defineStore('tasks', {
       timings.ewwwAddRule = performance.now()
       ewww.addRule(first_id, second_id)
       timings.ewwwAddRule = performance.now() - timings.ewwwAddRule
-      TaskStoreLogger.debug(`Added the dependency ${first_id} -> ${second_id} (eager)`)
+      TaskStoreLogger.debug(`Added the dependency ${first_id} -> ${second_id}`)
 
       if (!skipBatchOperations) {
         timings.refreshStarredCache = performance.now()
@@ -363,25 +340,8 @@ export const useTaskStore = defineStore('tasks', {
         recalculate('addRule')
       }
 
-      // Sync with API in background - handle errors if they occur
-      timings.apiUpdate = performance.now()
-      return this.apiPushChanges(first.id, { hard_postreq_ids: first.hard_postreq_ids }).then(() => {
-        timings.apiUpdate = performance.now() - timings.apiUpdate
-        timings.addRuleTotal = performance.now() - timings.addRuleTotal
-        TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
-      }, (error) => {
-        // Rollback on API failure
-        TaskStoreLogger.error('addRule API failed, rolling back local changes', error)
-        if (!skipBatchOperations) {
-          first.hard_postreq_ids = first.hard_postreq_ids.filter(id => id !== second_id)
-          second.hard_prereq_ids = second.hard_prereq_ids.filter(id => id !== first_id)
-        }
-        ewww.removeRule(first_id, second_id)
-        if (!skipRecalculate && !skipBatchOperations) {
-          recalculate('addRule-rollback')
-        }
-        handleError('Failed to add the dependency.')(error as Error)
-      })
+      timings.addRuleTotal = performance.now() - timings.addRuleTotal
+      TaskStoreLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
     },
     removeRule(first_id: number, second_id: number) {
       const first = this.hardGet(first_id)
