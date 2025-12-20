@@ -107,7 +107,7 @@
   import { hardCheck } from 'src/utils/type-utils'
   import {
     addPostrequisiteDialog,
-    addPrerequisitesDialog,
+    openTaskBreakdownDialog,
     openTaskSlicerDialog,
     quickSortPostreqsDialog
   } from 'src/utils/dialog-utils'
@@ -241,7 +241,7 @@
   }
 
   // FIXME: currently these do not update the pres/posts lists in the update task dialog.
-  const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value as Task)
+  const openPrerequisiteDialog = () => openTaskBreakdownDialog(currentTask.value as Task)
   const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
   const openSortPostreqsDialog = () => quickSortPostreqsDialog(currentTask.value.id)
 

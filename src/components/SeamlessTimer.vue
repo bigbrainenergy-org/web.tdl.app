@@ -38,7 +38,7 @@
           flat
           icon="fa fa-plus"
           class="q-pr-sm"
-          @click="addPrerequisitesDialog(task).onCancel(handleOKCancelOfAddPre).onDismiss(handleOKCancelOfAddPre).onOk(handleOKCancelOfAddPre)"
+          @click="openTaskBreakdownDialog(task)?.onCancel(handleOKCancelOfAddPre).onDismiss(handleOKCancelOfAddPre).onOk(handleOKCancelOfAddPre)"
           @touchstart.stop
           @mousedown.stop
         >
@@ -74,7 +74,7 @@
   import { storeToRefs } from 'pinia'
   import { useDialogPluginComponent } from 'quasar'
   import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
-  import { addPrerequisitesDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
+  import { openTaskBreakdownDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
   const { minimized, timeRemaining, task, timer } = storeToRefs(useTaskTimerStore())

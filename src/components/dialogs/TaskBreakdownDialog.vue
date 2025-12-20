@@ -48,7 +48,10 @@
                 dense
                 :placeholder="`Subtask ${index + 1}`"
                 style="flex: 1; pointer-events: auto; user-select: text;"
-                :class="{ 'existing-task-input': item.existingTask }"
+                :class="{
+                  'existing-task-input': item.existingTask,
+                  'cycle-error-input': itemHasCycleError(index)
+                }"
                 :debounce="50"
                 @keydown.enter.prevent="onItemEnter(index)"
                 @keydown.delete="(e: KeyboardEvent) => onItemDelete(index, e)"
@@ -60,8 +63,29 @@
               >
                 <template #prepend>
                   <q-icon v-if="item.existingTask" name="link" color="green" />
+                  <q-icon
+                    v-if="itemHasCycleError(index)"
+                    name="warning"
+                    color="negative"
+                  >
+                    <q-tooltip class="bg-negative">
+                      {{ getCycleErrorMessage(index) }}
+                    </q-tooltip>
+                  </q-icon>
                 </template>
                 <template #append>
+                  <q-btn
+                    v-if="!item.existingTask"
+                    round
+                    flat
+                    dense
+                    size="sm"
+                    icon="search"
+                    :color="focusedItemIndex === index && showSidebar ? 'primary' : 'grey'"
+                    @mousedown.prevent="toggleSearchForItem(index)"
+                  >
+                    <q-tooltip>Search existing tasks</q-tooltip>
+                  </q-btn>
                   <q-icon
                     v-if="index > 0"
                     name="close"
@@ -163,6 +187,7 @@
   const focusedItemIndex = ref<number | null>(null)
   const searchResults = ref<Task[]>([])
   const showAllPrereqs = ref(false)
+  let blurTimeout: ReturnType<typeof setTimeout> | null = null
 
   // Get incomplete prerequisites
   const incompletePrereqs = computed(() => props.task.grabPrereqs(true))
@@ -182,23 +207,44 @@
     includeScore: true
   }
 
+  // IDs to exclude from search results
+  const excludedIds = computed(() => {
+    const ids = new Set<number>()
+    // Exclude the parent task itself
+    ids.add(props.task.id)
+    // Exclude current prerequisites of the parent task
+    for (const prereqId of props.task.hard_prereq_ids) {
+      ids.add(prereqId)
+    }
+    // Exclude tasks already linked in the breakdown
+    for (const item of items.value) {
+      if (item.existingTask) {
+        ids.add(item.existingTask.id)
+      }
+    }
+    return ids
+  })
+
   const searchForTasks = (query: string) => {
     if (!query.trim()) {
       searchResults.value = []
       return
     }
     const fuse = new Fuse(allTasks.value, fuseOptions)
-    const results = fuse.search(query, { limit: 10 })
+    const results = fuse.search(query, { limit: 20 })
 
-    // Deduplicate by task ID
+    // Filter out excluded tasks and deduplicate
+    const excluded = excludedIds.value
     const seenIds = new Set<number>()
     const uniqueResults = results
       .map(r => r.item)
       .filter(task => {
+        if (excluded.has(task.id)) return false
         if (seenIds.has(task.id)) return false
         seenIds.add(task.id)
         return true
       })
+      .slice(0, 10)
 
     searchResults.value = uniqueResults
   }
@@ -242,6 +288,11 @@
   }
 
   function onInputFocus(index: number) {
+    // Clear any pending blur timeout
+    if (blurTimeout) {
+      clearTimeout(blurTimeout)
+      blurTimeout = null
+    }
     focusedItemIndex.value = index
     const item = items.value[index]
     if (item && !item.existingTask && item.text.trim()) {
@@ -255,30 +306,40 @@
 
   function onInputBlur() {
     // Delay hiding sidebar to allow clicking on search results
-    setTimeout(() => {
+    blurTimeout = setTimeout(() => {
       showSidebar.value = false
       focusedItemIndex.value = null
+      blurTimeout = null
     }, 200)
   }
 
-  function onItemEnter(index: number) {
+  function toggleSearchForItem(index: number) {
+    // Focus the input and show sidebar
+    focusInput(index)
+    focusedItemIndex.value = index
     const item = items.value[index]
-    const currentValue = item?.text.trim() || ''
-
-    if (currentValue || item?.existingTask) {
-      // Insert new item directly below the current item
-      const newIndex = index + 1
-      items.value.splice(newIndex, 0, createNewItem())
-
-      // Double nextTick to ensure refs are fully updated
-      nextTick(() => {
-        nextTick(() => {
-          if (inputRefs.value && inputRefs.value[newIndex]) {
-            inputRefs.value[newIndex].focus()
-          }
-        })
-      })
+    if (item && !item.existingTask) {
+      showSidebar.value = true
+      if (item.text.trim()) {
+        lastSearchText.value = item.text
+        searchForTasks(item.text)
+      }
     }
+  }
+
+  function onItemEnter(index: number) {
+    // Always insert new item directly below the current item
+    const newIndex = index + 1
+    items.value.splice(newIndex, 0, createNewItem())
+
+    // Double nextTick to ensure refs are fully updated
+    nextTick(() => {
+      nextTick(() => {
+        if (inputRefs.value && inputRefs.value[newIndex]) {
+          inputRefs.value[newIndex].focus()
+        }
+      })
+    })
   }
 
   function onItemDelete(index: number, event: KeyboardEvent) {
@@ -415,6 +476,44 @@
     onDialogOK()
   }
 
+  // Cycle detection: if task B is a prereq of task A, but A is placed above B, that's a conflict
+  interface CycleError {
+    index: number
+    conflictIndex: number
+    message: string
+  }
+
+  const cycleErrors = computed<CycleError[]>(() => {
+    const existing = items.value
+      .map((item, index) => ({ index, task: item.existingTask }))
+      .filter((x): x is { index: number; task: Task } => !!x.task)
+
+    if (existing.length < 2) return []
+
+    const allIds = existing.map(x => x.task.id)
+    const errors: CycleError[] = []
+
+    for (let i = 0; i < existing.length; i++) {
+      const current = existing[i]!
+      const prereqs = current.task.anyIDsAbove(allIds)
+
+      for (let j = i + 1; j < existing.length; j++) {
+        const below = existing[j]!
+        if (prereqs.get(below.task.id)) {
+          errors.push({
+            index: current.index,
+            conflictIndex: below.index,
+            message: `"${below.task.title}" must come before "${current.task.title}"`
+          })
+        }
+      }
+    }
+    return errors
+  })
+
+  const itemHasCycleError = (index: number) => cycleErrors.value.some(e => e.index === index)
+  const getCycleErrorMessage = (index: number) => cycleErrors.value.find(e => e.index === index)?.message ?? ''
+
   // Focus first input when dialog opens
   onMounted(() => {
     focusInput(0)
@@ -424,6 +523,10 @@
 <style scoped>
 .existing-task-input :deep(.q-field__control) {
   border: 4px solid darkgreen !important;
+}
+
+.cycle-error-input :deep(.q-field__control) {
+  border: 2px solid var(--q-negative) !important;
 }
 
 .drag-handle {

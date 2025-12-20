@@ -73,7 +73,7 @@
 <script setup lang="ts">
   import { ref, toRef, computed } from 'vue'
   import { useQuasar } from 'quasar'
-  import { addPrerequisitesDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
+  import { openTaskBreakdownDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskTimeEstimateInfoChip from './TaskTimeEstimateInfoChip.vue'
   import TaskItemMenu from './TaskItemMenu.vue'
@@ -160,7 +160,7 @@
     return task.value.notes?.includes('!PROJECT') ?? false
   })
 
-  const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
+  const addPre = (task: Task) => openTaskBreakdownDialog(task)?.onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
 
   const toggleStar = (task: Task) => {
     starredStore.toggle(task.id)

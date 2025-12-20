@@ -25,9 +25,9 @@ export function useLayout() {
     const isHorizontal = direction === 'LR'
     dagreGraph.setGraph({
       rankdir: direction,
-      nodesep: 100,  // Horizontal spacing between nodes
-      ranksep: 150,  // Vertical spacing between ranks
-      edgesep: 50,   // Spacing between edges
+      nodesep: 80,  // Horizontal spacing between nodes
+      ranksep: 80,  // Vertical spacing between ranks
+      edgesep: 100,   // Spacing between edges
     })
 
     previousDirection.value = direction

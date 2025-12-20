@@ -138,7 +138,7 @@
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { computed } from 'vue'
   import {
-    addPrerequisitesDialog,
+    openTaskBreakdownDialog,
     considerOpeningQuickSortDialog,
     openTaskSlicerDialog,
     openTimer,
@@ -152,7 +152,7 @@
 
   const open = (task: Task) => openUpdateTaskDialog(task)
 
-  const addTaskPre = addPrerequisitesDialog
+  const addTaskPre = openTaskBreakdownDialog
 
   const slice = openTaskSlicerDialog
 

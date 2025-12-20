@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-  import { addPrerequisitesDialog, considerOpeningQuickSortDialog, quickSortPostreqsDialog, openUpdateTaskDialog, openUpdateTaskDialog2, openTaskBreakdownDialog } from 'src/utils/dialog-utils'
+  import { considerOpeningQuickSortDialog, quickSortPostreqsDialog, openUpdateTaskDialog, openUpdateTaskDialog2, openTaskBreakdownDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import type { SimpleMenuItem } from 'src/utils/types'
   import MenuListItem from './MenuListItem.vue'
@@ -20,7 +20,7 @@
   const starredStore = useTaskStarredStore()
   const needsRefinementStore = useTaskNeedsRefinementStore()
 
-  const addPre = (task: Task) => addPrerequisitesDialog(task).onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
+  const addPre = (task: Task) => openTaskBreakdownDialog(task)?.onDismiss(considerOpeningQuickSortDialog).onCancel(considerOpeningQuickSortDialog)
 
   const updateEstimate = (est: number) => (task: Task) => {
     updateTask(task.id, { task_duration_in_minutes: est })

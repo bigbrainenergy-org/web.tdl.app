@@ -67,7 +67,7 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addPrerequisitesDialog(currentTask)"
+                      @click.stop="openTaskBreakdownDialog(currentTask)"
                     />
                   </q-item-section>
                 </q-item>
@@ -87,7 +87,7 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import {
-    addPrerequisitesDialog,
+    openTaskBreakdownDialog,
     considerOpeningQuickSortDialog,
     openSearchDialog,
     openUpdateTaskDialog

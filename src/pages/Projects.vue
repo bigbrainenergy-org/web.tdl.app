@@ -4,6 +4,28 @@
       <q-card-actions class="q-pa-sm">
         <div class="text-h6 q-ml-sm">Projects</div>
         <q-space />
+        <q-btn-toggle
+          v-model="animationSetting"
+          flat
+          dense
+          toggle-color="primary"
+          :options="[
+            { label: 'disable animation', value: false },
+            { label: 'animate', value: true }
+          ]"
+          @update:model-value="refreshGraph" 
+        />
+        <q-btn-toggle
+          v-model="layoutDirection"
+          flat
+          dense
+          toggle-color="primary"
+          :options="[
+            { label: 'TD', value: 'TB' },
+            { label: 'LR', value: 'LR' }
+          ]"
+          @update:model-value="refreshGraph"
+        />
         <q-btn
           flat
           round
@@ -27,12 +49,14 @@
           :default-viewport="{ zoom: 0.8 }"
           :min-zoom="0.1"
           :max-zoom="2"
+          :nodes-draggable="false"
           class="vue-flow-custom"
         >
           <Background pattern-color="#424242" :gap="16" />
-          <Controls />
+          <Controls :show-fit-view="false" />
 
-          <template #node-custom="{ data }">
+          <template #node-custom="{ data, sourcePosition, targetPosition }">
+            <Handle type="target" :position="targetPosition" style="opacity: 0" />
             <TaskCard
               :task="data.task"
               :show-pre-post-count="true"
@@ -40,6 +64,7 @@
               @click="onNodeClick(data.task)"
               @prereq-click="onNodeClick"
             />
+            <Handle type="source" :position="sourcePosition" style="opacity: 0" />
           </template>
         </VueFlow>
       </div>
@@ -50,7 +75,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, watch, nextTick } from 'vue'
   import { useMeta } from 'quasar'
-  import { VueFlow, useVueFlow } from '@vue-flow/core'
+  import { VueFlow, useVueFlow, Handle } from '@vue-flow/core'
   import { Background } from '@vue-flow/background'
   import { Controls } from '@vue-flow/controls'
   import type { Node, Edge } from '@vue-flow/core'
@@ -68,10 +93,12 @@
 
   const ts = useTaskStore()
   const hideCompleted = ref(true)
+  const layoutDirection = ref<'TB' | 'LR'>('LR')
+  const animationSetting = ref(false)
   const nodes = ref<Node[]>([])
   const edges = ref<Edge[]>([])
 
-  const { fitView } = useVueFlow()
+  const { fitView, onNodesInitialized } = useVueFlow()
   const { layout } = useLayout()
 
   // Filter tasks that have !PROJECT in their notes
@@ -84,7 +111,7 @@
   })
 
   // Build graph data and apply automatic layout
-  const buildGraphData = async () => {
+  const buildGraphData = async (init = false) => {
     const tasks = projectTasks.value
     if (tasks.length === 0) {
       nodes.value = []
@@ -92,51 +119,50 @@
       return
     }
 
-    // Create a map to track which tasks are already placed
-    const taskMap = new Map<number, Task>()
-    tasks.forEach(task => taskMap.set(task.id, task))
+    const taskIds = new Set(tasks.map(t => t.id))
 
     // Build nodes
-    const newNodes: Node[] = []
-    const newEdges: Edge[] = []
+    const newNodes: Node[] = tasks.map(task => ({
+      id: task.id.toString(),
+      type: 'custom',
+      position: { x: 0, y: 0 },
+      data: { task },
+      style: { width: '300px' }
+    }))
 
-    // Create nodes with initial positions (will be updated by layout)
-    tasks.forEach(task => {
-      newNodes.push({
-        id: task.id.toString(),
-        type: 'custom',
-        position: { x: 0, y: 0 },
-        data: {
-          task: task
-        },
-        style: {
-          width: '250px'
-        }
-      })
-    })
+    // Build edges (only between project tasks)
+    const newEdges: Edge[] = tasks.flatMap(task =>
+      task.hard_postreq_ids
+        .filter(postId => taskIds.has(postId))
+        .map(postId => ({
+          id: `e${task.id}-${postId}`,
+          source: task.id.toString(),
+          target: postId.toString(),
+          type: 'default',
+          animated: animationSetting.value,
+          style: { stroke: '#999', strokeWidth: 3 },
+          markerEnd: 'arrow'
+        }))
+    )
 
-    // Create edges based on prereq/postreq relationships
-    tasks.forEach(task => {
-      task.hard_postreq_ids.forEach(postId => {
-        if (taskMap.has(postId)) {
-          newEdges.push({
-            id: `e${task.id}-${postId}`,
-            source: task.id.toString(),
-            target: postId.toString(),
-            type: 'default',
-            animated: false,
-            style: { stroke: '#666', strokeWidth: 2 },
-            markerEnd: 'arrow'
-          })
-        }
-      })
-    })
-
-    // Apply layout algorithm (TB = top to bottom)
-    nodes.value = layout(newNodes, newEdges, 'TB')
+    // First pass: set nodes so they render and get dimensions
+    nodes.value = newNodes
     edges.value = newEdges
 
-    // Fit view after layout is complete
+    if(init) {
+      // Wait for vue-flow to initialize nodes with dimensions
+      await new Promise<void>(resolve => {
+        const { off } = onNodesInitialized(() => {
+          off()
+          resolve()
+        })
+      })
+    }
+    
+
+    // Second pass: re-layout with actual dimensions
+    nodes.value = layout(newNodes, newEdges, layoutDirection.value)
+
     await nextTick()
     fitView({ padding: 0.2, duration: 300 })
   }
@@ -157,10 +183,7 @@
     buildGraphData()
   })
 
-  // Initial load
-  onMounted(() => {
-    buildGraphData()
-  })
+  onMounted(() => buildGraphData(true))
 </script>
 
 <style scoped>
@@ -207,7 +230,7 @@
 }
 
 :deep(.vue-flow__arrowhead) {
-  fill: #666;
+  fill: #999;
 }
 
 :deep(.vue-flow__edge.animated .vue-flow__edge-path) {

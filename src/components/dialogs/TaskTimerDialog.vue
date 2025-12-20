@@ -41,7 +41,7 @@
           size="md"
           color="grey"
           label="ADD PRES"
-          @click="addPrerequisitesDialog(task).onDismiss(handleOKCancelOfAddPre).onCancel(handleOKCancelOfAddPre)"
+          @click="openTaskBreakdownDialog(task)?.onDismiss(handleOKCancelOfAddPre).onCancel(handleOKCancelOfAddPre)"
         />
       </q-card-section>
     </q-card>
@@ -52,7 +52,7 @@
   import { storeToRefs } from 'pinia'
   import { useDialogPluginComponent } from 'quasar'
   import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
-  import { addPrerequisitesDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
+  import { openTaskBreakdownDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
   const { minimized, timeRemaining, task, timer } = storeToRefs(useTaskTimerStore())
