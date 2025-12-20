@@ -59,7 +59,8 @@
                 @keydown.up="focusPrev(index)"
                 @keydown.esc="onDialogHide"
                 @focus="onInputFocus(index)"
-                @blur="onInputBlur"
+                @blur="onInputBlur(index)"
+                @update:model-value="(val) => onItemTextChange(index, val as string)"
               >
                 <template #prepend>
                   <q-icon v-if="item.existingTask" name="link" color="green" />
@@ -140,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, nextTick, onMounted, watch } from 'vue'
+  import { ref, computed, nextTick, onMounted } from 'vue'
   import { useDialogPluginComponent } from 'quasar'
   import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
   import { useTaskStore } from 'src/stores/tasks/task-store'
@@ -226,15 +227,18 @@
   })
 
   const searchForTasks = (query: string) => {
+    console.log('[searchForTasks] query:', query, 'allTasks.length:', allTasks.value.length)
     if (!query.trim()) {
       searchResults.value = []
       return
     }
     const fuse = new Fuse(allTasks.value, fuseOptions)
     const results = fuse.search(query, { limit: 20 })
+    console.log('[searchForTasks] fuse results:', results.length)
 
     // Filter out excluded tasks and deduplicate
     const excluded = excludedIds.value
+    console.log('[searchForTasks] excludedIds:', [...excluded])
     const seenIds = new Set<number>()
     const uniqueResults = results
       .map(r => r.item)
@@ -246,28 +250,35 @@
       })
       .slice(0, 10)
 
+    console.log('[searchForTasks] final results:', uniqueResults.length)
     searchResults.value = uniqueResults
   }
 
-  // Watch for text changes to update search
   const lastSearchText = ref('')
-  watch(items, (newItems) => {
-    if (focusedItemIndex.value !== null) {
-      const item = newItems[focusedItemIndex.value]
-      if (item && !item.existingTask) {
-        // Only search if the text actually changed
-        if (item.text !== lastSearchText.value) {
-          lastSearchText.value = item.text
-          searchForTasks(item.text)
-          if (item.text.trim()) {
-            showSidebar.value = true
-          } else {
-            showSidebar.value = false
-          }
-        }
-      }
+
+  // Handle text changes explicitly (useDragAndDrop's reactivity doesn't trigger deep watch reliably)
+  function onItemTextChange(index: number, text: string) {
+    console.log('[onItemTextChange] index:', index, 'text:', text, 'focusedItemIndex:', focusedItemIndex.value)
+    if (focusedItemIndex.value !== index) {
+      console.log('[onItemTextChange] SKIPPED: focusedItemIndex mismatch')
+      return
     }
-  }, { deep: true })
+    const item = items.value[index]
+    if (!item || item.existingTask) {
+      console.log('[onItemTextChange] SKIPPED: no item or existingTask')
+      return
+    }
+
+    if (text !== lastSearchText.value) {
+      console.log('[onItemTextChange] searching for:', text, 'lastSearchText was:', lastSearchText.value)
+      lastSearchText.value = text
+      searchForTasks(text)
+      showSidebar.value = !!text.trim()
+      console.log('[onItemTextChange] after search - showSidebar:', showSidebar.value, 'searchResults.length:', searchResults.value.length)
+    } else {
+      console.log('[onItemTextChange] SKIPPED: text unchanged')
+    }
+  }
 
   function selectExistingTask(task: Task, index: number) {
     items.value[index] = {
@@ -288,6 +299,7 @@
   }
 
   function onInputFocus(index: number) {
+    console.log('[onInputFocus] index:', index)
     // Clear any pending blur timeout
     if (blurTimeout) {
       clearTimeout(blurTimeout)
@@ -295,20 +307,32 @@
     }
     focusedItemIndex.value = index
     const item = items.value[index]
+    console.log('[onInputFocus] item:', item?.text, 'existingTask:', !!item?.existingTask)
     if (item && !item.existingTask && item.text.trim()) {
       lastSearchText.value = item.text
       showSidebar.value = true
       searchForTasks(item.text)
     } else {
+      // Clear stale search results when focusing empty or linked item
       lastSearchText.value = ''
+      showSidebar.value = false
+      searchResults.value = []
     }
   }
 
-  function onInputBlur() {
+  function onInputBlur(blurredIndex: number) {
+    console.log('[onInputBlur] index:', blurredIndex, 'starting 200ms timeout')
     // Delay hiding sidebar to allow clicking on search results
     blurTimeout = setTimeout(() => {
-      showSidebar.value = false
-      focusedItemIndex.value = null
+      // Only hide if focus hasn't moved to another input in our list
+      // (if it did, onInputFocus would have updated focusedItemIndex to a different value)
+      if (focusedItemIndex.value === blurredIndex) {
+        console.log('[onInputBlur] timeout fired, hiding sidebar')
+        showSidebar.value = false
+        focusedItemIndex.value = null
+      } else {
+        console.log('[onInputBlur] timeout fired but focus moved to index:', focusedItemIndex.value)
+      }
       blurTimeout = null
     }, 200)
   }
@@ -329,17 +353,8 @@
 
   function onItemEnter(index: number) {
     // Always insert new item directly below the current item
-    const newIndex = index + 1
-    items.value.splice(newIndex, 0, createNewItem())
-
-    // Double nextTick to ensure refs are fully updated
-    nextTick(() => {
-      nextTick(() => {
-        if (inputRefs.value && inputRefs.value[newIndex]) {
-          inputRefs.value[newIndex].focus()
-        }
-      })
-    })
+    // The new item will auto-focus via :autofocus="index === items.length - 1"
+    items.value.splice(index + 1, 0, createNewItem())
   }
 
   function onItemDelete(index: number, event: KeyboardEvent) {

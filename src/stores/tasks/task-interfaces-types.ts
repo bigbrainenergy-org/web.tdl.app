@@ -3,7 +3,9 @@ import { type ShallowRef } from 'vue'
 
 export interface TaskState {
   array: ShallowRef<Task[]>,
-  mapp: Map<number, Task>
+  mapp: Map<number, Task>,
+  // Version counter to force reactivity when task properties mutate (shallowRef doesn't track deep changes)
+  arrayVersion: number
 }
 
 export interface TaskTimerState {

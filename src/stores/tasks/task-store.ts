@@ -28,7 +28,9 @@ const ewww = dontLookAtMe()
 export const useTaskStore = defineStore('tasks', {
   state: (): TaskState => ({
     array: shallowRef([]) as any, // Use shallowRef for better performance with large arrays
-    mapp: new Map()
+    mapp: new Map(),
+    // Version counter to force reactivity when task properties mutate (shallowRef doesn't track deep changes)
+    arrayVersion: 0
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
@@ -87,6 +89,7 @@ export const useTaskStore = defineStore('tasks', {
       }
       else {
         Object.assign(inMap, newTask)
+        this.arrayVersion++ // Force reactivity after mutating task properties
       }
       return inMap ?? newTask
     },
@@ -113,7 +116,12 @@ export const useTaskStore = defineStore('tasks', {
       if (newTasks.length > 0) {
         this.array.push(...newTasks)
       }
-      
+
+      // Force reactivity after bulk mutations
+      if (updatedTasks.length > 0 || newTasks.length > 0) {
+        this.arrayVersion++
+      }
+
       TaskStoreLogger.log(`Added ${newTasks.length}, updated ${updatedTasks.length} tasks`)
     },
     hardGet(id: number): Task {
@@ -322,6 +330,7 @@ export const useTaskStore = defineStore('tasks', {
       if (!skipBatchOperations) {
         first.hard_postreq_ids = newPostreqs
         second.hard_prereq_ids = [...second.hard_prereq_ids, first_id]
+        this.arrayVersion++ // Force reactivity after mutating task properties
       }
       timings.patchState = performance.now() - timings.patchState
 
@@ -358,6 +367,7 @@ export const useTaskStore = defineStore('tasks', {
             first.hard_postreq_ids = new_first_postreqs
             second.hard_prereq_ids = second.hard_prereq_ids.filter(id => id !== first_id)
           })
+          this.arrayVersion++ // Force reactivity after mutating task properties
           notifySuccess('Removed the dependency')
           ewww.removeRule(first_id, second_id)
           // Refresh starred cache when task structure changes
@@ -404,6 +414,7 @@ export const useTaskStore = defineStore('tasks', {
           task.hard_postreq_ids = Array.from(posts.keys())
         }
       })
+      this.arrayVersion++ // Force reactivity after mutating task properties
       TaskStoreLogger.log(`stringTasks: sync took ${performance.now() - syncStart}ms`)
 
       // Refresh cache and recalculate once

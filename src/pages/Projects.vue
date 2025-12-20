@@ -103,6 +103,7 @@
 
   // Filter tasks that have !PROJECT in their notes
   const projectTasks = computed(() => {
+    void ts.arrayVersion // Touch to trigger reactivity when task properties change
     return ts.array.filter(task => {
       const hasProjectTag = task.notes?.includes('!PROJECT') ?? false
       const shouldInclude = hideCompleted.value ? !task.completed : true
