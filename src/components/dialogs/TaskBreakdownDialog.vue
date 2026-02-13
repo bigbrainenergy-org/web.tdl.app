@@ -109,6 +109,13 @@
           />
           <q-space />
           <q-btn
+            color="green"
+            label="Mark Complete"
+            outline
+            no-caps
+            @click="complete"
+          />
+          <q-btn
             color="primary"
             label="Submit"
             :disable="!hasValidItems"
@@ -405,6 +412,12 @@
 
   function markAsRefined() {
     // Just remove the needs refinement flag without creating subtasks
+    needsRefinementStore.unmarkNeedsRefinement(props.task.id)
+    onDialogOK()
+  }
+
+  async function complete() {
+    await props.task.toggleCompleted()
     needsRefinementStore.unmarkNeedsRefinement(props.task.id)
     onDialogOK()
   }
