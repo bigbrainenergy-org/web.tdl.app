@@ -43,19 +43,14 @@
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
   import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
-  import { stuckTasks } from 'src/stores/tasks/task-utils'
-  import { useTaskStore } from 'src/stores/tasks/task-store'
-  import type { Task } from 'src/stores/tasks/task-model'
   import TaskItem from 'src/components/TaskItem.vue'
-  import { computed } from 'vue'
-  import { mostSuspiciousStuckTasks } from 'src/stores/tasks/task-utils'
   import { storeToRefs } from 'pinia'
   import { useHeaderTimerStore } from 'src/stores/tasks/headerTimer'
 
   const { remindTasks, dueTasks } = storeToRefs(useHeaderTimerStore())
+  useHeaderTimerStore().collectTasks()
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide } = useDialogPluginComponent()
-  const taskStore = useTaskStore()
 
 </script>
