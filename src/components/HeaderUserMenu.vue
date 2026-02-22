@@ -1,4 +1,10 @@
 <template>
+  <q-btn dense flat no-wrap @click="openTimelyTasksDialog">
+    <q-avatar rounded size="32px">
+      <q-icon name="fas fa-triangle-exclamation" />
+    </q-avatar>
+    <q-badge v-if="taskAlerts" color="red" rounded floating :label="taskAlerts" />
+  </q-btn>
   <q-btn dense flat no-wrap>
     <q-avatar rounded size="32px">
       <q-icon name="fas fa-user-circle" />
@@ -55,6 +61,9 @@
   import { UserRepo } from 'src/stores/users/user'
   import { pullFresh } from 'src/utils/sync-utils'
   import { useAuthentication } from 'src/composables/use-authentication'
+  import { useHeaderTimerStore } from 'src/stores/tasks/headerTimer'
+  import { openTimelyTasksDialog } from 'src/utils/dialog-utils'
+  import { storeToRefs } from 'pinia'
 
   const ur = useRepo(UserRepo)
   const { logout } = useAuthentication()
@@ -62,4 +71,8 @@
   const username = computed(() => {
     return (ur.getUser() ?? { username: 'guest' }).username
   })
+
+  useHeaderTimerStore().wind()
+  const { dueTasks, remindTasks } = storeToRefs(useHeaderTimerStore())
+  const taskAlerts = computed(() => dueTasks.value.size + remindTasks.value.size)
 </script>

@@ -28,6 +28,7 @@
             <TaskInputList v-model:task="currentTask as Task" />
             <TaskInputProcedures v-model:task="currentTask as Task" />
             <TaskInputRemindMeAt v-model:task="currentTask as Task" />
+            <TaskInputDeadlineAt v-model:task="currentTask as Task" />
             <TaskInputDuration v-model:task="currentTask as Task" />
             <TaskInputEnergy v-model:task="currentTask as Task" />
             <br>

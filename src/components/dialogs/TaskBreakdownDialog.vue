@@ -40,6 +40,7 @@
           <ul ref="listRef" style="list-style-type: none; margin: 0; padding: 0;">
             <li v-for="(item, index) in items" :key="item.id" class="q-mb-sm" style="display: flex; align-items: center; gap: 8px;">
               <q-avatar rounded icon="fa-solid fa-grip-vertical" class="drag-handle" color="grey" size="sm" style="cursor: grab;" />
+              <q-avatar v-if="item.existingTask && (item.existingTask.notes ?? '').includes('!!REFINE')" rounded icon="fa-solid fa-anchor-circle-check" color="green" size="sm" />
               <q-input
                 ref="inputRefs"
                 v-model="item.text"
@@ -139,6 +140,9 @@
               <q-item-section>
                 <q-item-label>{{ searchResultTask.title }}</q-item-label>
               </q-item-section>
+              <q-item-section avatar>
+                <q-avatar v-if="!(searchResultTask.notes ?? '').includes('!!REFINE')" rounded icon="fa-solid fa-anchor-circle-check" color="green" size="sm" />
+              </q-item-section>
             </q-item>
           </q-list>
         </q-card-section>
@@ -234,18 +238,18 @@
   })
 
   const searchForTasks = (query: string) => {
-    console.log('[searchForTasks] query:', query, 'allTasks.length:', allTasks.value.length)
+    //console.log('[searchForTasks] query:', query, 'allTasks.length:', allTasks.value.length)
     if (!query.trim()) {
       searchResults.value = []
       return
     }
     const fuse = new Fuse(allTasks.value, fuseOptions)
     const results = fuse.search(query, { limit: 20 })
-    console.log('[searchForTasks] fuse results:', results.length)
+    //console.log('[searchForTasks] fuse results:', results.length)
 
     // Filter out excluded tasks and deduplicate
     const excluded = excludedIds.value
-    console.log('[searchForTasks] excludedIds:', [...excluded])
+    //console.log('[searchForTasks] excludedIds:', [...excluded])
     const seenIds = new Set<number>()
     const uniqueResults = results
       .map(r => r.item)
@@ -257,7 +261,7 @@
       })
       .slice(0, 10)
 
-    console.log('[searchForTasks] final results:', uniqueResults.length)
+    //console.log('[searchForTasks] final results:', uniqueResults.length)
     searchResults.value = uniqueResults
   }
 
@@ -265,25 +269,25 @@
 
   // Handle text changes explicitly (useDragAndDrop's reactivity doesn't trigger deep watch reliably)
   function onItemTextChange(index: number, text: string) {
-    console.log('[onItemTextChange] index:', index, 'text:', text, 'focusedItemIndex:', focusedItemIndex.value)
+    //console.log('[onItemTextChange] index:', index, 'text:', text, 'focusedItemIndex:', focusedItemIndex.value)
     if (focusedItemIndex.value !== index) {
-      console.log('[onItemTextChange] SKIPPED: focusedItemIndex mismatch')
+      //console.log('[onItemTextChange] SKIPPED: focusedItemIndex mismatch')
       return
     }
     const item = items.value[index]
     if (!item || item.existingTask) {
-      console.log('[onItemTextChange] SKIPPED: no item or existingTask')
+      //console.log('[onItemTextChange] SKIPPED: no item or existingTask')
       return
     }
 
     if (text !== lastSearchText.value) {
-      console.log('[onItemTextChange] searching for:', text, 'lastSearchText was:', lastSearchText.value)
+      //console.log('[onItemTextChange] searching for:', text, 'lastSearchText was:', lastSearchText.value)
       lastSearchText.value = text
       searchForTasks(text)
       showSidebar.value = !!text.trim()
-      console.log('[onItemTextChange] after search - showSidebar:', showSidebar.value, 'searchResults.length:', searchResults.value.length)
+      //console.log('[onItemTextChange] after search - showSidebar:', showSidebar.value, 'searchResults.length:', searchResults.value.length)
     } else {
-      console.log('[onItemTextChange] SKIPPED: text unchanged')
+      //console.log('[onItemTextChange] SKIPPED: text unchanged')
     }
   }
 
@@ -306,7 +310,7 @@
   }
 
   function onInputFocus(index: number) {
-    console.log('[onInputFocus] index:', index)
+    //console.log('[onInputFocus] index:', index)
     // Clear any pending blur timeout
     if (blurTimeout) {
       clearTimeout(blurTimeout)
@@ -314,7 +318,7 @@
     }
     focusedItemIndex.value = index
     const item = items.value[index]
-    console.log('[onInputFocus] item:', item?.text, 'existingTask:', !!item?.existingTask)
+    //console.log('[onInputFocus] item:', item?.text, 'existingTask:', !!item?.existingTask)
     if (item && !item.existingTask && item.text.trim()) {
       lastSearchText.value = item.text
       showSidebar.value = true
@@ -328,17 +332,17 @@
   }
 
   function onInputBlur(blurredIndex: number) {
-    console.log('[onInputBlur] index:', blurredIndex, 'starting 200ms timeout')
+    //console.log('[onInputBlur] index:', blurredIndex, 'starting 200ms timeout')
     // Delay hiding sidebar to allow clicking on search results
     blurTimeout = setTimeout(() => {
       // Only hide if focus hasn't moved to another input in our list
       // (if it did, onInputFocus would have updated focusedItemIndex to a different value)
       if (focusedItemIndex.value === blurredIndex) {
-        console.log('[onInputBlur] timeout fired, hiding sidebar')
+        //console.log('[onInputBlur] timeout fired, hiding sidebar')
         showSidebar.value = false
         focusedItemIndex.value = null
       } else {
-        console.log('[onInputBlur] timeout fired but focus moved to index:', focusedItemIndex.value)
+        //console.log('[onInputBlur] timeout fired but focus moved to index:', focusedItemIndex.value)
       }
       blurTimeout = null
     }, 200)
@@ -418,7 +422,7 @@
 
   async function complete() {
     await props.task.toggleCompleted()
-    needsRefinementStore.unmarkNeedsRefinement(props.task.id)
+    //needsRefinementStore.unmarkNeedsRefinement(props.task.id)
     onDialogOK()
   }
 

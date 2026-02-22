@@ -31,6 +31,7 @@ import QuickListDialog from 'src/components/dialogs/QuickListDialog.vue'
 import TaskBreakdownDialog from 'src/components/dialogs/TaskBreakdownDialog.vue'
 import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
 import { tasks } from 'src/stores/tasks/task-view'
+import TimelyTasksDialog from 'src/components/dialogs/TimelyTasksDialog.vue'
 
 const Dialogger = new Logger('Dialog Utils')
 
@@ -221,6 +222,12 @@ export function openProcedureDetailsDialog(procedure: Procedure) {
 export function openStuckTasksDialog() {
   return Dialog.create({
     component: StuckTasksDialog
+  })
+}
+
+export function openTimelyTasksDialog() {
+  return Dialog.create({
+    component: TimelyTasksDialog
   })
 }
 
