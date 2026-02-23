@@ -61,7 +61,6 @@
   import { UserRepo } from 'src/stores/users/user'
   import { pullFresh } from 'src/utils/sync-utils'
   import { useAuthentication } from 'src/composables/use-authentication'
-  import { useHeaderTimerStore } from 'src/stores/tasks/headerTimer'
   import { openTimelyTasksDialog } from 'src/utils/dialog-utils'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
@@ -73,6 +72,5 @@
     return (ur.getUser() ?? { username: 'guest' }).username
   })
 
-  useHeaderTimerStore().wind()
   const reminders = useTaskStore().reminders
 </script>
