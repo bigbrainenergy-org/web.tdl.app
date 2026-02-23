@@ -64,7 +64,7 @@
               >
                 <template #prepend>
                   <q-icon v-if="item.existingTask" name="link" color="green" />
-                  <q-icon v-if="item.existingTask && (item.existingTask.notes ?? '').includes('!!REFINE')" name="fa-solid fa-anchor-circle-check" color="green" />
+                  <q-icon v-if="item.existingTask && !(item.existingTask.notes ?? '').includes('!!REFINE')" name="fa-solid fa-anchor-circle-check" color="green" />
                   <q-icon
                     v-if="itemHasCycleError(index)"
                     name="warning"
