@@ -40,7 +40,6 @@
           <ul ref="listRef" style="list-style-type: none; margin: 0; padding: 0;">
             <li v-for="(item, index) in items" :key="item.id" class="q-mb-sm" style="display: flex; align-items: center; gap: 8px;">
               <q-avatar rounded icon="fa-solid fa-grip-vertical" class="drag-handle" color="grey" size="sm" style="cursor: grab;" />
-              <q-avatar v-if="item.existingTask && (item.existingTask.notes ?? '').includes('!!REFINE')" rounded icon="fa-solid fa-anchor-circle-check" color="green" size="sm" />
               <q-input
                 ref="inputRefs"
                 v-model="item.text"
@@ -65,6 +64,7 @@
               >
                 <template #prepend>
                   <q-icon v-if="item.existingTask" name="link" color="green" />
+                  <q-icon v-if="item.existingTask && (item.existingTask.notes ?? '').includes('!!REFINE')" icon="fa-solid fa-anchor-circle-check" color="green" />
                   <q-icon
                     v-if="itemHasCycleError(index)"
                     name="warning"
