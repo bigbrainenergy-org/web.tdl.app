@@ -3,7 +3,7 @@
     <q-avatar rounded size="32px">
       <q-icon name="fas fa-triangle-exclamation" />
     </q-avatar>
-    <q-badge v-if="taskAlerts" color="red" rounded floating :label="taskAlerts" />
+    <q-badge v-if="reminders.count" color="red" rounded floating :label="reminders.count" />
   </q-btn>
   <q-btn dense flat no-wrap>
     <q-avatar rounded size="32px">
@@ -64,6 +64,7 @@
   import { useHeaderTimerStore } from 'src/stores/tasks/headerTimer'
   import { openTimelyTasksDialog } from 'src/utils/dialog-utils'
   import { storeToRefs } from 'pinia'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const ur = useRepo(UserRepo)
   const { logout } = useAuthentication()
@@ -73,6 +74,5 @@
   })
 
   useHeaderTimerStore().wind()
-  const { dueTasks, remindTasks } = storeToRefs(useHeaderTimerStore())
-  const taskAlerts = computed(() => dueTasks.value.size + remindTasks.value.size)
+  const reminders = useTaskStore().reminders
 </script>

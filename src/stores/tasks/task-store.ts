@@ -463,6 +463,21 @@ export const useTaskStore = defineStore('tasks', {
       const start = page * pageSize
       const end = start + pageSize
       return state.array.slice(start, end)
+    },
+
+    reminders: (state) => {
+      return computed(() => {
+        const incompleteTasks = state.array.filter(x => !x.completed)
+        const now = new Date()
+        const reminderTasks: Task[] = []
+        const overdueTasks: Task[] = []
+        incompleteTasks.forEach(x => {
+          if(x.remind_me_at && new Date(x.remind_me_at) < now) reminderTasks.push(x)
+          if(x.deadline_at && new Date(x.deadline_at) < now) overdueTasks.push(x)
+        })
+        const count = reminderTasks.length + overdueTasks.length
+        return { reminderTasks, overdueTasks, count }
+      })
     }
   }
 })

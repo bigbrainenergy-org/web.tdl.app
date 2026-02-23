@@ -12,12 +12,12 @@
       <q-card-section>
         <div class="text-h6">Tasks Due</div>
         <q-space />
-        <q-item v-if="!dueTasks.size">
+        <q-item v-if="!reminders.overdueTasks.length">
           <q-item-section>
             <strong>No overdue tasks</strong>
           </q-item-section>
         </q-item>
-        <q-intersection v-for="task in dueTasks.values()" :key="task.id" once style="min-height: 48px">
+        <q-intersection v-for="task in reminders.overdueTasks" :key="task.id" once style="min-height: 48px">
           <TaskItem :task="task" @click="openUpdateTaskDialog(task)" />
         </q-intersection>
       </q-card-section>
@@ -27,12 +27,12 @@
       <q-card-section>
         <div class="text-h6">Reminders</div>
         <q-space />
-        <q-item v-if="!remindTasks.size">
+        <q-item v-if="!reminders.reminderTasks.length">
           <q-item-section>
             <strong>No reminders</strong>
           </q-item-section>
         </q-item>
-        <q-intersection v-for="task in remindTasks.values()" :key="task.id" once style="min-height: 48px">
+        <q-intersection v-for="task in reminders.reminderTasks" :key="task.id" once style="min-height: 48px">
           <TaskItem :task="task" @click="openUpdateTaskDialog(task)" />
         </q-intersection>
       </q-card-section>
@@ -45,12 +45,11 @@
   import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import TaskItem from 'src/components/TaskItem.vue'
   import { storeToRefs } from 'pinia'
-  import { useHeaderTimerStore } from 'src/stores/tasks/headerTimer'
-
-  const { remindTasks, dueTasks } = storeToRefs(useHeaderTimerStore())
-  useHeaderTimerStore().collectTasks()
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide } = useDialogPluginComponent()
+
+  const reminders = useTaskStore().reminders
 
 </script>
