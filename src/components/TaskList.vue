@@ -1,7 +1,7 @@
 <template>
   <q-list class="text-primary" data-cy="task_list">
     <template v-if="loading">
-      <q-item v-for="index in 5" :key="index" v-ripple>
+      <q-item v-for="index in 20" :key="index" v-ripple>
         <q-skeleton type="QRadio" class="q-mr-md" />
         <q-item-section>
           <q-skeleton type="text" />
@@ -43,11 +43,13 @@
         v-else
         v-slot="{ item }"
         :items="tasksWithMetadata"
-        :virtual-scroll-item-size="48"
+        :virtual-scroll-item-size="56"
         style="height: calc(100vh - 200px); min-height: 400px"
       >
         <TaskItem
           v-bind="item"
+          show-actions
+          show-refinement-icon
           @task-clicked="$emit('task-clicked', $event, item.task)"
           @task-completion-toggled="$emit('task-completion-toggled', $event, item.task)"
         />

@@ -111,7 +111,7 @@
           <q-space />
           <q-btn
             color="green"
-            label="Mark Complete"
+            label="Task Done"
             outline
             no-caps
             @click="complete"

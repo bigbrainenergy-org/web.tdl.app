@@ -64,6 +64,7 @@ export function filterByList(tasks: Task[], listTitle: string): Task[] {
 }
 
 export function filterByAgenda(baseQuery: Task[]): Task[] {
+  const MAX_TASKS = 200
   const finalList = new Set<Task>()
   const queue: Map<number, Task[]> = new Map()
   const addedToQueue = new Set<number>()
@@ -104,6 +105,10 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
           const ip = t.grabPrereqs(true)
           if (ip.every((y) => finalList.has(y))) {
             finalList.add(t)
+            if(finalList.size > MAX_TASKS) {
+              bail = true
+              break
+            }
             enqueue(t.grabPostreqs(true).filter((x) => !addedToQueue.has(x.id)))
             qk.splice(j, 1)
             if (qk.length === 0) {
