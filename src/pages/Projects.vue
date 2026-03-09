@@ -8,7 +8,9 @@
           v-if="needRefinement.length > 0"
           flat
           @click="openProjectNeedsRefinement"
-        />
+        >
+          REFINE
+        </q-btn>
         <q-btn-toggle
           v-model="animationSetting"
           flat
