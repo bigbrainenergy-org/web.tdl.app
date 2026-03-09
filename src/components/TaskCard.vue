@@ -1,6 +1,6 @@
 <template>
   <q-card
-    :class="['task-card', { 'in-progress': isInProgress, 'completed': task.completed }]"
+    :class="cardClass"
     @click="handleClick"
   >
     <q-card-section class="q-pa-sm">
@@ -189,6 +189,24 @@
   const handleClick = () => {
     emit('click', props.task)
   }
+
+  const cardClass = computed(() => {
+    const r = (x: Record<string, boolean>) => ['task-card', x]
+    const subclass: Record<string, boolean> = {}
+    if(props.task.completed) {
+      subclass['completed'] = true
+      return r(subclass)
+    }
+    if(props.task.notes?.includes('!REFINE') || props.task.grabPrereqs(true).length === 0 || props.task.grabPostreqs(true).filter(x => x.notes?.includes('!PROJECT') ?? false).length === 0) {
+      subclass['needs-refinement'] = true
+      return r(subclass)
+    }
+    if(props.task.notes?.includes('!INPROGRESS') ?? false) {
+      subclass['in-progress'] = true
+      return r(subclass)
+    }
+    else return ['task-card']
+  })
 </script>
 
 <style scoped>
@@ -214,6 +232,10 @@
 .task-card.completed {
   opacity: 0.6;
   border-color: #003905;
+}
+
+.task-card.needs-refinement {
+  border-color: #ffaa00;
 }
 
 .task-title {
