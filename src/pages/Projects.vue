@@ -4,6 +4,11 @@
       <q-card-actions class="q-pa-sm">
         <div class="text-h6 q-ml-sm">Projects</div>
         <q-space />
+        <q-btn
+          v-if="needRefinement.length > 0"
+          flat
+          @click="openProjectNeedsRefinement"
+        />
         <q-btn-toggle
           v-model="animationSetting"
           flat
@@ -110,6 +115,22 @@
       return hasProjectTag && shouldInclude
     })
   })
+
+  const needRefinement = computed(() => {
+    return projectTasks.value.filter(x => {
+      // props.task.notes?.includes('!REFINE') || props.task.grabPrereqs(true).filter(x => !x.notes?.includes('!PROJECT')).length === 0 || props.task.grabPostreqs(true).filter(x => x.notes?.includes('!PROJECT')).length === 0
+      if (x.notes?.includes('!REFINE')) return true
+      if (x.grabPrereqs(true).filter(y => !y.notes?.includes('!PROJECT')).length === 0) return true
+      if (x.grabPostreqs(true).filter(y => y.notes?.includes('!PROJECT')).length === 0) return true
+      return false
+    })
+  })
+
+  const openProjectNeedsRefinement = () => {
+    if(needRefinement.value.length === 0) return
+    const selectedTask = needRefinement.value[Math.floor(Math.random()*needRefinement.value.length)]
+    if(selectedTask) onNodeClick(selectedTask)
+  }
 
   // Build graph data and apply automatic layout
   const buildGraphData = async (init = false) => {
