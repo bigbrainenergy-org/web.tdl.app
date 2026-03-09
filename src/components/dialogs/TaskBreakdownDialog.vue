@@ -141,7 +141,8 @@
                 <q-item-label>{{ searchResultTask.title }}</q-item-label>
               </q-item-section>
               <q-item-section avatar>
-                <q-avatar v-if="!(searchResultTask.notes ?? '').includes('!!REFINE')" rounded icon="fa-solid fa-anchor-circle-check" color="green" size="sm" />
+                <q-avatar v-if="(searchResultTask.notes ?? '').includes('!PROJECT')" rounded icon="fa-solid fa-folder-open" color="green" size="sm" />
+                <q-avatar v-else-if="!(searchResultTask.notes ?? '').includes('!!REFINE')" rounded icon="fa-solid fa-anchor-circle-check" color="green" size="sm" />
               </q-item-section>
             </q-item>
           </q-list>

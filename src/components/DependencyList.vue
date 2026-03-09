@@ -47,6 +47,11 @@
                   name="fas fa-triangle-exclamation"
                   color="red"
                 />
+                <q-icon
+                  v-if="item.notes?.includes('!PROJECT')"
+                  name="fa-solid fa-folder-open"
+                  color="primary"
+                />
                 <q-item-label lines="2">
                   {{ item.title }}
                 </q-item-label>
