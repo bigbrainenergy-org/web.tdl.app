@@ -197,7 +197,8 @@
       subclass['completed'] = true
       return r(subclass)
     }
-    if(props.task.notes?.includes('!REFINE') || props.task.grabPrereqs(true).filter(x => !x.notes?.includes('!PROJECT')).length === 0 || props.task.grabPostreqs(true).filter(x => x.notes?.includes('!PROJECT')).length === 0) {
+    const project_postreqs = props.task.grabPostreqs(true).filter(x => x.notes?.includes('!PROJECT')).length
+    if(props.task.notes?.includes('!REFINE') || props.task.grabPrereqs(true).filter(x => !x.notes?.includes('!PROJECT')).length === 0 || project_postreqs === 0 || project_postreqs > 4) {
       subclass['needs-refinement'] = true
       return r(subclass)
     }
