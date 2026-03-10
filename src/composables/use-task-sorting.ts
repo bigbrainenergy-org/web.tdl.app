@@ -53,6 +53,66 @@ export function useTaskSorting() {
 
       // Pre-filter tasks for better performance
       const filteredTasks = hideCompleted.value ? tasks.filter(x => !x.completed) : tasks
+      const ptarr = filteredTasks.filter(x => x.notes?.includes('!PROJECT'))
+      const projectids = ptarr.map(x => x.id)
+      const projectTasks = new Set(projectids)
+      const projectDepth = new Map<number, number>()
+
+      const calculateProjectDepth = (x: Task) => {
+        if (projectDepth.has(x.id)) return projectDepth.get(x.id)!
+        let depth = 0
+        const pres = x.grabPrereqs(true)
+        if(pres.length === 0) {
+          projectDepth.set(x.id, depth)
+          return depth
+        }
+        x.grabPrereqs(true).forEach(y => {
+          if(projectTasks.has(y.id)) {
+            if(projectDepth.has(y.id)) {
+              depth = Math.max(projectDepth.get(y.id)!, depth + 1)
+            }
+            else depth = Math.max(calculateProjectDepth(y), depth + 1)
+          }
+        })
+        projectDepth.set(x.id, depth)
+        return depth
+      }
+
+      ptarr.forEach(calculateProjectDepth)
+
+      const associatedProjectDepth = new Map<number, number>()
+
+      const calculateAssociatedProjectDepth = (x: Task): number => {
+        if (associatedProjectDepth.has(x.id)) return associatedProjectDepth.get(x.id)!
+
+        // Project tasks get their own project depth
+        if (projectTasks.has(x.id)) {
+          const depth = projectDepth.get(x.id) ?? 0
+          associatedProjectDepth.set(x.id, depth)
+          return depth
+        }
+
+        const posts = x.grabPostreqs(true)
+        if (posts.length === 0) {
+          associatedProjectDepth.set(x.id, -1)
+          return -1
+        }
+
+        let minDepth = -1
+        for (const y of posts) {
+          const postDepth = associatedProjectDepth.has(y.id)
+            ? associatedProjectDepth.get(y.id)!
+            : calculateAssociatedProjectDepth(y)
+          if (postDepth !== -1) {
+            minDepth = minDepth === -1 ? postDepth : Math.min(minDepth, postDepth)
+          }
+        }
+
+        associatedProjectDepth.set(x.id, minDepth)
+        return minDepth
+      }
+
+      filteredTasks.forEach(calculateAssociatedProjectDepth)
 
       // Find first layer tasks (no incomplete prerequisites)
       const firstLayer = filteredTasks.filter(x => ewww.grabIncompletePres(x.id).size === 0)
@@ -98,7 +158,10 @@ export function useTaskSorting() {
         const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
         const starWeight = (isStarred + descendantCount) * 100 // Max 300 points
 
-        const weight = layerWeight + starWeight
+        const apd = associatedProjectDepth.get(task.id) ?? -1
+        const projectLayerWeight = apd === -1 ? 300 : Math.max(0, 250 - (apd * 50))
+
+        const weight = layerWeight + starWeight + projectLayerWeight
         starWeightCache.set(task.id, weight)
         return weight
       }
