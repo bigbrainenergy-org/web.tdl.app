@@ -32,6 +32,7 @@ import TaskBreakdownDialog from 'src/components/dialogs/TaskBreakdownDialog.vue'
 import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
 import { tasks } from 'src/stores/tasks/task-view'
 import TimelyTasksDialog from 'src/components/dialogs/TimelyTasksDialog.vue'
+import BulkDeleteCompletedDialog from 'src/components/dialogs/BulkDeleteCompletedDialog.vue'
 
 const Dialogger = new Logger('Dialog Utils')
 
@@ -234,6 +235,12 @@ export function openTimelyTasksDialog() {
 export function openQuickListDialog() {
   return Dialog.create({
     component: QuickListDialog
+  })
+}
+
+export function openBulkDeleteCompletedDialog() {
+  return Dialog.create({
+    component: BulkDeleteCompletedDialog
   })
 }
 

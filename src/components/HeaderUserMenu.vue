@@ -1,4 +1,9 @@
 <template>
+  <q-btn dense flat no-wrap @click="openBulkDeleteCompletedDialog">
+    <q-avatar rounded size="32px">
+      <q-icon name="fas fa-broom" />
+    </q-avatar>
+  </q-btn>
   <q-btn dense flat no-wrap @click="openTimelyTasksDialog">
     <q-avatar rounded size="32px">
       <q-icon name="fas fa-triangle-exclamation" />
@@ -61,7 +66,7 @@
   import { UserRepo } from 'src/stores/users/user'
   import { pullFresh } from 'src/utils/sync-utils'
   import { useAuthentication } from 'src/composables/use-authentication'
-  import { openTimelyTasksDialog } from 'src/utils/dialog-utils'
+  import { openTimelyTasksDialog, openBulkDeleteCompletedDialog } from 'src/utils/dialog-utils'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 

@@ -246,6 +246,17 @@ export const useTaskStore = defineStore('tasks', {
           notifySuccess('Task was deleted.')
         }, handleError('Error deleting task.'))
     },
+    apiBulkDelete(ids: number[]) {
+      const idSet = new Set(ids)
+      return Promise.all(
+        ids.map(id => this.api().delete(`/tasks/${id}`, this.commonHeader()))
+      ).then(() => {
+        this.array = this.array.filter(x => !idSet.has(x.id))
+        for (const id of ids) this.mapp.delete(id)
+        recalculate('apiBulkDelete')
+        notifySuccess(`Deleted ${ids.length} tasks.`)
+      }, handleError('Error bulk-deleting tasks.'))
+    },
     /**
      *
      * @param id the task ID to begin the traversal
