@@ -40,6 +40,7 @@ export function useTaskSorting() {
       const filteredTasks = hideCompleted.value ? tasks.filter(x => !x.completed) : tasks
       const ptarr = filteredTasks.filter(x => x.notes?.includes('!PROJECT'))
       const projectids = ptarr.map(x => x.id)
+      const inProgressProjectIds = new Set(ptarr.filter(x => x.notes?.includes('!INPROGRESS')).map(x => x.id))
       const projectTasks = new Set(projectids)
       const projectDepth = new Map<number, number>()
 
@@ -72,36 +73,49 @@ export function useTaskSorting() {
 
       ptarr.forEach(calculateProjectDepth)
 
-      const associatedProjectDepth = new Map<number, number>()
+      const associatedProjectDepth = new Map<number, { depth: number, inprogress: boolean }>()
 
-      const calculateAssociatedProjectDepth = (x: Task): number => {
+      const calculateAssociatedProjectDepth = (x: Task): { depth: number, inprogress: boolean } => {
         if (associatedProjectDepth.has(x.id)) return associatedProjectDepth.get(x.id)!
 
         // Project tasks get their own project depth
         if (projectTasks.has(x.id)) {
           const depth = projectDepth.get(x.id) ?? 0
-          associatedProjectDepth.set(x.id, depth)
-          return depth
+          const inprogress = inProgressProjectIds.has(x.id)
+          const result = { depth, inprogress }
+          associatedProjectDepth.set(x.id, result)
+          return result
         }
 
         const posts = x.grabPostreqs(true)
         if (posts.length === 0) {
-          associatedProjectDepth.set(x.id, -1)
-          return -1
+          const result = { depth: -1, inprogress: false }
+          associatedProjectDepth.set(x.id, result)
+          return result
         }
 
         let minDepth = -1
+        let hasInProgressAtMinDepth = false
         for (const y of posts) {
-          const postDepth = associatedProjectDepth.has(y.id)
+          const postResult = associatedProjectDepth.has(y.id)
             ? associatedProjectDepth.get(y.id)!
             : calculateAssociatedProjectDepth(y)
-          if (postDepth !== -1) {
-            minDepth = minDepth === -1 ? postDepth : Math.min(minDepth, postDepth)
+
+          if (postResult.depth !== -1) {
+            if (minDepth === -1 || postResult.depth < minDepth) {
+              // Found a new minimum - update depth and inprogress flag
+              minDepth = postResult.depth
+              hasInProgressAtMinDepth = postResult.inprogress
+            } else if (postResult.depth === minDepth && postResult.inprogress) {
+              // Same minimum depth, but this one is in progress
+              hasInProgressAtMinDepth = true
+            }
           }
         }
 
-        associatedProjectDepth.set(x.id, minDepth)
-        return minDepth
+        const result = { depth: minDepth, inprogress: hasInProgressAtMinDepth }
+        associatedProjectDepth.set(x.id, result)
+        return result
       }
 
       filteredTasks.forEach(calculateAssociatedProjectDepth)
@@ -125,6 +139,21 @@ export function useTaskSorting() {
       // Cache star weights to avoid recomputation during binary search
       const starWeightCache = new Map<number, number>()
 
+      // Helper to find first deadline in incomplete postreqs
+      const findFirstPostreqDeadline = (task: Task, visited = new Set<number>()): string | undefined => {
+        if (visited.has(task.id)) return undefined
+        visited.add(task.id)
+
+        const posts = ewww.grabIncompletePosts(task.id)
+        for (const [_postId, postTask] of posts) {
+          if (postTask.deadline_at) return postTask.deadline_at
+          const found = findFirstPostreqDeadline(postTask, visited)
+          if (found) return found
+        }
+
+        return undefined
+      }
+
       // Helper to calculate priority weight for a task (with caching)
       // Priority = (layer_weight * 250) + (star_weight * 100)
       // - Adjacent layers can swap based on stars (fuzzy)
@@ -141,11 +170,34 @@ export function useTaskSorting() {
         const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
         const starWeight = (isStarred + descendantCount) * 100 // Max 300 points
 
-        const apd = associatedProjectDepth.get(task.id) ?? -1
+        const apdResult = associatedProjectDepth.get(task.id)
+        const apd = apdResult?.depth ?? -1
         // Depth is capped at 5, so apd * 50 ranges from 0-250; no need to clamp
         const projectLayerWeight = apd === -1 ? 300 : 250 - (apd * 50)
 
-        const weight = layerWeight + starWeight + projectLayerWeight
+        // +50 bonus if nearest project postrequisite has !INPROGRESS
+        const inProgressBonus = apdResult?.inprogress ? 50 : 0
+
+        // Due date bonus: exponential drop-off (1/2)^(hours/24)
+        // Max 100 pts for deadlines within 24 hours, exponentially decreasing after that
+        // If task has no deadline, traverse incomplete postreqs to find one
+        let dueDateBonus = 0
+        let deadlineToUse = task.deadline_at
+        if (!deadlineToUse) {
+          deadlineToUse = findFirstPostreqDeadline(task)
+        }
+
+        if (deadlineToUse) {
+          const now = Date.now()
+          const deadline = new Date(deadlineToUse).getTime()
+          const hoursRemaining = (deadline - now) / (1000 * 60 * 60)
+
+          if (hoursRemaining > 0) {
+            dueDateBonus = Math.min(100, 100 * Math.pow(0.5, hoursRemaining / 24))
+          }
+        }
+
+        const weight = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus
         starWeightCache.set(task.id, weight)
         return weight
       }
