@@ -107,7 +107,7 @@ export const useDependencyStore = defineStore('dependencies', {
     async create(first_id: number, second_id: number, degree: 1 | 2 | 3 = 3) {
       const result = await this._api().post<TaskDependency>(
         '/task_dependencies',
-        { first_id, second_id, degree },
+        { task_dependency: { first_id, second_id, degree } },
         this._commonHeader()
       )
       const dep = result.data
@@ -117,11 +117,10 @@ export const useDependencyStore = defineStore('dependencies', {
     },
 
     async remove(first_id: number, second_id: number) {
-      await this._api().delete('/task_dependencies', {
-        ...this._commonHeader(),
-        data: { first_id, second_id }
-      })
-      const idx = this._deps.findIndex(d => d.first_id === first_id && d.second_id === second_id)
+      const dep = this._deps.find(d => d.first_id === first_id && d.second_id === second_id)
+      if (!dep) throw new Error(`Dependency not found: ${first_id} -> ${second_id}`)
+      await this._api().delete(`/task_dependencies/${dep.id}`, this._commonHeader())
+      const idx = this._deps.indexOf(dep)
       if (idx !== -1) this._deps.splice(idx, 1)
       this._removeFromMaps(first_id, second_id)
     },
