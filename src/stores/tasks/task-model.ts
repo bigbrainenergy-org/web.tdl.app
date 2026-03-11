@@ -11,6 +11,7 @@ import type { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { taskLike } from './task-utils'
 import { useTaskStarredStore } from './task-starred'
 import { useDependencyStore } from '../dependencies/dependency-store'
+import type { TaskDepRef } from '../dependencies/dependency-types'
 
 export class Task implements TaskLike {
   completed: boolean
@@ -26,6 +27,9 @@ export class Task implements TaskLike {
   mental_energy_required: number
   physical_energy_required: number
   task_duration_in_minutes?: number
+  declare pres: TaskDepRef[]
+  declare posts: TaskDepRef[]
+  declare _refsBuilt: boolean
   constructor(data: TaskLike | CreateTaskOptions) {
     this.completed = taskLike(data, 'completed') ? data.completed : false
     this.id = taskLike(data, 'id') ? data.id : -1
@@ -40,6 +44,9 @@ export class Task implements TaskLike {
     this.mental_energy_required = data.mental_energy_required ?? 50
     this.physical_energy_required = data.physical_energy_required ?? 50
     this.task_duration_in_minutes = data.task_duration_in_minutes
+    Object.defineProperty(this, 'pres', { value: [], writable: true, enumerable: false })
+    Object.defineProperty(this, 'posts', { value: [], writable: true, enumerable: false })
+    Object.defineProperty(this, '_refsBuilt', { value: false, writable: true, enumerable: false })
   }
   get list() {
     const id = this.list_id
@@ -70,12 +77,22 @@ export class Task implements TaskLike {
     return newVal
   }
   grabPrereqs(incompleteOnly: boolean): Task[] {
+    if (this._refsBuilt) {
+      return incompleteOnly
+        ? this.pres.filter(r => !r.task.completed).map(r => r.task)
+        : this.pres.map(r => r.task)
+    }
     const depStore = useDependencyStore()
     const taskStore = useTaskStore()
     const entries = incompleteOnly ? depStore.getIncompletePres(this.id) : depStore.getPres(this.id)
     return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
   }
   grabPostreqs(incompleteOnly: boolean): Task[] {
+    if (this._refsBuilt) {
+      return incompleteOnly
+        ? this.posts.filter(r => !r.task.completed).map(r => r.task)
+        : this.posts.map(r => r.task)
+    }
     const depStore = useDependencyStore()
     const taskStore = useTaskStore()
     const entries = incompleteOnly ? depStore.getIncompletePosts(this.id) : depStore.getPosts(this.id)

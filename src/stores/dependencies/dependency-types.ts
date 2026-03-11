@@ -1,3 +1,5 @@
+import type { Task } from '../tasks/task-model'
+
 export interface TaskDependency {
   id: number            // resource ID (used for DELETE)
   first_id: number      // pre-task (must complete first)
@@ -8,5 +10,10 @@ export interface TaskDependency {
 
 export interface DependencyEntry {
   task_id: number       // the other task's ID
+  degree: 1 | 2 | 3
+}
+
+export interface TaskDepRef {
+  task: Task
   degree: 1 | 2 | 3
 }

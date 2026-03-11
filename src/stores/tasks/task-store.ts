@@ -1,6 +1,6 @@
 import type { PiniaPluginContext, StateTree } from 'pinia'
 import { defineStore } from 'pinia'
-import { shallowRef, computed } from 'vue'
+import { shallowRef, computed, markRaw } from 'vue'
 import type {
   AllOptionalTaskProperties,
   CreateTaskOptions,
@@ -24,13 +24,13 @@ const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
 export const useTaskStore = defineStore('tasks', {
   state: (): TaskState => ({
     array: shallowRef([]) as any,
-    mapp: new Map(),
+    mapp: markRaw(new Map()),
     arrayVersion: 0
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
       TaskStoreLogger.log('afterRestore starting')
-      const map = new Map()
+      const map = markRaw(new Map())
       context.store.array.forEach((x: Task) => map.set(x.id, x))
       context.store.mapp = map
       TaskStoreLogger.log('afterRestore complete')

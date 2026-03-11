@@ -9,7 +9,8 @@ import { handleError, notifySuccess } from 'src/utils/notification-utils'
 import { Queue } from 'src/utils/types'
 import { Logger } from 'src/utils/d'
 import { recalculate } from '../tasks/task-view'
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, markRaw } from 'vue'
+import type { Task } from '../tasks/task-model'
 
 const depLogger = new Logger('Dep Store', '#6abc19')
 export const initialized = ref(false)
@@ -17,14 +18,21 @@ export const initialized = ref(false)
 export const useDependencyStore = defineStore('dependencies', {
   state: () => ({
     _deps: [] as TaskDependency[],
-    presMap: new Map<number, DependencyEntry[]>(),
-    postsMap: new Map<number, DependencyEntry[]>()
+    presMap: markRaw(new Map<number, DependencyEntry[]>()),
+    postsMap: markRaw(new Map<number, DependencyEntry[]>())
   }),
   persist: {
     paths: ['_deps'],
     afterRestore: (ctx) => {
       depLogger.log('afterRestore: rebuilding maps')
       ctx.store._rebuildMaps()
+      ctx.store._buildTaskRefs()
+      initialized.value = true
+
+      const taskStore = useTaskStore()
+      useTaskStarredStore().initializeFromTasks(taskStore.array)
+      useTaskNeedsRefinementStore().initializeFromTasks(taskStore.array)
+      recalculate('dep store afterRestore')
     },
     serializer: {
       serialize: (value: any) => JSON.stringify(value._deps ?? []),
@@ -46,8 +54,8 @@ export const useDependencyStore = defineStore('dependencies', {
         postEntries.push({ task_id: dep.second_id, degree: dep.degree })
         posts.set(dep.first_id, postEntries)
       }
-      this.presMap = pres
-      this.postsMap = posts
+      this.presMap = markRaw(pres)
+      this.postsMap = markRaw(posts)
       depLogger.log(`_rebuildMaps: ${this._deps.length} deps in ${performance.now() - start}ms`)
     },
 
@@ -74,6 +82,33 @@ export const useDependencyStore = defineStore('dependencies', {
       }
     },
 
+    _buildTaskRefs() {
+      const start = performance.now()
+      const taskStore = useTaskStore()
+
+      for (const [, task] of taskStore.mapp) {
+        const t = task as Task
+        t.pres = []
+        t.posts = []
+        t._refsBuilt = false
+      }
+
+      for (const dep of this._deps) {
+        const firstTask = taskStore.mapp.get(dep.first_id) as Task | undefined
+        const secondTask = taskStore.mapp.get(dep.second_id) as Task | undefined
+        if (firstTask && secondTask) {
+          secondTask.pres.push({ task: firstTask, degree: dep.degree })
+          firstTask.posts.push({ task: secondTask, degree: dep.degree })
+        }
+      }
+
+      for (const [, task] of taskStore.mapp) {
+        (task as Task)._refsBuilt = true
+      }
+
+      depLogger.log(`_buildTaskRefs: ${this._deps.length} deps across ${taskStore.mapp.size} tasks in ${performance.now() - start}ms`)
+    },
+
     _commonHeader() {
       try {
         const auth = useAuthenticationStore()
@@ -92,6 +127,7 @@ export const useDependencyStore = defineStore('dependencies', {
       const result = await this._api().get<TaskDependency[]>('/task_dependencies', this._commonHeader())
       this._deps = result.data
       this._rebuildMaps()
+      this._buildTaskRefs()
 
       // Post-fetch initialization (mirrors old ewww.refresh_all behavior)
       initialized.value = true
@@ -113,6 +149,15 @@ export const useDependencyStore = defineStore('dependencies', {
       const dep = result.data
       this._deps.push(dep)
       this._addToMaps(dep)
+
+      const taskStore = useTaskStore()
+      const firstTask = taskStore.mapp.get(first_id) as Task | undefined
+      const secondTask = taskStore.mapp.get(second_id) as Task | undefined
+      if (firstTask && secondTask) {
+        secondTask.pres.push({ task: firstTask, degree: dep.degree })
+        firstTask.posts.push({ task: secondTask, degree: dep.degree })
+      }
+
       return dep
     },
 
@@ -127,6 +172,12 @@ export const useDependencyStore = defineStore('dependencies', {
       const idx = this._deps.indexOf(dep)
       if (idx !== -1) this._deps.splice(idx, 1)
       this._removeFromMaps(first_id, second_id)
+
+      const taskStore = useTaskStore()
+      const firstTask = taskStore.mapp.get(first_id) as Task | undefined
+      const secondTask = taskStore.mapp.get(second_id) as Task | undefined
+      if (secondTask) secondTask.pres = secondTask.pres.filter(r => r.task.id !== first_id)
+      if (firstTask) firstTask.posts = firstTask.posts.filter(r => r.task.id !== second_id)
     },
 
     // --- Lookup methods ---
@@ -267,6 +318,20 @@ export const useDependencyStore = defineStore('dependencies', {
     },
 
     removeTaskEntries(taskId: number) {
+      // Clean up task refs bidirectionally
+      const taskStore = useTaskStore()
+      const deletedTask = taskStore.mapp.get(taskId) as Task | undefined
+      if (deletedTask) {
+        for (const ref of deletedTask.pres) {
+          ref.task.posts = ref.task.posts.filter(r => r.task.id !== taskId)
+        }
+        for (const ref of deletedTask.posts) {
+          ref.task.pres = ref.task.pres.filter(r => r.task.id !== taskId)
+        }
+        deletedTask.pres = []
+        deletedTask.posts = []
+      }
+
       // Remove from _deps array
       this._deps = this._deps.filter(d => d.first_id !== taskId && d.second_id !== taskId)
 
@@ -285,21 +350,5 @@ export const useDependencyStore = defineStore('dependencies', {
       }
     },
 
-    /**
-     * Initialize maps and state after restore from localStorage.
-     * Called from sync-utils after task store is ready.
-     */
-    initializeFromLocalStorage() {
-      this._rebuildMaps()
-
-      const taskStore = useTaskStore()
-      initialized.value = true
-      useTaskStarredStore().initializeFromTasks(taskStore.array)
-      useTaskNeedsRefinementStore().initializeFromTasks(taskStore.array)
-
-      nextTick(() => {
-        recalculate('dep store initializeFromLocalStorage')
-      })
-    }
   }
 })
