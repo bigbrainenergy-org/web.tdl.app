@@ -164,7 +164,7 @@ export const useTaskStarredStore = defineStore('task-starred', {
       const task = taskMap.get(taskId)
       if (!task) return 0
 
-      const posts = (task as TaskLike & { posts: Array<{ task: TaskLike; degree: number }> }).posts
+      const posts = (task as TaskLike & { posts: Array<{ task: TaskLike; degree: number | null }> }).posts
       let totalCount = 0
       for (const ref of posts) {
         if (ref.task.completed) continue

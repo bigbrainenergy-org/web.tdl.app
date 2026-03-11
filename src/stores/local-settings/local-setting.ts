@@ -60,6 +60,10 @@ interface LocalSettingsState {
   strictModeMaxPostreqs: 1 | 2 | 3 | 4 | 5 | 6
   sideBarOpen: boolean
   agendaSortLimit: number
+  quickSortLayerZeroDegree: 1 | 2 | 3 | null
+  quickSortPostsDegree: 1 | 2 | 3 | null
+  addDependencyDegree: 1 | 2 | 3 | null
+  unsetDegreeBehavior: 1 | 2 | 3
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -143,7 +147,11 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       taskPostreqInfoView: 'Quantity',
       strictModeMaxPostreqs: 1,
       sideBarOpen: true,
-      agendaSortLimit: 200
+      agendaSortLimit: 200,
+      quickSortLayerZeroDegree: 1,
+      quickSortPostsDegree: 1,
+      addDependencyDegree: 2,
+      unsetDegreeBehavior: 2
     }
   },
   persist: true,

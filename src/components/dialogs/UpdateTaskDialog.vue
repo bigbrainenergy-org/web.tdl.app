@@ -40,24 +40,28 @@
               :items="allPres"
               :dependency-type="preDepType"
               :menu-items="prereqMenuItems"
+              :degrees="preDegrees"
               show-prune
               @prune-dependencies="prunePres"
               @add-item="openPrerequisiteDialog"
               @remove-item="removePre"
               @select-item="setCurrentTask"
               @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
+              @update-degree="(p) => depStore.updateDegree(p.taskId, currentTask.id, p.degree)"
             />
             <q-btn label="Sort Postreqs" @click="openSortPostreqsDialog" />
             <DependencyList
               :items="allPosts"
               :dependency-type="postDepType"
               :menu-items="postreqMenuItems"
+              :degrees="postDegrees"
               show-prune
               @prune-dependencies="prunePosts"
               @add-item="openPostrequisiteDialog"
               @remove-item="removePost"
               @select-item="setCurrentTask"
               @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
+              @update-degree="(p) => depStore.updateDegree(currentTask.id, p.taskId, p.degree)"
             />
             <div class="row">
               <div class="col">
@@ -215,6 +219,20 @@
     const taskStore = useTaskStore()
     const entries = hideCompleted.value ? depStore.getIncompletePosts(currentTaskFromStore.value.id) : depStore.getPosts(currentTaskFromStore.value.id)
     return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
+  })
+
+  const preDegrees = computed(() => {
+    const entries = depStore.getPres(currentTaskFromStore.value.id)
+    const map = new Map<number, 1 | 2 | 3 | null>()
+    for (const e of entries) map.set(e.task_id, e.degree)
+    return map
+  })
+
+  const postDegrees = computed(() => {
+    const entries = depStore.getPosts(currentTaskFromStore.value.id)
+    const map = new Map<number, 1 | 2 | 3 | null>()
+    for (const e of entries) map.set(e.task_id, e.degree)
+    return map
   })
 
   function setCurrentTask(newTask: Task) {

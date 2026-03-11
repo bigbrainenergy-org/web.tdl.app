@@ -252,18 +252,19 @@ export function addPrerequisitesDialog(currentTask: Task) {
       onSelect: async (payload: { task?: CreateTaskOptions, id?: number }) => {
         Dialogger.log(`onSelect: Starting addPre for ${payload.id ? `task ${payload.id}...` : 'new task' }`)
         const start = performance.now()
+        const degree = useLocalSettingsStore().addDependencyDegree
         if(payload.id) {
-          await addPre(currentTask, payload.id)
+          await addPre(currentTask, payload.id, degree)
           Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
         }
         else if (payload.task) {
           const newTask = await useTaskStore().apiCreate(payload.task)
           if (newTask) {
-            await addPre(currentTask, newTask.id)
+            await addPre(currentTask, newTask.id, degree)
           }
           Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
         }
-        
+
       },
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')
@@ -301,14 +302,15 @@ export function addPostrequisiteDialog(currentTask: Task) {
       onSelect: async (payload: { task?: CreateTaskOptions, id?: number }) => {
         Dialogger.log(`onSelect: Starting addPost for ${payload.id ? `task ${payload.id}...` : 'new task' }`)
         const start = performance.now()
+        const degree = useLocalSettingsStore().addDependencyDegree
         if(payload.id) {
-          await addPost(currentTask, payload.id)
+          await addPost(currentTask, payload.id, degree)
           Dialogger.log(`onSelect: addPost completed in ${performance.now() - start}ms`)
         }
         else if (payload.task) {
           const newTask = await useTaskStore().apiCreate(payload.task)
           if (newTask) {
-            await addPost(currentTask, newTask.id)
+            await addPost(currentTask, newTask.id, degree)
           }
           Dialogger.log(`onSelect: addPost completed in ${performance.now() - start}ms`)
         }

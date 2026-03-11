@@ -24,11 +24,11 @@ export function updateTask(id: number, options: AllOptionalTaskProperties) {
     }, handleError('Error updating task'))
 }
 
-export async function addPre(task: Task, newPreID: number) {
+export async function addPre(task: Task, newPreID: number, degree?: 1 | 2 | 3 | null) {
   TaskUtilsLogger.log(`addPre called: adding ${newPreID} as prereq to ${task.id}`)
   const start = performance.now()
   const depStore = useDependencyStore()
-  return depStore.addRule(newPreID, task.id).then(() => {
+  return depStore.addRule(newPreID, task.id, { degree }).then(() => {
       const duration = performance.now() - start
       TaskUtilsLogger.log(`addPre .then() fired after ${duration}ms total`)
       notifySuccess('Added Prerequisite', 'fa-solid fa-link')
@@ -39,10 +39,10 @@ export async function addPre(task: Task, newPreID: number) {
     }, handleError('Failed to add prereq'))
 }
 
-export async function addPost(task: Task, newPostID: number) {
+export async function addPost(task: Task, newPostID: number, degree?: 1 | 2 | 3 | null) {
   const start = performance.now()
   const depStore = useDependencyStore()
-  return depStore.addRule(task.id, newPostID).then(() => {
+  return depStore.addRule(task.id, newPostID, { degree }).then(() => {
       const duration = performance.now() - start
       notifySuccess('Added Postrequisite', 'fa-solid fa-link')
       TaskUtilsLogger.assert(

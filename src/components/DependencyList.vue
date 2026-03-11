@@ -36,6 +36,12 @@
                   @update:model-value="emit('toggleCompletedItem', item)"
                 />
               </q-item-section>
+              <q-item-section v-if="degrees.size > 0" side>
+                <DegreeStars
+                  :model-value="degrees.get(item.id) ?? null"
+                  @update:model-value="(val) => emit('updateDegree', { taskId: item.id, degree: val })"
+                />
+              </q-item-section>
               <q-item-section class="vertical-top wrapped" :style="style">
                 <q-icon
                   v-if="isNearRedundant(item.id)"
@@ -76,6 +82,7 @@
   import { onUpdated } from 'vue'
   import { ref } from 'vue'
   import MenuListItem from './MenuListItem.vue'
+  import DegreeStars from './glorious/DegreeStars.vue'
 
   export interface EntityType {
     singular: string
@@ -87,13 +94,15 @@
     dependencyType?: EntityType // eg. Prerequisites (capitalize)
     menuItems?: Array<SimpleMenuItem<Task>>
     showPrune?: boolean
+    degrees?: Map<number, 1 | 2 | 3 | null>
   }
 
   const prop = withDefaults(defineProps<Props>(), {
     items: () => [],
     dependencyType: () => ({ plural: 'Requisites', singular: 'Requisite' }),
     menuItems: () => [],
-    showPrune: false
+    showPrune: false,
+    degrees: () => new Map()
   })
 
   // can do something like this to limit recalculations, especially when setting a task as MVP
@@ -109,7 +118,8 @@
     'removeItem',
     'selectItem',
     'toggleCompletedItem',
-    'pruneDependencies'
+    'pruneDependencies',
+    'updateDegree'
   ])
 
   const busySignal = computed(() => useLoadingStateStore().busy)

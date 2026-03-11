@@ -12,6 +12,7 @@
         <GloriousSettingsPopup>
           <GloriousToggle v-model:model-value="omitRedundant" label="Omit Redundant Tasks" />
         </GloriousSettingsPopup>
+        <DegreeStars v-model:model-value="addDependencyDegree" size="sm" label="Degree" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -67,6 +68,7 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
+  import { storeToRefs } from 'pinia'
   import { computed, onMounted, ref, shallowRef, watch } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
   import type { λ } from 'src/utils/types'
@@ -83,6 +85,7 @@
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
+  import DegreeStars from '../glorious/DegreeStars.vue'
   import TaskItem from '../TaskItem.vue'
   import { useTaskMetadata } from 'src/composables/use-task-metadata'
   import { Logger } from 'src/utils/d'
@@ -148,6 +151,7 @@
 
   const usr = useLocalSettingsStore()
   const omitRedundant = ref(usr.omitRedundantSearchResults)
+  const { addDependencyDegree } = storeToRefs(usr)
 
   watch(omitRedundant, () => {
     usr.omitRedundantSearchResults = omitRedundant.value

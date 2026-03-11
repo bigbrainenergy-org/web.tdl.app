@@ -44,6 +44,14 @@
                 cute-name="Max Tasks to Select at a Time"
                 @update:model-value="tryNewPair"
               />
+              <q-item>
+                <q-item-section>
+                  <q-item-label>Dependency Degree</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <DegreeStars v-model:model-value="quickSortLayerZeroDegree" size="sm" />
+                </q-item-section>
+              </q-item>
             </q-popup-proxy>
           </q-btn>
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
@@ -130,6 +138,7 @@
   import { dragAndDrop, useDragAndDrop } from '@formkit/drag-and-drop/vue'
   import { Logger } from 'src/utils/d'
   import TaskItem from '../TaskItem.vue'
+  import DegreeStars from '../glorious/DegreeStars.vue'
 
   const quickSortLogger = new Logger('Quick Sort', '#3498db')
 
@@ -163,7 +172,8 @@
     // enableQuickSortOnNewTask,
     quickSortDialogMaxToShow,
     enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize
+    quickSortBailOnTaskSize,
+    quickSortLayerZeroDegree
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
@@ -440,7 +450,7 @@
     const depStore = useDependencyStore()
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     for (const t of selected_tasks) {
-      await depStore.addRule(mvp.id, t.id)
+      await depStore.addRule(mvp.id, t.id, { degree: quickSortLayerZeroDegree.value })
     }
     await tryNewPair()
     loading.value = false
@@ -450,7 +460,7 @@
     loading.value = true
     const depStore = useDependencyStore()
     const taskIds = currentPair.value.map(t => t.id)
-    await depStore.stringTasks(taskIds)
+    await depStore.stringTasks(taskIds, quickSortLayerZeroDegree.value)
     await tryNewPair()
     loading.value = false
   }

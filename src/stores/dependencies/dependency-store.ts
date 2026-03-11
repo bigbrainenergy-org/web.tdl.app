@@ -140,10 +140,12 @@ export const useDependencyStore = defineStore('dependencies', {
       })
     },
 
-    async create(first_id: number, second_id: number, degree: 1 | 2 | 3 = 2) {
+    async create(first_id: number, second_id: number, degree?: 1 | 2 | 3 | null) {
+      const body: Record<string, any> = { first_id, second_id }
+      if (degree != null) body.degree = degree
       const result = await this._api().post<TaskDependency>(
         '/task_dependencies',
-        { first_id, second_id, degree },
+        body,
         this._commonHeader()
       )
       const dep = result.data
@@ -256,8 +258,8 @@ export const useDependencyStore = defineStore('dependencies', {
 
     // --- High-level operations ---
 
-    async addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, degree?: 1 | 2 | 3 } = {}) {
-      const { skipRecalculate = false, degree = 2 } = options
+    async addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, degree?: 1 | 2 | 3 | null } = {}) {
+      const { skipRecalculate = false, degree } = options
       const timings: any = { addRuleTotal: performance.now() }
 
       // Validate no cycles
@@ -298,7 +300,43 @@ export const useDependencyStore = defineStore('dependencies', {
       recalculate('removeRule')
     },
 
-    async stringTasks(taskIds: number[], degree: 1 | 2 | 3 = 3) {
+    async updateDegree(first_id: number, second_id: number, degree: 1 | 2 | 3 | null) {
+      const dep = this._deps.find(d => d.first_id === first_id && d.second_id === second_id)
+      if (!dep) throw new Error(`Dependency not found: ${first_id} -> ${second_id}`)
+
+      const body: Record<string, any> = {}
+      if (degree != null) body.degree = degree
+      await this._api().patch(`/task_dependencies/${dep.id}`, body, this._commonHeader())
+
+      dep.degree = degree
+
+      // Update maps
+      const preEntries = this.presMap.get(second_id)
+      if (preEntries) {
+        const entry = preEntries.find(e => e.task_id === first_id)
+        if (entry) entry.degree = degree
+      }
+      const postEntries = this.postsMap.get(first_id)
+      if (postEntries) {
+        const entry = postEntries.find(e => e.task_id === second_id)
+        if (entry) entry.degree = degree
+      }
+
+      // Update task refs
+      const taskStore = useTaskStore()
+      const firstTask = taskStore.mapp.get(first_id) as Task | undefined
+      const secondTask = taskStore.mapp.get(second_id) as Task | undefined
+      if (secondTask) {
+        const ref = secondTask.pres.find(r => r.task.id === first_id)
+        if (ref) ref.degree = degree
+      }
+      if (firstTask) {
+        const ref = firstTask.posts.find(r => r.task.id === second_id)
+        if (ref) ref.degree = degree
+      }
+    },
+
+    async stringTasks(taskIds: number[], degree?: 1 | 2 | 3 | null) {
       if (taskIds.length < 2) return
 
       depLogger.log(`stringTasks: connecting ${taskIds.length} tasks in sequence`)

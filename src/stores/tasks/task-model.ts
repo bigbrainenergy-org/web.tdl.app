@@ -13,7 +13,7 @@ import { useTaskStarredStore } from './task-starred'
 import { useDependencyStore } from '../dependencies/dependency-store'
 export interface TaskDepRef {
   task: Task
-  degree: 1 | 2 | 3
+  degree: 1 | 2 | 3 | null
 }
 
 export class Task implements TaskLike {

@@ -26,6 +26,14 @@
                 cute-name="Max Tasks to Select at a Time"
                 @update:model-value="tryNewPair"
               />
+              <q-item>
+                <q-item-section>
+                  <q-item-label>Dependency Degree</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <DegreeStars v-model:model-value="quickSortPostsDegree" size="sm" />
+                </q-item-section>
+              </q-item>
             </q-popup-proxy>
           </q-btn>
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
@@ -109,6 +117,7 @@
   import { addPostrequisiteDialog } from 'src/utils/dialog-utils'
   import { useDragAndDrop, dragAndDrop } from '@formkit/drag-and-drop/vue'
   import TaskItem from '../TaskItem.vue'
+  import DegreeStars from '../glorious/DegreeStars.vue'
 
   interface qspotdProps {
     parentTaskId: number
@@ -144,7 +153,8 @@
     quickSortDialogMaxToShow,
     enableQuickSortBailOnBigTask,
     quickSortBailOnTaskSize,
-    strictModeMaxPostreqs
+    strictModeMaxPostreqs,
+    quickSortPostsDegree
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
@@ -346,7 +356,7 @@
     // Remove selected tasks from parent's postreqs and add them under mvp
     for (const id of selected_ids) {
       await depStore.removeRule(parentTask.value.id, id)
-      await depStore.addRule(mvp.id, id)
+      await depStore.addRule(mvp.id, id, { degree: quickSortPostsDegree.value })
     }
     await tryNewPair()
     loading.value = false
@@ -362,7 +372,7 @@
       await depStore.removeRule(parentTask.value.id, id)
     }
     const taskIds = currentPair.value.map(t => t.id)
-    await depStore.stringTasks(taskIds)
+    await depStore.stringTasks(taskIds, quickSortPostsDegree.value)
     await tryNewPair()
     loading.value = false
   }
