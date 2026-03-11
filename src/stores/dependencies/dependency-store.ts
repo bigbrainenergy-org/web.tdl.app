@@ -263,6 +263,25 @@ export const useDependencyStore = defineStore('dependencies', {
       depLogger.log(`stringTasks completed in ${performance.now() - startTime}ms`)
     },
 
+    removeTaskEntries(taskId: number) {
+      // Remove from _deps array
+      this._deps = this._deps.filter(d => d.first_id !== taskId && d.second_id !== taskId)
+
+      // Remove as a key from both maps
+      this.presMap.delete(taskId)
+      this.postsMap.delete(taskId)
+
+      // Remove from other tasks' entry arrays
+      for (const [, entries] of this.presMap) {
+        const idx = entries.findIndex(e => e.task_id === taskId)
+        if (idx !== -1) entries.splice(idx, 1)
+      }
+      for (const [, entries] of this.postsMap) {
+        const idx = entries.findIndex(e => e.task_id === taskId)
+        if (idx !== -1) entries.splice(idx, 1)
+      }
+    },
+
     /**
      * Initialize maps and state after restore from localStorage.
      * Called from sync-utils after task store is ready.

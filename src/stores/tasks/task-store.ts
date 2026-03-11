@@ -194,8 +194,9 @@ export const useTaskStore = defineStore('tasks', {
       return this.api()
         .delete(`/tasks/${id}`, this.commonHeader())
         .then(() => {
-          const theTask = this.hardGet(id)
           this.array = this.array.filter(x => x.id !== id)
+          this.mapp.delete(id)
+          useDependencyStore().removeTaskEntries(id)
           recalculate('apiDelete')
           notifySuccess('Task was deleted.')
         }, handleError('Error deleting task.'))
@@ -206,7 +207,11 @@ export const useTaskStore = defineStore('tasks', {
         ids.map(id => this.api().delete(`/tasks/${id}`, this.commonHeader()))
       ).then(() => {
         this.array = this.array.filter(x => !idSet.has(x.id))
-        for (const id of ids) this.mapp.delete(id)
+        const depStore = useDependencyStore()
+        for (const id of ids) {
+          this.mapp.delete(id)
+          depStore.removeTaskEntries(id)
+        }
         recalculate('apiBulkDelete')
         notifySuccess(`Deleted ${ids.length} tasks.`)
       }, handleError('Error bulk-deleting tasks.'))

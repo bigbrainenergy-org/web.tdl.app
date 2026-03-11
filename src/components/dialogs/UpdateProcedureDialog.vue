@@ -138,15 +138,6 @@
 
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
-  // const tr = useRepo(TaskRepo)
-
-  // TODO: sort procedure tasks using the Agenda Sort algorithm
-  // onMounted(() => {
-  //   procedureRef.value.hard_postreqs.sort(
-  //     (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-  //   )
-  // })
-
   useMeta(() => ({ title: procedureRef.value.title + ' | TDL App' }))
 
   const editTitle = ref(procedureRef.value.title)
