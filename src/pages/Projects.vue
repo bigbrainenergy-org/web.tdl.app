@@ -87,6 +87,7 @@
   import { Controls } from '@vue-flow/controls'
   import type { Node, Edge } from '@vue-flow/core'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import type { Task } from 'src/stores/tasks/task-model'
   import TaskCard from 'src/components/TaskCard.vue'
   import { openUpdateTaskDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
@@ -155,8 +156,9 @@
     }))
 
     // Build edges (only between project tasks)
+    const depStore = useDependencyStore()
     const newEdges: Edge[] = tasks.flatMap(task =>
-      task.hard_postreq_ids
+      depStore.getPostTaskIds(task.id)
         .filter(postId => taskIds.has(postId))
         .map(postId => ({
           id: `e${task.id}-${postId}`,

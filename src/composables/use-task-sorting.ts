@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskStore } from 'src/stores/tasks/task-store'
@@ -19,7 +19,7 @@ export function useTaskSorting() {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') {
-      const ewww = dontLookAtMe()
+      const depStore = useDependencyStore()
       const taskStarredStore = useTaskStarredStore()
       const taskStore = useTaskStore()
       const taskMap = taskStore.mapp
@@ -103,11 +103,9 @@ export function useTaskSorting() {
 
           if (postResult.depth !== -1) {
             if (minDepth === -1 || postResult.depth < minDepth) {
-              // Found a new minimum - update depth and inprogress flag
               minDepth = postResult.depth
               hasInProgressAtMinDepth = postResult.inprogress
             } else if (postResult.depth === minDepth && postResult.inprogress) {
-              // Same minimum depth, but this one is in progress
               hasInProgressAtMinDepth = true
             }
           }
@@ -133,7 +131,6 @@ export function useTaskSorting() {
       const totalIncompletePrereqs = new Map<number, number>()
 
       // Incremental prerequisite satisfaction tracking
-      // Maps task ID -> count of how many incomplete prereqs are already in finalList
       const prereqsSatisfiedCount = new Map<number, number>()
 
       // Cache star weights to avoid recomputation during binary search
@@ -144,8 +141,10 @@ export function useTaskSorting() {
         if (visited.has(task.id)) return undefined
         visited.add(task.id)
 
-        const posts = ewww.grabIncompletePosts(task.id)
-        for (const [_postId, postTask] of posts) {
+        const posts = depStore.getIncompletePosts(task.id)
+        for (const entry of posts) {
+          const postTask = taskMap.get(entry.task_id) as Task | undefined
+          if (!postTask) continue
           if (postTask.deadline_at) return postTask.deadline_at
           const found = findFirstPostreqDeadline(postTask, visited)
           if (found) return found
@@ -155,32 +154,23 @@ export function useTaskSorting() {
       }
 
       // Helper to calculate priority weight for a task (with caching)
-      // Priority = (layer_weight * 250) + (star_weight * 100)
-      // - Adjacent layers can swap based on stars (fuzzy)
-      // - Layer n ALWAYS beats layer n+2+ (guaranteed by 500pt gap > 300pt max star weight)
       const getPriorityWeight = (task: Task): number => {
         const cached = starWeightCache.get(task.id)
         if (cached !== undefined) return cached
 
         const layer = taskLayers.get(task.id) ?? 0
-        // Each layer is worth 250 points - allows high-priority layer n+1 to beat low-priority layer n
         const layerWeight = (100 - layer) * 250
 
         const isStarred = taskStarredStore.isStarred(task.id) ? 2 : 0
         const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
-        const starWeight = (isStarred + descendantCount) * 100 // Max 300 points
+        const starWeight = (isStarred + descendantCount) * 100
 
         const apdResult = associatedProjectDepth.get(task.id)
         const apd = apdResult?.depth ?? -1
-        // Depth is capped at 5, so apd * 50 ranges from 0-250; no need to clamp
         const projectLayerWeight = apd === -1 ? 300 : 250 - (apd * 50)
 
-        // +50 bonus if nearest project postrequisite has !INPROGRESS
         const inProgressBonus = apdResult?.inprogress ? 50 : 0
 
-        // Due date bonus: exponential drop-off (1/2)^(hours/24)
-        // Max 100 pts for deadlines within 24 hours, exponentially decreasing after that
-        // If task has no deadline, traverse incomplete postreqs to find one
         let dueDateBonus = 0
         let deadlineToUse = task.deadline_at
         if (!deadlineToUse) {
@@ -206,13 +196,12 @@ export function useTaskSorting() {
       const insertIntoReadyQueue = (queue: Task[], newTask: Task) => {
         const insertTime = performance.now()
 
-        // Compute layer NOW, when all prereqs are guaranteed to be in finalList
         if (!taskLayers.has(newTask.id)) {
-          const incompletePres = ewww.grabIncompletePres(newTask.id)
+          const incompletePres = depStore.getIncompletePres(newTask.id)
           let maxPrereqLayer = -1
 
-          for (const preId of incompletePres.keys()) {
-            const prereqLayer = taskLayers.get(preId) ?? 0
+          for (const entry of incompletePres) {
+            const prereqLayer = taskLayers.get(entry.task_id) ?? 0
             maxPrereqLayer = Math.max(maxPrereqLayer, prereqLayer)
           }
 
@@ -221,7 +210,6 @@ export function useTaskSorting() {
 
         const newWeight = getPriorityWeight(newTask)
 
-        // Binary search for insertion point (descending order - higher priority/lower layer first)
         let left = 0
         let right = queue.length
 
@@ -240,19 +228,16 @@ export function useTaskSorting() {
         timings.insertionTotal += performance.now() - insertTime
       }
 
-      // Pre-register ALL filteredTasks: initialize prereq counters and compute starred descendants.
-      // This ensures every task is tracked even if not discovered via postreq BFS traversal,
-      // which fixes stuck tasks caused by bidirectional data inconsistency.
+      // Pre-register ALL filteredTasks
       const registrationTime = performance.now()
       for (const task of filteredTasks) {
         taskStarredStore.computeDescendants(task.id, taskMap, visited)
 
-        const incompletePres = ewww.grabIncompletePres(task.id)
-        totalIncompletePrereqs.set(task.id, incompletePres.size)
+        const incompletePres = depStore.getIncompletePres(task.id)
+        totalIncompletePrereqs.set(task.id, incompletePres.length)
         prereqsSatisfiedCount.set(task.id, 0)
 
-        // Tasks with no incomplete prereqs are immediately ready
-        if (incompletePres.size === 0) {
+        if (incompletePres.length === 0) {
           insertIntoReadyQueue(readyQueue, task)
         }
       }
@@ -266,18 +251,15 @@ export function useTaskSorting() {
         hundos++
         timings.mainLoopIterations++
 
-        // Pop task from ready queue
         const task = readyQueue.shift()!
         timings.tasksChecked++
 
-        // Skip if already processed
         if (finalList.has(task.id)) continue
 
         const prereqCheckTime = performance.now()
         const totalPrereqs = totalIncompletePrereqs.get(task.id) ?? 0
         const satisfiedCount = prereqsSatisfiedCount.get(task.id) ?? 0
 
-        // O(1) check: are all prerequisites satisfied?
         const allPresSatisfied = satisfiedCount === totalPrereqs
         timings.prerequisiteCheckTotal += performance.now() - prereqCheckTime
 
@@ -285,20 +267,19 @@ export function useTaskSorting() {
           timings.tasksProcessed++
           finalList.set(task.id, task)
 
-          // Incrementally update counters for all postrequisites
           const incrementTime = performance.now()
-          for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
-            // Only update tasks we're tracking (in filteredTasks)
+          for (const entry of depStore.getIncompletePosts(task.id)) {
+            const postId = entry.task_id
             if (!totalIncompletePrereqs.has(postId)) continue
 
             const currentCount = prereqsSatisfiedCount.get(postId) ?? 0
             const newCount = currentCount + 1
             prereqsSatisfiedCount.set(postId, newCount)
 
-            // Check if this task just became ready (all prereqs satisfied)
             const postTotalPrereqs = totalIncompletePrereqs.get(postId) ?? 0
             if (newCount === postTotalPrereqs && !finalList.has(postId)) {
-              insertIntoReadyQueue(readyQueue, postTask)
+              const postTask = taskStore.hardGet(postId)
+              if (postTask) insertIntoReadyQueue(readyQueue, postTask)
             }
           }
           timings.incrementCounterTotal += performance.now() - incrementTime
@@ -312,10 +293,10 @@ export function useTaskSorting() {
         errorNotification(new Error('Agenda sorting exceeded maximum iterations - bailing out'), 'Agenda sorting exceeded maximum iterations')
       }
 
-      // Check for stuck tasks (only within filteredTasks, not all incomplete tasks)
+      // Check for stuck tasks
       const notInFinalArray = filteredTasks.filter(x => !finalList.has(x.id))
         .filter(x => !x.completed)
-        .filter(x => ewww.grabIncompletePres(x.id).size > 0)
+        .filter(x => depStore.getIncompletePres(x.id).length > 0)
 
       stuckTasks.value.clear()
       if (notInFinalArray.length > 0) {
@@ -336,35 +317,35 @@ export function useTaskSorting() {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') {
-      const ewww = dontLookAtMe()
-      
+      const depStore = useDependencyStore()
+
       // Pre-compute task IDs as Set for O(1) lookups
       const taskIds = new Set(tasks.map(x => x.id))
-      
+
       // Find first layer - tasks with no prerequisites in this set
-      const firstLayer = tasks.filter(x => 
-        x.hard_prereq_ids.every(preId => !taskIds.has(preId))
+      const firstLayer = tasks.filter(x =>
+        depStore.getPreTaskIds(x.id).every(preId => !taskIds.has(preId))
       )
 
       const finalList = new Map<number, Task>()
       const addedToQueue = new Set<number>()
       const queue: Map<number, Task[]> = new Map()
       const sortedKeys: number[] = []
-      
+
       const enqueue = (tasksToEnqueue: Task[]) => {
         for (const task of tasksToEnqueue) {
           const postCount = task.grabPostreqs(true).length
-          
+
           if (!queue.has(postCount)) {
             queue.set(postCount, [])
             insertSorted(sortedKeys, postCount)
           }
-          
+
           queue.get(postCount)!.push(task)
           addedToQueue.add(task.id)
         }
       }
-      
+
       const insertSorted = (arr: number[], value: number) => {
         let left = 0, right = arr.length
         while (left < right) {
@@ -374,68 +355,67 @@ export function useTaskSorting() {
         }
         arr.splice(left, 0, value)
       }
-      
+
       const removeKey = (arr: number[], value: number) => {
         const index = arr.indexOf(value)
         if (index !== -1) arr.splice(index, 1)
       }
 
       enqueue(firstLayer)
-      
+
       let hundos = 0
       const maxIterations = 3 * tasks.length
-      
+
       while (sortedKeys.length > 0 && hundos < maxIterations) {
         hundos++
         let processed = false
-        
+
         for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
           const postCount = sortedKeys[keyIndex]!
           const queuedTasks = queue.get(postCount)!
-          
+
           for (let taskIndex = 0; taskIndex < queuedTasks.length; taskIndex++) {
             const task = queuedTasks[taskIndex]!
-            
-            // Check prerequisites efficiently
+
             const prereqs = task.grabPrereqs(false).filter(y => taskIds.has(y.id))
             const allPresSatisfied = prereqs.every(prereq => finalList.has(prereq.id))
-            
+
             if (allPresSatisfied) {
               finalList.set(task.id, task)
-              
-              // Enqueue postrequisites efficiently
+
               const newTasks: Task[] = []
-              for (const [postId, postTask] of ewww.grabIncompletePosts(task.id)) {
-                if (!addedToQueue.has(postId) && taskIds.has(postId)) {
+              for (const entry of depStore.getIncompletePosts(task.id)) {
+                const postTask = useTaskStore().mapp.get(entry.task_id) as Task | undefined
+                if (postTask && !addedToQueue.has(entry.task_id) && taskIds.has(entry.task_id)) {
                   newTasks.push(postTask)
                 }
               }
-              
+
               if (newTasks.length > 0) {
                 enqueue(newTasks)
               }
-              
+
               // Remove efficiently
               queuedTasks[taskIndex] = queuedTasks[queuedTasks.length - 1]!
               queuedTasks.pop()
-              
+
               processed = true
               break
             }
           }
-          
+
           if (queuedTasks.length === 0) {
             queue.delete(postCount)
             removeKey(sortedKeys, postCount)
             keyIndex--
           }
-          
+
           if (processed) break
         }
-        
+
         if (!processed) break
       }
-      
+
       if (hundos >= maxIterations) {
         TaskSortingLogger.warn('Routine task sorting exceeded maximum iterations')
       }

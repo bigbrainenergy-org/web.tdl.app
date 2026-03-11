@@ -1,0 +1,283 @@
+import { defineStore } from 'pinia'
+import type { TaskDependency, DependencyEntry } from './dependency-types'
+import { useTaskStore } from '../tasks/task-store'
+import { useAxiosStore } from '../axios-store'
+import { useAuthenticationStore } from '../authentication/pinia-authentication'
+import { useTaskStarredStore } from '../tasks/task-starred'
+import { useTaskNeedsRefinementStore } from '../tasks/task-needs-refinement'
+import { handleError, notifySuccess } from 'src/utils/notification-utils'
+import { Queue } from 'src/utils/types'
+import { Logger } from 'src/utils/d'
+import { recalculate } from '../tasks/task-view'
+import { ref, nextTick } from 'vue'
+
+const depLogger = new Logger('Dep Store', '#6abc19')
+export const initialized = ref(false)
+
+export const useDependencyStore = defineStore('dependencies', {
+  state: () => ({
+    _deps: [] as TaskDependency[],
+    presMap: new Map<number, DependencyEntry[]>(),
+    postsMap: new Map<number, DependencyEntry[]>()
+  }),
+  persist: {
+    paths: ['_deps'],
+    afterRestore: (ctx) => {
+      depLogger.log('afterRestore: rebuilding maps')
+      ctx.store._rebuildMaps()
+    },
+    serializer: {
+      serialize: (value: any) => JSON.stringify(value._deps ?? []),
+      deserialize: (value: string) => ({ _deps: JSON.parse(value) as TaskDependency[] })
+    }
+  },
+  actions: {
+    _rebuildMaps() {
+      const start = performance.now()
+      const pres = new Map<number, DependencyEntry[]>()
+      const posts = new Map<number, DependencyEntry[]>()
+      for (const dep of this._deps) {
+        // second depends on first: first is a pre of second, second is a post of first
+        const preEntries = pres.get(dep.second_id) ?? []
+        preEntries.push({ task_id: dep.first_id, degree: dep.degree })
+        pres.set(dep.second_id, preEntries)
+
+        const postEntries = posts.get(dep.first_id) ?? []
+        postEntries.push({ task_id: dep.second_id, degree: dep.degree })
+        posts.set(dep.first_id, postEntries)
+      }
+      this.presMap = pres
+      this.postsMap = posts
+      depLogger.log(`_rebuildMaps: ${this._deps.length} deps in ${performance.now() - start}ms`)
+    },
+
+    _addToMaps(dep: TaskDependency) {
+      const preEntries = this.presMap.get(dep.second_id) ?? []
+      preEntries.push({ task_id: dep.first_id, degree: dep.degree })
+      this.presMap.set(dep.second_id, preEntries)
+
+      const postEntries = this.postsMap.get(dep.first_id) ?? []
+      postEntries.push({ task_id: dep.second_id, degree: dep.degree })
+      this.postsMap.set(dep.first_id, postEntries)
+    },
+
+    _removeFromMaps(first_id: number, second_id: number) {
+      const preEntries = this.presMap.get(second_id)
+      if (preEntries) {
+        const idx = preEntries.findIndex(e => e.task_id === first_id)
+        if (idx !== -1) preEntries.splice(idx, 1)
+      }
+      const postEntries = this.postsMap.get(first_id)
+      if (postEntries) {
+        const idx = postEntries.findIndex(e => e.task_id === second_id)
+        if (idx !== -1) postEntries.splice(idx, 1)
+      }
+    },
+
+    _commonHeader() {
+      try {
+        const auth = useAuthenticationStore()
+        return { headers: { Authorization: auth.bearerToken } }
+      } catch (error) {
+        depLogger.error(`error in commonHeader: ${error}`)
+      }
+    },
+
+    _api() {
+      return useAxiosStore().axios()
+    },
+
+    async fetchAll() {
+      depLogger.log('fetchAll')
+      const result = await this._api().get<TaskDependency[]>('/task_dependencies', this._commonHeader())
+      this._deps = result.data
+      this._rebuildMaps()
+
+      // Post-fetch initialization (mirrors old ewww.refresh_all behavior)
+      initialized.value = true
+      const taskStore = useTaskStore()
+      useTaskStarredStore().initializeFromTasks(taskStore.array)
+      useTaskNeedsRefinementStore().initializeFromTasks(taskStore.array)
+
+      nextTick(() => {
+        recalculate('dep store fetchAll')
+      })
+    },
+
+    async create(first_id: number, second_id: number, degree: 1 | 2 | 3 = 3) {
+      const result = await this._api().post<TaskDependency>(
+        '/task_dependencies',
+        { first_id, second_id, degree },
+        this._commonHeader()
+      )
+      const dep = result.data
+      this._deps.push(dep)
+      this._addToMaps(dep)
+      return dep
+    },
+
+    async remove(first_id: number, second_id: number) {
+      await this._api().delete('/task_dependencies', {
+        ...this._commonHeader(),
+        data: { first_id, second_id }
+      })
+      const idx = this._deps.findIndex(d => d.first_id === first_id && d.second_id === second_id)
+      if (idx !== -1) this._deps.splice(idx, 1)
+      this._removeFromMaps(first_id, second_id)
+    },
+
+    // --- Lookup methods ---
+
+    getPres(taskId: number): DependencyEntry[] {
+      return this.presMap.get(taskId) ?? []
+    },
+
+    getPosts(taskId: number): DependencyEntry[] {
+      return this.postsMap.get(taskId) ?? []
+    },
+
+    getPreTaskIds(taskId: number): number[] {
+      return this.getPres(taskId).map(e => e.task_id)
+    },
+
+    getPostTaskIds(taskId: number): number[] {
+      return this.getPosts(taskId).map(e => e.task_id)
+    },
+
+    getIncompletePres(taskId: number): DependencyEntry[] {
+      const taskStore = useTaskStore()
+      return this.getPres(taskId).filter(e => {
+        const t = taskStore.mapp.get(e.task_id)
+        return t && !t.completed
+      })
+    },
+
+    getIncompletePosts(taskId: number): DependencyEntry[] {
+      const taskStore = useTaskStore()
+      return this.getPosts(taskId).filter(e => {
+        const t = taskStore.mapp.get(e.task_id)
+        return t && !t.completed
+      })
+    },
+
+    // --- Graph traversal ---
+
+    idsBefore(id: number, incompleteOnly = true): Set<number> {
+      const allPres = new Set<number>()
+      const queue = new Queue<number>()
+
+      const getPreIds = (taskId: number): number[] => {
+        const entries = incompleteOnly ? this.getIncompletePres(taskId) : this.getPres(taskId)
+        return entries.map(e => e.task_id)
+      }
+
+      queue.enqueueAll(getPreIds(id))
+      while (queue.size > 0) {
+        const tmpID = queue.dequeue()
+        if (allPres.has(tmpID)) continue
+        allPres.add(tmpID)
+        queue.enqueueAll(getPreIds(tmpID))
+      }
+      return allPres
+    },
+
+    idsAfter(id: number, incompleteOnly = true): Set<number> {
+      const allPosts = new Set<number>()
+      const queue = new Queue<number>()
+
+      const getPostIds = (taskId: number): number[] => {
+        const entries = incompleteOnly ? this.getIncompletePosts(taskId) : this.getPosts(taskId)
+        return entries.map(e => e.task_id)
+      }
+
+      queue.enqueueAll(getPostIds(id))
+      while (queue.size > 0) {
+        const tmpID = queue.dequeue()
+        if (allPosts.has(tmpID)) continue
+        allPosts.add(tmpID)
+        queue.enqueueAll(getPostIds(tmpID))
+      }
+      return allPosts
+    },
+
+    // --- High-level operations ---
+
+    async addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, degree?: 1 | 2 | 3 } = {}) {
+      const { skipRecalculate = false, degree = 3 } = options
+      const timings: any = { addRuleTotal: performance.now() }
+
+      // Validate no cycles
+      timings.treeGathering = performance.now()
+      const ids_before_first = this.idsBefore(first_id)
+      const ids_after_first = this.idsAfter(first_id)
+      timings.treeGathering = performance.now() - timings.treeGathering
+
+      if (ids_before_first.has(second_id)) {
+        throw new Error('Second task is already scheduled to happen before the first.')
+      }
+      if (ids_after_first.has(second_id)) {
+        throw new Error('First task is already scheduled to happen before the second.')
+      }
+
+      timings.apiCall = performance.now()
+      await this.create(first_id, second_id, degree)
+      timings.apiCall = performance.now() - timings.apiCall
+
+      const taskStore = useTaskStore()
+      taskStore.arrayVersion++
+
+      if (!skipRecalculate) {
+        taskStore.refreshStarredCache()
+        recalculate('addRule')
+      }
+
+      timings.addRuleTotal = performance.now() - timings.addRuleTotal
+      depLogger.log(`ADDRULE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
+    },
+
+    async removeRule(first_id: number, second_id: number) {
+      await this.remove(first_id, second_id)
+      const taskStore = useTaskStore()
+      taskStore.arrayVersion++
+      notifySuccess('Removed the dependency')
+      taskStore.refreshStarredCache()
+      recalculate('removeRule')
+    },
+
+    async stringTasks(taskIds: number[], degree: 1 | 2 | 3 = 3) {
+      if (taskIds.length < 2) return
+
+      depLogger.log(`stringTasks: connecting ${taskIds.length} tasks in sequence`)
+      const startTime = performance.now()
+
+      for (let i = 1; i < taskIds.length; i++) {
+        const first = taskIds[i - 1]!
+        const second = taskIds[i]!
+        await this.addRule(first, second, { skipRecalculate: true, degree })
+      }
+
+      const taskStore = useTaskStore()
+      taskStore.arrayVersion++
+      taskStore.refreshStarredCache()
+      recalculate('stringTasks batch complete')
+      depLogger.log(`stringTasks completed in ${performance.now() - startTime}ms`)
+    },
+
+    /**
+     * Initialize maps and state after restore from localStorage.
+     * Called from sync-utils after task store is ready.
+     */
+    initializeFromLocalStorage() {
+      this._rebuildMaps()
+
+      const taskStore = useTaskStore()
+      initialized.value = true
+      useTaskStarredStore().initializeFromTasks(taskStore.array)
+      useTaskNeedsRefinementStore().initializeFromTasks(taskStore.array)
+
+      nextTick(() => {
+        recalculate('dep store initializeFromLocalStorage')
+      })
+    }
+  }
+})

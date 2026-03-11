@@ -7,7 +7,6 @@ import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { Task } from 'src/stores/tasks/task-model'
 import { hardCheck } from 'src/utils/type-utils'
 import { handleError } from 'src/utils/notification-utils'
-import { dontLookAtMe } from '../tasks/look-i-dont-make-the-rules'
 
 export interface CreateProcedureOptions {
   title: string
@@ -55,8 +54,6 @@ export class Procedure extends Model implements iRecord {
   }
 }
 
-const ewww = dontLookAtMe()
-
 export class ProcedureRepo extends GenericRepo<
   CreateProcedureOptions,
   UpdateProcedureOptions,
@@ -75,9 +72,6 @@ export class ProcedureRepo extends GenericRepo<
         for (let i = 0; i < tasks.length; i++) {
           const ti = tasks[i]!
           ti.completed = false
-          ti.grabPrereqs(false).forEach(x => ewww.refresh(x))
-          ti.grabPostreqs(false).forEach(x => ewww.refresh(x))
-          ewww.refresh(ti)
         }
         return tmp
       }, handleError('Error restarting procedure.'))

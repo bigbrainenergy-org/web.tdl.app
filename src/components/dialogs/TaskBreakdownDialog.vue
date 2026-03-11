@@ -160,11 +160,11 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
   import { recalculate } from 'src/stores/tasks/task-view'
-  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
   import Fuse from 'fuse.js'
 
-  const ewww = dontLookAtMe()
+  const depStore = useDependencyStore()
 
   const props = defineProps<{
     task: Task
@@ -226,7 +226,7 @@
     // Exclude the parent task itself
     ids.add(props.task.id)
     // Exclude current prerequisites of the parent task
-    for (const prereqId of props.task.hard_prereq_ids) {
+    for (const prereqId of depStore.getPreTaskIds(props.task.id)) {
       ids.add(prereqId)
     }
     // Exclude tasks already linked in the breakdown
@@ -442,9 +442,7 @@
         if (!trimmedText) continue
 
         const taskOptions: CreateTaskOptions = {
-          title: trimmedText,
-          hard_prereq_ids: [],
-          hard_postreq_ids: []
+          title: trimmedText
         }
 
         try {
@@ -458,49 +456,29 @@
       }
     }
 
-    // Phase 2: Add rules between subtasks with batch operations deferred
+    // Phase 2: Add rules between subtasks
     for (let i = 1; i < taskIds.length; i++) {
       const prevTaskId = taskIds[i - 1]!
       const currentTaskId = taskIds[i]!
       try {
-        await taskStore.addRule(prevTaskId, currentTaskId, {
-          skipRecalculate: true,
-          skipBatchOperations: true
-        })
+        await depStore.addRule(prevTaskId, currentTaskId, { skipRecalculate: true })
       } catch (error) {
         console.error('Error adding rule:', error)
       }
     }
 
-    // Phase 3: Link last subtask to parent task with batch operations deferred
+    // Phase 3: Link last subtask to parent task
     const lastTaskId = taskIds[taskIds.length - 1]
     if (lastTaskId !== undefined) {
       try {
-        await taskStore.addRule(lastTaskId, props.task.id, {
-          skipRecalculate: true,
-          skipBatchOperations: true
-        })
+        await depStore.addRule(lastTaskId, props.task.id, { skipRecalculate: true })
       } catch (error) {
         console.error('Error linking to parent task:', error)
       }
     }
 
-    // Phase 4: Single batch update of task objects (including parent task)
-    const allAffectedTaskIds = [...taskIds, props.task.id]
-    taskStore.$patch(() => {
-      for (const taskId of allAffectedTaskIds) {
-        const task = taskStore.hardGet(taskId)
-        const pres = ewww.grabPres(taskId)
-        const posts = ewww.grabPosts(taskId)
-        task.hard_prereq_ids = Array.from(pres.keys())
-        task.hard_postreq_ids = Array.from(posts.keys())
-      }
-    })
-
-    // Phase 5: Single cache refresh
+    // Phase 4: Refresh cache and recalculate
     taskStore.refreshStarredCache()
-
-    // Phase 6: Single recalculation
     recalculate('TaskBreakdownDialog batch complete')
 
     // Remove needs refinement flag from the parent task

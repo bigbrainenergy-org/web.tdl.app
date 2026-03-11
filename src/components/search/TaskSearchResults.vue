@@ -41,6 +41,7 @@
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import { filtered_tasks } from 'src/stores/tasks/task-view'
   import TaskItem from '../TaskItem.vue'
@@ -78,10 +79,13 @@
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
+      const depStore = useDependencyStore()
+      const preIds = depStore.getPreTaskIds(currentTaskID)
+      const postIds = depStore.getPostTaskIds(currentTaskID)
       return (x: Task) => {
         if (x.completed) return false
-        if (ct.hard_prereq_ids.includes(x.id)) return false
-        if (ct.hard_postreq_ids.includes(x.id)) return false
+        if (preIds.includes(x.id)) return false
+        if (postIds.includes(x.id)) return false
         return true
       }
     }

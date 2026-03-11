@@ -103,6 +103,7 @@
   import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
   import { addPostrequisiteDialog } from 'src/utils/dialog-utils'
@@ -338,30 +339,30 @@
 
   const makeSelection = async (mvp: Task) => { // TODO: probably time to genericize the mvp task function
     loading.value = true
+    const depStore = useDependencyStore()
     priorMVPs.add(mvp.id)
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
     const selected_ids = selected_tasks.map((x) => x.id)
-    mvp.hard_postreq_ids.push(...selected_ids)
-    parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => !selected_ids.includes(x))
-    await useTaskStore().apiUpdate(parentTask.value.id, { hard_postreq_ids: parentTask.value.hard_postreq_ids })
-    selected_tasks.forEach((x) => {
-      x.hard_prereq_ids.push(mvp.id)
-    })
-    await useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
+    // Remove selected tasks from parent's postreqs and add them under mvp
+    for (const id of selected_ids) {
+      await depStore.removeRule(parentTask.value.id, id)
+      await depStore.addRule(mvp.id, id)
+    }
     await tryNewPair()
     loading.value = false
   }
 
   const confirmOrder = async () => {
     loading.value = true
+    const depStore = useDependencyStore()
     const first_task = currentPair.value[0]!
     priorMVPs.add(first_task.id)
     const tasks_to_remove_from_parent_task = currentPair.value.slice(1).map(x => x.id)
-    // TODO: use a batch update api call for this!
-    parentTask.value.hard_postreq_ids = parentTask.value.hard_postreq_ids.filter(x => !tasks_to_remove_from_parent_task.includes(x))
-    await useTaskStore().apiUpdate(parentTask.value.id, { hard_postreq_ids: parentTask.value.hard_postreq_ids })
+    for (const id of tasks_to_remove_from_parent_task) {
+      await depStore.removeRule(parentTask.value.id, id)
+    }
     const taskIds = currentPair.value.map(t => t.id)
-    await useTaskStore().stringTasks(taskIds)
+    await depStore.stringTasks(taskIds)
     await tryNewPair()
     loading.value = false
   }

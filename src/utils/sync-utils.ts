@@ -7,7 +7,7 @@ import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { errorNotification, handleError, notifySuccess } from './notification-utils'
 import { updateLuxonTimeZone } from './luxon-utils'
-import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 
 interface verySpecial {
   modelname: string
@@ -67,7 +67,7 @@ export async function syncWithBackend(): Promise<number> {
       obj: currentUser.timeZoneObj
     })
     await useTaskStore().apiGetAll()
-    dontLookAtMe().refresh_all(useTaskStore().array)
+    await useDependencyStore().fetchAll()
     return 0
   }
   return 1

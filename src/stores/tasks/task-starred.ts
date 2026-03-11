@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { type TaskLike } from './task-interfaces-types'
-import { dontLookAtMe } from './look-i-dont-make-the-rules'
+import { useDependencyStore } from '../dependencies/dependency-store'
 import { useTaskStore } from './task-store'
 import { recalculate } from './task-view'
 
@@ -153,38 +153,33 @@ export const useTaskStarredStore = defineStore('task-starred', {
     },
 
     computeDescendants(taskId: number, taskMap: Map<number, TaskLike>, visited = new Set<number>()) {
-      // Check if already computed
       const cached = this.starredDescendantCounts.get(taskId)
       if (cached !== undefined) return cached
-      
-      // Prevent cycles
+
       if (visited.has(taskId)) {
         console.log('Cycle detected for task', taskId, taskMap.get(taskId)?.title)
         return 0
       }
       visited.add(taskId)
-      
+
       const task = taskMap.get(taskId)
       if (!task) return 0
-      
-      // Accumulate starred descendants from all direct postreqs
-      // Use task.hard_postreq_ids directly to avoid reactive ewww store access
+
+      const depStore = useDependencyStore()
+      const postIds = depStore.getPostTaskIds(taskId)
+
       let totalCount = 0
-      for (const postreqId of task.hard_postreq_ids) {
-        // Skip completed tasks to match incomplete posts behavior
+      for (const postreqId of postIds) {
         const postreqTask = taskMap.get(postreqId)
         if(!postreqTask || postreqTask.completed) continue
-        
-        // If this postreq is starred, count it
+
         if (this._starredSet.has(postreqId)) totalCount += 1
-        
-        // Add all starred descendants of this postreq (recursive)
+
         totalCount += this.computeDescendants(postreqId, taskMap, visited)
       }
-      
-      // Cache the result (including zero values)
+
       this.starredDescendantCounts.set(taskId, totalCount)
-      
+
       return totalCount
     },
     

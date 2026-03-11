@@ -71,7 +71,7 @@
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { Logger } from 'src/utils/d'
-  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import { searchInput } from 'src/stores/tasks/task-utils'
   import { fuseOptions } from 'src/utils/search-utils'
 
@@ -81,8 +81,8 @@
   const tasks = defineModel<Array<Task>>('tasks', { required: true })
   const filtered = defineModel<Array<Task>>('filtered', { required: true })
 
-  const ewww = dontLookAtMe()
-  const layerZeroFiltered = computed(() => filtered.value.filter(x => !x.completed && ewww.grabIncompletePres(x.id).size === 0).length)
+  const depStore = useDependencyStore()
+  const layerZeroFiltered = computed(() => filtered.value.filter(x => !x.completed && depStore.getIncompletePres(x.id).length === 0).length)
 
   const emit = defineEmits(['search'])
 

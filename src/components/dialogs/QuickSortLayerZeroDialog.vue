@@ -123,6 +123,7 @@
   import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import type { Task } from 'src/stores/tasks/task-model'
   import { notifySuccess } from 'src/utils/notification-utils'
   import { openCreateTaskDialog } from 'src/utils/dialog-utils'
@@ -434,26 +435,22 @@
     await reinitializeDragAndDrop()
   }
 
-  const makeSelection = (mvp: Task) => {
+  const makeSelection = async (mvp: Task) => {
     loading.value = true
+    const depStore = useDependencyStore()
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
-    const selected_ids = selected_tasks.map((x) => x.id)
-    mvp.hard_postreq_ids.push(...selected_ids)
-    selected_tasks.forEach((x) => {
-      x.hard_prereq_ids.push(mvp.id)
-    })
-    taskStore
-      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(async () => {
-        await tryNewPair()
-        loading.value = false
-      })
+    for (const t of selected_tasks) {
+      await depStore.addRule(mvp.id, t.id)
+    }
+    await tryNewPair()
+    loading.value = false
   }
 
   const confirmOrder = async () => {
     loading.value = true
+    const depStore = useDependencyStore()
     const taskIds = currentPair.value.map(t => t.id)
-    await taskStore.stringTasks(taskIds)
+    await depStore.stringTasks(taskIds)
     await tryNewPair()
     loading.value = false
   }

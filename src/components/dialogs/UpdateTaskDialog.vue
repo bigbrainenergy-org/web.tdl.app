@@ -118,7 +118,7 @@
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import type { Task } from 'src/stores/tasks/task-model'
   import { Logger } from 'src/utils/d'
-  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 
   const updateTaskDialogger = new Logger('Update Task Dialog', '#008800')
@@ -204,15 +204,17 @@
     return t
   })
 
-  const ewww = dontLookAtMe()
+  const depStore = useDependencyStore()
 
   const allPres = computed(() => {
-    const pres = hideCompleted.value ? ewww.grabIncompletePres(currentTaskFromStore.value.id) : ewww.grabPres(currentTaskFromStore.value.id)
-    return [...pres.values()]
+    const taskStore = useTaskStore()
+    const entries = hideCompleted.value ? depStore.getIncompletePres(currentTaskFromStore.value.id) : depStore.getPres(currentTaskFromStore.value.id)
+    return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
   })
   const allPosts = computed(() => {
-    const posts = hideCompleted.value ? ewww.grabIncompletePosts(currentTaskFromStore.value.id) : ewww.grabPosts(currentTaskFromStore.value.id)
-    return [...posts.values()]
+    const taskStore = useTaskStore()
+    const entries = hideCompleted.value ? depStore.getIncompletePosts(currentTaskFromStore.value.id) : depStore.getPosts(currentTaskFromStore.value.id)
+    return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
   })
 
   function setCurrentTask(newTask: Task) {
@@ -251,8 +253,9 @@
   const mvpPostrequisite = async (post: Task) => {
     updateTaskDialogger.debug(post)
     const allPostreqs = currentTaskFromStore.value.grabPostreqs(false)
+    const postPostIds = depStore.getPostTaskIds(post.id)
     for (let i = 0; i < allPostreqs.length; i++) {
-      const tmp = allPostreqs[i]! // for some reason new ts/eslint thinks this could be undefined, TODO figure out a way to explicitly state i will be within range of allPostreqs index
+      const tmp = allPostreqs[i]!
       updateTaskDialogger.debug(`now evaluating ${tmp.title}`)
       if(tmp.id === post.id) {
         updateTaskDialogger.debug(`skipping this task because it is the post being promoted to mvp: ${tmp.title}`)
@@ -262,15 +265,15 @@
         updateTaskDialogger.debug(`skipping this task because it is already completed: ${tmp.title}`)
         continue
       }
-      allPostreqs.splice(i--, 1)
-      if(post.hard_postreq_ids.includes(tmp.id)) {
+      // Remove dependency from current task to tmp
+      await depStore.removeRule(currentTask.value.id, tmp.id)
+      if(postPostIds.includes(tmp.id)) {
         updateTaskDialogger.debug(`removed postreq from original, but not adding to mvp as it is already a postreq of mvp: ${tmp.title}`)
       }
-      else post.hard_postreq_ids.push(tmp.id)
+      else {
+        await depStore.addRule(post.id, tmp.id)
+      }
     }
-
-    await useTaskStore().apiUpdate(currentTask.value.id, { hard_postreq_ids: [post.id] })
-    await useTaskStore().apiUpdate(post.id, { hard_postreq_ids: post.hard_postreq_ids })
 
     // const syncResult = await syncWithBackend()
     // if (syncResult === 1)
@@ -280,15 +283,16 @@
 
   const insertBetweenPre = async (payload: { task: Task }) => {
     const oldPre = hardCheck(currentPre)
-    await useTaskStore().removeRule(oldPre.id, currentTask.value.id)
-    await useTaskStore()
+    await depStore.removeRule(oldPre.id, currentTask.value.id)
+    await depStore
       .addRule(oldPre.id, payload.task.id)
       .then(
         handleSuccess('successfully moved prerequisite!'),
         handleError('error moving prerequisite!')
       )
-    if (!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
-      await useTaskStore()
+    const currentPreIds = depStore.getPreTaskIds(currentTask.value.id)
+    if (!currentPreIds.includes(payload.task.id)) {
+      await depStore
         .addRule(payload.task.id, currentTask.value.id)
         .then(
           handleSuccess('added new pre to current task'),
@@ -389,7 +393,7 @@
     {
       label: 'Unlink this Prerequisite',
       icon: 'fas fa-unlink',
-      action: (x: Task) => useTaskStore().removeRule(x.id, currentTask.value.id)
+      action: (x: Task) => depStore.removeRule(x.id, currentTask.value.id)
     },
     {
       label: 'Add Task Between This Prereq and This Task',
@@ -402,7 +406,7 @@
     {
       label: 'Unlink this Postrequisite',
       icon: 'fas fa-unlink',
-      action: (x: Task) => useTaskStore().removeRule(currentTask.value.id, x.id)
+      action: (x: Task) => depStore.removeRule(currentTask.value.id, x.id)
     },
     {
       label: 'Move all Postreqs from Current Task to This Task',
@@ -422,7 +426,7 @@
       (x) => payload.below.has(x.id) && !payload.above.has(x.id)
     )
     for (let i = 0; i < toRemove.length; i++) {
-      await useTaskStore().removeRule(currentTask.value.id, toRemove[i]!.id)
+      await depStore.removeRule(currentTask.value.id, toRemove[i]!.id)
     }
     useLoadingStateStore().busy = false
   })
@@ -436,18 +440,18 @@
     })
     updateTaskDialogger.log('pruning prerequisites', { payload, toRemove })
     for (let i = 0; i < toRemove.length; i++) {
-      await useTaskStore().removeRule(toRemove[i]!.id, currentTask.value.id)
+      await depStore.removeRule(toRemove[i]!.id, currentTask.value.id)
     }
   })
 
   const removePre = (task: Task, id_of_prereq: number) => {
-    useTaskStore()
+    depStore
       .removeRule(id_of_prereq, task.id)
       .then(handleSuccess('Removed a prerequisite'), handleError('Error removing the prerequisite'))
   }
 
   const removePost = (task: Task, id_of_postreq: number) => {
-    useTaskStore()
+    depStore
       .removeRule(task.id, id_of_postreq)
       .then(handleSuccess('Removed a postrequisite'), handleError('Error removing the postrequisite'))
   }

@@ -43,6 +43,7 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import type { Task } from 'src/stores/tasks/task-model'
 
   interface Props {
@@ -73,7 +74,7 @@
     // Sequential awaits - parallel would race since all rules share the same first task
     for (let i = 0; i < selectedTasks.length; i++) {
       const element = selectedTasks[i]!
-      await useTaskStore().addRule(prop.task.id, element.obj.id)
+      await useDependencyStore().addRule(prop.task.id, element.obj.id)
       saveProgress.value = (i + 1) / selectedTasks.length
     }
     onDialogCancel()

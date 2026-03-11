@@ -13,6 +13,7 @@ import { useRepo } from 'pinia-orm'
 import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
 import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 import type { CreateListOptions} from 'src/stores/lists/list'
 import { ListRepo } from 'src/stores/lists/list'
 import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
@@ -41,10 +42,7 @@ export function openCreateTaskDialog() {
     component: CreateTaskDialog,
     componentProps: {
       onCreate: (payload: { options: CreateTaskOptions; callback: () => void }) => {
-        const newTask = payload.options
-        newTask.hard_prereq_ids = []
-        newTask.hard_postreq_ids = []
-        createTask(newTask)
+        createTask(payload.options)
       }
     }
   })
@@ -273,10 +271,12 @@ export function addPrerequisitesDialog(currentTask: Task) {
         const ct = useTaskStore().mapp.get(currentTaskID)
         if (typeof ct === 'undefined')
           throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
+        const depStore = useDependencyStore()
+        const preIds = depStore.getPreTaskIds(currentTaskID)
         return (x: Task) => {
           if (x.completed) return false
           if (x.id === ct.id) return false
-          if (ct.hard_prereq_ids.includes(x.id)) return false
+          if (preIds.includes(x.id)) return false
           return true
         }
       },
@@ -319,10 +319,12 @@ export function addPostrequisiteDialog(currentTask: Task) {
         const ct = useTaskStore().mapp.get(currentTaskID)
         if (typeof ct === 'undefined')
           throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
+        const depStore = useDependencyStore()
+        const postIds = depStore.getPostTaskIds(currentTaskID)
         return (x: Task) => {
           if (x.completed) return false
           if (x.id === ct.id) return false
-          if (ct.hard_postreq_ids.includes(x.id)) return false
+          if (postIds.includes(x.id)) return false
           return true
         }
       },

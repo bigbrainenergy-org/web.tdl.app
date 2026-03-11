@@ -2,6 +2,7 @@ import { handleError, notifySuccess } from './notification-utils'
 import type { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { Task } from 'src/stores/tasks/task-model'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 import { Logger } from './d'
 
 const TaskUtilsLogger = new Logger('Task Utils')
@@ -26,10 +27,8 @@ export function updateTask(id: number, options: AllOptionalTaskProperties) {
 export async function addPre(task: Task, newPreID: number) {
   TaskUtilsLogger.log(`addPre called: adding ${newPreID} as prereq to ${task.id}`)
   const start = performance.now()
-  const beforeAddRule = performance.now()
-  const result = useTaskStore().addRule(newPreID, task.id)
-  TaskUtilsLogger.log(`addRule returned promise in ${performance.now() - beforeAddRule}ms`)
-  return result.then(() => {
+  const depStore = useDependencyStore()
+  return depStore.addRule(newPreID, task.id).then(() => {
       const duration = performance.now() - start
       TaskUtilsLogger.log(`addPre .then() fired after ${duration}ms total`)
       notifySuccess('Added Prerequisite', 'fa-solid fa-link')
@@ -42,9 +41,8 @@ export async function addPre(task: Task, newPreID: number) {
 
 export async function addPost(task: Task, newPostID: number) {
   const start = performance.now()
-  return useTaskStore()
-    .addRule(task.id, newPostID)
-    .then(() => {
+  const depStore = useDependencyStore()
+  return depStore.addRule(task.id, newPostID).then(() => {
       const duration = performance.now() - start
       notifySuccess('Added Postrequisite', 'fa-solid fa-link')
       TaskUtilsLogger.assert(

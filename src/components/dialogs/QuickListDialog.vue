@@ -54,9 +54,9 @@
   import type { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { recalculate } from 'src/stores/tasks/task-view'
-  import { dontLookAtMe } from 'src/stores/tasks/look-i-dont-make-the-rules'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 
-  const ewww = dontLookAtMe()
+  const depStore = useDependencyStore()
 
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide } = useDialogPluginComponent()
@@ -142,9 +142,7 @@
       if (!trimmedText) continue
 
       const taskOptions: CreateTaskOptions = {
-        title: trimmedText,
-        hard_prereq_ids: [],
-        hard_postreq_ids: []
+        title: trimmedText
       }
 
       try {
@@ -157,35 +155,19 @@
       }
     }
 
-    // Phase 2: Add rules between tasks with batch operations deferred
+    // Phase 2: Add rules between tasks
     for (let i = 1; i < createdTaskIds.length; i++) {
       const prevTaskId = createdTaskIds[i - 1]!
       const currentTaskId = createdTaskIds[i]!
       try {
-        await taskStore.addRule(prevTaskId, currentTaskId, {
-          skipRecalculate: true,
-          skipBatchOperations: true
-        })
+        await depStore.addRule(prevTaskId, currentTaskId, { skipRecalculate: true })
       } catch (error) {
         console.error('Error adding rule:', error)
       }
     }
 
-    // Phase 3: Single batch update of task objects
-    taskStore.$patch(() => {
-      for (const taskId of createdTaskIds) {
-        const task = taskStore.hardGet(taskId)
-        const pres = ewww.grabPres(taskId)
-        const posts = ewww.grabPosts(taskId)
-        task.hard_prereq_ids = Array.from(pres.keys())
-        task.hard_postreq_ids = Array.from(posts.keys())
-      }
-    })
-
-    // Phase 4: Single cache refresh
+    // Phase 3: Refresh cache and recalculate
     taskStore.refreshStarredCache()
-
-    // Phase 5: Single recalculation
     recalculate('QuickListDialog batch complete')
 
     onDialogHide()

@@ -23,8 +23,6 @@ export interface CreateTaskOptions {
   prioritize_at?: string
   remind_me_at?: string
   review_at?: string
-  hard_prereq_ids?: number[]
-  hard_postreq_ids?: number[]
   procedure_ids?: number[]
   mental_energy_required?: number
   physical_energy_required?: number
@@ -32,10 +30,6 @@ export interface CreateTaskOptions {
 }
 
 export interface TaskLike {
-  hard_prereq_ids: number[]
-  hard_postreq_ids: number[]
-  // hard_prereqs: TaskLike[]
-  // hard_postreqs: TaskLike[]
   completed: boolean
   id: number
   title: string
@@ -67,8 +61,6 @@ export interface AllOptionalTaskProperties {
   prioritize_at?: string
   remind_me_at?: string
   review_at?: string
-  hard_prereq_ids?: number[]
-  hard_postreq_ids?: number[]
   mental_energy_required?: number
   physical_energy_required?: number
   procedure_ids?: number[]

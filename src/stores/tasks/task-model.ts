@@ -9,19 +9,10 @@ import { useLocalSettingsStore } from '../local-settings/local-setting'
 import { considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
 import type { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { taskLike } from './task-utils'
-import { useLoadingStateStore } from '../performance/loading-state'
 import { useTaskStarredStore } from './task-starred'
-import { Logger } from 'src/utils/d'
-import { dontLookAtMe } from './look-i-dont-make-the-rules'
-
-const debuggingCzar = new Logger('Czar', '#FF0000')
-const ewww = dontLookAtMe()
+import { useDependencyStore } from '../dependencies/dependency-store'
 
 export class Task implements TaskLike {
-  hard_prereq_ids: number[]
-  hard_postreq_ids: number[]
-  _hard_prereq_ids: number[]
-  _hard_postreq_ids: number[]
   completed: boolean
   id: number
   title: string
@@ -36,93 +27,6 @@ export class Task implements TaskLike {
   physical_energy_required: number
   task_duration_in_minutes?: number
   constructor(data: TaskLike | CreateTaskOptions) {
-    // Populate underlying arrays first to avoid triggering Proxy traps during initial load
-    this._hard_prereq_ids = [...(data.hard_prereq_ids ?? [])]
-    this._hard_postreq_ids = [...(data.hard_postreq_ids ?? [])]
-
-    // Now create Proxies around the already-populated arrays
-    this.hard_prereq_ids = new Proxy(this._hard_prereq_ids, {
-      set: (target, property, value: number) => {
-        target[property as any] = value
-        if (typeof property === 'symbol') {
-          console.debug({ 'symbol access of hard_prereq_ids': property })
-          return true
-        }
-        if (property === null || property === '') {
-          console.debug({ 'null or empty property name access of hard_prereq_ids': property })
-          return true
-        }
-        if (property === 'length') return true
-        if (isNaN(Number(property))) {
-          console.debug({
-            'catch-all for hard_prereq_ids access that does not fit a mould': property
-          })
-          return true
-        }
-        //debuggingCzar.log(`setting hard prereq ids of ${this.title}`)
-        if(useTaskStore().mapp.has(value)) ewww.upsertPre(this.id, value)
-        return true
-      },
-      get: (target, prop) => {
-        // TODO: this is pretty weaksauce
-        if (typeof prop === 'symbol') return target[prop as any]
-        if (prop === null || prop === '') return target
-        if (isNaN(Number(prop))) return target[prop as any]
-        const val = target[prop as any]
-        if(typeof val === 'undefined') {
-          debuggingCzar.log('val was undefined wtf')
-          return undefined
-        }
-        //debuggingCzar.log(`hard prereqs FORCE SYNC ${this.title}`)
-        if(useTaskStore().mapp.has(val)) ewww.upsertPre(this.id, val)
-        return val
-      },
-      apply: (target, thisArg, argumentsList) => {
-        const result = (target as any).apply(thisArg, argumentsList)
-        ewww.refresh(this)
-        return result
-      }
-    })
-    this.hard_postreq_ids = new Proxy(this._hard_postreq_ids, {
-      set: (target, property, value: number) => {
-        target[property as any] = value
-        if (typeof property === 'symbol') {
-          console.debug({ 'symbol access of hard_postreq_ids': property })
-          return true
-        }
-        if (property === null || property === '') {
-          console.debug({ 'null or empty property name access of hard_postreq_ids': property })
-          return true
-        }
-        if (property === 'length') return true
-        if (isNaN(Number(property))) {
-          console.debug({
-            'catch-all for hard_postreq_ids access that does not fit a mould': property
-          })
-          return true
-        }
-        if(useTaskStore().mapp.has(value)) ewww.upsertPost(this.id, value)
-        return true
-      },
-      get: (target, prop) => {
-        // TODO: this is pretty weaksauce
-        if (typeof prop === 'symbol') return target[prop as any]
-        if (prop === null || prop === '') return target
-        if (isNaN(Number(prop))) return target[prop as any]
-        const val = target[prop as any]
-        if(typeof val === 'undefined') {
-          debuggingCzar.log('kinda weird - val was undefined')
-          return undefined
-        }
-        if(useTaskStore().mapp.has(val)) ewww.upsertPost(this.id, val)
-        return val
-      },
-      apply: (target, thisArg, argumentsList) => {
-        const result = (target as any).apply(thisArg, argumentsList)
-        ewww.refresh(this)
-        return result
-      }
-    })
     this.completed = taskLike(data, 'completed') ? data.completed : false
     this.id = taskLike(data, 'id') ? data.id : -1
     this.title = data.title
@@ -136,39 +40,6 @@ export class Task implements TaskLike {
     this.mental_energy_required = data.mental_energy_required ?? 50
     this.physical_energy_required = data.physical_energy_required ?? 50
     this.task_duration_in_minutes = data.task_duration_in_minutes
-  }
-  fullSyncPres() {
-    //debuggingCzar.log('fullsyncpres NOP')
-    return
-    // TODO: make private if possible
-    // const hp = []
-    // for (let i = 0; i < this._hard_prereq_ids.length; i++) {
-    //   try {
-    //     const pre = useTaskStore().hardGet(this._hard_prereq_ids[i]!)
-    //     hp.push(pre)
-    //   } catch (e) {
-    //     console.warn(`tried to get pres for ${this.title} but encountered an error.`)
-    //     continue
-    //   }
-    // }
-    // this.hard_prereqs = hp
-    // this.incomplete_prereqs = this.hard_prereqs.filter((x) => !x.completed)
-  }
-  fullSyncPosts() {
-    //debuggingCzar.log('fullsyncposts NOP')
-    return
-    // const hp = []
-    // for (let i = 0; i < this._hard_postreq_ids.length; i++) {
-    //   try {
-    //     const post = useTaskStore().hardGet(this._hard_postreq_ids[i]!)
-    //     hp.push(post)
-    //   } catch (e) {
-    //     console.warn(`tried to get posts for ${this.title} but encountered an error.`)
-    //     continue
-    //   }
-    // }
-    // this.hard_postreqs = hp
-    // this.incomplete_postreqs = this.hard_postreqs.filter((x) => !x.completed)
   }
   get list() {
     const id = this.list_id
@@ -185,8 +56,7 @@ export class Task implements TaskLike {
   async toggleCompleted() {
     const newCompleteStatus = !this.completed
     const newVal = await useTaskStore().apiUpdate(this.id, { completed: newCompleteStatus })
-    
-    // If task is being marked as completed, remove it from starred set
+
     if (newCompleteStatus) {
       const starredStore = useTaskStarredStore()
       starredStore.removeCompletedTask(this.id)
@@ -194,34 +64,37 @@ export class Task implements TaskLike {
     considerOpeningQuickSortDialog()
     return newVal
   }
-  /**
-   * A similar function but just sets up the api update to only have a payload containing the new completed status; does not actively switch the completed status
-   */
   async updateTaskCompletionStatus() {
     const newVal = await useTaskStore().apiUpdate(this.id, { completed: this.completed })
     considerOpeningQuickSortDialog()
     return newVal
   }
-  grabPrereqs(incompleteOnly: boolean) {
-    return [...(incompleteOnly ? ewww.grabIncompletePres(this.id) : ewww.grabPres(this.id)).values()]
+  grabPrereqs(incompleteOnly: boolean): Task[] {
+    const depStore = useDependencyStore()
+    const taskStore = useTaskStore()
+    const entries = incompleteOnly ? depStore.getIncompletePres(this.id) : depStore.getPres(this.id)
+    return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
   }
-  grabPostreqs(incompleteOnly: boolean) {
-    return [...(incompleteOnly ? ewww.grabIncompletePosts(this.id) : ewww.grabPosts(this.id)).values()]
+  grabPostreqs(incompleteOnly: boolean): Task[] {
+    const depStore = useDependencyStore()
+    const taskStore = useTaskStore()
+    const entries = incompleteOnly ? depStore.getIncompletePosts(this.id) : depStore.getPosts(this.id)
+    return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
   }
   anyIDsAbove(ids: number[]): Map<number, boolean> {
-    const ts = useTaskStore()
-    const allIDsAbove = ts.idsBefore(this.id)
+    const depStore = useDependencyStore()
+    const allIDsAbove = depStore.idsBefore(this.id)
     return new Map(ids.map((x) => [x, allIDsAbove.has(x)]))
   }
   anyIDsBelow(ids: number[]): Map<number, boolean> {
-    const ts = useTaskStore()
-    const allIDsBelow = ts.idsAfter(this.id)
+    const depStore = useDependencyStore()
+    const allIDsBelow = depStore.idsAfter(this.id)
     return new Map(ids.map((x) => [x, allIDsBelow.has(x)]))
   }
   hasRelationTo(id: number) {
-    const ts = useTaskStore()
-    const idsAfter = ts.idsAfter(this.id)
-    const idsBefore = ts.idsBefore(this.id)
+    const depStore = useDependencyStore()
+    const idsAfter = depStore.idsAfter(this.id)
+    const idsBefore = depStore.idsBefore(this.id)
     return idsAfter.has(id) || idsBefore.has(id)
   }
   hasRelationToAny(ids: number[]) {
@@ -234,8 +107,6 @@ export class Task implements TaskLike {
   get rawData(): Pick<Task, keyof TaskLike> {
     return {
       id: this.id,
-      hard_prereq_ids: this._hard_prereq_ids,
-      hard_postreq_ids: this._hard_postreq_ids,
       completed: this.completed,
       title: this.title,
       mental_energy_required: this.mental_energy_required,
@@ -250,21 +121,16 @@ export class Task implements TaskLike {
       task_duration_in_minutes: this.task_duration_in_minutes
     }
   }
-  /// d3Node<Task>
-  //  id: the task id
-  //  obj: pass through the task object
-  //  index: the 0-based node index for the chart
-  //  x: the current x coordinate on the plane (origin is top left corner)
-  //  y: the current y coordinate on the plane
-  //  vx:
-  //  vy:
-  //  radius: calculated radius value of each node (to be drawn as a circle)
-  //  color: if you want to color-code the nodes based on its properties.
   d3forceNode(index: number, width = 0, height = 0): d3Node<Task> {
+    const depStore = useDependencyStore()
+    const postCount = depStore.getPosts(this.id).length
+    const preCount = depStore.getPres(this.id).length
+    const incompletePostCount = depStore.getIncompletePosts(this.id).length
+    const incompletePreCount = depStore.getIncompletePres(this.id).length
     return {
       id: this.id,
       obj: this,
-      index: index, //node indices start at 0, sequential.
+      index: index,
       x: width / 2,
       y: height / 2,
       vx: 0,
@@ -273,24 +139,24 @@ export class Task implements TaskLike {
         useLocalSettingsStore().maxGraphNodeRadius,
         Math.max(
           (useLocalSettingsStore().hideCompleted
-            ? this.grabPostreqs(false).filter((x) => !x.completed).length
-            : this.hard_postreq_ids.length) ** 2.1,
-          this.grabPostreqs(true).filter((x) => !x.completed).length === 0 ? 16 : 8
+            ? incompletePostCount
+            : postCount) ** 2.1,
+          incompletePostCount === 0 ? 16 : 8
         )
       ),
       color: this.completed
         ? '#003905'
-        : this.grabPrereqs(false).filter((x) => !x.completed).length === 0
+        : incompletePreCount === 0
           ? 'red'
           : 'gray',
-      repel: -1000 / this.hard_prereq_ids.length ** 2
+      repel: -1000 / (preCount || 1) ** 2
     }
   }
   get hasPrereqs() {
-    return this.hard_prereq_ids.length > 0
+    return useDependencyStore().getPres(this.id).length > 0
   }
   get hasPostreqs() {
-    return this.hard_postreq_ids.length > 0
+    return useDependencyStore().getPosts(this.id).length > 0
   }
   get expanded_state() {
     return useRepo(ExpandedStateRepo).getByTaskID(this.id)
@@ -354,15 +220,13 @@ export class Task implements TaskLike {
     return hexColor
   }
   async split(slices: number) {
-    // const repo = useRepo(TaskRepo)
+    const depStore = useDependencyStore()
     const title = (number: number) => `${this.title} (${number}/${slices})`
     if (slices <= 1) throw new Error(`Cannot slice a task into ${slices} piece(s).`)
-    // copy the prereq and postreq id arrays
-    const prereq_ids = Array.from(this.hard_prereq_ids)
+    const prereq_ids = depStore.getPreTaskIds(this.id)
     for (let i = 0; i < prereq_ids.length; i++) {
-      useTaskStore().removeRule(prereq_ids[i]!, this.id)
+      await depStore.removeRule(prereq_ids[i]!, this.id)
     }
-    // make a template object (strip away title, prereqs, and postreqs)
     const templateTaskSliceObj = (number: number): CreateTaskOptions => ({
       list_id: this.list_id,
       title: title(number),
@@ -371,32 +235,25 @@ export class Task implements TaskLike {
       prioritize_at: this.prioritize_at,
       remind_me_at: this.remind_me_at,
       review_at: this.review_at,
-      hard_prereq_ids: prereq_ids,
-      hard_postreq_ids: [],
       mental_energy_required: this.mental_energy_required,
       physical_energy_required: this.physical_energy_required
     })
-    // collect the generated slices
     const newSlices: Array<CreateTaskOptions> = []
     const resultTasks: Array<Task> = []
     const ts = useTaskStore()
-    // the last slice is the original task record
     for (let i = 0; i < slices - 1; i++) {
       newSlices.push(templateTaskSliceObj(i + 1))
     }
-    // todo: review everything from here down
     for (let i = 0; i < newSlices.length; i++) {
       const tmp = await ts.apiCreate(newSlices[i]!)
       if (typeof tmp !== 'undefined' && tmp !== null) resultTasks.push(new Task(tmp))
     }
-    // todo: actually possibly an issue with resultTasks being out of bounds here.
     for (let i = 0; i < prereq_ids.length; i++) {
-      await ts.addRule(prereq_ids[i]!, resultTasks[0]!.id)
+      await depStore.addRule(prereq_ids[i]!, resultTasks[0]!.id)
     }
     for (let i = 1; i < resultTasks.length; i++) {
-      await ts.addRule(resultTasks[i - 1]!.id, resultTasks[i]!.id)
-      // await ts.addPre(resultTasks[i], resultTasks[i - 1].id)
+      await depStore.addRule(resultTasks[i - 1]!.id, resultTasks[i]!.id)
     }
-    await ts.addRule(resultTasks[resultTasks.length - 1]!.id, this.id)
+    await depStore.addRule(resultTasks[resultTasks.length - 1]!.id, this.id)
   }
 }

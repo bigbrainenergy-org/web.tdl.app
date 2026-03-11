@@ -79,6 +79,7 @@
   import { handleError } from 'src/utils/notification-utils'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
   import GloriousToggle from '../glorious/GloriousToggle.vue'
@@ -161,10 +162,13 @@
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
+      const depStore = useDependencyStore()
+      const preIds = depStore.getPreTaskIds(currentTaskID)
+      const postIds = depStore.getPostTaskIds(currentTaskID)
       return (x: Task) => {
         if (x.completed) return false
-        if (ct.hard_prereq_ids.includes(x.id)) return false
-        if (ct.hard_postreq_ids.includes(x.id)) return false
+        if (preIds.includes(x.id)) return false
+        if (postIds.includes(x.id)) return false
         return true
       }
     }
@@ -285,7 +289,7 @@
     //   }, handleError('Error creating task.'))
     // busy.value = false
     if(typeof searchString.value === 'undefined' || searchString.value === null || searchString.value.length === 0) return
-    const toCreate: CreateTaskOptions = { title: searchString.value, notes: '!!REFINE', hard_postreq_ids: [ props.taskID ]}
+    const toCreate: CreateTaskOptions = { title: searchString.value, notes: '!!REFINE' }
     selectTask({ task: toCreate })
   }
 
