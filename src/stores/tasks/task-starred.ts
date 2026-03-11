@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { type TaskLike } from './task-interfaces-types'
-import { useDependencyStore } from '../dependencies/dependency-store'
 import { useTaskStore } from './task-store'
 import { recalculate } from './task-view'
 
@@ -165,17 +164,14 @@ export const useTaskStarredStore = defineStore('task-starred', {
       const task = taskMap.get(taskId)
       if (!task) return 0
 
-      const depStore = useDependencyStore()
-      const postIds = depStore.getPostTaskIds(taskId)
-
+      const posts = (task as TaskLike & { posts: Array<{ task: TaskLike; degree: number }> }).posts
       let totalCount = 0
-      for (const postreqId of postIds) {
-        const postreqTask = taskMap.get(postreqId)
-        if(!postreqTask || postreqTask.completed) continue
+      for (const ref of posts) {
+        if (ref.task.completed) continue
 
-        if (this._starredSet.has(postreqId)) totalCount += 1
+        if (this._starredSet.has(ref.task.id)) totalCount += 1
 
-        totalCount += this.computeDescendants(postreqId, taskMap, visited)
+        totalCount += this.computeDescendants(ref.task.id, taskMap, visited)
       }
 
       this.starredDescendantCounts.set(taskId, totalCount)

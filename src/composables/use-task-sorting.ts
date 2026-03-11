@@ -1,7 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
-import type { Task } from 'src/stores/tasks/task-model'
+import type { Task, TaskDepRef } from 'src/stores/tasks/task-model'
 import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { stuckTasks } from 'src/stores/tasks/task-utils'
@@ -19,10 +18,30 @@ export function useTaskSorting() {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') {
-      const depStore = useDependencyStore()
       const taskStarredStore = useTaskStarredStore()
       const taskStore = useTaskStore()
       const taskMap = taskStore.mapp
+
+      // Local caches for incomplete pres/posts to avoid re-filtering
+      const incompletePresCache = new Map<number, TaskDepRef[]>()
+      const incompletePostsCache = new Map<number, TaskDepRef[]>()
+      const getIncompletePres = (task: Task): TaskDepRef[] => {
+        let cached = incompletePresCache.get(task.id)
+        if (cached === undefined) {
+          cached = task.pres.filter(r => !r.task.completed)
+          incompletePresCache.set(task.id, cached)
+        }
+        return cached
+      }
+      const getIncompletePosts = (task: Task): TaskDepRef[] => {
+        let cached = incompletePostsCache.get(task.id)
+        if (cached === undefined) {
+          cached = task.posts.filter(r => !r.task.completed)
+          incompletePostsCache.set(task.id, cached)
+        }
+        return cached
+      }
+
       const timings: any = {
         agendaSort: performance.now(),
         computeDescendantsTotal: 0,
@@ -141,12 +160,9 @@ export function useTaskSorting() {
         if (visited.has(task.id)) return undefined
         visited.add(task.id)
 
-        const posts = depStore.getIncompletePosts(task.id)
-        for (const entry of posts) {
-          const postTask = taskMap.get(entry.task_id) as Task | undefined
-          if (!postTask) continue
-          if (postTask.deadline_at) return postTask.deadline_at
-          const found = findFirstPostreqDeadline(postTask, visited)
+        for (const ref of getIncompletePosts(task)) {
+          if (ref.task.deadline_at) return ref.task.deadline_at
+          const found = findFirstPostreqDeadline(ref.task, visited)
           if (found) return found
         }
 
@@ -197,11 +213,11 @@ export function useTaskSorting() {
         const insertTime = performance.now()
 
         if (!taskLayers.has(newTask.id)) {
-          const incompletePres = depStore.getIncompletePres(newTask.id)
+          const incompletePres = getIncompletePres(newTask)
           let maxPrereqLayer = -1
 
-          for (const entry of incompletePres) {
-            const prereqLayer = taskLayers.get(entry.task_id) ?? 0
+          for (const ref of incompletePres) {
+            const prereqLayer = taskLayers.get(ref.task.id) ?? 0
             maxPrereqLayer = Math.max(maxPrereqLayer, prereqLayer)
           }
 
@@ -233,7 +249,7 @@ export function useTaskSorting() {
       for (const task of filteredTasks) {
         taskStarredStore.computeDescendants(task.id, taskMap, visited)
 
-        const incompletePres = depStore.getIncompletePres(task.id)
+        const incompletePres = getIncompletePres(task)
         totalIncompletePrereqs.set(task.id, incompletePres.length)
         prereqsSatisfiedCount.set(task.id, 0)
 
@@ -268,8 +284,8 @@ export function useTaskSorting() {
           finalList.set(task.id, task)
 
           const incrementTime = performance.now()
-          for (const entry of depStore.getIncompletePosts(task.id)) {
-            const postId = entry.task_id
+          for (const ref of getIncompletePosts(task)) {
+            const postId = ref.task.id
             if (!totalIncompletePrereqs.has(postId)) continue
 
             const currentCount = prereqsSatisfiedCount.get(postId) ?? 0
@@ -278,8 +294,7 @@ export function useTaskSorting() {
 
             const postTotalPrereqs = totalIncompletePrereqs.get(postId) ?? 0
             if (newCount === postTotalPrereqs && !finalList.has(postId)) {
-              const postTask = taskStore.hardGet(postId)
-              if (postTask) insertIntoReadyQueue(readyQueue, postTask)
+              insertIntoReadyQueue(readyQueue, ref.task)
             }
           }
           timings.incrementCounterTotal += performance.now() - incrementTime
@@ -296,7 +311,7 @@ export function useTaskSorting() {
       // Check for stuck tasks
       const notInFinalArray = filteredTasks.filter(x => !finalList.has(x.id))
         .filter(x => !x.completed)
-        .filter(x => depStore.getIncompletePres(x.id).length > 0)
+        .filter(x => getIncompletePres(x).length > 0)
 
       stuckTasks.value.clear()
       if (notInFinalArray.length > 0) {
@@ -317,14 +332,12 @@ export function useTaskSorting() {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') {
-      const depStore = useDependencyStore()
-
       // Pre-compute task IDs as Set for O(1) lookups
       const taskIds = new Set(tasks.map(x => x.id))
 
       // Find first layer - tasks with no prerequisites in this set
       const firstLayer = tasks.filter(x =>
-        depStore.getPreTaskIds(x.id).every(preId => !taskIds.has(preId))
+        x.pres.every(r => !taskIds.has(r.task.id))
       )
 
       const finalList = new Map<number, Task>()
@@ -384,9 +397,10 @@ export function useTaskSorting() {
               finalList.set(task.id, task)
 
               const newTasks: Task[] = []
-              for (const entry of depStore.getIncompletePosts(task.id)) {
-                const postTask = useTaskStore().mapp.get(entry.task_id) as Task | undefined
-                if (postTask && !addedToQueue.has(entry.task_id) && taskIds.has(entry.task_id)) {
+              for (const ref of task.posts) {
+                const postTask = ref.task
+                if (postTask.completed) continue
+                if (!addedToQueue.has(postTask.id) && taskIds.has(postTask.id)) {
                   newTasks.push(postTask)
                 }
               }

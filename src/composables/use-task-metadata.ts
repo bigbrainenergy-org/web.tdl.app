@@ -50,6 +50,7 @@ export function useTaskMetadata() {
     tasks: Ref<Task[]> | ComputedRef<Task[]>
   ): ComputedRef<TaskMetadata[]> => {
     return computed(() => {
+      void taskStore.arrayVersion // subscribe to in-place task mutations (shallowRef doesn't track deep changes)
       const l0Set = layerZeroIds.value
       const starredSet = starredStore._starredSet
       const currentTime = now.value

@@ -11,7 +11,10 @@ import type { SimpleTreeNode } from 'src/utils/quasar-interfaces'
 import { taskLike } from './task-utils'
 import { useTaskStarredStore } from './task-starred'
 import { useDependencyStore } from '../dependencies/dependency-store'
-import type { TaskDepRef } from '../dependencies/dependency-types'
+export interface TaskDepRef {
+  task: Task
+  degree: 1 | 2 | 3
+}
 
 export class Task implements TaskLike {
   completed: boolean
