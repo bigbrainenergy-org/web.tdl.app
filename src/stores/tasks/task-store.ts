@@ -8,7 +8,7 @@ import type {
   TaskLike
 } from './task-interfaces-types'
 import { Task } from './task-model'
-import type { AxiosResponse } from 'axios'
+import type { AxiosError, AxiosResponse } from 'axios'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
 import { hardCheck } from 'src/utils/type-utils'
@@ -199,13 +199,21 @@ export const useTaskStore = defineStore('tasks', {
           useDependencyStore().removeTaskEntries(id)
           recalculate('apiDelete')
           notifySuccess('Task was deleted.')
-        }, handleError('Error deleting task.'))
+        }, (error: AxiosError) => {
+          if (error?.response?.status === 404) {
+            this.array = this.array.filter(x => x.id !== id)
+            this.mapp.delete(id)
+            useDependencyStore().removeTaskEntries(id)
+            recalculate('apiDelete')
+            notifySuccess('Task was deleted.')
+            return
+          }
+          handleError('Error deleting task.')(error)
+        })
     },
     apiBulkDelete(ids: number[]) {
       const idSet = new Set(ids)
-      return Promise.all(
-        ids.map(id => this.api().delete(`/tasks/${id}`, this.commonHeader()))
-      ).then(() => {
+      const removeLocally = () => {
         this.array = this.array.filter(x => !idSet.has(x.id))
         const depStore = useDependencyStore()
         for (const id of ids) {
@@ -213,6 +221,17 @@ export const useTaskStore = defineStore('tasks', {
           depStore.removeTaskEntries(id)
         }
         recalculate('apiBulkDelete')
+      }
+      return Promise.all(
+        ids.map(id =>
+          this.api().delete(`/tasks/${id}`, this.commonHeader())
+            .catch((error: AxiosError) => {
+              if (error?.response?.status === 404) return
+              throw error
+            })
+        )
+      ).then(() => {
+        removeLocally()
         notifySuccess(`Deleted ${ids.length} tasks.`)
       }, handleError('Error bulk-deleting tasks.'))
     },

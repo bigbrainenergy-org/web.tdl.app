@@ -119,7 +119,11 @@ export const useDependencyStore = defineStore('dependencies', {
     async remove(first_id: number, second_id: number) {
       const dep = this._deps.find(d => d.first_id === first_id && d.second_id === second_id)
       if (!dep) throw new Error(`Dependency not found: ${first_id} -> ${second_id}`)
-      await this._api().delete(`/task_dependencies/${dep.id}`, this._commonHeader())
+      try {
+        await this._api().delete(`/task_dependencies/${dep.id}`, this._commonHeader())
+      } catch (error: any) {
+        if (error?.response?.status !== 404) throw error
+      }
       const idx = this._deps.indexOf(dep)
       if (idx !== -1) this._deps.splice(idx, 1)
       this._removeFromMaps(first_id, second_id)
@@ -202,7 +206,7 @@ export const useDependencyStore = defineStore('dependencies', {
     // --- High-level operations ---
 
     async addRule(first_id: number, second_id: number, options: { skipRecalculate?: boolean, degree?: 1 | 2 | 3 } = {}) {
-      const { skipRecalculate = false, degree = 3 } = options
+      const { skipRecalculate = false, degree = 2 } = options
       const timings: any = { addRuleTotal: performance.now() }
 
       // Validate no cycles
