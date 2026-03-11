@@ -104,10 +104,10 @@ export const useDependencyStore = defineStore('dependencies', {
       })
     },
 
-    async create(first_id: number, second_id: number, degree: 1 | 2 | 3 = 3) {
+    async create(first_id: number, second_id: number, degree: 1 | 2 | 3 = 2) {
       const result = await this._api().post<TaskDependency>(
         '/task_dependencies',
-        { task_dependency: { first_id, second_id, degree } },
+        { first_id, second_id, degree },
         this._commonHeader()
       )
       const dep = result.data
