@@ -39,7 +39,7 @@
           </q-icon>
         </div>
         <q-btn
-          v-if="allIncompletePrereqs.length > 3"
+          v-if="visiblePrereqs.length > 3"
           flat
           dense
           no-caps
@@ -160,7 +160,8 @@
 
     const result: PrereqInfo[] = []
 
-    // Sort blocked tasks by depth (descending) to get farthest-up first
+    // Sort by depth descending so deepest actionable tasks are prioritized
+    unblockedTasks.sort((a, b) => b.depth - a.depth)
     blockedTasks.sort((a, b) => b.depth - a.depth)
 
     if (unblockedTasks.length >= 3) {
