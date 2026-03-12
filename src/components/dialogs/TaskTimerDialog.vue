@@ -76,7 +76,7 @@
     // Make sure the timer is cleared before hiding the dialog
     if (timer.value) {
       console.log('cleared interval: canceled timer dialog')
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       clearInterval(timer.value)
       timer.value = null
     }

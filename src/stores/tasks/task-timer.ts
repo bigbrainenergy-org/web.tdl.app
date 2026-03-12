@@ -15,7 +15,7 @@ export const useTaskTimerStore = defineStore('task-timer', {
   actions: {
     resetTimer() {
       if(this.timer === null) return
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       clearInterval(this.timer)
       TaskTimerLogger.warn('cleared interval using state function.')
       this.timer = null
@@ -23,7 +23,7 @@ export const useTaskTimerStore = defineStore('task-timer', {
     startTimer(task?: Task) {
       if(this.timer) {
         TaskTimerLogger.log('reseting previous timer')
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        
         clearInterval(this.timer)
         this.timer = null
       }

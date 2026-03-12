@@ -25,6 +25,7 @@ interface LocalSettingsState {
   graphTraverseThroughCompleted: boolean // include completed tasks but don't traverse their dependencies
   reverseTreeView: boolean
   disableQuickSort: boolean
+  disableTaskBreakdown: boolean
   enableQuickSortOnNewTask: boolean
   enableQuickSortOnLayerZeroQTY:
     | 1
@@ -63,6 +64,7 @@ interface LocalSettingsState {
   quickSortLayerZeroDegree: 1 | 2 | 3 | null
   quickSortPostsDegree: 1 | 2 | 3 | null
   addDependencyDegree: 1 | 2 | 3 | null
+  taskBreakdownDegree: 1 | 2 | 3 | null
   unsetDegreeBehavior: 1 | 2 | 3
 }
 
@@ -133,6 +135,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       graphTraverseThroughCompleted: false,
       reverseTreeView: false,
       disableQuickSort: true,
+      disableTaskBreakdown: false,
       enableQuickSortOnNewTask: false,
       enableQuickSortOnLayerZeroQTY: 1,
       backgroundMode: 'image',
@@ -151,6 +154,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       quickSortLayerZeroDegree: 1,
       quickSortPostsDegree: 1,
       addDependencyDegree: 2,
+      taskBreakdownDegree: 3,
       unsetDegreeBehavior: 2
     }
   },

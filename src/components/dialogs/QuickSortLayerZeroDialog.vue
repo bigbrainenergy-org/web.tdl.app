@@ -21,6 +21,7 @@
                 <q-item-label lines="2">{{ 'Settings' }}</q-item-label>
               </q-item-section>
               <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+              <GloriousToggle v-model:model-value="disableTaskBreakdown" label="Disable Task Breakdown" />
               <!-- <GloriousToggle
                 v-model:model-value="enableDeeperQuickSort"
                 label="Deeper Quick Sort"
@@ -167,6 +168,7 @@
 
   const {
     disableQuickSort,
+    disableTaskBreakdown,
     // enableDeeperQuickSort,
     enableQuickSortOnLayerZeroQTY,
     // enableQuickSortOnNewTask,

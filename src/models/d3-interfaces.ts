@@ -111,7 +111,7 @@ export class CustomForceGraph {
   static d3PanAndGeometricZoom(s: d3.Selection<any, any, any, any>) {
     const handleZoom = (event: { transform: any }) => {
       // todo: add 'semantic' zoom for text labels so they stay the same size no matter the zoom level.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       s.attr('transform', event.transform)
     }
     const zoom = d3

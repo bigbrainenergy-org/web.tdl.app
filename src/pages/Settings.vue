@@ -41,6 +41,8 @@
 
         <q-btn class="q-ma-md" icon="settings" color="indigo" label="Task Appearance Settings" @click="openTaskAppearanceSettingsDialog" />
 
+        <q-btn class="q-ma-md" icon="fa-solid fa-star" color="indigo" label="Dependency Degree Settings" @click="openDependencyDegreeSettingsDialog" />
+
         <q-separator class="q-my-md" />
 
         <PasswordChangeForm />
@@ -76,6 +78,7 @@
   import DefaultPageSwitcher from 'src/components/inputs/DefaultPageSwitcher.vue'
   import CurrentTimeIndicator from 'src/components/CurrentTimeIndicator.vue'
   import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
+  import DependencyDegreeSettingsDialog from 'src/components/dialogs/DependencyDegreeSettingsDialog.vue'
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 
@@ -105,6 +108,12 @@
   const openTaskAppearanceSettingsDialog = () => {
     $q.dialog({
       component: TaskAppearanceSetting
+    })
+  }
+
+  const openDependencyDegreeSettingsDialog = () => {
+    $q.dialog({
+      component: DependencyDegreeSettingsDialog
     })
   }
 </script>

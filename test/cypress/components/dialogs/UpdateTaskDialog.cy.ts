@@ -25,7 +25,7 @@ describe('UpdateTaskDialog', () => {
   // it('should allow editing title', () => {
   //   cy.fixture('create_task_success.json').then((task) => {
   //     task.title = 'Task 1 but better'
-  //     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  //     
   //     cy.intercept('PATCH', '/tasks/1', task)
   //   })
   //   cy.dataCy('task_title_input').type('{selectall}{del}Task 1 but better{enter}')

@@ -76,11 +76,11 @@ export async function syncNotifications(store: any) {
         }
       })
     if (toBeCancelled.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       cancelNotifications(toBeCancelled)
     }
     if (toBeScheduled.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       scheduleNotifications(toBeScheduled)
     }
   }

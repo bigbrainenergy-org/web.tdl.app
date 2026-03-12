@@ -16,27 +16,27 @@ export class Logger {
     return `hsl(${hue}, 70%, 50%)`
   }
   public log(...args: any[]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    
     console.log(...this.prefix, ...args)
   }
   public warn(...args: any[]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    
     console.warn(...this.prefix, ...args)
   }
   public debug(...args: any[]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    
     console.debug(...this.prefix, ...args)
   }
   public error(...args: any[]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    
     console.error(...this.prefix, ...args)
   }
   public trace(...args: any[]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    
     console.trace(...this.prefix, ...args)
   }
   public assert(value: boolean, ...args: any[]) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    
     console.assert(value, ...this.prefix, ...args)
   }
 }

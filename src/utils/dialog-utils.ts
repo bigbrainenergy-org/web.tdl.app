@@ -144,37 +144,38 @@ export function openTaskBreakdownDialog(task: Task) {
 }
 
 export function considerOpeningQuickSortDialog() {
-  const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
+  const { disableQuickSort, disableTaskBreakdown, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
     useLocalSettingsStore()
-  if (disableQuickSort) return
   const { quickSortDialogActive, breakdownDialogActive } = useLoadingStateStore()
   if (quickSortDialogActive || breakdownDialogActive) return
 
   // First, check if any tasks in the sorted agenda view need refinement
-  const taskStore = useTaskStore()
-  const needsRefinementStore = useTaskNeedsRefinementStore()
+  if (!disableTaskBreakdown) {
+    const needsRefinementStore = useTaskNeedsRefinementStore()
 
-  // Get the sorted tasks from the task view (what's actually shown in the agenda)
-  // Filter out projects from the refinement check
-  const sortedTasks = tasks.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
+    // Get the sorted tasks from the task view (what's actually shown in the agenda)
+    // Filter out projects from the refinement check
+    const sortedTasks = tasks.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
 
-  // Check between 10-20 tasks: min(20, max(10, qty))
-  const checkLimit = Math.min(20, Math.max(10, sortedTasks.length))
-  const tasksToCheck = sortedTasks.slice(0, checkLimit)
+    // Check between 10-20 tasks: min(20, max(10, qty))
+    const checkLimit = Math.min(20, Math.max(10, sortedTasks.length))
+    const tasksToCheck = sortedTasks.slice(0, checkLimit)
 
-  // Find first task that needs refinement
-  const taskNeedingRefinement = tasksToCheck.find(task =>
-    needsRefinementStore.needsRefinement(task.id)
-  )
+    // Find first task that needs refinement
+    const taskNeedingRefinement = tasksToCheck.find(task =>
+      needsRefinementStore.needsRefinement(task.id)
+    )
 
-  if (taskNeedingRefinement) {
-    // Open breakdown dialog instead of quick sort
-    openTaskBreakdownDialog(taskNeedingRefinement as Task)
-    return
+    if (taskNeedingRefinement) {
+      openTaskBreakdownDialog(taskNeedingRefinement as Task)
+      return
+    }
   }
 
   // If no tasks need refinement, proceed with normal quick sort logic
+  if (disableQuickSort) return
   if (enableQuickSortOnLayerZeroQTY > 0) {
+    const taskStore = useTaskStore()
     // Filter out projects from layer zero
     const layerZero = taskStore.layerZero.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
     const layerZeroQTY = layerZero.length

@@ -204,7 +204,7 @@ export const useTaskStarredStore = defineStore('task-starred', {
     },
     
     invalidateDescendantCache() {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       clearTimeout(this._cacheTimeout)
       this._cacheTimeout = setTimeout(() => {
         this.starredDescendantCounts.clear()

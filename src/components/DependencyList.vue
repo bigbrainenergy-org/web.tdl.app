@@ -23,7 +23,7 @@
         </q-item>
         <q-item v-for="(item, itemkey) in items" :key="itemkey" v-ripple>
           <q-btn-dropdown
-            style="width: 100%; overflow: hidden"
+            style="width: 100%"
             split
             auto-close
             dropdown-icon="more_vert"
@@ -42,7 +42,7 @@
                   @update:model-value="(val) => emit('updateDegree', { taskId: item.id, degree: val })"
                 />
               </q-item-section>
-              <q-item-section class="vertical-top wrapped" :style="style">
+              <q-item-section class="vertical-top wrapped" :style="{ ...style, overflow: 'hidden' }">
                 <q-icon
                   v-if="isNearRedundant(item.id)"
                   name="fas fa-triangle-exclamation"

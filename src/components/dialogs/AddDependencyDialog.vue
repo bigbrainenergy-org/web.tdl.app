@@ -11,8 +11,15 @@
         <div class="text-h6">{{ dialogTitle }}</div>
         <GloriousSettingsPopup>
           <GloriousToggle v-model:model-value="omitRedundant" label="Omit Redundant Tasks" />
+          <q-item>
+            <q-item-section>
+              <q-item-label>Dependency Degree</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <DegreeStars v-model:model-value="addDependencyDegree" size="sm" />
+            </q-item-section>
+          </q-item>
         </GloriousSettingsPopup>
-        <DegreeStars v-model:model-value="addDependencyDegree" size="sm" label="Degree" />
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 

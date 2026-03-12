@@ -7,6 +7,7 @@
 
   const {
     disableQuickSort,
+    disableTaskBreakdown,
     enableQuickSortOnNewTask,
     enableQuickSortOnLayerZeroQTY,
     enableQuickSortBailOnBigTask,
@@ -30,6 +31,7 @@
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
             <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+            <GloriousToggle v-model:model-value="disableTaskBreakdown" label="Disable Task Breakdown" />
             <GloriousSlider
               v-model:model-value="enableQuickSortOnLayerZeroQTY"
               :min="1"

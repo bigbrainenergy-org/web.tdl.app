@@ -5,6 +5,17 @@
         <q-card-section class="row items-center q-pb-none">
           <div class="text-h6">Break Down Task</div>
           <q-space />
+          <GloriousSettingsPopup>
+            <GloriousToggle v-model:model-value="disableTaskBreakdown" label="Disable Task Breakdown" />
+            <q-item>
+              <q-item-section>
+                <q-item-label>Dependency Degree</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <DegreeStars v-model:model-value="taskBreakdownDegree" size="sm" />
+              </q-item-section>
+            </q-item>
+          </GloriousSettingsPopup>
           <q-btn v-close-popup icon="close" flat round dense />
         </q-card-section>
 
@@ -161,10 +172,16 @@
   import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
   import { recalculate } from 'src/stores/tasks/task-view'
   import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { storeToRefs } from 'pinia'
+  import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
+  import DegreeStars from 'src/components/glorious/DegreeStars.vue'
   import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
   import Fuse from 'fuse.js'
 
   const depStore = useDependencyStore()
+  const { disableTaskBreakdown, taskBreakdownDegree } = storeToRefs(useLocalSettingsStore())
 
   const props = defineProps<{
     task: Task
@@ -461,7 +478,7 @@
       const prevTaskId = taskIds[i - 1]!
       const currentTaskId = taskIds[i]!
       try {
-        await depStore.addRule(prevTaskId, currentTaskId, { skipRecalculate: true })
+        await depStore.addRule(prevTaskId, currentTaskId, { skipRecalculate: true, degree: taskBreakdownDegree.value })
       } catch (error) {
         console.error('Error adding rule:', error)
       }
@@ -471,7 +488,7 @@
     const lastTaskId = taskIds[taskIds.length - 1]
     if (lastTaskId !== undefined) {
       try {
-        await depStore.addRule(lastTaskId, props.task.id, { skipRecalculate: true })
+        await depStore.addRule(lastTaskId, props.task.id, { skipRecalculate: true, degree: taskBreakdownDegree.value })
       } catch (error) {
         console.error('Error linking to parent task:', error)
       }
