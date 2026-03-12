@@ -57,6 +57,8 @@
   import { ref, computed } from 'vue'
   import type { Task, TaskDepRef } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { storeToRefs } from 'pinia'
 
   const props = withDefaults(
     defineProps<{
@@ -82,9 +84,11 @@
     return props.task.notes?.includes('!INPROGRESS') ?? false
   })
 
+  const { unsetDegreeBehavior } = storeToRefs(useLocalSettingsStore())
+
   const fitsAllWeirdCriteria = (tdr: TaskDepRef) => {
     if (tdr.task.completed) return false
-    if (tdr.degree ?? 2 < 2) return false
+    if ((tdr.degree ?? unsetDegreeBehavior.value) < 2) return false
     if (tdr.task.notes?.includes('!PROJECT') ?? false) return false
     return true
   }
