@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import type { Task } from 'src/stores/tasks/task-model'
+  import type { Task, TaskDepRef } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const props = withDefaults(
@@ -82,12 +82,15 @@
     return props.task.notes?.includes('!INPROGRESS') ?? false
   })
 
+  const fitsAllWeirdCriteria = (tdr: TaskDepRef) => {
+    if (tdr.task.completed) return false
+    if (tdr.degree ?? 2 < 2) return false
+    if (tdr.task.notes?.includes('!PROJECT') ?? false) return false
+  }
+
   // Get all incomplete prerequisites (excluding those that are also projects)
   const allIncompletePrereqs = computed(() => {
-    return props.task.grabPrereqs(true).filter(prereq => {
-      // Filter out prerequisites that are also projects
-      return !(prereq.notes?.includes('!PROJECT') ?? false)
-    })
+    return props.task.pres.filter(fitsAllWeirdCriteria)
   })
 
   // Map prerequisites with blocked status
@@ -113,16 +116,16 @@
 
     // Initialize queue with direct prerequisites
     allIncompletePrereqs.value.forEach(prereq => {
-      if (!visited.has(prereq.id)) {
-        queue.push({ task: prereq, depth: 1 })
-        visited.add(prereq.id)
+      if (!visited.has(prereq.task.id)) {
+        queue.push({ task: prereq.task, depth: 1 })
+        visited.add(prereq.task.id)
       }
     })
 
     // BFS traversal
     while (queue.length > 0) {
       const { task, depth } = queue.shift()!
-      const taskPrereqs = task.grabPrereqs(true).filter(p => !p.notes?.includes('!PROJECT'))
+      const taskPrereqs = task.pres.filter(fitsAllWeirdCriteria)
       const isBlocked = taskPrereqs.length > 0
 
       const prereqInfo: PrereqWithDepth = {
@@ -135,9 +138,9 @@
         blockedTasks.push(prereqInfo)
         // Continue BFS through this task's prerequisites
         taskPrereqs.forEach(prereq => {
-          if (!visited.has(prereq.id)) {
-            queue.push({ task: prereq, depth: depth + 1 })
-            visited.add(prereq.id)
+          if (!visited.has(prereq.task.id)) {
+            queue.push({ task: prereq.task, depth: depth + 1 })
+            visited.add(prereq.task.id)
           }
         })
       } else {
