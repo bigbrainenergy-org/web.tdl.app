@@ -58,6 +58,7 @@
   import type { Task, TaskDepRef } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import { storeToRefs } from 'pinia'
 
   const props = withDefaults(
@@ -78,6 +79,7 @@
   }>()
 
   const taskStore = useTaskStore()
+  const depStore = useDependencyStore()
   const showAllPrereqs = ref(false)
 
   const isInProgress = computed(() => {
@@ -85,6 +87,13 @@
   })
 
   const { unsetDegreeBehavior } = storeToRefs(useLocalSettingsStore())
+
+  /** Resolve a task's pres from the dep store (reactive via _mapVersion) */
+  const getPresFromStore = (taskId: number): TaskDepRef[] => {
+    return depStore.getPres(taskId)
+      .map(e => ({ task: taskStore.mapp.get(e.task_id) as Task, degree: e.degree }))
+      .filter(r => r.task != null)
+  }
 
   const fitsAllWeirdCriteria = (tdr: TaskDepRef) => {
     if (tdr.task.completed) return false
@@ -95,7 +104,7 @@
 
   // Get all incomplete prerequisites (excluding those that are also projects)
   const allIncompletePrereqs = computed(() => {
-    return props.task.pres.filter(fitsAllWeirdCriteria)
+    return getPresFromStore(props.task.id).filter(fitsAllWeirdCriteria)
   })
 
   // Map prerequisites with blocked status
@@ -130,7 +139,7 @@
     // BFS traversal
     while (queue.length > 0) {
       const { task, depth } = queue.shift()!
-      const taskPrereqs = task.pres.filter(fitsAllWeirdCriteria)
+      const taskPrereqs = getPresFromStore(task.id).filter(fitsAllWeirdCriteria)
       const isBlocked = taskPrereqs.length > 0
 
       const prereqInfo: PrereqWithDepth = {
