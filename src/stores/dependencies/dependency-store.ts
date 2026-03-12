@@ -310,8 +310,7 @@ export const useDependencyStore = defineStore('dependencies', {
       const dep = this._deps.find(d => d.first_id === first_id && d.second_id === second_id)
       if (!dep) throw new Error(`Dependency not found: ${first_id} -> ${second_id}`)
 
-      const body: Record<string, any> = {}
-      if (degree != null) body.degree = degree
+      const body = { degree }
       await this._api().patch(`/task_dependencies/${dep.id}`, body, this._commonHeader())
 
       dep.degree = degree
