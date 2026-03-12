@@ -86,6 +86,7 @@
     if (tdr.task.completed) return false
     if (tdr.degree ?? 2 < 2) return false
     if (tdr.task.notes?.includes('!PROJECT') ?? false) return false
+    return true
   }
 
   // Get all incomplete prerequisites (excluding those that are also projects)
