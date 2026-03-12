@@ -246,17 +246,18 @@ export const useTaskStore = defineStore('tasks', {
     },
     layerZero: (state) => {
       return computed((): Task[] => {
+        const depStore = useDependencyStore()
+        void depStore._mapVersion // reactive dependency on dep changes
+        const taskStore = useTaskStore()
         const LayerZeroLogger = new Logger('Layer Zero Getter', '#FFFFFF')
         const incompleteTasks = state.array.filter(x => !x.completed)
 
         const noincompletepres = incompleteTasks.filter(x => {
-          try {
-            if (x.pres.some(r => !r.task.completed)) return false
-          } catch(ex) {
-            LayerZeroLogger.warn({ msg: 'while computing layer zero', ex })
-            return false
-          }
-          return true
+          const pres = depStore.getPres(x.id)
+          return !pres.some(e => {
+            const t = taskStore.mapp.get(e.task_id)
+            return t && !t.completed
+          })
         })
 
         LayerZeroLogger.log(`layerzero: (all: ${state.array.length}) => (incomplete: ${incompleteTasks.length}) => (noincompletepres: ${noincompletepres.length})`)
