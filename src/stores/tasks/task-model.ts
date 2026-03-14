@@ -71,11 +71,13 @@ export class Task implements TaskLike {
       const starredStore = useTaskStarredStore()
       starredStore.removeCompletedTask(this.id)
     }
+    useDependencyStore().boop()
     considerOpeningQuickSortDialog()
     return newVal
   }
   async updateTaskCompletionStatus() {
     const newVal = await useTaskStore().apiUpdate(this.id, { completed: this.completed })
+    useDependencyStore().boop()
     considerOpeningQuickSortDialog()
     return newVal
   }

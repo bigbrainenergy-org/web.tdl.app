@@ -262,7 +262,6 @@
     })
   }
 
-  // FIXME: currently these do not update the pres/posts lists in the update task dialog.
   const openPrerequisiteDialog = () => openTaskBreakdownDialog(currentTask.value as Task)
   const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
   const openSortPostreqsDialog = () => quickSortPostreqsDialog(currentTask.value.id)

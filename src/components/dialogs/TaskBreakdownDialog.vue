@@ -63,7 +63,7 @@
                   'existing-task-input': item.existingTask,
                   'cycle-error-input': itemHasCycleError(index)
                 }"
-                :debounce="50"
+                :debounce="searchDebounce"
                 @keydown.enter.prevent="onItemEnter(index)"
                 @keydown.delete="(e: KeyboardEvent) => onItemDelete(index, e)"
                 @keydown.down="focusNext(index)"
@@ -181,7 +181,7 @@
   import Fuse from 'fuse.js'
 
   const depStore = useDependencyStore()
-  const { disableTaskBreakdown, taskBreakdownDegree } = storeToRefs(useLocalSettingsStore())
+  const { disableTaskBreakdown, taskBreakdownDegree, searchDebounce } = storeToRefs(useLocalSettingsStore())
 
   const props = defineProps<{
     task: Task

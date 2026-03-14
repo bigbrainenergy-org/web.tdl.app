@@ -41,6 +41,10 @@ export const useDependencyStore = defineStore('dependencies', {
     }
   },
   actions: {
+    boop() {
+      this._mapVersion++
+    },
+
     _rebuildMaps() {
       const start = performance.now()
       const pres = new Map<number, DependencyEntry[]>()
@@ -57,7 +61,7 @@ export const useDependencyStore = defineStore('dependencies', {
       }
       this.presMap = markRaw(pres)
       this.postsMap = markRaw(posts)
-      this._mapVersion++
+      this.boop()
       depLogger.log(`_rebuildMaps: ${this._deps.length} deps in ${performance.now() - start}ms`)
     },
 
@@ -69,7 +73,7 @@ export const useDependencyStore = defineStore('dependencies', {
       const postEntries = this.postsMap.get(dep.first_id) ?? []
       postEntries.push({ task_id: dep.second_id, degree: dep.degree })
       this.postsMap.set(dep.first_id, postEntries)
-      this._mapVersion++
+      this.boop()
     },
 
     _removeFromMaps(first_id: number, second_id: number) {
@@ -83,7 +87,7 @@ export const useDependencyStore = defineStore('dependencies', {
         const idx = postEntries.findIndex(e => e.task_id === second_id)
         if (idx !== -1) postEntries.splice(idx, 1)
       }
-      this._mapVersion++
+      this.boop()
     },
 
     _buildTaskRefs() {
@@ -286,7 +290,7 @@ export const useDependencyStore = defineStore('dependencies', {
       timings.apiCall = performance.now() - timings.apiCall
 
       const taskStore = useTaskStore()
-      taskStore.arrayVersion++
+      taskStore.boop()
 
       if (!skipRecalculate) {
         taskStore.refreshStarredCache()
@@ -300,7 +304,7 @@ export const useDependencyStore = defineStore('dependencies', {
     async removeRule(first_id: number, second_id: number) {
       await this.remove(first_id, second_id)
       const taskStore = useTaskStore()
-      taskStore.arrayVersion++
+      taskStore.boop()
       notifySuccess('Removed the dependency')
       taskStore.refreshStarredCache()
       recalculate('removeRule')
@@ -339,7 +343,7 @@ export const useDependencyStore = defineStore('dependencies', {
         const ref = firstTask.posts.find(r => r.task.id === second_id)
         if (ref) ref.degree = degree
       }
-      this._mapVersion++
+      this.boop()
     },
 
     async stringTasks(taskIds: number[], degree?: 1 | 2 | 3 | null) {
@@ -355,7 +359,7 @@ export const useDependencyStore = defineStore('dependencies', {
       }
 
       const taskStore = useTaskStore()
-      taskStore.arrayVersion++
+      taskStore.boop()
       taskStore.refreshStarredCache()
       recalculate('stringTasks batch complete')
       depLogger.log(`stringTasks completed in ${performance.now() - startTime}ms`)
@@ -392,7 +396,7 @@ export const useDependencyStore = defineStore('dependencies', {
         const idx = entries.findIndex(e => e.task_id === taskId)
         if (idx !== -1) entries.splice(idx, 1)
       }
-      this._mapVersion++
+      this.boop()
     },
 
   }

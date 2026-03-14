@@ -29,7 +29,7 @@
         v-model:model-value="searchString"
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
-        :debounce="debounceAmount"
+        :debounce="searchDebounce"
         @do-a-search="searchForTasks"
       />
 
@@ -158,7 +158,7 @@
 
   const usr = useLocalSettingsStore()
   const omitRedundant = ref(usr.omitRedundantSearchResults)
-  const { addDependencyDegree } = storeToRefs(usr)
+  const { addDependencyDegree, searchDebounce } = storeToRefs(usr)
 
   watch(omitRedundant, () => {
     usr.omitRedundantSearchResults = omitRedundant.value
@@ -242,10 +242,10 @@
     //results.value.sort(byRedundancy)
     const duration = Math.floor(performance.now() - start)
     // console.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value && debounceAmount.value < 600) {
-      const newDebounce = Math.min(600, Math.max(duration * 1.5, debounceAmount.value))
+    if (duration * 2 > searchDebounce.value && searchDebounce.value < 600) {
+      const newDebounce = Math.min(600, Math.max(duration * 1.5, searchDebounce.value))
       console.warn(`rolling back debounce to ${newDebounce}`)
-      debounceAmount.value = newDebounce
+      searchDebounce.value = newDebounce
     }
   }
 
@@ -332,7 +332,6 @@
   const currentTask = ref(
     typeof props.taskID !== 'undefined' ? useTaskStore().hardGet(props.taskID) : null
   )
-  const debounceAmount = ref(150)
   // fuse.value
 
   const el = ref()

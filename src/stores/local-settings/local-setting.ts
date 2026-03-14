@@ -65,7 +65,8 @@ interface LocalSettingsState {
   quickSortPostsDegree: 1 | 2 | 3 | null
   addDependencyDegree: 1 | 2 | 3 | null
   taskBreakdownDegree: 1 | 2 | 3 | null
-  unsetDegreeBehavior: 1 | 2 | 3
+  unsetDegreeBehavior: 1 | 2 | 3,
+  searchDebounce: number
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -155,7 +156,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       quickSortPostsDegree: 1,
       addDependencyDegree: 2,
       taskBreakdownDegree: 3,
-      unsetDegreeBehavior: 2
+      unsetDegreeBehavior: 2,
+      searchDebounce: 100
     }
   },
   persist: true,

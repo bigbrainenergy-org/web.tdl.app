@@ -79,6 +79,7 @@
   import GloriousToggle from '../glorious/GloriousToggle.vue'
   import TaskItem from '../TaskItem.vue'
   import { fuseOptions } from 'src/utils/search-utils'
+  import { storeToRefs } from 'pinia'
 
   interface Props {
     dialogTitle: string
@@ -139,12 +140,7 @@
   // const tr = useRepo(TaskRepo)
   // const usr = useLocalSettingsStore()
 
-  const usr = useLocalSettingsStore()
-  const hideCompleted = ref(usr.hideCompleted)
-
-  watch(hideCompleted, () => {
-    usr.hideCompleted = hideCompleted.value
-  })
+  const { hideCompleted } = storeToRefs(useLocalSettingsStore())
 
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.

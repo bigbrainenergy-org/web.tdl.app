@@ -15,7 +15,7 @@
   <q-space />
   
   <!-- <q-btn icon="fa-solid fa-search" class="text-primary" @click="openBespokeSearchDialog()" /> -->
-  <TaskSearchInput v-model:model-value="searchInput" v-model:search-all-tasks="searchAllTasks" search-label="Search or Create Tasks" :debounce="debounceAmount" :show-all-checkbox="true" @do-a-search="searchForTasks" @create-task="createTask" />
+  <TaskSearchInput v-model:model-value="searchInput" v-model:search-all-tasks="searchAllTasks" search-label="Search or Create Tasks" :debounce="searchDebounce" :show-all-checkbox="true" @do-a-search="searchForTasks" @create-task="createTask" />
   <q-btn dense flat no-wrap>
     <q-icon name="arrow_drop_down" />
     <q-menu auto-close>
@@ -88,7 +88,7 @@
 
   const localSettingsStore = useLocalSettingsStore()
 
-  const { layerZeroOnly, hideCompleted, autoScalePriority, currentSortingMode } = storeToRefs(localSettingsStore)
+  const { layerZeroOnly, hideCompleted, autoScalePriority, currentSortingMode, searchDebounce } = storeToRefs(localSettingsStore)
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
@@ -175,7 +175,6 @@
     }
   }
 
-  const debounceAmount = ref(100)
   const searchAllTasks = ref(false)
 
   // Lazy Fuse instance - only create when actually searching
@@ -230,10 +229,10 @@
     filtered.value = results
     const duration = Math.floor(performance.now() - start)
     taskListActionsLogger.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value) {
-      const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+    if (duration * 2 > searchDebounce.value) {
+      const newDebounce = Math.min(500, Math.max(duration * 2, searchDebounce.value))
       taskListActionsLogger.warn(`rolling back debounce to ${newDebounce}`)
-      debounceAmount.value = newDebounce
+      searchDebounce.value = newDebounce
     }
   }
   watch(tasks, searchForTasks)

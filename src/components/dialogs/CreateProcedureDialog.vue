@@ -29,7 +29,7 @@
               v-model:model-value="title"
               filled
               clearable
-              :debounce="debounceAmount"
+              :debounce="searchDebounce"
               label="Procedure Title"
               @update:model-value="searchForProcedures"
               @keyup.enter="searchForProcedures"
@@ -88,8 +88,10 @@
 <script setup lang="ts">
   import type { FuseResult } from 'fuse.js'
   import Fuse from 'fuse.js'
+  import { storeToRefs } from 'pinia'
   import { useRepo } from 'pinia-orm'
   import { useDialogPluginComponent } from 'quasar'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { Procedure} from 'src/stores/procedures/procedure'
   import { ProcedureRepo } from 'src/stores/procedures/procedure'
@@ -117,7 +119,7 @@
   const title = ref('')
   const notes = ref('')
 
-  const debounceAmount = ref(100)
+  const { searchDebounce } = storeToRefs(useLocalSettingsStore())
   const results = ref<Procedure[]>([])
 
   const createProcedure = () => {
@@ -151,10 +153,10 @@
     results.value = run.slice(0, 3).map((x) => x.item)
     const duration = Math.floor(performance.now() - start)
     console.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value) {
-      const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+    if (duration * 2 > searchDebounce.value) {
+      const newDebounce = Math.min(500, Math.max(duration * 2, searchDebounce.value))
       console.warn(`rolling back debounce to ${newDebounce}`)
-      debounceAmount.value = newDebounce
+      searchDebounce.value = newDebounce
     }
   }
 

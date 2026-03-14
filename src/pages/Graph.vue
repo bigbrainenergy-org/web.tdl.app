@@ -13,7 +13,7 @@
           <TaskSearchInput
             v-model="searchQuery"
             search-label="Search tasks..."
-            :debounce="300"
+            :debounce="searchDebounce"
             class="search-input q-mx-sm"
             @do-a-search="onSearch"
           />
@@ -73,7 +73,8 @@
     graphDepthPres,
     graphDepthPosts,
     graphTraverseThroughCompleted,
-    maxGraphNodeRadius: taskNodeMaxSize
+    maxGraphNodeRadius: taskNodeMaxSize,
+    searchDebounce
   } = storeToRefs(usr)
 
   // Search state

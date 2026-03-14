@@ -65,6 +65,9 @@ export const useTaskStore = defineStore('tasks', {
     }
   },
   actions: {
+    boop() {
+      this.arrayVersion++
+    },
     updateSingle(data: TaskLike) {
       const newTask = new Task(data)
       const inMap = this.mapp.get(data.id)
@@ -74,7 +77,7 @@ export const useTaskStore = defineStore('tasks', {
       }
       else {
         Object.assign(inMap, newTask)
-        this.arrayVersion++
+        this.boop()
       }
       return inMap ?? newTask
     },
@@ -101,7 +104,7 @@ export const useTaskStore = defineStore('tasks', {
       }
 
       if (updatedTasks.length > 0 || newTasks.length > 0) {
-        this.arrayVersion++
+        this.boop()
       }
 
       TaskStoreLogger.log(`Added ${newTasks.length}, updated ${updatedTasks.length} tasks`)
