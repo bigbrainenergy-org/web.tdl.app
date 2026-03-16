@@ -70,19 +70,18 @@ export function computeInheritedDeadline(
 
 /**
  * Format a deadline relative to now as human-readable text.
- * Returns "2d 3h", "45m", "Overdue 2h", etc.
+ * Shows only the largest time unit: "22d", "3h", "45m".
+ * Returns null if overdue (caller handles overdue text).
  */
-export function formatDeadlineText(deadline: Date, now: Date): string {
+export function formatDeadlineText(deadline: Date, now: Date): string | null {
   const diffMs = deadline.getTime() - now.getTime()
-  const absDiffMs = Math.abs(diffMs)
-  const minutes = Math.floor(absDiffMs / 60_000)
+  if (diffMs < 0) return null
+
+  const minutes = Math.floor(diffMs / 60_000)
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  let text: string
-  if (days > 0) text = `${days}d ${hours % 24}h`
-  else if (hours > 0) text = `${hours}h ${minutes % 60}m`
-  else text = `${minutes}m`
-
-  return diffMs < 0 ? `Overdue ${text}` : text
+  if (days > 0) return `${days}d`
+  if (hours > 0) return `${hours}h`
+  return `${minutes}m`
 }

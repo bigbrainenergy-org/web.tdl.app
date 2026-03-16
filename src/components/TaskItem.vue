@@ -59,18 +59,18 @@
     </q-item-section>
 
     <!-- Deadline badge -->
-    <q-item-section v-if="props.deadlineText" side>
+    <q-item-section v-if="props.inheritedDeadline" side>
       <q-icon
         name="event"
         :color="props.isOverdue || props.isInheritedOverdue || props.isReminderTriggered ? 'red' : 'orange'"
         size="sm"
       >
         <q-tooltip>
-          <template v-if="props.inheritedDeadline?.isOwn">
-            Due in {{ props.deadlineText }}
+          <template v-if="props.inheritedDeadline.isOwn">
+            {{ props.deadlineText ? `Due in ${props.deadlineText}` : 'Overdue' }}
           </template>
-          <template v-else-if="props.inheritedDeadline">
-            A postrequisite is due in {{ props.deadlineText }}
+          <template v-else>
+            {{ props.deadlineText ? `A postrequisite is due in ${props.deadlineText}` : 'A postrequisite is overdue' }}
           </template>
         </q-tooltip>
       </q-icon>

@@ -90,7 +90,7 @@ export function useTaskMetadata() {
           isReminderTriggered,
           taskBackgroundStyle,
           inheritedDeadline: inherited ?? undefined,
-          deadlineText: inherited ? formatDeadlineText(inherited.deadline, currentTime) : undefined,
+          deadlineText: inherited ? (formatDeadlineText(inherited.deadline, currentTime) ?? undefined) : undefined,
           isInheritedOverdue
         }
       })
@@ -130,7 +130,7 @@ export function useTaskMetadata() {
       isReminderTriggered,
       taskBackgroundStyle,
       inheritedDeadline: inherited ?? undefined,
-      deadlineText: inherited ? formatDeadlineText(inherited.deadline, currentTime) : undefined,
+      deadlineText: inherited ? (formatDeadlineText(inherited.deadline, currentTime) ?? undefined) : undefined,
       isInheritedOverdue
     }
   }
