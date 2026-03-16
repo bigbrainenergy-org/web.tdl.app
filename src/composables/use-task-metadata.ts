@@ -3,6 +3,7 @@ import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
+import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import { useNow } from './useNow'
 import { computeInheritedDeadline, formatDeadlineText, type InheritedDeadlineResult } from 'src/utils/inherited-deadline'
 
@@ -34,6 +35,7 @@ export function useTaskMetadata() {
   const taskStore = useTaskStore()
   const starredStore = useTaskStarredStore()
   const refinementStore = useTaskNeedsRefinementStore()
+  const localSettings = useLocalSettingsStore()
   const now = useNow()
 
   // Compute layer zero IDs once as a Set for O(1) lookups
@@ -75,7 +77,7 @@ export function useTaskMetadata() {
             ? 'background-color: #cc6600'
             : undefined
 
-        const inherited = task.completed ? null : computeInheritedDeadline(task, deadlineMemo, deadlineVisited)
+        const inherited = task.completed ? null : computeInheritedDeadline(task, deadlineMemo, deadlineVisited, localSettings.defaultTaskDuration)
         const isInheritedOverdue = !task.completed && !task.deadline_at &&
           !!inherited && inherited.deadline < currentTime
 
@@ -115,7 +117,7 @@ export function useTaskMetadata() {
 
     const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
     const deadlineVisited = new Set<number>()
-    const inherited = task.completed ? null : computeInheritedDeadline(task, deadlineMemo, deadlineVisited)
+    const inherited = task.completed ? null : computeInheritedDeadline(task, deadlineMemo, deadlineVisited, localSettings.defaultTaskDuration)
     const isInheritedOverdue = !task.completed && !task.deadline_at &&
       !!inherited && inherited.deadline < currentTime
 

@@ -17,7 +17,8 @@ export interface InheritedDeadlineResult {
 export function computeInheritedDeadline(
   task: Task,
   memo: Map<number, InheritedDeadlineResult | null>,
-  visited: Set<number>
+  visited: Set<number>,
+  defaultDuration = 15
 ): InheritedDeadlineResult | null {
   if (memo.has(task.id)) return memo.get(task.id)!
   if (visited.has(task.id)) return null
@@ -40,10 +41,10 @@ export function computeInheritedDeadline(
 
   for (const ref of task.posts) {
     if (ref.task.completed) continue
-    const postResult = computeInheritedDeadline(ref.task, memo, visited)
+    const postResult = computeInheritedDeadline(ref.task, memo, visited, defaultDuration)
     if (postResult) {
       const adjusted = new Date(
-        postResult.deadline.getTime() - (ref.task.task_duration_in_minutes ?? 0) * 60_000
+        postResult.deadline.getTime() - (ref.task.task_duration_in_minutes ?? defaultDuration) * 60_000
       )
       candidates.push({
         deadline: adjusted,

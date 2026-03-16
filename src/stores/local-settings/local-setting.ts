@@ -67,6 +67,7 @@ interface LocalSettingsState {
   taskBreakdownDegree: 1 | 2 | 3 | null
   unsetDegreeBehavior: 1 | 2 | 3,
   searchDebounce: number
+  defaultTaskDuration: number
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -157,7 +158,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       addDependencyDegree: 2,
       taskBreakdownDegree: 3,
       unsetDegreeBehavior: 2,
-      searchDebounce: 100
+      searchDebounce: 100,
+      defaultTaskDuration: 15
     }
   },
   persist: true,

@@ -179,7 +179,7 @@ export function useTaskSorting() {
         const inProgressBonus = apdResult?.inprogress ? 50 : 0
 
         let dueDateBonus = 0
-        const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited)
+        const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited, localSettingsStore.defaultTaskDuration)
         if (inherited) {
           const hoursRemaining = (inherited.deadline.getTime() - Date.now()) / (1000 * 60 * 60)
           if (hoursRemaining > 0) {
