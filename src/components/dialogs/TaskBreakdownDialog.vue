@@ -237,6 +237,21 @@
     includeScore: true
   }
 
+  let fuseInstance: Fuse<Task> | null = null
+  let fuseTasksVersion = 0
+
+  const getFuse = () => {
+    const source = allTasks.value
+    const currentVersion = source.length
+    if (!fuseInstance || fuseTasksVersion !== currentVersion) {
+      fuseInstance = new Fuse(source, fuseOptions)
+      fuseTasksVersion = currentVersion
+    }
+    return fuseInstance
+  }
+
+  const invalidateFuse = () => { fuseInstance = null }
+
   // IDs to exclude from search results
   const excludedIds = computed(() => {
     const ids = new Set<number>()
@@ -261,7 +276,7 @@
       searchResults.value = []
       return
     }
-    const fuse = new Fuse(allTasks.value, fuseOptions)
+    const fuse = getFuse()
     const results = fuse.search(query, { limit: 20 })
     //console.log('[searchForTasks] fuse results:', results.length)
 
@@ -319,6 +334,7 @@
     searchResults.value = []
     focusedItemIndex.value = null
     lastSearchText.value = ''
+    invalidateFuse()
 
     // Add a new blank item beneath the selected one
     items.value.splice(index + 1, 0, createNewItem())
