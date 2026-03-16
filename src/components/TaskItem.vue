@@ -58,6 +58,24 @@
       </q-icon>
     </q-item-section>
 
+    <!-- Deadline badge -->
+    <q-item-section v-if="props.deadlineText" side>
+      <q-icon
+        name="event"
+        :color="props.isOverdue || props.isInheritedOverdue || props.isReminderTriggered ? 'red' : 'orange'"
+        size="sm"
+      >
+        <q-tooltip>
+          <template v-if="props.inheritedDeadline?.isOwn">
+            Due in {{ props.deadlineText }}
+          </template>
+          <template v-else-if="props.inheritedDeadline">
+            A postrequisite is due in {{ props.deadlineText }}
+          </template>
+        </q-tooltip>
+      </q-icon>
+    </q-item-section>
+
     <q-item-section v-if="task.notes" side data-cy="notes_indicator">
       <q-avatar icon="description">
         <q-tooltip anchor="center right" self="center left" :offset="[10, 10]">
@@ -89,6 +107,7 @@
   import { ref, toRef } from 'vue'
   import { openTaskBreakdownDialog, considerOpeningQuickSortDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
+  import type { InheritedDeadlineResult } from 'src/utils/inherited-deadline'
   import TaskTimeEstimateInfoChip from './TaskTimeEstimateInfoChip.vue'
   import TaskItemMenu from './TaskItemMenu.vue'
   import TheBestTransition from './TheBestTransition.vue'
@@ -108,6 +127,9 @@
     taskBackgroundStyle?: string
     showActions?: boolean
     showRefinementIcon?: boolean
+    inheritedDeadline?: InheritedDeadlineResult
+    deadlineText?: string
+    isInheritedOverdue?: boolean
   }>()
 
   const hovered = ref(false)

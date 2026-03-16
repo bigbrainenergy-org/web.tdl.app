@@ -4,6 +4,7 @@ import { useTaskStore } from 'src/stores/tasks/task-store'
 import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
 import { useNow } from './useNow'
+import { computeInheritedDeadline, formatDeadlineText, type InheritedDeadlineResult } from 'src/utils/inherited-deadline'
 
 /**
  * Metadata shape that can be spread directly onto TaskItem via v-bind.
@@ -19,6 +20,9 @@ export interface TaskMetadata {
   isOverdue: boolean
   isReminderTriggered: boolean
   taskBackgroundStyle: string | undefined
+  inheritedDeadline?: InheritedDeadlineResult
+  deadlineText?: string
+  isInheritedOverdue: boolean
 }
 
 /**
@@ -55,6 +59,10 @@ export function useTaskMetadata() {
       const starredSet = starredStore._starredSet
       const currentTime = now.value
 
+      // Shared memo for inherited deadline computation across all tasks
+      const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
+      const deadlineVisited = new Set<number>()
+
       return tasks.value.map((task) => {
         const isProject = task.notes?.includes('!PROJECT') ?? false
         const isOverdue =
@@ -67,6 +75,10 @@ export function useTaskMetadata() {
             ? 'background-color: #cc6600'
             : undefined
 
+        const inherited = task.completed ? null : computeInheritedDeadline(task, deadlineMemo, deadlineVisited)
+        const isInheritedOverdue = !task.completed && !task.deadline_at &&
+          !!inherited && inherited.deadline < currentTime
+
         return {
           task,
           isLayerZero: l0Set.has(task.id),
@@ -76,7 +88,10 @@ export function useTaskMetadata() {
           isProject,
           isOverdue,
           isReminderTriggered,
-          taskBackgroundStyle
+          taskBackgroundStyle,
+          inheritedDeadline: inherited ?? undefined,
+          deadlineText: inherited ? formatDeadlineText(inherited.deadline, currentTime) : undefined,
+          isInheritedOverdue
         }
       })
     })
@@ -98,6 +113,12 @@ export function useTaskMetadata() {
         ? 'background-color: #cc6600'
         : undefined
 
+    const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
+    const deadlineVisited = new Set<number>()
+    const inherited = task.completed ? null : computeInheritedDeadline(task, deadlineMemo, deadlineVisited)
+    const isInheritedOverdue = !task.completed && !task.deadline_at &&
+      !!inherited && inherited.deadline < currentTime
+
     return {
       task,
       isLayerZero: layerZeroIds.value.has(task.id),
@@ -107,7 +128,10 @@ export function useTaskMetadata() {
       isProject,
       isOverdue,
       isReminderTriggered,
-      taskBackgroundStyle
+      taskBackgroundStyle,
+      inheritedDeadline: inherited ?? undefined,
+      deadlineText: inherited ? formatDeadlineText(inherited.deadline, currentTime) : undefined,
+      isInheritedOverdue
     }
   }
 

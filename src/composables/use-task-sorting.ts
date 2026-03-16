@@ -7,6 +7,7 @@ import { stuckTasks } from 'src/stores/tasks/task-utils'
 import { Logger } from 'src/utils/d'
 import { errorNotification } from 'src/utils/notification-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
+import { computeInheritedDeadline, type InheritedDeadlineResult } from 'src/utils/inherited-deadline'
 
 const TaskSortingLogger = new Logger('Task Sort', '#794A20')
 
@@ -155,19 +156,9 @@ export function useTaskSorting() {
       // Cache star weights to avoid recomputation during binary search
       const starWeightCache = new Map<number, number>()
 
-      // Helper to find first deadline in incomplete postreqs
-      const findFirstPostreqDeadline = (task: Task, visited = new Set<number>()): string | undefined => {
-        if (visited.has(task.id)) return undefined
-        visited.add(task.id)
-
-        for (const ref of getIncompletePosts(task)) {
-          if (ref.task.deadline_at) return ref.task.deadline_at
-          const found = findFirstPostreqDeadline(ref.task, visited)
-          if (found) return found
-        }
-
-        return undefined
-      }
+      // Shared memo for inherited deadline computation
+      const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
+      const deadlineVisited = new Set<number>()
 
       // Helper to calculate priority weight for a task (with caching)
       const getPriorityWeight = (task: Task): number => {
@@ -188,16 +179,9 @@ export function useTaskSorting() {
         const inProgressBonus = apdResult?.inprogress ? 50 : 0
 
         let dueDateBonus = 0
-        let deadlineToUse = task.deadline_at
-        if (!deadlineToUse) {
-          deadlineToUse = findFirstPostreqDeadline(task)
-        }
-
-        if (deadlineToUse) {
-          const now = Date.now()
-          const deadline = new Date(deadlineToUse).getTime()
-          const hoursRemaining = (deadline - now) / (1000 * 60 * 60)
-
+        const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited)
+        if (inherited) {
+          const hoursRemaining = (inherited.deadline.getTime() - Date.now()) / (1000 * 60 * 60)
           if (hoursRemaining > 0) {
             dueDateBonus = Math.min(100, 100 * Math.pow(0.5, hoursRemaining / 24))
           }
