@@ -38,56 +38,89 @@ interface TimeSlot {
   end: Date
 }
 
-// --- ScheduleTimeline: per-schedule time consumption tracker ---
+// --- TimeAllocator: global occupancy-aware allocator across all schedules ---
 
-class ScheduleTimeline {
-  private slots: TimeSlot[]
-  private currentSlotIndex = 0
-  private currentOffsetMs = 0 // milliseconds into current slot that are consumed
+type ScheduleKey = number | 'fallback'
 
-  constructor(slots: TimeSlot[]) {
-    this.slots = slots
+class TimeAllocator {
+  private scheduleSlots = new Map<ScheduleKey, TimeSlot[]>()
+  private scheduleCursors = new Map<ScheduleKey, number>()
+  private occupied: { start: number; end: number }[] = []
+
+  addSchedule(key: ScheduleKey, slots: TimeSlot[]) {
+    this.scheduleSlots.set(key, slots)
+    this.scheduleCursors.set(key, 0)
   }
 
-  peekNextStart(): Date | null {
-    while (this.currentSlotIndex < this.slots.length) {
-      const slot = this.slots[this.currentSlotIndex]!
-      const startMs = slot.start.getTime() + this.currentOffsetMs
-      if (startMs < slot.end.getTime()) {
-        return new Date(startMs)
+  hasSchedule(key: ScheduleKey): boolean {
+    return this.scheduleSlots.has(key)
+  }
+
+  /** Find the next available (non-occupied) time for a given schedule. */
+  peekNextStart(key: ScheduleKey): Date | null {
+    const slots = this.scheduleSlots.get(key)
+    if (!slots) return null
+    let cursor = this.scheduleCursors.get(key) ?? 0
+
+    while (cursor < slots.length) {
+      const slot = slots[cursor]!
+      let candidate = slot.start.getTime()
+
+      // Advance past occupied intervals within this slot
+      candidate = this.skipOccupied(candidate, slot.end.getTime())
+
+      if (candidate < slot.end.getTime()) {
+        return new Date(candidate)
       }
-      this.currentSlotIndex++
-      this.currentOffsetMs = 0
+      cursor++
     }
     return null
   }
 
-  allocate(durationMinutes: number): { start: Date; end: Date } | null {
+  /** Allocate contiguous time on a schedule, respecting global occupancy. */
+  allocate(key: ScheduleKey, durationMinutes: number): { start: Date; end: Date } | null {
+    const slots = this.scheduleSlots.get(key)
+    if (!slots) return null
+    let cursor = this.scheduleCursors.get(key) ?? 0
     const durationMs = durationMinutes * 60_000
-    while (this.currentSlotIndex < this.slots.length) {
-      const slot = this.slots[this.currentSlotIndex]!
-      const slotStart = slot.start.getTime() + this.currentOffsetMs
-      const slotRemaining = slot.end.getTime() - slotStart
 
-      if (slotRemaining <= 0) {
-        this.currentSlotIndex++
-        this.currentOffsetMs = 0
-        continue
+    while (cursor < slots.length) {
+      const slot = slots[cursor]!
+      let candidate = slot.start.getTime()
+
+      // Advance past occupied intervals
+      candidate = this.skipOccupied(candidate, slot.end.getTime())
+
+      const remaining = slot.end.getTime() - candidate
+      if (remaining >= durationMs) {
+        const start = candidate
+        const end = candidate + durationMs
+        this.occupied.push({ start, end })
+        // Advance cursor past fully consumed slots
+        this.scheduleCursors.set(key, cursor)
+        return { start: new Date(start), end: new Date(end) }
       }
+      cursor++
+    }
 
-      if (durationMs <= slotRemaining) {
-        // Task fits in current slot
-        const start = new Date(slotStart)
-        const end = new Date(slotStart + durationMs)
-        this.currentOffsetMs += durationMs
-        return { start, end }
-      } else {
-        // Task doesn't fit in remaining slot — move to next slot
-        this.currentSlotIndex++
-        this.currentOffsetMs = 0
+    this.scheduleCursors.set(key, cursor)
+    return null
+  }
+
+  /** Skip past any occupied intervals starting from `timeMs`, staying within `slotEndMs`. */
+  private skipOccupied(timeMs: number, slotEndMs: number): number {
+    let current = timeMs
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const o of this.occupied) {
+        if (current >= o.start && current < o.end) {
+          current = o.end
+          changed = true
+        }
       }
     }
-    return null // no space left in horizon
+    return Math.min(current, slotEndMs)
   }
 }
 
@@ -115,10 +148,10 @@ function generateTimeline(
       const [eh, em] = block.end.split(':').map(Number)
 
       const slotStart = new Date(date)
-      slotStart.setHours(sh!, sm!, 0, 0)
+      slotStart.setHours(sh!, sm, 0, 0)
 
       const slotEnd = new Date(date)
-      slotEnd.setHours(eh!, em!, 0, 0)
+      slotEnd.setHours(eh!, em, 0, 0)
 
       if (slotEnd.getTime() <= slotStart.getTime()) continue
       slots.push({ start: slotStart, end: slotEnd })
@@ -150,14 +183,15 @@ function generateTimeline(
 
 function resolveTaskSchedule(
   task: Task,
-  scheduleRepo: ReturnType<typeof useRepo<typeof ScheduleRepo>>,
-  listRepo: ReturnType<typeof useRepo<typeof ListRepo>>,
   defaultSchedule: Schedule | null,
   cache: Map<number, Schedule | null>
 ): Schedule | null {
   if (cache.has(task.id)) return cache.get(task.id)!
 
   let schedule: Schedule | null = null
+
+  const scheduleRepo = useRepo(ScheduleRepo)
+  const listRepo = useRepo(ListRepo)
 
   if (task.schedule_id) {
     schedule = scheduleRepo.find(task.schedule_id) ?? null
@@ -332,20 +366,19 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   // Compute layers for all tasks
   incompleteTasks.forEach(computeLayer)
 
-  // Resolve schedules and build timelines per unique schedule
+  // Resolve schedules and build allocator with global occupancy tracking
   const now = new Date()
   const horizonDays = 90
-  const timelineCache = new Map<number | 'fallback', ScheduleTimeline>()
+  const allocator = new TimeAllocator()
 
-  const getTimeline = (schedule: Schedule | null): ScheduleTimeline => {
-    const key = schedule ? schedule.id : 'fallback'
-    let timeline = timelineCache.get(key)
-    if (!timeline) {
+  const getScheduleKey = (schedule: Schedule | null): ScheduleKey => schedule ? schedule.id : 'fallback'
+
+  const ensureScheduleLoaded = (schedule: Schedule | null) => {
+    const key = getScheduleKey(schedule)
+    if (!allocator.hasSchedule(key)) {
       const slots = generateTimeline(schedule, now, horizonDays)
-      timeline = new ScheduleTimeline(slots)
-      timelineCache.set(key, timeline)
+      allocator.addSchedule(key, slots)
     }
-    return timeline
   }
 
   // Priority function (dynamic — depends on virtualTime)
@@ -380,7 +413,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
 
     // Schedule bonus: 1000 if task's schedule is active at virtualTime
     let scheduleBonus = 0
-    const taskSchedule = resolveTaskSchedule(task, scheduleRepo, listRepo, defaultSchedule, taskScheduleCache)
+    const taskSchedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
     if (taskSchedule) {
       const vDay: DayOfWeek = DAYS_OF_WEEK[virtualTime.getDay()]!
       const vTime = formatHHmm(virtualTime)
@@ -433,12 +466,13 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   while (readyQueue.length > 0 && iterations < maxIterations) {
     iterations++
 
-    // Find the earliest virtual time across all ready tasks' timelines
+    // Find the earliest virtual time across all ready tasks' schedules
     let earliestTime: Date | null = null
     for (const task of readyQueue) {
-      const schedule = resolveTaskSchedule(task, scheduleRepo, listRepo, defaultSchedule, taskScheduleCache)
-      const timeline = getTimeline(schedule)
-      const nextStart = timeline.peekNextStart()
+      const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
+      ensureScheduleLoaded(schedule)
+      const key = getScheduleKey(schedule)
+      const nextStart = allocator.peekNextStart(key)
       if (nextStart && (!earliestTime || nextStart.getTime() < earliestTime.getTime())) {
         earliestTime = nextStart
       }
@@ -446,13 +480,18 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
 
     if (!earliestTime) break // no more time slots available
 
-    // Score all ready tasks at this virtual time
+    // Score only tasks whose schedule is available at earliestTime
     let bestTask: Task | null = null
     let bestScore = -Infinity
     let bestIndex = -1
 
     for (let i = 0; i < readyQueue.length; i++) {
       const task = readyQueue[i]!
+      const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
+      const key = getScheduleKey(schedule)
+      const taskStart = allocator.peekNextStart(key)
+      if (!taskStart || taskStart.getTime() !== earliestTime.getTime()) continue
+
       const score = computeTaskPriority(task, earliestTime, placedTasks)
       if (score > bestScore) {
         bestScore = score
@@ -468,9 +507,10 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
 
     // Allocate time
     const duration = bestTask.task_duration_in_minutes ?? defaultDuration
-    const schedule = resolveTaskSchedule(bestTask, scheduleRepo, listRepo, defaultSchedule, taskScheduleCache)
-    const timeline = getTimeline(schedule)
-    const allocation = timeline.allocate(duration)
+    const schedule = resolveTaskSchedule(bestTask, defaultSchedule, taskScheduleCache)
+    ensureScheduleLoaded(schedule)
+    const key = getScheduleKey(schedule)
+    const allocation = allocator.allocate(key, duration)
 
     if (!allocation) {
       // No space left — this task is at-risk
@@ -527,6 +567,9 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   if (notPlaced.length > 0) {
     SchedulerLogger.warn(`${notPlaced.length} tasks could not be scheduled (possible cycles)`)
   }
+
+  // Sort output chronologically for display
+  scheduled.sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
 
   const elapsed = performance.now() - startTime
   SchedulerLogger.log(`Auto-scheduler completed in ${elapsed.toFixed(1)}ms: ${scheduled.length} scheduled, ${atRisk.length} at-risk, ${notPlaced.length} stuck`)

@@ -25,10 +25,10 @@
 
           <q-card-section v-else class="q-pa-none">
             <q-virtual-scroll
+              v-slot="{ item }"
               :items="displayItems"
               :virtual-scroll-item-size="40"
               style="max-height: calc(100vh - 200px)"
-              v-slot="{ item }"
             >
               <!-- Day separator -->
               <div
@@ -45,17 +45,18 @@
                 v-else
                 :key="'task-' + item.scheduled.task.id"
                 class="scheduled-card q-pa-xs"
+                :class="{ 'completed-task': isCompleted(item.scheduled.task) }"
                 :style="{ height: cardHeight(item.scheduled.durationMinutes) + 'px', minHeight: '40px' }"
                 @click="openTask(item.scheduled.task)"
               >
                 <div class="row items-center full-height no-wrap">
                   <q-checkbox
-                    :model-value="item.scheduled.task.completed"
+                    :model-value="isCompleted(item.scheduled.task)"
                     color="primary"
                     keep-color
                     dense
                     class="q-mr-xs"
-                    @update:model-value="() => item.scheduled.task.updateTaskCompletionStatus()"
+                    @update:model-value="() => toggleCompletion(item.scheduled.task)"
                     @click.stop
                   />
                   <span class="text-grey-5 text-caption q-mr-sm" style="min-width: 90px">
@@ -139,6 +140,28 @@
 
   const result = ref<AutoScheduleResult | null>(null)
   const isComputing = ref(false)
+  const completedIds = ref(new Set<number>())
+
+  function isCompleted(task: Task): boolean {
+    return completedIds.value.has(task.id) || task.completed
+  }
+
+  async function toggleCompletion(task: Task) {
+    const taskStore = useTaskStore()
+    const liveTask = taskStore.mapp.get(task.id)
+    if (!liveTask) return
+
+    liveTask.completed = !liveTask.completed
+    task.completed = liveTask.completed
+
+    if (liveTask.completed) {
+      completedIds.value.add(task.id)
+    } else {
+      completedIds.value.delete(task.id)
+    }
+
+    await liveTask.updateTaskCompletionStatus()
+  }
 
   const displayItems = computed<DisplayItem[]>(() => {
     if (!result.value) return []
@@ -200,12 +223,20 @@
   .scheduled-card {
     border-bottom: 1px solid #333;
     cursor: pointer;
-    transition: background-color 0.1s;
+    transition: background-color 0.1s, opacity 0.2s;
     padding-left: 8px;
     padding-right: 8px;
 
     &:hover {
       background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    &.completed-task {
+      opacity: 0.4;
+
+      .text-primary {
+        text-decoration: line-through;
+      }
     }
   }
 </style>
