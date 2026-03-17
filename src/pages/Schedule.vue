@@ -64,6 +64,9 @@
                   <span class="text-primary ellipsis">
                     {{ item.scheduled.task.title }}
                   </span>
+                  <q-badge class="q-ml-sm" color="grey-7" text-color="white">
+                    {{ item.scheduled.scheduleTitle }}
+                  </q-badge>
                 </div>
               </div>
             </q-virtual-scroll>

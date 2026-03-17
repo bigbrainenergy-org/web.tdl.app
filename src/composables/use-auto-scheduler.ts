@@ -17,6 +17,7 @@ export interface ScheduledItem {
   startTime: Date
   endTime: Date
   durationMinutes: number
+  scheduleTitle: string
 }
 
 export interface AtRiskItem {
@@ -315,6 +316,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     const pres = getIncompletePres(task)
     let maxLayer = -1
     for (const ref of pres) {
+      if (!isHardDegree(ref.degree)) continue
       maxLayer = Math.max(maxLayer, computeLayer(ref.task))
     }
     const layer = maxLayer + 1
@@ -495,7 +497,8 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
         task: bestTask,
         startTime: allocation.start,
         endTime: allocation.end,
-        durationMinutes: duration
+        durationMinutes: duration,
+        scheduleTitle: schedule?.title ?? 'Default'
       })
       placedTasks.add(bestTask.id)
     }
