@@ -34,95 +34,11 @@ export interface AutoScheduleResult {
 // --- Internal types ---
 
 interface TimeSlot {
-  start: Date
-  end: Date
+  startMs: number
+  endMs: number
 }
-
-// --- TimeAllocator: global occupancy-aware allocator across all schedules ---
 
 type ScheduleKey = number | 'fallback'
-
-class TimeAllocator {
-  private scheduleSlots = new Map<ScheduleKey, TimeSlot[]>()
-  private scheduleCursors = new Map<ScheduleKey, number>()
-  private occupied: { start: number; end: number }[] = []
-
-  addSchedule(key: ScheduleKey, slots: TimeSlot[]) {
-    this.scheduleSlots.set(key, slots)
-    this.scheduleCursors.set(key, 0)
-  }
-
-  hasSchedule(key: ScheduleKey): boolean {
-    return this.scheduleSlots.has(key)
-  }
-
-  /** Find the next available (non-occupied) time for a given schedule. */
-  peekNextStart(key: ScheduleKey): Date | null {
-    const slots = this.scheduleSlots.get(key)
-    if (!slots) return null
-    let cursor = this.scheduleCursors.get(key) ?? 0
-
-    while (cursor < slots.length) {
-      const slot = slots[cursor]!
-      let candidate = slot.start.getTime()
-
-      // Advance past occupied intervals within this slot
-      candidate = this.skipOccupied(candidate, slot.end.getTime())
-
-      if (candidate < slot.end.getTime()) {
-        return new Date(candidate)
-      }
-      cursor++
-    }
-    return null
-  }
-
-  /** Allocate contiguous time on a schedule, respecting global occupancy. */
-  allocate(key: ScheduleKey, durationMinutes: number): { start: Date; end: Date } | null {
-    const slots = this.scheduleSlots.get(key)
-    if (!slots) return null
-    let cursor = this.scheduleCursors.get(key) ?? 0
-    const durationMs = durationMinutes * 60_000
-
-    while (cursor < slots.length) {
-      const slot = slots[cursor]!
-      let candidate = slot.start.getTime()
-
-      // Advance past occupied intervals
-      candidate = this.skipOccupied(candidate, slot.end.getTime())
-
-      const remaining = slot.end.getTime() - candidate
-      if (remaining >= durationMs) {
-        const start = candidate
-        const end = candidate + durationMs
-        this.occupied.push({ start, end })
-        // Advance cursor past fully consumed slots
-        this.scheduleCursors.set(key, cursor)
-        return { start: new Date(start), end: new Date(end) }
-      }
-      cursor++
-    }
-
-    this.scheduleCursors.set(key, cursor)
-    return null
-  }
-
-  /** Skip past any occupied intervals starting from `timeMs`, staying within `slotEndMs`. */
-  private skipOccupied(timeMs: number, slotEndMs: number): number {
-    let current = timeMs
-    let changed = true
-    while (changed) {
-      changed = false
-      for (const o of this.occupied) {
-        if (current >= o.start && current < o.end) {
-          current = o.end
-          changed = true
-        }
-      }
-    }
-    return Math.min(current, slotEndMs)
-  }
-}
 
 // --- Timeline generation ---
 
@@ -141,7 +57,7 @@ function generateTimeline(
 
     const blocks = schedule
       ? schedule.blocks.filter(b => b.day_of_week === day)
-      : [{ day_of_week: day, start: '09:00', end: '17:00' }] // fallback: 9-5 all days
+      : [{ day_of_week: day, start: '09:00', end: '17:00' }]
 
     for (const block of blocks) {
       const [sh, sm] = block.start.split(':').map(Number)
@@ -153,24 +69,24 @@ function generateTimeline(
       const slotEnd = new Date(date)
       slotEnd.setHours(eh!, em, 0, 0)
 
-      if (slotEnd.getTime() <= slotStart.getTime()) continue
-      slots.push({ start: slotStart, end: slotEnd })
+      const startMs = slotStart.getTime()
+      const endMs = slotEnd.getTime()
+      if (endMs <= startMs) continue
+      slots.push({ startMs, endMs })
     }
   }
 
-  // Sort chronologically
-  slots.sort((a, b) => a.start.getTime() - b.start.getTime())
+  slots.sort((a, b) => a.startMs - b.startMs)
 
-  // Clip slots that are in the past
-  const now = startFrom.getTime()
+  // Clip past slots
+  const nowMs = startFrom.getTime()
   const clipped: TimeSlot[] = []
   for (const slot of slots) {
-    if (slot.end.getTime() <= now) continue
-    if (slot.start.getTime() < now) {
-      // Round up to next 15-min boundary
-      const roundedMs = Math.ceil(now / (15 * 60_000)) * (15 * 60_000)
-      if (roundedMs >= slot.end.getTime()) continue
-      clipped.push({ start: new Date(roundedMs), end: slot.end })
+    if (slot.endMs <= nowMs) continue
+    if (slot.startMs < nowMs) {
+      const roundedMs = Math.ceil(nowMs / (15 * 60_000)) * (15 * 60_000)
+      if (roundedMs >= slot.endMs) continue
+      clipped.push({ startMs: roundedMs, endMs: slot.endMs })
     } else {
       clipped.push(slot)
     }
@@ -210,36 +126,72 @@ function resolveTaskSchedule(
   return schedule
 }
 
-// --- Priority computation ---
+// --- Helpers ---
 
 function formatHHmm(date: Date): string {
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
+// --- Per-schedule state ---
+
+interface ScheduleState {
+  slots: TimeSlot[]
+  cursor: number      // index into slots, only advances
+  queue: Task[]       // sorted by priority descending (highest first)
+  schedule: Schedule | null
+}
+
+/**
+ * Check if a schedule has an active block at `timeMs`.
+ * Advances cursor past consumed slots.
+ * Returns { active, slotEndMs, nextStartMs }.
+ */
+function getActiveSlot(
+  state: ScheduleState,
+  timeMs: number
+): { active: boolean; slotEndMs: number; nextStartMs: number | null } {
+  while (state.cursor < state.slots.length) {
+    const slot = state.slots[state.cursor]!
+    if (timeMs < slot.endMs) {
+      // This slot is still relevant
+      if (timeMs >= slot.startMs) {
+        return { active: true, slotEndMs: slot.endMs, nextStartMs: null }
+      } else {
+        // timeMs is before this slot — slot starts in the future
+        return { active: false, slotEndMs: 0, nextStartMs: slot.startMs }
+      }
+    }
+    // Slot fully consumed
+    state.cursor++
+  }
+  // No more slots
+  return { active: false, slotEndMs: 0, nextStartMs: null }
+}
+
 // --- Main algorithm ---
 
 export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
-  const startTime = performance.now()
+  const t0 = performance.now()
   const localSettings = useLocalSettingsStore()
   const taskStore = useTaskStore()
   const taskMap = taskStore.mapp
   const taskStarredStore = useTaskStarredStore()
   const scheduleRepo = useRepo(ScheduleRepo)
-  const listRepo = useRepo(ListRepo)
 
   const allSchedules = scheduleRepo.all()
   const defaultSchedule = allSchedules.find(s => s.default) ?? null
   const defaultDuration = localSettings.defaultTaskDuration
   const unsetDegreeBehavior = localSettings.unsetDegreeBehavior
+  const breakMs = localSettings.taskBreaksBetween * 60_000
 
-  // Phase 1: Setup
+  // ===== PRE-COMPUTATION =====
+
   const incompleteTasks = allTasks.filter(t => !t.completed)
-  SchedulerLogger.log(`Starting auto-scheduler with ${incompleteTasks.length} incomplete tasks`)
+  SchedulerLogger.log(`Starting with ${incompleteTasks.length} incomplete tasks`)
 
-  // Caches
+  // Dependency ref caches
   const incompletePresCache = new Map<number, TaskDepRef[]>()
   const incompletePostsCache = new Map<number, TaskDepRef[]>()
-  const taskScheduleCache = new Map<number, Schedule | null>()
 
   const getIncompletePres = (task: Task): TaskDepRef[] => {
     let cached = incompletePresCache.get(task.id)
@@ -259,13 +211,12 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     return cached
   }
 
-  // Determine if a dependency degree is "hard" (blocking)
   const isHardDegree = (degree: 1 | 2 | 3 | null): boolean => {
     if (degree === null) return unsetDegreeBehavior >= 2
     return degree >= 2
   }
 
-  // Project depth computation (same as use-task-sorting.ts)
+  // Project depth
   const ptarr = incompleteTasks.filter(x => x.notes?.includes('!PROJECT'))
   const projectids = ptarr.map(x => x.id)
   const inProgressProjectIds = new Set(ptarr.filter(x => x.notes?.includes('!INPROGRESS')).map(x => x.id))
@@ -335,11 +286,11 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   }
   incompleteTasks.forEach(calculateAssociatedProjectDepth)
 
-  // Inherited deadline computation
+  // Inherited deadlines
   const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
   const deadlineVisited = new Set<number>()
 
-  // Task layers (prereq depth)
+  // Task layers (hard deps only)
   const taskLayers = new Map<number, number>()
   const layerVisiting = new Set<number>()
 
@@ -359,34 +310,25 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     return layer
   }
 
-  // Star weight computation
+  // Star weights
   const starVisited = new Set<number>()
   incompleteTasks.forEach(t => taskStarredStore.computeDescendants(t.id, taskMap, starVisited))
 
-  // Compute layers for all tasks
   incompleteTasks.forEach(computeLayer)
 
-  // Resolve schedules and build allocator with global occupancy tracking
+  // Schedule resolution
+  const taskScheduleCache = new Map<number, Schedule | null>()
   const now = new Date()
-  const horizonDays = 90
-  const allocator = new TimeAllocator()
+  const currentDay: DayOfWeek = DAYS_OF_WEEK[now.getDay()]!
+  const currentTimeHHmm = formatHHmm(now)
 
-  const getScheduleKey = (schedule: Schedule | null): ScheduleKey => schedule ? schedule.id : 'fallback'
+  // Priority weight — computed once per task, cached
+  const priorityCache = new Map<number, number>()
 
-  const ensureScheduleLoaded = (schedule: Schedule | null) => {
-    const key = getScheduleKey(schedule)
-    if (!allocator.hasSchedule(key)) {
-      const slots = generateTimeline(schedule, now, horizonDays)
-      allocator.addSchedule(key, slots)
-    }
-  }
+  const getPriorityWeight = (task: Task): number => {
+    const cached = priorityCache.get(task.id)
+    if (cached !== undefined) return cached
 
-  // Priority function (dynamic — depends on virtualTime)
-  const computeTaskPriority = (
-    task: Task,
-    virtualTime: Date,
-    placedTasks: Set<number>
-  ): number => {
     const layer = taskLayers.get(task.id) ?? 0
     const layerWeight = (100 - layer) * 250
 
@@ -402,177 +344,236 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     let dueDateBonus = 0
     const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited, defaultDuration)
     if (inherited) {
-      const hoursRemaining = (inherited.deadline.getTime() - virtualTime.getTime()) / (1000 * 60 * 60)
+      const hoursRemaining = (inherited.deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
       if (hoursRemaining > 0) {
         dueDateBonus = Math.min(100, 100 * Math.pow(0.5, hoursRemaining / 24))
       } else {
-        // Past deadline — maximum urgency
         dueDateBonus = 100
       }
     }
 
-    // Schedule bonus: 1000 if task's schedule is active at virtualTime
     let scheduleBonus = 0
     const taskSchedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
     if (taskSchedule) {
-      const vDay: DayOfWeek = DAYS_OF_WEEK[virtualTime.getDay()]!
-      const vTime = formatHHmm(virtualTime)
-      if (taskSchedule.isActiveAt(vDay, vTime)) {
-        scheduleBonus = 1000
+      if (taskSchedule.isActiveAt(currentDay, currentTimeHHmm)) {
+        const incompletePres = getIncompletePres(task)
+        const onlyWeakBlocks = incompletePres.every(r => r.degree === 1)
+        if (incompletePres.length === 0 || onlyWeakBlocks) {
+          scheduleBonus = 500
+        }
       }
     } else {
-      // Fallback schedule (9-5) — check if virtualTime is in 9-17
-      const h = virtualTime.getHours()
+      const h = now.getHours()
       if (h >= 9 && h < 17) {
-        scheduleBonus = 1000
+        scheduleBonus = 500
       }
     }
 
-    // Degree-1 bonus: +200 if all degree-1 prereqs are already placed
-    let degree1Bonus = 0
-    const pres = getIncompletePres(task)
-    const degree1Pres = pres.filter(r => r.degree === 1)
-    if (degree1Pres.length > 0 && degree1Pres.every(r => placedTasks.has(r.task.id))) {
-      degree1Bonus = 200
-    }
-
-    return layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus + degree1Bonus
+    const weight = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus
+    priorityCache.set(task.id, weight)
+    return weight
   }
 
-  // Phase 2: Ready Queue Init
-  // A task is "ready" when all HARD prereqs (degree 2/3/null-mapped) are placed
-  const hardPrereqCount = new Map<number, number>() // count of hard incomplete prereqs
-  const hardPrereqsSatisfied = new Map<number, number>() // how many have been placed
-  const readyQueue: Task[] = []
-  const placedTasks = new Set<number>()
+  // ===== SCHEDULE SETUP =====
+
+  const horizonDays = 90
+  const scheduleStates = new Map<ScheduleKey, ScheduleState>()
+
+  const getScheduleKey = (schedule: Schedule | null): ScheduleKey => schedule ? schedule.id : 'fallback'
+
+  const ensureSchedule = (schedule: Schedule | null): ScheduleKey => {
+    const key = getScheduleKey(schedule)
+    if (!scheduleStates.has(key)) {
+      const slots = generateTimeline(schedule, now, horizonDays)
+      scheduleStates.set(key, {
+        slots,
+        cursor: 0,
+        queue: [],
+        schedule
+      })
+    }
+    return key
+  }
+
+  // Resolve schedule for every task
+  const taskScheduleKeyMap = new Map<number, ScheduleKey>()
+  for (const task of incompleteTasks) {
+    const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
+    const key = ensureSchedule(schedule)
+    taskScheduleKeyMap.set(task.id, key)
+  }
+
+  // Binary-search insert into a sorted queue (highest priority first)
+  const insertIntoQueue = (state: ScheduleState, task: Task) => {
+    const weight = getPriorityWeight(task)
+    const queue = state.queue
+    let left = 0
+    let right = queue.length
+    while (left < right) {
+      const mid = (left + right) >> 1
+      if (getPriorityWeight(queue[mid]!) >= weight) {
+        left = mid + 1
+      } else {
+        right = mid
+      }
+    }
+    queue.splice(left, 0, task)
+  }
+
+  // ===== SEED READY QUEUES =====
+
+  const hardPrereqCount = new Map<number, number>()
+  const hardPrereqsSatisfied = new Map<number, number>()
+  const placed = new Set<number>()
 
   for (const task of incompleteTasks) {
     const pres = getIncompletePres(task)
-    const hardPres = pres.filter(r => isHardDegree(r.degree))
-    hardPrereqCount.set(task.id, hardPres.length)
+    const hardCount = pres.filter(r => isHardDegree(r.degree)).length
+    hardPrereqCount.set(task.id, hardCount)
     hardPrereqsSatisfied.set(task.id, 0)
 
-    if (hardPres.length === 0) {
-      readyQueue.push(task)
+    if (hardCount === 0) {
+      const key = taskScheduleKeyMap.get(task.id)!
+      insertIntoQueue(scheduleStates.get(key)!, task)
     }
   }
 
-  // Phase 3: Greedy Forward Walk
+  const tPrecomp = performance.now() - t0
+
+  // ===== MAIN LOOP: FORWARD TIME WALK =====
+
   const scheduled: ScheduledItem[] = []
   const atRisk: AtRiskItem[] = []
-  const maxIterations = 3 * incompleteTasks.length
+  let currentTimeMs = now.getTime()
+  const maxFitScan = 10 // max tasks to scan in a queue for fit
 
+  const maxIterations = 3 * incompleteTasks.length
   let iterations = 0
-  while (readyQueue.length > 0 && iterations < maxIterations) {
+
+  while (iterations < maxIterations) {
     iterations++
 
-    // Find the earliest virtual time across all ready tasks' schedules
-    let earliestTime: Date | null = null
-    for (const task of readyQueue) {
-      const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
-      ensureScheduleLoaded(schedule)
-      const key = getScheduleKey(schedule)
-      const nextStart = allocator.peekNextStart(key)
-      if (nextStart && (!earliestTime || nextStart.getTime() < earliestTime.getTime())) {
-        earliestTime = nextStart
+    // 1. Find all active schedules at currentTime, and next block start for inactive ones
+    type ActiveInfo = { key: ScheduleKey; state: ScheduleState; remainingMs: number; slotEndMs: number }
+    const activeSchedules: ActiveInfo[] = []
+    let nextBlockStart = Infinity
+
+    for (const [key, state] of scheduleStates) {
+      if (state.queue.length === 0) continue
+      const slotInfo = getActiveSlot(state, currentTimeMs)
+      if (slotInfo.active) {
+        activeSchedules.push({
+          key,
+          state,
+          remainingMs: slotInfo.slotEndMs - currentTimeMs,
+          slotEndMs: slotInfo.slotEndMs
+        })
+      } else if (slotInfo.nextStartMs !== null && slotInfo.nextStartMs < nextBlockStart) {
+        nextBlockStart = slotInfo.nextStartMs
       }
     }
 
-    if (!earliestTime) break // no more time slots available
+    // 2. If no schedule is active, jump to next block start
+    if (activeSchedules.length === 0) {
+      if (nextBlockStart === Infinity) break // no more slots
+      currentTimeMs = nextBlockStart
+      continue
+    }
 
-    // Score only tasks whose schedule is available at earliestTime
+    // 3. Among active schedules, find the best task that fits
     let bestTask: Task | null = null
     let bestScore = -Infinity
     let bestIndex = -1
+    let bestState: ScheduleState | null = null
 
-    for (let i = 0; i < readyQueue.length; i++) {
-      const task = readyQueue[i]!
-      const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
-      const key = getScheduleKey(schedule)
-      const taskStart = allocator.peekNextStart(key)
-      if (!taskStart || taskStart.getTime() !== earliestTime.getTime()) continue
-
-      const score = computeTaskPriority(task, earliestTime, placedTasks)
-      if (score > bestScore) {
-        bestScore = score
-        bestTask = task
-        bestIndex = i
+    for (const info of activeSchedules) {
+      const queue = info.state.queue
+      const limit = Math.min(queue.length, maxFitScan)
+      for (let i = 0; i < limit; i++) {
+        const task = queue[i]!
+        if (placed.has(task.id)) continue
+        const durationMs = (task.task_duration_in_minutes ?? defaultDuration) * 60_000
+        if (durationMs <= info.remainingMs) {
+          const score = getPriorityWeight(task)
+          if (score > bestScore) {
+            bestTask = task
+            bestScore = score
+            bestIndex = i
+            bestState = info.state
+          }
+          break // this queue's best fitting task found (queue is sorted by priority)
+        }
+        // Top task doesn't fit — try next (might be shorter)
       }
     }
 
-    if (!bestTask || bestIndex === -1) break
+    // 4. If nothing fits, advance past the earliest-ending active block
+    if (!bestTask || !bestState) {
+      let earliestEnd = Infinity
+      for (const info of activeSchedules) {
+        if (info.slotEndMs < earliestEnd) earliestEnd = info.slotEndMs
+      }
+      currentTimeMs = earliestEnd
+      continue
+    }
 
-    // Remove from ready queue
-    readyQueue.splice(bestIndex, 1)
+    // 5. Place the task
+    bestState.queue.splice(bestIndex, 1)
+    placed.add(bestTask.id)
 
-    // Allocate time
     const duration = bestTask.task_duration_in_minutes ?? defaultDuration
-    const schedule = resolveTaskSchedule(bestTask, defaultSchedule, taskScheduleCache)
-    ensureScheduleLoaded(schedule)
-    const key = getScheduleKey(schedule)
-    const allocation = allocator.allocate(key, duration)
+    const durationMs = duration * 60_000
+    const startMs = currentTimeMs
+    const endMs = startMs + durationMs
 
-    if (!allocation) {
-      // No space left — this task is at-risk
-      const inherited = computeInheritedDeadline(bestTask, deadlineMemo, deadlineVisited, defaultDuration)
+    const inherited = computeInheritedDeadline(bestTask, deadlineMemo, deadlineVisited, defaultDuration)
+    if (inherited && endMs > inherited.deadline.getTime()) {
       atRisk.push({
         task: bestTask,
-        deadline: inherited?.deadline ?? new Date(0),
-        reason: 'No available time slots in the scheduling horizon'
+        deadline: inherited.deadline,
+        reason: `Scheduled end ${formatHHmm(new Date(endMs))} exceeds deadline`
       })
-      // Still mark as placed so dependents can proceed
-      placedTasks.add(bestTask.id)
-    } else {
-      // Check deadline
-      const inherited = computeInheritedDeadline(bestTask, deadlineMemo, deadlineVisited, defaultDuration)
-      if (inherited && allocation.end.getTime() > inherited.deadline.getTime()) {
-        atRisk.push({
-          task: bestTask,
-          deadline: inherited.deadline,
-          reason: `Scheduled end ${formatHHmm(allocation.end)} exceeds deadline`
-        })
-      }
-
-      scheduled.push({
-        task: bestTask,
-        startTime: allocation.start,
-        endTime: allocation.end,
-        durationMinutes: duration,
-        scheduleTitle: schedule?.title ?? 'Default'
-      })
-      placedTasks.add(bestTask.id)
     }
 
-    // Update postreq satisfaction
+    scheduled.push({
+      task: bestTask,
+      startTime: new Date(startMs),
+      endTime: new Date(endMs),
+      durationMinutes: duration,
+      scheduleTitle: bestState.schedule?.title ?? 'Default'
+    })
+
+    currentTimeMs = endMs + breakMs
+
+    // 6. Unlock postreqs
     for (const ref of getIncompletePosts(bestTask)) {
       const postId = ref.task.id
       if (!hardPrereqCount.has(postId)) continue
+      if (!isHardDegree(ref.degree)) continue
 
-      // Only increment if THIS dependency is hard
-      if (isHardDegree(ref.degree)) {
-        const current = hardPrereqsSatisfied.get(postId) ?? 0
-        const newCount = current + 1
-        hardPrereqsSatisfied.set(postId, newCount)
+      const current = hardPrereqsSatisfied.get(postId) ?? 0
+      const newCount = current + 1
+      hardPrereqsSatisfied.set(postId, newCount)
 
-        const total = hardPrereqCount.get(postId) ?? 0
-        if (newCount >= total && !placedTasks.has(postId)) {
-          readyQueue.push(ref.task)
-        }
+      const total = hardPrereqCount.get(postId) ?? 0
+      if (newCount >= total && !placed.has(postId)) {
+        const postKey = taskScheduleKeyMap.get(postId)!
+        insertIntoQueue(scheduleStates.get(postKey)!, ref.task)
       }
     }
   }
 
-  // Phase 4: Stuck tasks (cycles or unreachable)
-  const notPlaced = incompleteTasks.filter(t => !placedTasks.has(t.id))
+  // Sort chronologically (already in order, safety measure)
+  scheduled.sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+
+  // Stuck tasks
+  const notPlaced = incompleteTasks.filter(t => !placed.has(t.id))
   if (notPlaced.length > 0) {
     SchedulerLogger.warn(`${notPlaced.length} tasks could not be scheduled (possible cycles)`)
   }
 
-  // Sort output chronologically for display
-  scheduled.sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
-
-  const elapsed = performance.now() - startTime
-  SchedulerLogger.log(`Auto-scheduler completed in ${elapsed.toFixed(1)}ms: ${scheduled.length} scheduled, ${atRisk.length} at-risk, ${notPlaced.length} stuck`)
+  const elapsed = performance.now() - t0
+  SchedulerLogger.log(`Completed in ${elapsed.toFixed(1)}ms (precomp: ${tPrecomp.toFixed(1)}ms): ${scheduled.length} scheduled, ${atRisk.length} at-risk, ${notPlaced.length} stuck`)
 
   return { scheduled, atRisk }
 }

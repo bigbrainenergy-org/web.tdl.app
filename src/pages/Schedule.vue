@@ -46,7 +46,7 @@
                 :key="'task-' + item.scheduled.task.id"
                 class="scheduled-card q-pa-xs"
                 :class="{ 'completed-task': isCompleted(item.scheduled.task) }"
-                :style="{ height: cardHeight(item.scheduled.durationMinutes) + 'px', minHeight: '40px' }"
+                :style="{ height: cardHeight(item.scheduled.durationMinutes) + 'px', minHeight: '40px', marginBottom: breakGapPx + 'px' }"
                 @click="openTask(item.scheduled.task)"
               >
                 <div class="row items-center full-height no-wrap">
@@ -128,6 +128,7 @@
   import { ref, computed } from 'vue'
   import { useMeta } from 'quasar'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { runAutoScheduler, type AutoScheduleResult, type ScheduledItem } from 'src/composables/use-auto-scheduler'
   import { openUpdateTaskDialog, openScheduleManagerDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
@@ -196,6 +197,11 @@
   function openTask(task: Task) {
     openUpdateTaskDialog(task)
   }
+
+  const breakGapPx = computed(() => {
+    const breakMin = useLocalSettingsStore().taskBreaksBetween
+    return Math.ceil(breakMin / 5) * 10
+  })
 
   function cardHeight(durationMinutes: number): number {
     return Math.ceil(durationMinutes / 10) * 20
