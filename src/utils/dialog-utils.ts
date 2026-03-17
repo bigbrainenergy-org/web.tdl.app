@@ -22,6 +22,7 @@ import type { CreateProcedureOptions, Procedure} from 'src/stores/procedures/pro
 import { ProcedureRepo } from 'src/stores/procedures/procedure'
 import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.vue'
 import ScheduleEditorDialog from 'src/components/dialogs/ScheduleEditorDialog.vue'
+import ScheduleManagerDialog from 'src/components/dialogs/ScheduleManagerDialog.vue'
 import UpdateListDialog from 'src/components/dialogs/UpdateListDialog.vue'
 import type { λ } from './types'
 import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
@@ -366,6 +367,10 @@ export function openScheduleEditorDialog(schedule?: Schedule) {
     component: ScheduleEditorDialog,
     componentProps: schedule ? { schedule } : {}
   })
+}
+
+export function openScheduleManagerDialog() {
+  return Dialog.create({ component: ScheduleManagerDialog })
 }
 
 export function openUpdateListDialog(list: List) {

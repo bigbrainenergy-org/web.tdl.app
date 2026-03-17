@@ -16,6 +16,7 @@
             <q-item-label v-if="result" class="text-primary">
               {{ result.scheduled.length }} scheduled
             </q-item-label>
+            <q-btn flat icon="settings" class="text-primary" @click="openScheduleManagerDialog" />
           </q-card-actions>
 
           <q-card-section v-if="!result" class="text-grey-5 text-center q-pa-xl">
@@ -124,7 +125,7 @@
   import { useMeta } from 'quasar'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { runAutoScheduler, type AutoScheduleResult, type ScheduledItem } from 'src/composables/use-auto-scheduler'
-  import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
+  import { openUpdateTaskDialog, openScheduleManagerDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
 
   useMeta({ title: 'Schedule' })

@@ -43,6 +43,8 @@
 
         <q-btn class="q-ma-md" icon="fa-solid fa-star" color="indigo" label="Dependency Degree Settings" @click="openDependencyDegreeSettingsDialog" />
 
+        <q-btn class="q-ma-md" icon="fa-solid fa-calendar-check" color="indigo" label="Manage Schedules" @click="openScheduleManagerDialog" />
+
         <q-separator class="q-my-md" />
 
         <PasswordChangeForm />
@@ -79,6 +81,7 @@
   import CurrentTimeIndicator from 'src/components/CurrentTimeIndicator.vue'
   import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
   import DependencyDegreeSettingsDialog from 'src/components/dialogs/DependencyDegreeSettingsDialog.vue'
+  import { openScheduleManagerDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 
