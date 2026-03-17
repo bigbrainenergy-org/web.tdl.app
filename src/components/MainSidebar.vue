@@ -55,6 +55,14 @@
         <q-item-section>Agenda</q-item-section>
       </q-item>
 
+      <q-item v-ripple clickable @click="$router.push('/schedule')">
+        <q-item-section avatar>
+          <q-icon name="fa-solid fa-calendar-check" />
+        </q-item-section>
+
+        <q-item-section>Schedule</q-item-section>
+      </q-item>
+
       <q-item
         v-ripple
         clickable

@@ -1,7 +1,7 @@
 import { Model } from 'pinia-orm'
 import type { iOptions } from '../generics/i-record'
 import type iRecord from '../generics/i-record'
-import { Num, Str } from 'pinia-orm/dist/decorators'
+import { Attr, Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { Task } from 'src/stores/tasks/task-model'
@@ -17,6 +17,7 @@ export interface UpdateListOptions extends iOptions {
     list: {
       title?: string
       order?: number
+      schedule_id?: number | null
     }
   }
 }
@@ -29,6 +30,7 @@ export class List extends Model implements iRecord {
   @Str('') declare color: string
   @Num(0) declare order: number
   @Str('') declare notes: string
+  @Attr(undefined) declare schedule_id: number | undefined
 
   // @HasMany(() => Task, 'list_id') declare tasks: Task[]
   get tasks(): Task[] {

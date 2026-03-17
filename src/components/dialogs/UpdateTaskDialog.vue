@@ -26,6 +26,7 @@
               </div>
             </div>
             <TaskInputList v-model:task="currentTask as Task" />
+            <TaskInputSchedule v-model:task="currentTask as Task" />
             <TaskInputProcedures v-model:task="currentTask as Task" />
             <TaskInputRemindMeAt v-model:task="currentTask as Task" />
             <TaskInputDueAt v-model:task="currentTask as Task" />
@@ -57,6 +58,7 @@
               :degrees="postDegrees"
               show-prune
               @prune-dependencies="prunePosts"
+              @prune-posts-one-star="unloadOneStarPosts"
               @add-item="openPostrequisiteDialog"
               @remove-item="removePost"
               @select-item="setCurrentTask"
@@ -101,6 +103,7 @@
   import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
   import TaskInputTitle from 'src/components/TaskInputTitle.vue'
   import TaskInputList from 'src/components/TaskInputList.vue'
+  import TaskInputSchedule from 'src/components/TaskInputSchedule.vue'
   import TaskInputProcedures from 'src/components/TaskInputProcedures.vue'
   import TaskInputRemindMeAt from 'src/components/TaskInputRemindMeAt.vue'
   import TaskInputDueAt from '../TaskInputDueAt.vue'
@@ -447,6 +450,16 @@
     }
     useLoadingStateStore().busy = false
   })
+
+  const unloadOneStarPosts = async () => {
+    const posts = useDependencyStore().getPosts(currentTask.value.id)
+    const unsetDegree = useLocalSettingsStore().unsetDegreeBehavior
+    for (let i = 0; i < posts.length; i++) {
+      if((posts[i]!.degree ?? unsetDegree) === 1) {
+        await depStore.removeRule(currentTask.value.id, posts[i]!.task_id)
+      } 
+    }
+  }
 
   const prunePres = blockingFunc(async (payload: { above: Set<number>; below: Set<number> }) => {
     const toRemove = allPres.value.filter((x) => {

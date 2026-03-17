@@ -13,6 +13,7 @@ const PageNames = [
   'Graph',
   'Projects',
   'Routines',
+  'Schedule',
   'Login',
   'Empty',
   'Error 404'
@@ -72,6 +73,11 @@ const routes: StronglyTypedRouteRecordRaw[] = [
         path: 'routines',
         name: 'Routines',
         component: () => import('src/pages/Routines.vue')
+      },
+      {
+        path: 'schedule',
+        name: 'Schedule',
+        component: () => import('src/pages/Schedule.vue')
       }
     ] as StronglyTypedRouteRecordRaw[]
   },

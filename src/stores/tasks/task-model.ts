@@ -22,6 +22,7 @@ export class Task implements TaskLike {
   title: string
   notes?: string
   list_id?: number
+  schedule_id?: number
   deadline_at?: string
   prioritize_at?: string
   remind_me_at?: string
@@ -39,6 +40,7 @@ export class Task implements TaskLike {
     this.title = data.title
     this.notes = data.notes
     this.list_id = data.list_id ?? undefined
+    this.schedule_id = data.schedule_id
     this.deadline_at = data.deadline_at
     this.prioritize_at = data.prioritize_at
     this.remind_me_at = data.remind_me_at
@@ -138,6 +140,7 @@ export class Task implements TaskLike {
       review_at: this.review_at,
       notes: this.notes,
       list_id: this.list_id,
+      schedule_id: this.schedule_id,
       deadline_at: this.deadline_at,
       prioritize_at: this.prioritize_at,
       task_duration_in_minutes: this.task_duration_in_minutes

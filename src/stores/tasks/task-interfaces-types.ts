@@ -17,6 +17,7 @@ export interface TaskTimerState {
 
 export interface CreateTaskOptions {
   list_id?: number | null
+  schedule_id?: number | null
   title: string
   notes?: string
   deadline_at?: string
@@ -35,6 +36,7 @@ export interface TaskLike {
   title: string
   notes?: string
   list_id?: number
+  schedule_id?: number
   deadline_at?: string
   prioritize_at?: string
   remind_me_at?: string
@@ -54,6 +56,7 @@ export interface UpdateTaskLike {
 
 export interface AllOptionalTaskProperties {
   list_id?: number | null
+  schedule_id?: number | null
   title?: string
   notes?: string
   completed?: boolean

@@ -14,12 +14,15 @@ import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfac
 import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
-import type { CreateListOptions} from 'src/stores/lists/list'
-import { ListRepo } from 'src/stores/lists/list'
+import type { CreateListOptions } from 'src/stores/lists/list'
+import { type List, ListRepo } from 'src/stores/lists/list'
+import type { Schedule } from 'src/stores/schedules/schedule'
 import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
 import type { CreateProcedureOptions, Procedure} from 'src/stores/procedures/procedure'
 import { ProcedureRepo } from 'src/stores/procedures/procedure'
 import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.vue'
+import ScheduleEditorDialog from 'src/components/dialogs/ScheduleEditorDialog.vue'
+import UpdateListDialog from 'src/components/dialogs/UpdateListDialog.vue'
 import type { λ } from './types'
 import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
 import QuickSortLayerZeroDialog2 from 'src/components/dialogs/QuickSortLayerZeroDialog2.vue'
@@ -355,5 +358,19 @@ export function openTaskSlicerDialog(task: Task) {
   return Dialog.create({
     component: TaskSlicerDialog,
     componentProps: { task }
+  })
+}
+
+export function openScheduleEditorDialog(schedule?: Schedule) {
+  return Dialog.create({
+    component: ScheduleEditorDialog,
+    componentProps: schedule ? { schedule } : {}
+  })
+}
+
+export function openUpdateListDialog(list: List) {
+  return Dialog.create({
+    component: UpdateListDialog,
+    componentProps: { list }
   })
 }

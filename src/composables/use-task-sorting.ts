@@ -1,5 +1,7 @@
 import { storeToRefs } from 'pinia'
+import { useRepo } from 'pinia-orm'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+import { type DayOfWeek, DAYS_OF_WEEK, type Schedule, ScheduleRepo } from 'src/stores/schedules/schedule'
 import type { Task, TaskDepRef } from 'src/stores/tasks/task-model'
 import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
 import { useTaskStore } from 'src/stores/tasks/task-store'
@@ -8,6 +10,7 @@ import { Logger } from 'src/utils/d'
 import { errorNotification } from 'src/utils/notification-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
 import { computeInheritedDeadline, type InheritedDeadlineResult } from 'src/utils/inherited-deadline'
+import { ListRepo } from 'src/stores/lists/list'
 
 const TaskSortingLogger = new Logger('Task Sort', '#794A20')
 
@@ -138,6 +141,39 @@ export function useTaskSorting() {
 
       filteredTasks.forEach(calculateAssociatedProjectDepth)
 
+      // Schedule-aware sorting: resolve which schedule applies to each task
+      const scheduleRepo = useRepo(ScheduleRepo)
+      const listRepo = useRepo(ListRepo)
+      const allSchedules = scheduleRepo.all()
+      const defaultSchedule = allSchedules.find(s => s.default) ?? null
+
+      // Current time slot info
+      const now = new Date()
+      const dayIndex = now.getDay() // 0=Sun, 1=Mon, ...
+      const currentDay: DayOfWeek = DAYS_OF_WEEK[dayIndex]!
+      const currentTimeHHmm = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+
+      // Resolve schedule for each task: direct > list > default
+      const taskScheduleCache = new Map<number, Schedule | null>()
+      const resolveTaskSchedule = (task: Task): Schedule | null => {
+        if (taskScheduleCache.has(task.id)) return taskScheduleCache.get(task.id)!
+        let schedule: Schedule | null = null
+        if (task.schedule_id) {
+          schedule = scheduleRepo.find(task.schedule_id) ?? null
+        }
+        if (!schedule && task.list_id) {
+          const list = listRepo.find(task.list_id)
+          if (list?.schedule_id) {
+            schedule = scheduleRepo.find(list.schedule_id) ?? null
+          }
+        }
+        if (!schedule) {
+          schedule = defaultSchedule
+        }
+        taskScheduleCache.set(task.id, schedule)
+        return schedule
+      }
+
       const finalList = new Map<number, Task>()
       const visited = new Set<number>()
 
@@ -187,7 +223,19 @@ export function useTaskSorting() {
           }
         }
 
-        const weight = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus
+        // Schedule bonus: tasks whose schedule is active right now get boosted
+        let scheduleBonus = 0
+        const taskSchedule = resolveTaskSchedule(task)
+        if (taskSchedule && taskSchedule.isActiveAt(currentDay, currentTimeHHmm)) {
+          // Only boost if unblocked or only blocked by degree-1 prereqs
+          const incompletePres = getIncompletePres(task)
+          const onlyWeakBlocks = incompletePres.every(r => r.degree === 1)
+          if (incompletePres.length === 0 || onlyWeakBlocks) {
+            scheduleBonus = 500
+          }
+        }
+
+        const weight = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus
         starWeightCache.set(task.id, weight)
         return weight
       }
