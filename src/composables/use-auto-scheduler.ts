@@ -26,9 +26,20 @@ export interface AtRiskItem {
   reason: string
 }
 
+export interface PriorityBreakdown {
+  total: number
+  layerWeight: number
+  starWeight: number
+  projectLayerWeight: number
+  inProgressBonus: number
+  dueDateBonus: number
+  scheduleBonus: number
+}
+
 export interface AutoScheduleResult {
   scheduled: ScheduledItem[]
   atRisk: AtRiskItem[]
+  breakdowns: Map<number, PriorityBreakdown>
 }
 
 // --- Internal types ---
@@ -322,12 +333,12 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   const currentDay: DayOfWeek = DAYS_OF_WEEK[now.getDay()]!
   const currentTimeHHmm = formatHHmm(now)
 
-  // Priority weight — computed once per task, cached
-  const priorityCache = new Map<number, number>()
+  // Priority weight — computed once per task, cached with full breakdown
+  const priorityCache = new Map<number, PriorityBreakdown>()
 
   const getPriorityWeight = (task: Task): number => {
     const cached = priorityCache.get(task.id)
-    if (cached !== undefined) return cached
+    if (cached !== undefined) return cached.total
 
     const layer = taskLayers.get(task.id) ?? 0
     const layerWeight = (100 - layer) * 250
@@ -369,9 +380,18 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
       }
     }
 
-    const weight = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus
-    priorityCache.set(task.id, weight)
-    return weight
+    const total = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus
+    const breakdown: PriorityBreakdown = {
+      total,
+      layerWeight,
+      starWeight,
+      projectLayerWeight,
+      inProgressBonus,
+      dueDateBonus,
+      scheduleBonus
+    }
+    priorityCache.set(task.id, breakdown)
+    return total
   }
 
   // ===== SCHEDULE SETUP =====
@@ -575,5 +595,5 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   const elapsed = performance.now() - t0
   SchedulerLogger.log(`Completed in ${elapsed.toFixed(1)}ms (precomp: ${tPrecomp.toFixed(1)}ms): ${scheduled.length} scheduled, ${atRisk.length} at-risk, ${notPlaced.length} stuck`)
 
-  return { scheduled, atRisk }
+  return { scheduled, atRisk, breakdowns: priorityCache }
 }

@@ -68,6 +68,17 @@
                   <q-badge class="q-ml-sm" color="grey-7" text-color="white">
                     {{ item.scheduled.scheduleTitle }}
                   </q-badge>
+                  <q-badge
+                    v-if="getBreakdown(item.scheduled.task.id)"
+                    class="q-ml-sm"
+                    color="deep-purple-9"
+                    text-color="white"
+                  >
+                    {{ Math.round(getBreakdown(item.scheduled.task.id)!.total) }}
+                    <q-tooltip>
+                      <div style="white-space: pre; font-family: monospace; font-size: 12px">{{ formatBreakdown(getBreakdown(item.scheduled.task.id)!) }}</div>
+                    </q-tooltip>
+                  </q-badge>
                 </div>
               </div>
             </q-virtual-scroll>
@@ -103,7 +114,7 @@
               :key="item.task.id"
               v-ripple
               clickable
-              @click="openTask(item.task)"
+              @click="openTask(item.task as Task)"
             >
               <q-item-section>
                 <q-item-label>{{ item.task.title }}</q-item-label>
@@ -129,7 +140,7 @@
   import { useMeta } from 'quasar'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { runAutoScheduler, type AutoScheduleResult, type ScheduledItem } from 'src/composables/use-auto-scheduler'
+  import { runAutoScheduler, type AutoScheduleResult, type ScheduledItem, type PriorityBreakdown } from 'src/composables/use-auto-scheduler'
   import { openUpdateTaskDialog, openScheduleManagerDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
 
@@ -179,7 +190,8 @@
         items.push({ type: 'separator', label: dateStr })
         lastDateStr = dateStr
       }
-      items.push({ type: 'task', scheduled: s, startTime: s.startTime, endTime: s.endTime })
+      const scheduled = s as ScheduledItem
+      items.push({ type: 'task', scheduled, startTime: s.startTime, endTime: s.endTime })
     }
     return items
   })
@@ -213,6 +225,24 @@
       minute: '2-digit',
       hour12: false
     })
+  }
+
+  function getBreakdown(taskId: number) {
+    return (result.value?.breakdowns as Map<number, PriorityBreakdown>).get(taskId)
+  }
+
+  function formatBreakdown(b: PriorityBreakdown): string {
+    const lines = [
+      `Layer:       ${b.layerWeight}`,
+      `Star:        ${b.starWeight}`,
+      `Project:     ${b.projectLayerWeight}`,
+      `In Progress: ${b.inProgressBonus}`,
+      `Due Date:    ${Math.round(b.dueDateBonus * 10) / 10}`,
+      `Schedule:    ${b.scheduleBonus}`,
+      '─────────────────',
+      `Total:       ${Math.round(b.total)}`
+    ]
+    return lines.join('\n')
   }
 
   function formatDate(date: Date): string {
