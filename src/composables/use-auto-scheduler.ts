@@ -34,6 +34,7 @@ export interface PriorityBreakdown {
   inProgressBonus: number
   dueDateBonus: number
   scheduleBonus: number
+  procedureBonus: number
 }
 
 export interface AutoScheduleResult {
@@ -381,7 +382,9 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
       }
     }
 
-    const total = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus
+    const procedureBonus = (task.procedure_ids?.length ?? 0) > 0 ? 450 : 0
+
+    const total = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus + procedureBonus
     const breakdown: PriorityBreakdown = {
       total,
       layerWeight,
@@ -389,7 +392,8 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
       projectLayerWeight,
       inProgressBonus,
       dueDateBonus,
-      scheduleBonus
+      scheduleBonus,
+      procedureBonus
     }
     priorityCache.set(task.id, breakdown)
     return total

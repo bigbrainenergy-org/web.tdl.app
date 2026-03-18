@@ -23,33 +23,31 @@
             Click "Auto-Schedule" to generate a schedule.
           </q-card-section>
 
-          <q-card-section v-else class="q-pa-none">
-            <q-virtual-scroll
-              v-slot="{ item }"
-              :items="displayItems"
-              :virtual-scroll-item-size="40"
-              style="max-height: calc(100vh - 200px)"
-            >
-              <!-- Day separator -->
-              <div
-                v-if="item.type === 'separator'"
-                :key="'sep-' + item.label"
-                class="q-pa-sm text-bold text-grey-4 bg-dark"
-                style="border-bottom: 1px solid #444"
-              >
-                {{ item.label }}
-              </div>
+          <q-card-section v-else class="q-pa-none" style="max-height: calc(100vh - 200px); overflow-y: auto">
+            <q-list>
+              <template v-for="item in displayItems.slice(0, 1000)" :key="item.type === 'separator' ? 'sep-' + item.label : 'task-' + item.scheduled.task.id">
+                <!-- Day separator -->
+                <div
+                  v-if="item.type === 'separator'"
+                  class="q-pa-sm text-bold text-grey-4 bg-dark"
+                  style="border-bottom: 1px solid #444"
+                >
+                  {{ item.label }}
+                </div>
 
-              <!-- Task card -->
-              <div
-                v-else
-                :key="'task-' + item.scheduled.task.id"
-                class="scheduled-card q-pa-xs"
-                :class="{ 'completed-task': isCompleted(item.scheduled.task) }"
-                :style="{ height: cardHeight(item.scheduled.durationMinutes) + 'px', minHeight: '40px', marginBottom: breakGapPx + 'px' }"
-                @click="openTask(item.scheduled.task)"
-              >
-                <div class="row items-center full-height no-wrap">
+                <!-- Task item -->
+                <q-item
+                  v-else
+                  v-ripple
+                  clickable
+                  class="scheduled-card"
+                  :class="{
+                    'completed-task': isCompleted(item.scheduled.task),
+                    'scheduled-card--bordered': hasBreaks
+                  }"
+                  :style="{ minHeight: cardHeight(item.scheduled.durationMinutes) + 'px', marginBottom: hasBreaks ? breakGapPx + 'px' : undefined }"
+                  @click="openTask(item.scheduled.task)"
+                >
                   <q-checkbox
                     :model-value="isCompleted(item.scheduled.task)"
                     color="primary"
@@ -59,29 +57,32 @@
                     @update:model-value="() => toggleCompletion(item.scheduled.task)"
                     @click.stop
                   />
-                  <span class="text-grey-5 text-caption q-mr-sm" style="min-width: 90px">
-                    {{ formatTime(item.scheduled.startTime) }}–{{ formatTime(item.scheduled.endTime) }}
-                  </span>
-                  <span class="text-primary ellipsis">
-                    {{ item.scheduled.task.title }}
-                  </span>
-                  <q-badge class="q-ml-sm" color="grey-7" text-color="white">
-                    {{ item.scheduled.scheduleTitle }}
-                  </q-badge>
-                  <q-badge
-                    v-if="getBreakdown(item.scheduled.task.id)"
-                    class="q-ml-sm"
-                    color="deep-purple-9"
-                    text-color="white"
-                  >
-                    {{ Math.round(getBreakdown(item.scheduled.task.id)!.total) }}
-                    <q-tooltip>
-                      <div style="white-space: pre; font-family: monospace; font-size: 12px">{{ formatBreakdown(getBreakdown(item.scheduled.task.id)!) }}</div>
-                    </q-tooltip>
-                  </q-badge>
-                </div>
-              </div>
-            </q-virtual-scroll>
+                  <q-item-section>
+                    <q-item-label>
+                      <span class="text-grey-5 text-caption q-mr-sm">
+                        {{ formatTime(item.scheduled.startTime) }}–{{ formatTime(item.scheduled.endTime) }}
+                      </span>
+                      <span class="text-primary">
+                        {{ item.scheduled.task.title }}
+                      </span>
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-badge color="grey-7" text-color="white">
+                      {{ item.scheduled.scheduleTitle }}
+                    </q-badge>
+                  </q-item-section>
+                  <q-item-section v-if="getBreakdown(item.scheduled.task.id)" side>
+                    <q-badge color="deep-purple-9" text-color="white">
+                      {{ Math.round(getBreakdown(item.scheduled.task.id)!.total) }}
+                      <q-tooltip>
+                        <div style="white-space: pre; font-family: monospace; font-size: 12px">{{ formatBreakdown(getBreakdown(item.scheduled.task.id)!) }}</div>
+                      </q-tooltip>
+                    </q-badge>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-list>
           </q-card-section>
         </q-card>
       </div>
@@ -210,6 +211,8 @@
     openUpdateTaskDialog(task)
   }
 
+  const hasBreaks = computed(() => useLocalSettingsStore().taskBreaksBetween > 0)
+
   const breakGapPx = computed(() => {
     const breakMin = useLocalSettingsStore().taskBreaksBetween
     return Math.ceil(breakMin / 5) * 10
@@ -258,10 +261,7 @@
 <style scoped lang="scss">
   .scheduled-card {
     border-bottom: 1px solid #333;
-    cursor: pointer;
     transition: background-color 0.1s, opacity 0.2s;
-    padding-left: 8px;
-    padding-right: 8px;
 
     &:hover {
       background-color: rgba(255, 255, 255, 0.05);
@@ -273,6 +273,12 @@
       .text-primary {
         text-decoration: line-through;
       }
+    }
+
+    &--bordered {
+      border-bottom: none;
+      border: 1px solid #333;
+      border-radius: 6px;
     }
   }
 </style>
