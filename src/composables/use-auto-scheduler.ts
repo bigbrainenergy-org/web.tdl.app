@@ -357,9 +357,10 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     if (inherited) {
       const hoursRemaining = (inherited.deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
       if (hoursRemaining > 0) {
-        dueDateBonus = Math.min(100, 100 * Math.pow(0.5, hoursRemaining / 24))
+        dueDateBonus = Math.min(200, 100 * Math.pow(0.7, hoursRemaining / 24))
       } else {
-        dueDateBonus = 100
+        if(inherited.isOwn) dueDateBonus = 300
+        else dueDateBonus = 200
       }
     }
 
