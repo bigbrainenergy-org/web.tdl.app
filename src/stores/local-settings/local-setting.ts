@@ -69,6 +69,13 @@ interface LocalSettingsState {
   searchDebounce: number
   defaultTaskDuration: number
   taskBreaksBetween: number
+  scheduleDisplayLimit: number
+  schedulerStarMod: number
+  schedulerProjectMod: number
+  schedulerInProgressMod: number
+  schedulerDueDateMod: number
+  schedulerScheduleMod: number
+  schedulerProcedureMod: number
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -161,7 +168,14 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       unsetDegreeBehavior: 2,
       searchDebounce: 100,
       defaultTaskDuration: 15,
-      taskBreaksBetween: 3
+      taskBreaksBetween: 3,
+      scheduleDisplayLimit: 600,
+      schedulerStarMod: 1,
+      schedulerProjectMod: 1,
+      schedulerInProgressMod: 1,
+      schedulerDueDateMod: 1,
+      schedulerScheduleMod: 1,
+      schedulerProcedureMod: 1
     }
   },
   persist: true,

@@ -48,7 +48,7 @@
           @mouseleave="onMouseUp"
         >
           <!-- Header row -->
-          <div class="grid-header grid-time-col"></div>
+          <div class="grid-header grid-time-col" />
           <div
             v-for="day in DAYS_OF_WEEK"
             :key="day"
@@ -102,7 +102,7 @@
     type DayOfWeek,
     type ScheduleBlock,
     DAYS_OF_WEEK,
-    Schedule,
+    type Schedule,
     ScheduleRepo
   } from 'src/stores/schedules/schedule'
   import { handleError, notifySuccess } from 'src/utils/notification-utils'

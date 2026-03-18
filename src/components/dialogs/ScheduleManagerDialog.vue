@@ -49,7 +49,7 @@
   import { useDialogPluginComponent, useQuasar } from 'quasar'
   import { computed } from 'vue'
   import { useRepo } from 'pinia-orm'
-  import { Schedule, ScheduleRepo } from 'src/stores/schedules/schedule'
+  import { type Schedule, ScheduleRepo } from 'src/stores/schedules/schedule'
   import { openScheduleEditorDialog } from 'src/utils/dialog-utils'
   import { handleError, notifySuccess } from 'src/utils/notification-utils'
 
@@ -74,8 +74,8 @@
       message: `Are you sure you want to delete "${schedule.title}"?`,
       cancel: true,
       persistent: true
-    }).onOk(async () => {
-      await schedulesRepo.delete(schedule.id).then(() => {
+    }).onOk(() => {
+      schedulesRepo.delete(schedule.id).then(() => {
         notifySuccess('Schedule deleted')
       }, handleError('Error deleting schedule'))
     })

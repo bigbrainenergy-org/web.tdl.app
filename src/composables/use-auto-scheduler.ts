@@ -112,7 +112,8 @@ function generateTimeline(
 function resolveTaskSchedule(
   task: Task,
   defaultSchedule: Schedule | null,
-  cache: Map<number, Schedule | null>
+  cache: Map<number, Schedule | null>,
+  inheritedProjectSchedule?: Map<number, number | null>
 ): Schedule | null {
   if (cache.has(task.id)) return cache.get(task.id)!
 
@@ -123,6 +124,12 @@ function resolveTaskSchedule(
 
   if (task.schedule_id) {
     schedule = scheduleRepo.find(task.schedule_id) ?? null
+  }
+  if (!schedule && inheritedProjectSchedule) {
+    const projectScheduleId = inheritedProjectSchedule.get(task.id)
+    if (projectScheduleId) {
+      schedule = scheduleRepo.find(projectScheduleId) ?? null
+    }
   }
   if (!schedule && task.list_id) {
     const list = listRepo.find(task.list_id)
@@ -195,6 +202,14 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   const defaultDuration = localSettings.defaultTaskDuration
   const unsetDegreeBehavior = localSettings.unsetDegreeBehavior
   const breakMs = localSettings.taskBreaksBetween * 60_000
+  const {
+    schedulerStarMod,
+    schedulerProjectMod,
+    schedulerInProgressMod,
+    schedulerDueDateMod,
+    schedulerScheduleMod,
+    schedulerProcedureMod
+  } = localSettings
 
   // ===== PRE-COMPUTATION =====
 
@@ -271,18 +286,18 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
       associatedProjectDepth.set(x.id, result)
       return result
     }
-    const posts = x.grabPostreqs(true)
-    if (posts.length === 0) {
+    const hardPosts = getIncompletePosts(x).filter(r => isHardDegree(r.degree))
+    if (hardPosts.length === 0) {
       const result = { depth: -1, inprogress: false }
       associatedProjectDepth.set(x.id, result)
       return result
     }
     let minDepth = -1
     let hasInProgressAtMinDepth = false
-    for (const y of posts) {
-      const postResult = associatedProjectDepth.has(y.id)
-        ? associatedProjectDepth.get(y.id)!
-        : calculateAssociatedProjectDepth(y)
+    for (const ref of hardPosts) {
+      const postResult = associatedProjectDepth.has(ref.task.id)
+        ? associatedProjectDepth.get(ref.task.id)!
+        : calculateAssociatedProjectDepth(ref.task)
       if (postResult.depth !== -1) {
         if (minDepth === -1 || postResult.depth < minDepth) {
           minDepth = postResult.depth
@@ -297,6 +312,27 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     return result
   }
   incompleteTasks.forEach(calculateAssociatedProjectDepth)
+
+  // Inherited project schedule (walk hard postreqs to nearest project with a schedule)
+  const inheritedProjectSchedule = new Map<number, number | null>()
+  const computeInheritedProjectSchedule = (task: Task): number | null => {
+    if (inheritedProjectSchedule.has(task.id)) return inheritedProjectSchedule.get(task.id)!
+    if (projectTasks.has(task.id) && task.schedule_id) {
+      inheritedProjectSchedule.set(task.id, task.schedule_id)
+      return task.schedule_id
+    }
+    const hardPosts = getIncompletePosts(task).filter(r => isHardDegree(r.degree))
+    for (const ref of hardPosts) {
+      const result = computeInheritedProjectSchedule(ref.task)
+      if (result !== null) {
+        inheritedProjectSchedule.set(task.id, result)
+        return result
+      }
+    }
+    inheritedProjectSchedule.set(task.id, null)
+    return null
+  }
+  incompleteTasks.forEach(computeInheritedProjectSchedule)
 
   // Inherited deadlines
   const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
@@ -366,7 +402,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     }
 
     let scheduleBonus = 0
-    const taskSchedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
+    const taskSchedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache, inheritedProjectSchedule)
     if (taskSchedule) {
       if (taskSchedule.isActiveAt(currentDay, currentTimeHHmm)) {
         const incompletePres = getIncompletePres(task)
@@ -384,7 +420,13 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
 
     const procedureBonus = (task.procedure_ids?.length ?? 0) > 0 ? 450 : 0
 
-    const total = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus + procedureBonus
+    const total = layerWeight
+      + starWeight * schedulerStarMod
+      + projectLayerWeight * schedulerProjectMod
+      + inProgressBonus * schedulerInProgressMod
+      + dueDateBonus * schedulerDueDateMod
+      + scheduleBonus * schedulerScheduleMod
+      + procedureBonus * schedulerProcedureMod
     const breakdown: PriorityBreakdown = {
       total,
       layerWeight,
@@ -423,7 +465,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
   // Resolve schedule for every task
   const taskScheduleKeyMap = new Map<number, ScheduleKey>()
   for (const task of incompleteTasks) {
-    const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache)
+    const schedule = resolveTaskSchedule(task, defaultSchedule, taskScheduleCache, inheritedProjectSchedule)
     const key = ensureSchedule(schedule)
     taskScheduleKeyMap.set(task.id, key)
   }

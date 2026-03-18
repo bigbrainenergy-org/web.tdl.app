@@ -26,11 +26,11 @@
               </div>
             </div>
             <TaskInputList v-model:task="currentTask as Task" />
-            <TaskInputSchedule v-model:task="currentTask as Task" />
+            <TaskInputSchedule v-model="currentTask.schedule_id" @update:schedule="updateSchedule" />
             <TaskInputProcedures v-model:task="currentTask as Task" />
             <TaskInputRemindMeAt v-model:task="currentTask as Task" />
             <TaskInputDueAt v-model:task="currentTask as Task" />
-            <TaskInputDuration v-model:task="currentTask as Task" />
+            <TaskInputDuration v-model="currentTask.task_duration_in_minutes" @update:duration="updateDuration" />
             <TaskInputEnergy v-model:task="currentTask as Task" />
             <br>
             <TaskInputNotes v-model:task="currentTask as Task" />
@@ -484,5 +484,13 @@
     depStore
       .removeRule(task.id, id_of_postreq)
       .then(handleSuccess('Removed a postrequisite'), handleError('Error removing the postrequisite'))
+  }
+
+  const updateDuration = async (task_duration_in_minutes: number | undefined) => {
+    await useTaskStore().apiUpdate(currentTask.value.id, { task_duration_in_minutes })
+  }
+
+  const updateSchedule = async (schedule_id: number | undefined) => {
+    await useTaskStore().apiUpdate(currentTask.value.id, { schedule_id })
   }
 </script>

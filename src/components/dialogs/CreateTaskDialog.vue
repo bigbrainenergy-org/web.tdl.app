@@ -50,6 +50,9 @@
 
             <br>
 
+            <TaskInputDuration v-model="duration" />
+            <TaskInputSchedule v-model="scheduleId" />
+
             <div class="row">
               <div class="col-grow">
                 <q-btn
@@ -72,6 +75,8 @@
   import { useDialogPluginComponent } from 'quasar'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { onMounted, ref } from 'vue'
+  import TaskInputDuration from '../TaskInputDuration.vue'
+  import TaskInputSchedule from '../TaskInputSchedule.vue'
 
   const emit = defineEmits([
     // REQUIRED; need to specify some events that your
@@ -91,6 +96,8 @@
 
   const title = ref('')
   const notes = ref('!!REFINE')
+  const duration = ref<number | undefined>(undefined)
+  const scheduleId = ref<number | undefined>(undefined)
 
   const titleInput = ref()
   const notesInput = ref()
@@ -107,7 +114,9 @@
     emit('create', {
       options: {
         title: title.value,
-        notes: notes.value
+        notes: notes.value,
+        task_duration_in_minutes: duration.value,
+        schedule_id: scheduleId.value
       },
       callback: clearFields
     })

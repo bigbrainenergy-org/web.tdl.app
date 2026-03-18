@@ -16,7 +16,16 @@
             <q-item-label v-if="result" class="text-primary">
               {{ result.scheduled.length }} scheduled
             </q-item-label>
-            <q-btn flat icon="settings" class="text-primary" @click="openScheduleManagerDialog" />
+            <q-btn flat label="Schedules" class="text-primary" @click="openScheduleManagerDialog" />
+            <GloriousSettingsPopup>
+              <GloriousSlider v-model="scheduleDisplayLimit" cute-name="Display Limit" :min="200" :max="4000" :step="200" />
+              <GloriousSlider v-model="schedulerStarMod" cute-name="Star" unit="x" :min="0" :max="2" :step="0.5" color="amber" />
+              <GloriousSlider v-model="schedulerProjectMod" cute-name="Project" unit="x" :min="0" :max="2" :step="0.5" color="blue" />
+              <GloriousSlider v-model="schedulerInProgressMod" cute-name="In Progress" unit="x" :min="0" :max="2" :step="0.5" color="green" />
+              <GloriousSlider v-model="schedulerDueDateMod" cute-name="Due Date" unit="x" :min="0" :max="2" :step="0.5" color="orange" />
+              <GloriousSlider v-model="schedulerScheduleMod" cute-name="Schedule" unit="x" :min="0" :max="2" :step="0.5" color="cyan" />
+              <GloriousSlider v-model="schedulerProcedureMod" cute-name="Procedure" unit="x" :min="0" :max="2" :step="0.5" color="purple" />
+            </GloriousSettingsPopup>
           </q-card-actions>
 
           <q-card-section v-if="!result" class="text-grey-5 text-center q-pa-xl">
@@ -25,7 +34,7 @@
 
           <q-card-section v-else class="q-pa-none" style="max-height: calc(100vh - 200px); overflow-y: auto">
             <q-list>
-              <template v-for="item in displayItems.slice(0, 1000)" :key="item.type === 'separator' ? 'sep-' + item.label : 'task-' + item.scheduled.task.id">
+              <template v-for="item in displayItems" :key="item.type === 'separator' ? 'sep-' + item.label : 'task-' + item.scheduled.task.id">
                 <!-- Day separator -->
                 <div
                   v-if="item.type === 'separator'"
@@ -139,13 +148,27 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { useMeta } from 'quasar'
+  import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { runAutoScheduler, type AutoScheduleResult, type ScheduledItem, type PriorityBreakdown } from 'src/composables/use-auto-scheduler'
   import { openUpdateTaskDialog, openScheduleManagerDialog } from 'src/utils/dialog-utils'
   import type { Task } from 'src/stores/tasks/task-model'
+  import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
 
   useMeta({ title: 'Schedule' })
+
+  const localSettings = useLocalSettingsStore()
+  const {
+    scheduleDisplayLimit,
+    schedulerStarMod,
+    schedulerProjectMod,
+    schedulerInProgressMod,
+    schedulerDueDateMod,
+    schedulerScheduleMod,
+    schedulerProcedureMod
+  } = storeToRefs(localSettings)
 
   type DisplayItem =
     | { type: 'separator'; label: string }
@@ -202,7 +225,9 @@
     setTimeout(() => {
       const taskStore = useTaskStore()
       const tasks = taskStore.incompleteOnly.value
-      result.value = runAutoScheduler(tasks)
+      const fullResult = runAutoScheduler(tasks)
+      fullResult.scheduled = fullResult.scheduled.slice(0, scheduleDisplayLimit.value)
+      result.value = fullResult
       isComputing.value = false
     }, 0)
   }
@@ -211,11 +236,10 @@
     openUpdateTaskDialog(task)
   }
 
-  const hasBreaks = computed(() => useLocalSettingsStore().taskBreaksBetween > 0)
+  const hasBreaks = computed(() => localSettings.taskBreaksBetween > 0)
 
   const breakGapPx = computed(() => {
-    const breakMin = useLocalSettingsStore().taskBreaksBetween
-    return Math.ceil(breakMin / 5) * 10
+    return Math.ceil(localSettings.taskBreaksBetween / 5) * 10
   })
 
   function cardHeight(durationMinutes: number): number {
@@ -242,6 +266,7 @@
       `In Progress: ${b.inProgressBonus}`,
       `Due Date:    ${Math.round(b.dueDateBonus * 10) / 10}`,
       `Schedule:    ${b.scheduleBonus}`,
+      `Procedure:   ${b.procedureBonus}`,
       '─────────────────',
       `Total:       ${Math.round(b.total)}`
     ]

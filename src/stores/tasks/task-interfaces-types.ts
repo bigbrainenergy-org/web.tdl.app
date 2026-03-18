@@ -36,7 +36,7 @@ export interface TaskLike {
   title: string
   notes?: string
   list_id?: number
-  schedule_id?: number
+  schedule_id?: number | null
   deadline_at?: string
   prioritize_at?: string
   remind_me_at?: string
