@@ -202,7 +202,7 @@ export function useTaskSorting() {
         if (cached !== undefined) return cached
 
         const layer = taskLayers.get(task.id) ?? 0
-        const layerWeight = (100 - layer) * 250
+        const layerWeight = (100 - layer) * 10
 
         const isStarred = taskStarredStore.isStarred(task.id) ? 2 : 0
         const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0

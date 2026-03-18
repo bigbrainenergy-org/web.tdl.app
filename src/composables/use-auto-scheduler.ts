@@ -341,7 +341,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     if (cached !== undefined) return cached.total
 
     const layer = taskLayers.get(task.id) ?? 0
-    const layerWeight = (100 - layer) * 250
+    const layerWeight = (100 - layer) * 10
 
     const isStarred = taskStarredStore.isStarred(task.id) ? 2 : 0
     const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
@@ -353,7 +353,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     const inProgressBonus = apdResult?.inprogress ? 50 : 0
 
     let dueDateBonus = 0
-    const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited, defaultDuration)
+    const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited, defaultDuration, isHardDegree)
     if (inherited) {
       const hoursRemaining = (inherited.deadline.getTime() - now.getTime()) / (1000 * 60 * 60)
       if (hoursRemaining > 0) {
@@ -546,7 +546,7 @@ export function runAutoScheduler(allTasks: Task[]): AutoScheduleResult {
     const startMs = currentTimeMs
     const endMs = startMs + durationMs
 
-    const inherited = computeInheritedDeadline(bestTask, deadlineMemo, deadlineVisited, defaultDuration)
+    const inherited = computeInheritedDeadline(bestTask, deadlineMemo, deadlineVisited, defaultDuration, isHardDegree)
     if (inherited && endMs > inherited.deadline.getTime()) {
       atRisk.push({
         task: bestTask,

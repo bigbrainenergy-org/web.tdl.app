@@ -18,7 +18,8 @@ export function computeInheritedDeadline(
   task: Task,
   memo: Map<number, InheritedDeadlineResult | null>,
   visited: Set<number>,
-  defaultDuration = 15
+  defaultDuration = 15,
+  isHardDegree?: (degree: 1 | 2 | 3 | null) => boolean
 ): InheritedDeadlineResult | null {
   if (memo.has(task.id)) return memo.get(task.id)!
   if (visited.has(task.id)) return null
@@ -41,7 +42,8 @@ export function computeInheritedDeadline(
 
   for (const ref of task.posts) {
     if (ref.task.completed) continue
-    const postResult = computeInheritedDeadline(ref.task, memo, visited, defaultDuration)
+    if (isHardDegree && !isHardDegree(ref.degree)) continue
+    const postResult = computeInheritedDeadline(ref.task, memo, visited, defaultDuration, isHardDegree)
     if (postResult) {
       const adjusted = new Date(
         postResult.deadline.getTime() - (ref.task.task_duration_in_minutes ?? defaultDuration) * 60_000
