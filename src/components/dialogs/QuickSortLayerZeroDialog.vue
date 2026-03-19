@@ -173,8 +173,6 @@
     enableQuickSortOnLayerZeroQTY,
     // enableQuickSortOnNewTask,
     quickSortDialogMaxToShow,
-    enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize,
     quickSortLayerZeroDegree
   } = storeToRefs(useLocalSettingsStore())
 
@@ -302,14 +300,6 @@
   const generateNewPair = (): Task[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
-    if (enableQuickSortBailOnBigTask.value) {
-      if (
-        layerZero.value.filter(
-          (x) => x.t.grabPostreqs(true).length > quickSortBailOnTaskSize.value
-        ).length > 0
-      )
-        throw new Error('There is already a layer zero task that is big')
-    }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
     let toGenerateFrom = []
     if(layerZero.value.length - priorMVPs.size > howManyToSelect) toGenerateFrom = layerZero.value.filter(x => !priorMVPs.has(x.t.id))

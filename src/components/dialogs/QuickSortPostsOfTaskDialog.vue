@@ -151,8 +151,6 @@
     enableQuickSortOnLayerZeroQTY,
     // enableQuickSortOnNewTask,
     quickSortDialogMaxToShow,
-    enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize,
     strictModeMaxPostreqs,
     quickSortPostsDegree
   } = storeToRefs(useLocalSettingsStore())

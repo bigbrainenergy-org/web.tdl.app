@@ -10,8 +10,7 @@
     disableTaskBreakdown,
     enableQuickSortOnNewTask,
     enableQuickSortOnLayerZeroQTY,
-    enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize
+    disableQuickSortPosts
   } = storeToRefs(useLocalSettingsStore())
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
@@ -32,6 +31,7 @@
           <div class="col-12">
             <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
             <GloriousToggle v-model:model-value="disableTaskBreakdown" label="Disable Task Breakdown" />
+            <GloriousToggle v-model:model-value="disableQuickSortPosts" label="Disable Quick Sort Postreqs" />
             <GloriousSlider
               v-model:model-value="enableQuickSortOnLayerZeroQTY"
               :min="1"
@@ -42,17 +42,6 @@
             <GloriousToggle
               v-model:model-value="enableQuickSortOnNewTask"
               label="Quick Sort on Any Task w/o Postreqs"
-            />
-            <GloriousToggle
-              v-model:model-value="enableQuickSortBailOnBigTask"
-              label="Abort quick sort if there is a task with gobs of postreqs"
-            />
-            <GloriousSlider
-              v-model:model-value="quickSortBailOnTaskSize"
-              :min="3"
-              :max="30"
-              :step="1"
-              cute-name="How many postreqs is too many?"
             />
           </div>
         </div>

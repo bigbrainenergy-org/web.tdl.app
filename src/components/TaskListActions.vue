@@ -88,7 +88,7 @@
 
   const localSettingsStore = useLocalSettingsStore()
 
-  const { layerZeroOnly, hideCompleted, autoScalePriority, currentSortingMode, searchDebounce } = storeToRefs(localSettingsStore)
+  const { layerZeroOnly, hideCompleted, autoScalePriority, currentSortingMode, searchDebounce, disableQuickSortPosts, strictModeMaxPostreqs } = storeToRefs(localSettingsStore)
 
   const tasksPageSettings = ref({
     'Unblocked Only': layerZeroOnly,
@@ -112,22 +112,22 @@
   })
 
   const agendaOnFire = computed(() => {
+    if(disableQuickSortPosts.value) return false
     if(busy.value) return false
     // taskListActionsLogger.debug('inspecting agenda.')
     let countFire = 0
-    const fireAmt = localSettingsStore.strictModeMaxPostreqs
     const t = firstTenTasks.value[0]
     const qtyNonRecurringPostreqs = (x: Task) => x.grabPostreqs(true).filter(x => (x.procedure_ids ?? []).length === 0).length
     if(typeof t === 'undefined') {
       //taskListActionsLogger.debug('task 0 was undefined')
       return false
     }
-    if(qtyNonRecurringPostreqs(t) > fireAmt) {
+    if(qtyNonRecurringPostreqs(t) > strictModeMaxPostreqs.value) {
       //taskListActionsLogger.debug(`${t.title} has too many non procedure tasks`)
       return true
     }
     for(let i = 1; i < firstTenTasks.value.length; i++) {
-      if(qtyNonRecurringPostreqs(firstTenTasks.value[i]!) > fireAmt) {
+      if(qtyNonRecurringPostreqs(firstTenTasks.value[i]!) > strictModeMaxPostreqs.value) {
         //taskListActionsLogger.debug(`${firstTenTasks.value[i]!.title} has too many non procedure tasks`)
         countFire++
       }

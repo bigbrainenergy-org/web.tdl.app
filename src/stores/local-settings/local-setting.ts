@@ -25,6 +25,7 @@ interface LocalSettingsState {
   graphTraverseThroughCompleted: boolean // include completed tasks but don't traverse their dependencies
   reverseTreeView: boolean
   disableQuickSort: boolean
+  disableQuickSortPosts: boolean
   disableTaskBreakdown: boolean
   enableQuickSortOnNewTask: boolean
   enableQuickSortOnLayerZeroQTY:
@@ -55,8 +56,6 @@ interface LocalSettingsState {
   autoScalePriority: boolean
   quickSortDialogMaxToShow: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
   toolbarButtons: RouteTab[]
-  enableQuickSortBailOnBigTask: boolean
-  quickSortBailOnTaskSize: number
   taskPostreqInfoView: 'Quantity' | 'Strict'
   strictModeMaxPostreqs: 1 | 2 | 3 | 4 | 5 | 6
   sideBarOpen: boolean
@@ -145,6 +144,7 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       graphTraverseThroughCompleted: false,
       reverseTreeView: false,
       disableQuickSort: true,
+      disableQuickSortPosts: false,
       disableTaskBreakdown: false,
       enableQuickSortOnNewTask: false,
       enableQuickSortOnLayerZeroQTY: 1,
@@ -155,8 +155,6 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       autoScalePriority: false,
       quickSortDialogMaxToShow: 2,
       toolbarButtons: originalToolbarButtons,
-      enableQuickSortBailOnBigTask: false,
-      quickSortBailOnTaskSize: 9,
       taskPostreqInfoView: 'Quantity',
       strictModeMaxPostreqs: 1,
       sideBarOpen: true,
