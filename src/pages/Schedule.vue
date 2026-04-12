@@ -136,6 +136,7 @@
                 <q-item-label caption class="text-grey-5">
                   Due {{ formatDate(item.deadline) }}
                 </q-item-label>
+                <TaskPuntChip :task="item.task as Task" />
               </q-item-section>
             </q-item>
           </q-list>
@@ -156,6 +157,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
   import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import TaskPuntChip from 'src/components/TaskPuntChip.vue'
 
   useMeta({ title: 'Schedule' })
 

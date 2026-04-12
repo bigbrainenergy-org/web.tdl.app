@@ -56,6 +56,7 @@ export const recalculate = (caller?: string) => {
   if (currentSortingMode.value === 'sortByAgenda') {
     // Agenda sort only needs incomplete tasks to traverse the dependency graph
     taskList = useTaskStore().incompleteOnly.value
+    console.log('got incomplete only task list')
   } else if(currentBaseQueryMode.value === 'allTasks') {
     taskList = useTaskStore().array
   } else if(currentBaseQueryMode.value === 'layerZero') {

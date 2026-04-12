@@ -75,6 +75,7 @@ interface LocalSettingsState {
   schedulerDueDateMod: number
   schedulerScheduleMod: number
   schedulerProcedureMod: number
+  defaultDueTime: string
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -117,6 +118,13 @@ const originalToolbarButtons: RouteTab[] = [
     icon: 'fa-solid fa-star',
     to: '/routines',
     label: 'Routines',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-calendar-day',
+    to: '/schedule',
+    label: 'Schedule',
     enabled: true,
     default: false
   }
@@ -173,7 +181,8 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       schedulerInProgressMod: 1,
       schedulerDueDateMod: 1,
       schedulerScheduleMod: 1,
-      schedulerProcedureMod: 1
+      schedulerProcedureMod: 1,
+      defaultDueTime: '23:59'
     }
   },
   persist: true,

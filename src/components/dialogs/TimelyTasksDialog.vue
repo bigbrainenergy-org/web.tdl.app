@@ -18,7 +18,12 @@
           </q-item-section>
         </q-item>
         <q-intersection v-for="task in reminders.overdueTasks" :key="task.id" once style="min-height: 48px">
-          <TaskItem :task="task" @click="openUpdateTaskDialog(task)" />
+          <div class="row items-center no-wrap">
+            <div class="col">
+              <TaskItem :task="task" @click="openUpdateTaskDialog(task)" />
+            </div>
+            <TaskPuntChip :task="task" />
+          </div>
         </q-intersection>
       </q-card-section>
 
@@ -44,6 +49,7 @@
   import { useDialogPluginComponent } from 'quasar'
   import { openUpdateTaskDialog } from 'src/utils/dialog-utils'
   import TaskItem from 'src/components/TaskItem.vue'
+  import TaskPuntChip from 'src/components/TaskPuntChip.vue'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
 

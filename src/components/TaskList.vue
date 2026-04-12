@@ -44,6 +44,7 @@
         v-slot="{ item }"
         :items="tasksWithMetadata"
         :virtual-scroll-item-size="56"
+        :virtual-scroll-slice-size="40"
         style="height: calc(100vh - 200px); min-height: 400px"
       >
         <TaskItem
@@ -61,7 +62,7 @@
 <script setup lang="ts">
   import TaskItem from 'src/components/TaskItem.vue'
 
-  import { computed, toRef } from 'vue'
+  import { computed, nextTick, toRef, watch } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskMetadata } from 'src/composables/use-task-metadata'
@@ -87,7 +88,10 @@
 
   // Compute metadata once for all tasks, then v-bind to TaskItem
   const { computeMetadataForTasks } = useTaskMetadata()
-  const tasksWithMetadata = computeMetadataForTasks(tasks)
+  let tasksWithMetadata = Object.freeze(computeMetadataForTasks(tasks).value)
+  watch(tasks, () => {
+    tasksWithMetadata = Object.freeze(computeMetadataForTasks(tasks).value)
+  })
 
   const loading = computed(() => useLoadingStateStore().busy)
 </script>

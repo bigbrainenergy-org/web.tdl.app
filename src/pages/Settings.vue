@@ -20,6 +20,10 @@
           <DefaultPageSwitcher />
           <BackgroundSwitcher />
           <NotificationTimeSetting />
+          <q-separator class="q-my-md" />
+          <p>Default Due Time</p>
+          <q-input v-model="defaultDueTime" filled type="time" style="max-width: 200px; margin: auto" />
+          <q-separator class="q-my-md" />
         </div>
         <q-btn class="q-ma-md" icon="fas fa-bell" color="indigo" label="Test Notification" />
 
@@ -82,6 +86,10 @@
   import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
   import DependencyDegreeSettingsDialog from 'src/components/dialogs/DependencyDegreeSettingsDialog.vue'
   import { openScheduleManagerDialog } from 'src/utils/dialog-utils'
+  import { storeToRefs } from 'pinia'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+
+  const { defaultDueTime } = storeToRefs(useLocalSettingsStore())
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 

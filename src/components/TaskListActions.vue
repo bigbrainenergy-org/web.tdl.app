@@ -74,6 +74,7 @@
   import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
   import { searchInput } from 'src/stores/tasks/task-utils'
   import { fuseOptions } from 'src/utils/search-utils'
+  import { recalculate } from 'src/stores/tasks/task-view'
 
   const taskListActionsLogger = new Logger('Task List Actions', '#555555')
   taskListActionsLogger.log('component mounting')
@@ -102,6 +103,7 @@
       console.log('agenda mode is now on')
       currentSortingMode.value = 'sortByAgenda'
     }
+    recalculate('toggle agenda')
   }
 
   const { busy } = storeToRefs(useLoadingStateStore())
