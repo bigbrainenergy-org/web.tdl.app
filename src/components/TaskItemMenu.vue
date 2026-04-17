@@ -9,7 +9,7 @@
   import type { Task } from 'src/stores/tasks/task-model'
   import type { SimpleMenuItem } from 'src/utils/types'
   import MenuListItem from './MenuListItem.vue'
-  import { updateTask } from 'src/utils/task-utils'
+  import { updateTask, puntTask } from 'src/utils/task-utils'
   import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
   import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
 
@@ -33,6 +33,8 @@
   const toggleNeedsRefinement = (task: Task) => {
     needsRefinementStore.toggle(task.id)
   }
+
+  const punt = (unit: 'days' | 'weeks' | 'months') => (task: Task) => puntTask(task, unit)
 
   const menuItems: SimpleMenuItem<Task>[] = [
     {
@@ -105,6 +107,16 @@
           icon: 'clock',
           action: updateEstimate(75)
         }
+      ]
+    },
+    {
+      label: 'Punt',
+      icon: 'schedule',
+      action: () => {},
+      items: [
+        { label: '+D', icon: 'today', action: punt('days') },
+        { label: '+W', icon: 'date_range', action: punt('weeks') },
+        { label: '+M', icon: 'calendar_month', action: punt('months') }
       ]
     },
     {

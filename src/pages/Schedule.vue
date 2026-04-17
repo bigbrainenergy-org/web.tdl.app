@@ -147,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useMeta } from 'quasar'
   import { storeToRefs } from 'pinia'
   import { useTaskStore } from 'src/stores/tasks/task-store'
@@ -176,16 +176,21 @@
     | { type: 'separator'; label: string }
     | { type: 'task'; scheduled: ScheduledItem; startTime: Date; endTime: Date }
 
+  const taskStore = useTaskStore()
+
   const result = ref<AutoScheduleResult | null>(null)
   const isComputing = ref(false)
   const completedIds = ref(new Set<number>())
+
+  watch(() => taskStore.arrayVersion, () => {
+    if (result.value) compute()
+  })
 
   function isCompleted(task: Task): boolean {
     return completedIds.value.has(task.id) || task.completed
   }
 
   async function toggleCompletion(task: Task) {
-    const taskStore = useTaskStore()
     const liveTask = taskStore.mapp.get(task.id)
     if (!liveTask) return
 
@@ -225,7 +230,6 @@
   function compute() {
     isComputing.value = true
     setTimeout(() => {
-      const taskStore = useTaskStore()
       const tasks = taskStore.incompleteOnly.value
       const fullResult = runAutoScheduler(tasks)
       fullResult.scheduled = fullResult.scheduled.slice(0, scheduleDisplayLimit.value)

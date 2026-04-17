@@ -4,6 +4,7 @@ import { useTaskStore } from 'src/stores/tasks/task-store'
 import type { Task } from 'src/stores/tasks/task-model'
 import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 import { Logger } from './d'
+import { DateTime } from 'luxon'
 
 const TaskUtilsLogger = new Logger('Task Utils')
 
@@ -14,6 +15,21 @@ export function createTask(payload: CreateTaskOptions) {
     .then(() => {
       // notifySuccess('Successfully created a task')
     }, handleError('Failed to create task.'))
+}
+
+export function puntTask(task: Task, unit: 'days' | 'weeks' | 'months') {
+  const base = task.deadline_at ? DateTime.fromISO(task.deadline_at) : DateTime.now()
+  const originalTime = task.deadline_at
+    ? { hour: base.hour, minute: base.minute, second: base.second, millisecond: base.millisecond }
+    : null
+  let newDate = base
+  do {
+    newDate = newDate.plus({ [unit]: 1 })
+  } while (newDate <= DateTime.now())
+  if (originalTime) newDate = newDate.set(originalTime)
+  useTaskStore()
+    .apiUpdate(task.id, { deadline_at: newDate.toISO()! })
+    .then(() => notifySuccess('Deadline punted'), handleError('Error updating deadline'))
 }
 
 export function updateTask(id: number, options: AllOptionalTaskProperties) {
