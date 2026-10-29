@@ -18,8 +18,13 @@ export default tseslint.config(
       '**/src-electron/*',
       '**/src-pwa/*',
       '**/*.d.ts',
+      '**/test/*', // adding temporarily
       '.quasar',
       '.postcssrc.js',
+      '.eslintrc.cjs',
+      '/quasar.config.*.temporary.compiled*',
+      '*.config.mjs',
+      '*.config.mts'
     ]
   },
   // Import recommendations for all plugins
@@ -55,6 +60,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/restrict-plus-operands': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
@@ -63,6 +69,10 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports' }
+      ],
       'vue/attribute-hyphenation': 'off',
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',

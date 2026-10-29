@@ -1,4 +1,5 @@
-import { PageNameBuiltins, StronglyTypedRouteRecordRaw } from './REEEE'
+import type { StronglyTypedRouteRecordRaw } from './REEEE'
+import { PageNameBuiltins } from './REEEE'
 
 // Add your page names here. Formatting:
 // - Capitalize first letter
@@ -10,8 +11,9 @@ const PageNames = [
   'Tree',
   'Settings',
   'Graph',
-  'Agenda',
+  'Projects',
   'Routines',
+  'Schedule',
   'Login',
   'Empty',
   'Error 404'
@@ -58,6 +60,11 @@ const routes: StronglyTypedRouteRecordRaw[] = [
         component: () => import('src/pages/Graph.vue')
       },
       {
+        path: 'projects',
+        name: 'Projects',
+        component: () => import('src/pages/Projects.vue')
+      },
+      {
         path: 'agenda',
         name: 'Agenda',
         component: () => import('src/pages/Agenda.vue')
@@ -66,6 +73,11 @@ const routes: StronglyTypedRouteRecordRaw[] = [
         path: 'routines',
         name: 'Routines',
         component: () => import('src/pages/Routines.vue')
+      },
+      {
+        path: 'schedule',
+        name: 'Schedule',
+        component: () => import('src/pages/Schedule.vue')
       }
     ] as StronglyTypedRouteRecordRaw[]
   },

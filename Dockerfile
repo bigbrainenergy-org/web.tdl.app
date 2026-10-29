@@ -12,7 +12,7 @@ COPY ./babel.config.js .
 COPY ./index.html .
 COPY ./LICENSE .
 COPY ./package.json .
-COPY ./quasar.config.js .
+COPY ./quasar.config.ts .
 COPY ./quasar.extensions.json .
 COPY ./server.js .
 COPY ./tsconfig.json .

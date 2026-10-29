@@ -23,7 +23,7 @@
         </q-item>
         <q-item v-for="(item, itemkey) in items" :key="itemkey" v-ripple>
           <q-btn-dropdown
-            style="width: 100%; overflow: hidden"
+            style="width: 100%"
             split
             auto-close
             dropdown-icon="more_vert"
@@ -36,7 +36,13 @@
                   @update:model-value="emit('toggleCompletedItem', item)"
                 />
               </q-item-section>
-              <q-item-section class="vertical-top wrapped" :style="style">
+              <q-item-section v-if="degrees.size > 0" side>
+                <DegreeStars
+                  :model-value="degrees.get(item.id) ?? null"
+                  @update:model-value="(val) => emit('updateDegree', { taskId: item.id, degree: val })"
+                />
+              </q-item-section>
+              <q-item-section class="vertical-top wrapped" :style="{ ...style, overflow: 'hidden' }">
                 <q-icon
                   v-if="isNearRedundant(item.id)"
                   name="fas fa-triangle-exclamation"
@@ -47,23 +53,18 @@
                   name="fas fa-triangle-exclamation"
                   color="red"
                 />
+                <q-icon
+                  v-if="item.notes?.includes('!PROJECT')"
+                  name="fa-solid fa-folder-open"
+                  color="primary"
+                />
                 <q-item-label lines="2">
                   {{ item.title }}
                 </q-item-label>
               </q-item-section>
             </template>
             <q-list>
-              <q-item
-                v-for="(menuitem, index) in menuItems"
-                :key="index"
-                v-close-popup
-                clickable
-                @click.stop="menuitem.action(item)"
-              >
-                <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-                <q-space />
-                <q-icon :name="menuitem.icon" />
-              </q-item>
+              <MenuListItem v-for="(menuitem, index) in menuItems" :key="index" :item="item" :menu-item="menuitem" />
             </q-list>
           </q-btn-dropdown>
         </q-item>
@@ -75,11 +76,13 @@
 <script setup lang="ts">
   import { useElementSize } from '@vueuse/core'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task } from 'src/stores/tasks/task-model'
-  import { SimpleMenuItem } from 'src/utils/types'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import type { SimpleMenuItem } from 'src/utils/types'
   import { computed, onMounted } from 'vue'
   import { onUpdated } from 'vue'
   import { ref } from 'vue'
+  import MenuListItem from './MenuListItem.vue'
+  import DegreeStars from './glorious/DegreeStars.vue'
 
   export interface EntityType {
     singular: string
@@ -91,13 +94,15 @@
     dependencyType?: EntityType // eg. Prerequisites (capitalize)
     menuItems?: Array<SimpleMenuItem<Task>>
     showPrune?: boolean
+    degrees?: Map<number, 1 | 2 | 3 | null>
   }
 
   const prop = withDefaults(defineProps<Props>(), {
     items: () => [],
     dependencyType: () => ({ plural: 'Requisites', singular: 'Requisite' }),
     menuItems: () => [],
-    showPrune: false
+    showPrune: false,
+    degrees: () => new Map()
   })
 
   // can do something like this to limit recalculations, especially when setting a task as MVP
@@ -113,7 +118,8 @@
     'removeItem',
     'selectItem',
     'toggleCompletedItem',
-    'pruneDependencies'
+    'pruneDependencies',
+    'updateDegree'
   ])
 
   const busySignal = computed(() => useLoadingStateStore().busy)

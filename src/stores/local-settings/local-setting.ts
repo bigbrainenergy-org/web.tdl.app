@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { RouteTab } from 'src/utils/types'
+import type { RouteTab } from 'src/utils/types'
 // import { Model } from 'pinia-orm'
 // import { Attr, Bool, Str, Uid } from 'pinia-orm/dist/decorators';
 
@@ -10,7 +10,7 @@ interface LocalSettingsState {
   taskSearch: string
   currentBaseQueryMode: string
   currentFilteringMode: string
-  currentSortingMode: string
+  currentSortingMode: 'sortByPostreqs' | 'sortByAgenda'
   selectedList: string
   selectedTags: Array<string>
   tagsFilter: string
@@ -19,8 +19,14 @@ interface LocalSettingsState {
   expandEnergyStats: boolean
   expandAllWithSameID: boolean
   maxGraphNodeRadius: number
+  graphTraversalDepth: number // 0 = layer zero only, 1+ = include prereqs at that depth
+  graphDepthPres: number // depth of prereqs to show in task dialog graph
+  graphDepthPosts: number // depth of postreqs to show in task dialog graph
+  graphTraverseThroughCompleted: boolean // include completed tasks but don't traverse their dependencies
   reverseTreeView: boolean
   disableQuickSort: boolean
+  disableQuickSortPosts: boolean
+  disableTaskBreakdown: boolean
   enableQuickSortOnNewTask: boolean
   enableQuickSortOnLayerZeroQTY:
     | 1
@@ -50,8 +56,26 @@ interface LocalSettingsState {
   autoScalePriority: boolean
   quickSortDialogMaxToShow: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
   toolbarButtons: RouteTab[]
-  enableQuickSortBailOnBigTask: boolean
-  quickSortBailOnTaskSize: number
+  taskPostreqInfoView: 'Quantity' | 'Strict'
+  strictModeMaxPostreqs: 1 | 2 | 3 | 4 | 5 | 6
+  sideBarOpen: boolean
+  agendaSortLimit: number
+  quickSortLayerZeroDegree: 1 | 2 | 3 | null
+  quickSortPostsDegree: 1 | 2 | 3 | null
+  addDependencyDegree: 1 | 2 | 3 | null
+  taskBreakdownDegree: 1 | 2 | 3 | null
+  unsetDegreeBehavior: 1 | 2 | 3,
+  searchDebounce: number
+  defaultTaskDuration: number
+  taskBreaksBetween: number
+  scheduleDisplayLimit: number
+  schedulerStarMod: number
+  schedulerProjectMod: number
+  schedulerInProgressMod: number
+  schedulerDueDateMod: number
+  schedulerScheduleMod: number
+  schedulerProcedureMod: number
+  defaultDueTime: string
 }
 
 const originalToolbarButtons: RouteTab[] = [
@@ -70,13 +94,6 @@ const originalToolbarButtons: RouteTab[] = [
     default: false
   },
   {
-    icon: 'fa-solid fa-inbox',
-    to: '/agenda',
-    label: 'Agenda',
-    enabled: true,
-    default: false
-  },
-  {
     icon: 'fa-solid fa-project-diagram',
     to: '/tree',
     label: 'Tree',
@@ -91,9 +108,23 @@ const originalToolbarButtons: RouteTab[] = [
     default: false
   },
   {
+    icon: 'fa-solid fa-folder-open',
+    to: '/projects',
+    label: 'Projects',
+    enabled: true,
+    default: true
+  },
+  {
     icon: 'fa-solid fa-star',
     to: '/routines',
     label: 'Routines',
+    enabled: true,
+    default: false
+  },
+  {
+    icon: 'fa-solid fa-calendar-day',
+    to: '/schedule',
+    label: 'Schedule',
     enabled: true,
     default: false
   }
@@ -115,8 +146,14 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       expandEnergyStats: false,
       expandAllWithSameID: false,
       maxGraphNodeRadius: 100,
+      graphTraversalDepth: 4,
+      graphDepthPres: 2,
+      graphDepthPosts: 2,
+      graphTraverseThroughCompleted: false,
       reverseTreeView: false,
       disableQuickSort: true,
+      disableQuickSortPosts: false,
+      disableTaskBreakdown: false,
       enableQuickSortOnNewTask: false,
       enableQuickSortOnLayerZeroQTY: 1,
       backgroundMode: 'image',
@@ -126,8 +163,26 @@ export const useLocalSettingsStore = defineStore('local-settings', {
       autoScalePriority: false,
       quickSortDialogMaxToShow: 2,
       toolbarButtons: originalToolbarButtons,
-      enableQuickSortBailOnBigTask: false,
-      quickSortBailOnTaskSize: 9
+      taskPostreqInfoView: 'Quantity',
+      strictModeMaxPostreqs: 1,
+      sideBarOpen: true,
+      agendaSortLimit: 200,
+      quickSortLayerZeroDegree: 1,
+      quickSortPostsDegree: 1,
+      addDependencyDegree: 2,
+      taskBreakdownDegree: 3,
+      unsetDegreeBehavior: 2,
+      searchDebounce: 100,
+      defaultTaskDuration: 15,
+      taskBreaksBetween: 3,
+      scheduleDisplayLimit: 600,
+      schedulerStarMod: 1,
+      schedulerProjectMod: 1,
+      schedulerInProgressMod: 1,
+      schedulerDueDateMod: 1,
+      schedulerScheduleMod: 1,
+      schedulerProcedureMod: 1,
+      defaultDueTime: '23:59'
     }
   },
   persist: true,

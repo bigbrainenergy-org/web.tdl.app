@@ -1,5 +1,5 @@
 <template>
-  <q-drawer v-model="drawer" side="left" elevated dark show-if-above :width="200" :breakpoint="500">
+  <q-drawer v-model="drawer" side="left" elevated dark :width="200" :breakpoint="500">
     <q-list padding>
       <q-item v-ripple clickable @click="openCreateTaskDialog">
         <q-item-section avatar>
@@ -53,6 +53,14 @@
         </q-item-section>
 
         <q-item-section>Agenda</q-item-section>
+      </q-item>
+
+      <q-item v-ripple clickable @click="$router.push('/schedule')">
+        <q-item-section avatar>
+          <q-icon name="fa-solid fa-calendar-check" />
+        </q-item-section>
+
+        <q-item-section>Schedule</q-item-section>
       </q-item>
 
       <q-item
@@ -125,7 +133,8 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRepo } from 'pinia-orm'
-  import { List, ListRepo } from 'src/stores/lists/list'
+  import type { List} from 'src/stores/lists/list'
+  import { ListRepo } from 'src/stores/lists/list'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import { autoContrastTextColor } from 'src/utils/color-utils'

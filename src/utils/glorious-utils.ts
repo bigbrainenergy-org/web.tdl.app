@@ -1,5 +1,5 @@
-import { Ref } from 'vue'
-import { λ } from './types'
+import type { Ref } from 'vue'
+import type { λ } from './types'
 
 export interface GloriousSliderProp {
   beginIcon?: string

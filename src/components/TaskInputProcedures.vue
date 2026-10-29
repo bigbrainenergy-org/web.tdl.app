@@ -19,8 +19,9 @@
 
 <script setup lang="ts">
   import { useRepo } from 'pinia-orm'
-  import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Procedure} from 'src/stores/procedures/procedure'
+  import { ProcedureRepo } from 'src/stores/procedures/procedure'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { updateTask } from 'src/utils/task-utils'
   import { computed, ref, watch } from 'vue'
 

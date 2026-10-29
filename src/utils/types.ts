@@ -1,5 +1,5 @@
-import { AxiosError } from 'axios'
-import { RouteTo } from 'src/router/routes'
+import type { AxiosError } from 'axios'
+import type { RouteTo } from 'src/router/routes'
 
 // hahaha.... started as a joke but I kindof like it.
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
@@ -28,7 +28,8 @@ export class NodeKey {
 export type SimpleMenuItem<T> = {
   label: string
   icon: string
-  action: λ<T, Promise<T | void> | void>
+  action: λ<T, unknown>
+  items?: SimpleMenuItem<T>[]
 }
 
 export type ApiError = Error | AxiosError<unknown, any>
@@ -97,6 +98,7 @@ const icons = [
   'fa-solid fa-star',
   'fa-solid fa-list-check',
   'fa-solid fa-calendar-day',
+  'fa-solid fa-folder-open',
   'hub',
   'self_improvement'
 ] as const

@@ -9,11 +9,9 @@
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
-        <SettingsButton
-          v-model:settings="taskSearchSettings"
-          name="Task Search Settings"
-          color="white"
-        />
+        <GloriousSettingsPopup>
+          <GloriousToggle v-model:model-value="hideCompleted" label="Omit Completed Tasks" />
+        </GloriousSettingsPopup>
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -45,19 +43,13 @@
                     @click="createTask"
                   />
                 </q-item>
-                <q-item
+                <TaskItem
                   v-for="task in results"
                   :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as Task)"
-                >
-                  <q-item-section>
-                    <q-item-label lines="2">
-                      {{ task.title }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
+                  :task="task as Task"
+                  @task-clicked="selectTask(task as Task)"
+                  @task-completion-toggled="() => {}"
+                />
               </q-list>
             </template>
           </div>
@@ -73,16 +65,21 @@
   // import { useRepo } from 'pinia-orm'
   // import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { λ } from 'src/utils/types'
+  import type { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult } from 'fuse.js'
+  import Fuse from 'fuse.js'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
-  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
   import { hardCheck } from 'src/utils/type-utils'
   import { timeThisB } from 'src/utils/performance-utils'
+  import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from '../glorious/GloriousToggle.vue'
+  import TaskItem from '../TaskItem.vue'
+  import { fuseOptions } from 'src/utils/search-utils'
+  import { storeToRefs } from 'pinia'
 
   interface Props {
     dialogTitle: string
@@ -143,13 +140,7 @@
   // const tr = useRepo(TaskRepo)
   // const usr = useLocalSettingsStore()
 
-  const usr = useLocalSettingsStore()
-  const hideCompleted = ref(usr.hideCompleted)
-  const taskSearchSettings = ref({ 'Omit Completed Tasks': hideCompleted })
-
-  watch(hideCompleted, () => {
-    usr.hideCompleted = hideCompleted.value
-  })
+  const { hideCompleted } = storeToRefs(useLocalSettingsStore())
 
   /**
    * The default batch filter checks if current task is defined, plus checks omitRedundant setting to provide default behavior of the task search dialog.
@@ -161,7 +152,7 @@
   //   return tasks
   // }
 
-  const selectTask = (task: Task) => {
+  const selectTask = (task: TaskLike) => {
     emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
@@ -177,7 +168,7 @@
       title: searchString.value
     }
     const newTask = await useTaskStore().apiCreate(toCreate)
-    if (newTask !== null) selectTask(newTask)
+    if (typeof newTask !== 'undefined' && newTask !== null) selectTask(newTask)
   }
 
   const hideDialog = () => {
@@ -187,7 +178,7 @@
 
   // can't set this in withDefaults... don't even try
   // DON'T
-  const defaultFilter = (currentTaskID: number | undefined) => {
+  const defaultFilter = () => {
     const filterCompleted = useLocalSettingsStore().hideCompleted
     if (filterCompleted) {
       return (x: Task) => {
@@ -195,35 +186,29 @@
         return true
       }
     }
-    return (x: Task) => true
+    return () => true
   }
 
   const filterish = computed(() => props.initialFilter ?? defaultFilter)
 
   const getTasks = () => {
-    console.debug('getting pre filtered task list.')
+    //console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
+    const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
-      console.warn(
-        `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
-          allTasks.length / 2
-        }ms`
-      )
-    return allTasks
+      // console.warn(
+      //   `getting pre-filtered task list took ${Math.floor(duration)}ms - target is ${
+      //     allTasks.length / 2
+      //   }ms`
+      // )
+      return allTasks
   }
 
   const tasks = computed(getTasks)
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
-  const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+  const fuse = computed(() => new Fuse(tasks.value ?? [], fuseOptions))
 
   const searchForTasks = () => {
     const start = performance.now()
@@ -233,14 +218,14 @@
     // FIXME: AKA this is a vuln waiting to happen, fix it.
     const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
 
-    console.log({ run })
+    //console.log({ run })
 
     results.value = run.map((x) => x.item)
     const duration = Math.floor(performance.now() - start)
-    console.log(`task search took ${Math.floor(duration)}ms`)
+    //console.log(`task search took ${Math.floor(duration)}ms`)
     if (duration * 2 > debounceAmount.value) {
       const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
-      console.warn(`rolling back debounce to ${newDebounce}`)
+      //console.warn(`rolling back debounce to ${newDebounce}`)
       debounceAmount.value = newDebounce
     }
   }

@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios'
+import type { AxiosError } from 'axios'
 import { useQuasar } from 'quasar'
 import { useAuthenticationStore } from 'src/stores/authentication/pinia-authentication'
 import { useAxiosStore } from 'src/stores/axios-store'

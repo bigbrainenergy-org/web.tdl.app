@@ -29,7 +29,7 @@
               v-model:model-value="title"
               filled
               clearable
-              :debounce="debounceAmount"
+              :debounce="searchDebounce"
               label="Procedure Title"
               @update:model-value="searchForProcedures"
               @keyup.enter="searchForProcedures"
@@ -86,13 +86,18 @@
 </template>
 
 <script setup lang="ts">
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult } from 'fuse.js'
+  import Fuse from 'fuse.js'
+  import { storeToRefs } from 'pinia'
   import { useRepo } from 'pinia-orm'
   import { useDialogPluginComponent } from 'quasar'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+  import type { Procedure} from 'src/stores/procedures/procedure'
+  import { ProcedureRepo } from 'src/stores/procedures/procedure'
   import { openProcedureDetailsDialog } from 'src/utils/dialog-utils'
   import { timeThisB } from 'src/utils/performance-utils'
+  import { fuseOptions } from 'src/utils/search-utils'
   import { computed, onMounted, ref } from 'vue'
 
   const emit = defineEmits([
@@ -114,7 +119,7 @@
   const title = ref('')
   const notes = ref('')
 
-  const debounceAmount = ref(100)
+  const { searchDebounce } = storeToRefs(useLocalSettingsStore())
   const results = ref<Procedure[]>([])
 
   const createProcedure = () => {
@@ -129,13 +134,7 @@
 
   const procedures = computed(() => useRepo(ProcedureRepo).all())
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
-  const fuse = computed(() => new Fuse(procedures.value, searchOptions))
+  const fuse = computed(() => new Fuse(procedures.value, fuseOptions))
 
   const searchForProcedures = () => {
     const start = performance.now()
@@ -154,10 +153,10 @@
     results.value = run.slice(0, 3).map((x) => x.item)
     const duration = Math.floor(performance.now() - start)
     console.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value) {
-      const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+    if (duration * 2 > searchDebounce.value) {
+      const newDebounce = Math.min(500, Math.max(duration * 2, searchDebounce.value))
       console.warn(`rolling back debounce to ${newDebounce}`)
-      debounceAmount.value = newDebounce
+      searchDebounce.value = newDebounce
     }
   }
 

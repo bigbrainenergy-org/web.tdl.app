@@ -2,11 +2,13 @@ import { Settings } from 'luxon'
 import { useRepo } from 'pinia-orm'
 import { ListRepo } from 'src/stores/lists/list'
 import { ProcedureRepo } from 'src/stores/procedures/procedure'
+import { ScheduleRepo } from 'src/stores/schedules/schedule'
 import { useTaskStore } from 'src/stores/tasks/task-store'
 import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
 import { UserRepo } from 'src/stores/users/user'
 import { errorNotification, handleError, notifySuccess } from './notification-utils'
 import { updateLuxonTimeZone } from './luxon-utils'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
 
 interface verySpecial {
   modelname: string
@@ -40,16 +42,20 @@ export async function syncWithBackend(): Promise<number> {
     {
       modelname: 'Procedure',
       repo: ProcedureRepo
+    },
+    {
+      modelname: 'Schedule',
+      repo: ScheduleRepo
     }
   ]
 
   while (queue.length && tries > 0) {
-    await useRepo(queue[queue.length - 1].repo)
+    await useRepo(queue[queue.length - 1]!.repo)
       .fetch()
       .then(queue.pop())
       .catch(() => {
         handleError(
-          `Failed to fetch from repo ${queue[0].repo.apidir}; MAKING ${tries} MORE ATTEMPTS`
+          `Failed to fetch from repo ${queue[0]!.repo.apidir}; MAKING ${tries} MORE ATTEMPTS`
         )
         tries--
       })
@@ -66,6 +72,7 @@ export async function syncWithBackend(): Promise<number> {
       obj: currentUser.timeZoneObj
     })
     await useTaskStore().apiGetAll()
+    await useDependencyStore().fetchAll()
     return 0
   }
   return 1

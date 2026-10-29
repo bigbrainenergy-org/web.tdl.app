@@ -1,15 +1,35 @@
 import { handleError, notifySuccess } from './notification-utils'
-import { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+import type { AllOptionalTaskProperties, CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+import { Logger } from './d'
+import { DateTime } from 'luxon'
+
+const TaskUtilsLogger = new Logger('Task Utils')
 
 // FIXME: This should (probably) return the task created
 export function createTask(payload: CreateTaskOptions) {
   useTaskStore()
     .apiCreate(payload)
     .then(() => {
-      notifySuccess('Successfully created a task')
+      // notifySuccess('Successfully created a task')
     }, handleError('Failed to create task.'))
+}
+
+export function puntTask(task: Task, unit: 'days' | 'weeks' | 'months') {
+  const base = task.deadline_at ? DateTime.fromISO(task.deadline_at) : DateTime.now()
+  const originalTime = task.deadline_at
+    ? { hour: base.hour, minute: base.minute, second: base.second, millisecond: base.millisecond }
+    : null
+  let newDate = base
+  do {
+    newDate = newDate.plus({ [unit]: 1 })
+  } while (newDate <= DateTime.now())
+  if (originalTime) newDate = newDate.set(originalTime)
+  useTaskStore()
+    .apiUpdate(task.id, { deadline_at: newDate.toISO()! })
+    .then(() => notifySuccess('Deadline punted'), handleError('Error updating deadline'))
 }
 
 export function updateTask(id: number, options: AllOptionalTaskProperties) {
@@ -20,29 +40,28 @@ export function updateTask(id: number, options: AllOptionalTaskProperties) {
     }, handleError('Error updating task'))
 }
 
-export async function addPre(task: Task, newPreID: number) {
-  console.log('addPre')
+export async function addPre(task: Task, newPreID: number, degree?: 1 | 2 | 3 | null) {
+  TaskUtilsLogger.log(`addPre called: adding ${newPreID} as prereq to ${task.id}`)
   const start = performance.now()
-  return useTaskStore()
-    .addRule(newPreID, task.id)
-    .then(() => {
+  const depStore = useDependencyStore()
+  return depStore.addRule(newPreID, task.id, { degree }).then(() => {
       const duration = performance.now() - start
+      TaskUtilsLogger.log(`addPre .then() fired after ${duration}ms total`)
       notifySuccess('Added Prerequisite', 'fa-solid fa-link')
-      console.assert(
+      TaskUtilsLogger.assert(
         duration < 800,
         `Adding a rule via API should ideally be faster than ${duration} ms`
       )
     }, handleError('Failed to add prereq'))
 }
 
-export async function addPost(task: Task, newPostID: number) {
+export async function addPost(task: Task, newPostID: number, degree?: 1 | 2 | 3 | null) {
   const start = performance.now()
-  return useTaskStore()
-    .addRule(task.id, newPostID)
-    .then(() => {
+  const depStore = useDependencyStore()
+  return depStore.addRule(task.id, newPostID, { degree }).then(() => {
       const duration = performance.now() - start
       notifySuccess('Added Postrequisite', 'fa-solid fa-link')
-      console.assert(
+      TaskUtilsLogger.assert(
         duration < 800,
         `Adding a postrequisite via API should ideally be faster than ${duration} ms`
       )
@@ -59,6 +78,7 @@ export function filterByList(tasks: Task[], listTitle: string): Task[] {
 }
 
 export function filterByAgenda(baseQuery: Task[]): Task[] {
+  const MAX_TASKS = 200
   const finalList = new Set<Task>()
   const queue: Map<number, Task[]> = new Map()
   const addedToQueue = new Set<number>()
@@ -68,7 +88,7 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
   }
   const enqueue = (tasks: Task[]) => {
     tasks.forEach((x) => {
-      safeAccess(queue, x.incomplete_postreqs.length).push(x)
+      safeAccess(queue, x.grabPostreqs(true).length).push(x)
       addedToQueue.add(x.id)
     })
   }
@@ -81,32 +101,36 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
       qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
       hundos++
       const duration = performance.now() - start
-      console.assert(duration < 10, 'checking keys took too long.')
+      TaskUtilsLogger.assert(duration < 10, 'checking keys took too long.')
       return qkeys.length > 0
     }
     while (hasKeys()) {
-      if (hundos > 4 * addedToQueue.size) {
-        console.warn('agenda calc is taking too long. bailing out. Also TODO')
+      if (hundos > 4 * addedToQueue.size) { // bug: this was working
+        TaskUtilsLogger.warn('agenda calc is taking too long. bailing out. Also TODO')
         break
       }
       let bail = false
       const start = performance.now()
       for (let i = 0; i < qkeys.length; i++) {
-        const k = qkeys[i]
-        const qk = queue.get(k)!
+        const k = qkeys[i]! // todo: ! should not be needed imho
+        const qk = queue.get(k)! // todo: ! should not be needed imho
         for (let j = 0; j < qk.length; j++) {
-          const t = qk[j]
-          const ip = t.incomplete_prereqs
+          const t = qk[j]! // todo: ! should not be needed imho
+          const ip = t.grabPrereqs(true)
           if (ip.every((y) => finalList.has(y))) {
             finalList.add(t)
-            enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
+            if(finalList.size > MAX_TASKS) {
+              bail = true
+              break
+            }
+            enqueue(t.grabPostreqs(true).filter((x) => !addedToQueue.has(x.id)))
             qk.splice(j, 1)
             if (qk.length === 0) {
               queue.delete(k)
               qkeys.splice(i, 1)
             }
             const duration = performance.now() - start
-            console.assert(duration < 8, 'agenda main loop is taking too long per task')
+            TaskUtilsLogger.assert(duration < 8, 'agenda main loop is taking too long per task')
             bail = true
             break
           }
@@ -122,7 +146,7 @@ export function filterByAgenda(baseQuery: Task[]): Task[] {
 // - I shouldn't need to return; array.sort is in-place
 export function sortByPostreqs(tasks: Task[], hideCompleted = true): Task[] {
   const postreqs = hideCompleted
-    ? (t: Task) => t.hard_postreqs.filter((x) => !x.completed)
-    : (t: Task) => t.hard_postreqs
+    ? (t: Task) => t.grabPostreqs(true).filter((x) => !x.completed)
+    : (t: Task) => t.grabPostreqs(false)
   return tasks.sort((a, b) => postreqs(b).length - postreqs(a).length)
 }

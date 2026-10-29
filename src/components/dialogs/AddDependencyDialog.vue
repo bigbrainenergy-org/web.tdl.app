@@ -9,11 +9,17 @@
     <q-card class="q-dialog-plugin only-most-the-screen-lol">
       <q-card-section class="bg-primary text-white text-center">
         <div class="text-h6">{{ dialogTitle }}</div>
-        <SettingsButton
-          v-model:settings="taskSearchSettings"
-          name="Task Search Settings"
-          color="white"
-        />
+        <GloriousSettingsPopup>
+          <GloriousToggle v-model:model-value="omitRedundant" label="Omit Redundant Tasks" />
+          <q-item>
+            <q-item-section>
+              <q-item-label>Dependency Degree</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <DegreeStars v-model:model-value="addDependencyDegree" size="sm" />
+            </q-item-section>
+          </q-item>
+        </GloriousSettingsPopup>
         <q-btn class="q-ma-sm" size="md" color="grey" label="close" @click="hideDialog" />
       </q-card-section>
 
@@ -23,7 +29,7 @@
         v-model:model-value="searchString"
         :search-label="searchLabel"
         :dialog-title="dialogTitle"
-        :debounce="debounceAmount"
+        :debounce="searchDebounce"
         @do-a-search="searchForTasks"
       />
 
@@ -44,23 +50,21 @@
               <q-item v-if="!results.length" v-ripple clickable>
                 <q-item-section>No results found</q-item-section>
               </q-item>
-              <!-- <q-scroll-area v-else> -->
-              <q-list v-else ref="el">
-                <q-item
-                  v-for="task in results"
-                  :key="task.id ?? -1"
-                  v-ripple
-                  clickable
-                  @click="selectTask(task as Task)"
-                >
-                  <q-item-section :style="colorize(task.id)">
-                    <q-item-label lines="2">
-                      {{ task.title }}
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-              <!-- </q-scroll-area> -->
+              <q-virtual-scroll
+                v-slot="{ item }"
+                ref="el"
+                :items="resultsWithMetadata"
+                :virtual-scroll-item-size="48"
+                style="height: 600px"
+              >
+                <TaskItem
+                  v-bind="item"
+                  :show-actions="false"
+                  :show-refinement-icon="false"
+                  @task-clicked="selectTask(item.task)"
+                  @task-completion-toggled="() => {}"
+                />
+              </q-virtual-scroll>
             </template>
           </div>
         </div>
@@ -71,25 +75,34 @@
 
 <script setup lang="ts">
   import { useDialogPluginComponent } from 'quasar'
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
+  import { computed, onMounted, ref, shallowRef, watch } from 'vue'
   import TaskSearchInput from '../search/TaskSearchInput.vue'
-  import { λ } from 'src/utils/types'
+  import type { λ } from 'src/utils/types'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import SettingsButton from '../SettingsButton.vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult, IFuseOptions } from 'fuse.js'
+  import Fuse from 'fuse.js'
   import { hardCheck } from 'src/utils/type-utils'
   import { handleError } from 'src/utils/notification-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+  import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
+  import GloriousSettingsPopup from '../glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from '../glorious/GloriousToggle.vue'
+  import DegreeStars from '../glorious/DegreeStars.vue'
+  import TaskItem from '../TaskItem.vue'
+  import { useTaskMetadata } from 'src/composables/use-task-metadata'
+  import { Logger } from 'src/utils/d'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   interface Props {
     dialogTitle: string
     searchLabel?: string
     resultsTitle?: string
-    taskID: number | undefined
+    taskID: number
     closeOnSelect?: boolean
     showCreateButton?: boolean
     initialFilter: λ<number | undefined, λ<Task, boolean>> | undefined
@@ -145,7 +158,7 @@
 
   const usr = useLocalSettingsStore()
   const omitRedundant = ref(usr.omitRedundantSearchResults)
-  const taskSearchSettings = ref({ 'Omit Redundant Tasks': omitRedundant })
+  const { addDependencyDegree, searchDebounce } = storeToRefs(usr)
 
   watch(omitRedundant, () => {
     usr.omitRedundantSearchResults = omitRedundant.value
@@ -160,10 +173,13 @@
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
+      const depStore = useDependencyStore()
+      const preIds = depStore.getPreTaskIds(currentTaskID)
+      const postIds = depStore.getPostTaskIds(currentTaskID)
       return (x: Task) => {
         if (x.completed) return false
-        if (ct.hard_prereq_ids.includes(x.id)) return false
-        if (ct.hard_postreq_ids.includes(x.id)) return false
+        if (preIds.includes(x.id)) return false
+        if (postIds.includes(x.id)) return false
         return true
       }
     }
@@ -174,7 +190,7 @@
   const getTasks = (): Task[] => {
     console.debug('getting pre filtered task list.')
     const start = performance.now()
-    const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
+    const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
     if (typeof props.batchFilter !== 'undefined') return props.batchFilter(props.taskID)(allTasks)
     const duration = performance.now() - start
     if (duration > allTasks.length / 2)
@@ -207,13 +223,7 @@
   //   return tasks
   // }
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
-  const fuse = computed(() => new Fuse(tasks.value, searchOptions))
+  const fuse = computed(() => new Fuse(tasks.value, fuseOptions))
 
   const searchForTasks = () => {
     if (busy.value) {
@@ -225,23 +235,32 @@
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
-    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str), 'fuse search', 55)()
+    const run = timeThisB<FuseResult<Task>[]>(() => fuse.value.search(str, { limit: 999 }), 'fuse search', 55)()
 
     results.value = run.map((x) => x.item)
     timeThis(kickOffRedundancyCheck, 'kickOffRedundancyCheck', 13)()
     //results.value.sort(byRedundancy)
     const duration = Math.floor(performance.now() - start)
     // console.log(`task search took ${Math.floor(duration)}ms`)
-    if (duration * 2 > debounceAmount.value && debounceAmount.value < 500) {
-      const newDebounce = Math.min(500, Math.max(duration * 2, debounceAmount.value))
+    if (duration * 2 > searchDebounce.value && searchDebounce.value < 600) {
+      const newDebounce = Math.min(600, Math.max(duration * 1.5, searchDebounce.value))
       console.warn(`rolling back debounce to ${newDebounce}`)
-      debounceAmount.value = newDebounce
+      searchDebounce.value = newDebounce
     }
   }
 
-  const selectTask = (task: Task) => {
-    emit('select', { task })
+  const selectTask = (options: { id?: number, task?: CreateTaskOptions }) => {
+    if(options.id) emit('select', { id: options.id })
+    if(!options.task) return
+    else emit('select', { task: options.task })
     searchForTasks()
+    if (props.closeOnSelect) onDialogCancel()
+    else key.value++
+  }
+
+  // Fast path for newly created tasks - skip redundancy check since new tasks have no relations
+  const selectTaskQuick = (task: TaskLike) => {
+    emit('select', { task })
     if (props.closeOnSelect) onDialogCancel()
     else key.value++
   }
@@ -253,22 +272,36 @@
 
   const busy = ref(false)
 
+  const CreateTaskLogger = new Logger('CreateTask', '#FF6B6B')
+
   const createTask = () => {
-    busy.value = true
-    if (typeof searchString.value === 'undefined') return
-    const toCreate: CreateTaskOptions = { title: searchString.value }
-    const start = performance.now()
-    const target = 400
-    useTaskStore()
-      .apiCreate(toCreate)
-      .then((result) => {
-        if (result === null) return
-        if (typeof props.taskID !== 'undefined') selectTask(result)
-        const duration = Math.floor(performance.now() - start)
-        if (duration > target)
-          console.warn(`createTask took ${duration} ms - target is ${target} ms`)
-      }, handleError('Error creating task.'))
-    busy.value = false
+    // busy.value = true
+    // if (typeof searchString.value === 'undefined') return
+    // const toCreate: CreateTaskOptions = { title: searchString.value, notes: '!!REFINE' }
+    // const start = performance.now()
+    // const target = 400
+    // CreateTaskLogger.log('Starting apiCreate...')
+    // useTaskStore()
+    //   .apiCreate(toCreate, { skipRecalculate: true })
+    //   .then((result) => {
+    //     CreateTaskLogger.log(`apiCreate resolved in ${performance.now() - start}ms`)
+    //     if (typeof result === 'undefined' || result === null) return
+    //     if (typeof props.taskID !== 'undefined') {
+    //       CreateTaskLogger.log('About to call selectTaskQuick...')
+    //       const beforeSelect = performance.now()
+    //       // Use selectTaskQuick to skip redundant searchForTasks after creating
+    //       selectTaskQuick(result)
+    //       CreateTaskLogger.log(`selectTaskQuick returned in ${performance.now() - beforeSelect}ms`)
+    //     }
+    //     const duration = Math.floor(performance.now() - start)
+    //     CreateTaskLogger.log(`Total: ${duration}ms`)
+    //     if (duration > target)
+    //       CreateTaskLogger.warn(`createTask took ${duration} ms - target is ${target} ms`)
+    //   }, handleError('Error creating task.'))
+    // busy.value = false
+    if(typeof searchString.value === 'undefined' || searchString.value === null || searchString.value.length === 0) return
+    const toCreate: CreateTaskOptions = { title: searchString.value, notes: '!!REFINE' }
+    selectTask({ task: toCreate })
   }
 
   const hideDialog = () => {
@@ -277,10 +310,16 @@
     onDialogHide()
   }
 
-  const results = ref<Task[]>([])
+  // shallowRef: fast lists
+  // items don't change themselves
+  // replace whole array
+  const results = shallowRef<Task[]>([])
+
+  // Compute metadata once for all results, then v-bind to TaskItem
+  const { computeMetadataForTasks } = useTaskMetadata()
+  const resultsWithMetadata = computeMetadataForTasks(results)
+
   const redundantTasks = ref<Map<number, boolean>>(new Map())
-  const colorize = (id: number) =>
-    redundantTasks.value.get(id) ? "color: 'warning'" : "color: 'primary'"
   // type HasID = { id: number }
   // const byRedundancy = (a: HasID, b: HasID) =>
   //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
@@ -293,7 +332,6 @@
   const currentTask = ref(
     typeof props.taskID !== 'undefined' ? useTaskStore().hardGet(props.taskID) : null
   )
-  const debounceAmount = ref(100)
   // fuse.value
 
   const el = ref()

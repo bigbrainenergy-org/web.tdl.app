@@ -1,7 +1,7 @@
 <template>
   <q-list class="text-primary" data-cy="task_list">
     <template v-if="loading">
-      <q-item v-for="index in 5" :key="index" v-ripple>
+      <q-item v-for="index in 20" :key="index" v-ripple>
         <q-skeleton type="QRadio" class="q-mr-md" />
         <q-item-section>
           <q-skeleton type="text" />
@@ -38,14 +38,23 @@
           <strong>{{ props.emptyListMessage }}</strong>
         </q-item-section>
       </q-item>
-      <!-- Otherwise, lazy render tasks -->
-      <q-intersection v-for="(task, index) in tasks" :key="index" once style="min-height: 48px">
+      <!-- Virtual scroll for smooth rendering of large lists -->
+      <q-virtual-scroll
+        v-else
+        v-slot="{ item }"
+        :items="tasksWithMetadata"
+        :virtual-scroll-item-size="56"
+        :virtual-scroll-slice-size="40"
+        style="height: calc(100vh - 200px); min-height: 400px"
+      >
         <TaskItem
-          :task="task"
-          @task-clicked="$emit('task-clicked', $event, task)"
-          @task-completion-toggled="$emit('task-completion-toggled', $event, task)"
+          v-bind="item"
+          show-actions
+          show-refinement-icon
+          @task-clicked="$emit('task-clicked', $event, item.task)"
+          @task-completion-toggled="$emit('task-completion-toggled', $event, item.task)"
         />
-      </q-intersection>
+      </q-virtual-scroll>
     </template>
   </q-list>
 </template>
@@ -53,11 +62,10 @@
 <script setup lang="ts">
   import TaskItem from 'src/components/TaskItem.vue'
 
-  import { computed, toRef } from 'vue'
+  import { computed, nextTick, toRef, watch } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { Task } from 'src/stores/tasks/task-model'
-
-  console.debug('loaded task list')
+  import type { Task } from 'src/stores/tasks/task-model'
+  import { useTaskMetadata } from 'src/composables/use-task-metadata'
 
   // TODO: unblockedOnly is unused, use it
   const props = withDefaults(
@@ -75,7 +83,15 @@
 
   defineEmits(['task-clicked', 'task-completion-toggled'])
 
+  // Wrap props.tasks as a ref for the composable
   const tasks = toRef(props, 'tasks')
+
+  // Compute metadata once for all tasks, then v-bind to TaskItem
+  const { computeMetadataForTasks } = useTaskMetadata()
+  let tasksWithMetadata = Object.freeze(computeMetadataForTasks(tasks).value)
+  watch(tasks, () => {
+    tasksWithMetadata = Object.freeze(computeMetadataForTasks(tasks).value)
+  })
 
   const loading = computed(() => useLoadingStateStore().busy)
 </script>

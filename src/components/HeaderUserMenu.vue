@@ -1,4 +1,15 @@
 <template>
+  <q-btn dense flat no-wrap @click="openBulkDeleteCompletedDialog">
+    <q-avatar rounded size="32px">
+      <q-icon name="fas fa-broom" />
+    </q-avatar>
+  </q-btn>
+  <q-btn dense flat no-wrap @click="openTimelyTasksDialog">
+    <q-avatar rounded size="32px">
+      <q-icon name="fas fa-triangle-exclamation" />
+    </q-avatar>
+    <q-badge v-if="reminders.count" color="red" rounded floating :label="reminders.count" />
+  </q-btn>
   <q-btn dense flat no-wrap>
     <q-avatar rounded size="32px">
       <q-icon name="fas fa-user-circle" />
@@ -55,6 +66,9 @@
   import { UserRepo } from 'src/stores/users/user'
   import { pullFresh } from 'src/utils/sync-utils'
   import { useAuthentication } from 'src/composables/use-authentication'
+  import { openTimelyTasksDialog, openBulkDeleteCompletedDialog } from 'src/utils/dialog-utils'
+  import { storeToRefs } from 'pinia'
+  import { useTaskStore } from 'src/stores/tasks/task-store'
 
   const ur = useRepo(UserRepo)
   const { logout } = useAuthentication()
@@ -62,4 +76,6 @@
   const username = computed(() => {
     return (ur.getUser() ?? { username: 'guest' }).username
   })
+
+  const reminders = useTaskStore().reminders
 </script>

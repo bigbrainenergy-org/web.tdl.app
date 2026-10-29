@@ -3,30 +3,50 @@ import { addPost, addPre, createTask } from './task-utils'
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 import UpdateTaskDialog from 'src/components/dialogs/UpdateTaskDialog.vue'
+import UpdateTaskDialog2 from 'src/components/dialogs/UpdateTaskDialog2.vue'
 import CreateTaskDialog from 'src/components/dialogs/CreateTaskDialog.vue'
 import TaskSearchDialog from 'src/components/dialogs/TaskSearchDialog.vue'
 import QuickSortLayerZeroDialog from 'src/components/dialogs/QuickSortLayerZeroDialog.vue'
 import AddDependencyDialog from 'src/components/dialogs/AddDependencyDialog.vue'
 import TaskSlicerDialog from 'src/components/dialogs/TaskSlicerDialog.vue'
 import { useRepo } from 'pinia-orm'
-import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
-import { Task } from 'src/stores/tasks/task-model'
+import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
+import type { Task } from 'src/stores/tasks/task-model'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { CreateListOptions, ListRepo } from 'src/stores/lists/list'
+import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+import type { CreateListOptions } from 'src/stores/lists/list'
+import { type List, ListRepo } from 'src/stores/lists/list'
+import type { Schedule } from 'src/stores/schedules/schedule'
 import CreateProcedureDialog from 'src/components/dialogs/CreateProcedureDialog.vue'
-import { CreateProcedureOptions, Procedure, ProcedureRepo } from 'src/stores/procedures/procedure'
+import type { CreateProcedureOptions, Procedure} from 'src/stores/procedures/procedure'
+import { ProcedureRepo } from 'src/stores/procedures/procedure'
 import UpdateProcedureDialog from 'src/components/dialogs/UpdateProcedureDialog.vue'
-import { λ } from './types'
+import ScheduleEditorDialog from 'src/components/dialogs/ScheduleEditorDialog.vue'
+import ScheduleManagerDialog from 'src/components/dialogs/ScheduleManagerDialog.vue'
+import UpdateListDialog from 'src/components/dialogs/UpdateListDialog.vue'
+import type { λ } from './types'
+import QuickSortPostsOfTaskDialog from 'src/components/dialogs/QuickSortPostsOfTaskDialog.vue'
+import QuickSortLayerZeroDialog2 from 'src/components/dialogs/QuickSortLayerZeroDialog2.vue'
+import TaskTimerDialog from 'src/components/dialogs/TaskTimerDialog.vue'
+import { useTaskTimerStore } from 'src/stores/tasks/task-timer'
+import SeamlessTimer from 'src/components/SeamlessTimer.vue'
+import { Logger } from './d'
+import StuckTasksDialog from 'src/components/dialogs/StuckTasksDialog.vue'
+import QuickListDialog from 'src/components/dialogs/QuickListDialog.vue'
+import TaskBreakdownDialog from 'src/components/dialogs/TaskBreakdownDialog.vue'
+import { useTaskNeedsRefinementStore } from 'src/stores/tasks/task-needs-refinement'
+import { tasks } from 'src/stores/tasks/task-view'
+import TimelyTasksDialog from 'src/components/dialogs/TimelyTasksDialog.vue'
+import BulkDeleteCompletedDialog from 'src/components/dialogs/BulkDeleteCompletedDialog.vue'
+
+const Dialogger = new Logger('Dialog Utils')
 
 export function openCreateTaskDialog() {
   return Dialog.create({
     component: CreateTaskDialog,
     componentProps: {
       onCreate: (payload: { options: CreateTaskOptions; callback: () => void }) => {
-        const newTask = payload.options
-        newTask.hard_prereq_ids = []
-        newTask.hard_postreq_ids = []
-        createTask(newTask)
+        createTask(payload.options)
       }
     }
   })
@@ -88,8 +108,9 @@ export function openSearchDialog() {
 export function openQuickSortDialog() {
   if (useLoadingStateStore().quickSortDialogActive) return
   // todo fixme this is BAD.
+  console.log('setting dialogactive to true')
   useLoadingStateStore().quickSortDialogActive = true
-  console.log('OPENING QUICK SORT')
+  Dialogger.log('OPENING QUICK SORT')
   return Dialog.create({
     component: QuickSortLayerZeroDialog,
     componentProps: {
@@ -98,20 +119,77 @@ export function openQuickSortDialog() {
   })
 }
 
+export function openTimer(task: Task) {
+  const tts = useTaskTimerStore()
+  tts.startTimer(task)
+  tts.minimized = false
+  return Dialog.create({
+    component: SeamlessTimer //! TODO: make sure ondismiss and on unmount are properly handled w/pinia state
+  })
+}
+
+export function openTaskBreakdownDialog(task: Task) {
+  if (useLoadingStateStore().breakdownDialogActive) return
+  useLoadingStateStore().breakdownDialogActive = true
+  return Dialog.create({
+    component: TaskBreakdownDialog,
+    componentProps: {
+      task
+    }
+  }).onOk(() => {
+    useLoadingStateStore().breakdownDialogActive = false
+    // Re-run considerOpeningQuickSortDialog after breakdown is complete
+    considerOpeningQuickSortDialog()
+  }).onCancel(() => {
+    useLoadingStateStore().breakdownDialogActive = false
+  }).onDismiss(() => {
+    useLoadingStateStore().breakdownDialogActive = false
+  })
+}
+
 export function considerOpeningQuickSortDialog() {
-  const { disableQuickSort, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
+  const { disableQuickSort, disableTaskBreakdown, enableQuickSortOnLayerZeroQTY, enableQuickSortOnNewTask } =
     useLocalSettingsStore()
-  const { quickSortDialogActive } = useLoadingStateStore()
-  if (quickSortDialogActive) return
+  const { quickSortDialogActive, breakdownDialogActive } = useLoadingStateStore()
+  if (quickSortDialogActive || breakdownDialogActive) return
+
+  // First, check if any tasks in the sorted agenda view need refinement
+  if (!disableTaskBreakdown) {
+    const needsRefinementStore = useTaskNeedsRefinementStore()
+
+    // Get the sorted tasks from the task view (what's actually shown in the agenda)
+    // Filter out projects from the refinement check
+    const sortedTasks = tasks.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
+
+    // Check between 10-20 tasks: min(20, max(10, qty))
+    const checkLimit = Math.min(20, Math.max(10, sortedTasks.length))
+    const tasksToCheck = sortedTasks.slice(0, checkLimit)
+
+    // Find first task that needs refinement
+    const taskNeedingRefinement = tasksToCheck.find(task =>
+      needsRefinementStore.needsRefinement(task.id)
+    )
+
+    if (taskNeedingRefinement) {
+      openTaskBreakdownDialog(taskNeedingRefinement as Task)
+      return
+    }
+  }
+
+  // If no tasks need refinement, proceed with normal quick sort logic
   if (disableQuickSort) return
   if (enableQuickSortOnLayerZeroQTY > 0) {
-    const layerZeroQTY = useTaskStore().layerZero.length
+    const taskStore = useTaskStore()
+    // Filter out projects from layer zero
+    const layerZero = taskStore.layerZero.value.filter(task => !(task.notes?.includes('!PROJECT') ?? false))
+    const layerZeroQTY = layerZero.length
     if (layerZeroQTY > enableQuickSortOnLayerZeroQTY) {
       openQuickSortDialog()
+      return
     }
     if (
       enableQuickSortOnNewTask &&
-      useTaskStore().layerZero.filter((x) => x.incomplete_postreqs.length === 0).length > 0
+      layerZero.filter((x) => x.grabPrereqs(true).length === 0).length > 0
     ) {
       openQuickSortDialog()
     }
@@ -127,12 +205,45 @@ export function openUpdateTaskDialog(task: Task) {
   })
 }
 
+export function openUpdateTaskDialog2(task: Task) {
+  return Dialog.create({
+    component: UpdateTaskDialog2,
+    componentProps: {
+      task: task
+    }
+  })
+}
+
 export function openProcedureDetailsDialog(procedure: Procedure) {
   return Dialog.create({
     component: UpdateProcedureDialog,
     componentProps: {
       procedure
     }
+  })
+}
+
+export function openStuckTasksDialog() {
+  return Dialog.create({
+    component: StuckTasksDialog
+  })
+}
+
+export function openTimelyTasksDialog() {
+  return Dialog.create({
+    component: TimelyTasksDialog
+  })
+}
+
+export function openQuickListDialog() {
+  return Dialog.create({
+    component: QuickListDialog
+  })
+}
+
+export function openBulkDeleteCompletedDialog() {
+  return Dialog.create({
+    component: BulkDeleteCompletedDialog
   })
 }
 
@@ -143,8 +254,22 @@ export function addPrerequisitesDialog(currentTask: Task) {
       dialogTitle: 'Add Prerequisite',
       taskID: currentTask.id,
       showCreateButton: true,
-      onSelect: async (payload: { task: Task }) => {
-        await addPre(currentTask, payload.task.id)
+      onSelect: async (payload: { task?: CreateTaskOptions, id?: number }) => {
+        Dialogger.log(`onSelect: Starting addPre for ${payload.id ? `task ${payload.id}...` : 'new task' }`)
+        const start = performance.now()
+        const degree = useLocalSettingsStore().addDependencyDegree
+        if(payload.id) {
+          await addPre(currentTask, payload.id, degree)
+          Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
+        }
+        else if (payload.task) {
+          const newTask = await useTaskStore().apiCreate(payload.task)
+          if (newTask) {
+            await addPre(currentTask, newTask.id, degree)
+          }
+          Dialogger.log(`onSelect: addPre completed in ${performance.now() - start}ms`)
+        }
+
       },
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')
@@ -152,10 +277,12 @@ export function addPrerequisitesDialog(currentTask: Task) {
         const ct = useTaskStore().mapp.get(currentTaskID)
         if (typeof ct === 'undefined')
           throw new Error(`Add Prerequisite: Task not found with Task ID ${currentTaskID}`)
+        const depStore = useDependencyStore()
+        const preIds = depStore.getPreTaskIds(currentTaskID)
         return (x: Task) => {
           if (x.completed) return false
           if (x.id === ct.id) return false
-          if (ct.hard_prereq_ids.includes(x.id)) return false
+          if (preIds.includes(x.id)) return false
           return true
         }
       },
@@ -177,8 +304,21 @@ export function addPostrequisiteDialog(currentTask: Task) {
       dialogTitle: 'Add Postrequisite',
       taskID: currentTask.id,
       showCreateButton: true,
-      onSelect: (payload: { task: Task }) => {
-        addPost(currentTask, payload.task.id)
+      onSelect: async (payload: { task?: CreateTaskOptions, id?: number }) => {
+        Dialogger.log(`onSelect: Starting addPost for ${payload.id ? `task ${payload.id}...` : 'new task' }`)
+        const start = performance.now()
+        const degree = useLocalSettingsStore().addDependencyDegree
+        if(payload.id) {
+          await addPost(currentTask, payload.id, degree)
+          Dialogger.log(`onSelect: addPost completed in ${performance.now() - start}ms`)
+        }
+        else if (payload.task) {
+          const newTask = await useTaskStore().apiCreate(payload.task)
+          if (newTask) {
+            await addPost(currentTask, newTask.id, degree)
+          }
+          Dialogger.log(`onSelect: addPost completed in ${performance.now() - start}ms`)
+        }
       },
       initialFilter: (currentTaskID: number | undefined) => {
         if (typeof currentTaskID === 'undefined')
@@ -186,10 +326,12 @@ export function addPostrequisiteDialog(currentTask: Task) {
         const ct = useTaskStore().mapp.get(currentTaskID)
         if (typeof ct === 'undefined')
           throw new Error(`Add Postrequisite: Task not found with Task ID ${currentTaskID}`)
+        const depStore = useDependencyStore()
+        const postIds = depStore.getPostTaskIds(currentTaskID)
         return (x: Task) => {
           if (x.completed) return false
           if (x.id === ct.id) return false
-          if (ct.hard_postreq_ids.includes(x.id)) return false
+          if (postIds.includes(x.id)) return false
           return true
         }
       },
@@ -204,9 +346,36 @@ export function addPostrequisiteDialog(currentTask: Task) {
   })
 }
 
+export function quickSortPostreqsDialog(parentTaskId: number) {
+  return Dialog.create({
+    component: QuickSortPostsOfTaskDialog,
+    componentProps: {
+      parentTaskId
+    }
+  })
+}
+
 export function openTaskSlicerDialog(task: Task) {
   return Dialog.create({
     component: TaskSlicerDialog,
     componentProps: { task }
+  })
+}
+
+export function openScheduleEditorDialog(schedule?: Schedule) {
+  return Dialog.create({
+    component: ScheduleEditorDialog,
+    componentProps: schedule ? { schedule } : {}
+  })
+}
+
+export function openScheduleManagerDialog() {
+  return Dialog.create({ component: ScheduleManagerDialog })
+}
+
+export function openUpdateListDialog(list: List) {
+  return Dialog.create({
+    component: UpdateListDialog,
+    componentProps: { list }
   })
 }

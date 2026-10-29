@@ -1,7 +1,18 @@
 import { storeToRefs } from 'pinia'
+import { useRepo } from 'pinia-orm'
 import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-import { Task } from 'src/stores/tasks/task-model'
+import { type DayOfWeek, DAYS_OF_WEEK, type Schedule, ScheduleRepo } from 'src/stores/schedules/schedule'
+import type { Task, TaskDepRef } from 'src/stores/tasks/task-model'
+import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
+import { useTaskStore } from 'src/stores/tasks/task-store'
+import { stuckTasks } from 'src/stores/tasks/task-utils'
+import { Logger } from 'src/utils/d'
+import { errorNotification } from 'src/utils/notification-utils'
 import { sortByPostreqs } from 'src/utils/task-utils'
+import { computeInheritedDeadline, type InheritedDeadlineResult } from 'src/utils/inherited-deadline'
+import { ListRepo } from 'src/stores/lists/list'
+
+const TaskSortingLogger = new Logger('Task Sort', '#794A20')
 
 export function useTaskSorting() {
   const localSettingsStore = useLocalSettingsStore()
@@ -11,11 +22,457 @@ export function useTaskSorting() {
     if (currentSortingMode.value === 'sortByPostreqs') {
       return sortByPostreqs(tasks, hideCompleted.value)
     } else if(currentSortingMode.value === 'sortByAgenda') {
-      return tasks
+      const taskStarredStore = useTaskStarredStore()
+      const taskStore = useTaskStore()
+      const taskMap = taskStore.mapp
+
+      // Local caches for incomplete pres/posts to avoid re-filtering
+      const incompletePresCache = new Map<number, TaskDepRef[]>()
+      const incompletePostsCache = new Map<number, TaskDepRef[]>()
+      const getIncompletePres = (task: Task): TaskDepRef[] => {
+        let cached = incompletePresCache.get(task.id)
+        if (cached === undefined) {
+          cached = task.pres.filter(r => !r.task.completed)
+          incompletePresCache.set(task.id, cached)
+        }
+        return cached
+      }
+      const getIncompletePosts = (task: Task): TaskDepRef[] => {
+        let cached = incompletePostsCache.get(task.id)
+        if (cached === undefined) {
+          cached = task.posts.filter(r => !r.task.completed)
+          incompletePostsCache.set(task.id, cached)
+        }
+        return cached
+      }
+
+      const timings: any = {
+        agendaSort: performance.now(),
+        computeDescendantsTotal: 0,
+        registrationTotal: 0,
+        insertionTotal: 0,
+        prerequisiteCheckTotal: 0,
+        incrementCounterTotal: 0,
+        // Counters
+        mainLoopIterations: 0,
+        tasksChecked: 0,
+        tasksProcessed: 0,
+      }
+
+      // Pre-filter tasks for better performance
+      const filteredTasks = hideCompleted.value ? tasks.filter(x => !x.completed) : tasks
+      const ptarr = filteredTasks.filter(x => x.notes?.includes('!PROJECT'))
+      const projectids = ptarr.map(x => x.id)
+      const inProgressProjectIds = new Set(ptarr.filter(x => x.notes?.includes('!INPROGRESS')).map(x => x.id))
+      const projectTasks = new Set(projectids)
+      const projectDepth = new Map<number, number>()
+
+      // Cycle-safe project depth calculation
+      const projectVisiting = new Set<number>()
+      const calculateProjectDepth = (x: Task) => {
+        if (projectDepth.has(x.id)) return projectDepth.get(x.id)!
+        if (projectVisiting.has(x.id)) return 0 // cycle detected, break it
+        projectVisiting.add(x.id)
+        let depth = 0
+        const pres = x.grabPrereqs(true)
+        if(pres.length === 0) {
+          projectDepth.set(x.id, depth)
+          projectVisiting.delete(x.id)
+          return depth
+        }
+        pres.forEach(y => {
+          if(projectTasks.has(y.id)) {
+            if(projectDepth.has(y.id)) {
+              depth = Math.max(projectDepth.get(y.id)!, depth + 1)
+            }
+            else depth = Math.max(calculateProjectDepth(y), depth + 1)
+          }
+        })
+        depth = Math.min(depth, 5)
+        projectDepth.set(x.id, depth)
+        projectVisiting.delete(x.id)
+        return depth
+      }
+
+      ptarr.forEach(calculateProjectDepth)
+
+      const associatedProjectDepth = new Map<number, { depth: number, inprogress: boolean }>()
+
+      const calculateAssociatedProjectDepth = (x: Task): { depth: number, inprogress: boolean } => {
+        if (associatedProjectDepth.has(x.id)) return associatedProjectDepth.get(x.id)!
+
+        // Project tasks get their own project depth
+        if (projectTasks.has(x.id)) {
+          const depth = projectDepth.get(x.id) ?? 0
+          const inprogress = inProgressProjectIds.has(x.id)
+          const result = { depth, inprogress }
+          associatedProjectDepth.set(x.id, result)
+          return result
+        }
+
+        const posts = x.grabPostreqs(true)
+        if (posts.length === 0) {
+          const result = { depth: -1, inprogress: false }
+          associatedProjectDepth.set(x.id, result)
+          return result
+        }
+
+        let minDepth = -1
+        let hasInProgressAtMinDepth = false
+        for (const y of posts) {
+          const postResult = associatedProjectDepth.has(y.id)
+            ? associatedProjectDepth.get(y.id)!
+            : calculateAssociatedProjectDepth(y)
+
+          if (postResult.depth !== -1) {
+            if (minDepth === -1 || postResult.depth < minDepth) {
+              minDepth = postResult.depth
+              hasInProgressAtMinDepth = postResult.inprogress
+            } else if (postResult.depth === minDepth && postResult.inprogress) {
+              hasInProgressAtMinDepth = true
+            }
+          }
+        }
+
+        const result = { depth: minDepth, inprogress: hasInProgressAtMinDepth }
+        associatedProjectDepth.set(x.id, result)
+        return result
+      }
+
+      filteredTasks.forEach(calculateAssociatedProjectDepth)
+
+      // Schedule-aware sorting: resolve which schedule applies to each task
+      const scheduleRepo = useRepo(ScheduleRepo)
+      const listRepo = useRepo(ListRepo)
+      const allSchedules = scheduleRepo.all()
+      const defaultSchedule = allSchedules.find(s => s.default) ?? null
+
+      // Current time slot info
+      const now = new Date()
+      const dayIndex = now.getDay() // 0=Sun, 1=Mon, ...
+      const currentDay: DayOfWeek = DAYS_OF_WEEK[dayIndex]!
+      const currentTimeHHmm = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+
+      // Resolve schedule for each task: direct > list > default
+      const taskScheduleCache = new Map<number, Schedule | null>()
+      const resolveTaskSchedule = (task: Task): Schedule | null => {
+        if (taskScheduleCache.has(task.id)) return taskScheduleCache.get(task.id)!
+        let schedule: Schedule | null = null
+        if (task.schedule_id) {
+          schedule = scheduleRepo.find(task.schedule_id) ?? null
+        }
+        if (!schedule && task.list_id) {
+          const list = listRepo.find(task.list_id)
+          if (list?.schedule_id) {
+            schedule = scheduleRepo.find(list.schedule_id) ?? null
+          }
+        }
+        if (!schedule) {
+          schedule = defaultSchedule
+        }
+        taskScheduleCache.set(task.id, schedule)
+        return schedule
+      }
+
+      const finalList = new Map<number, Task>()
+      const visited = new Set<number>()
+
+      // Ready queue - tasks whose prerequisites are all satisfied, ready to process immediately
+      const readyQueue: Task[] = []
+
+      // Track layer/depth of each task (layer 0 = no prereqs, layer 1 = depends on layer 0, etc.)
+      const taskLayers = new Map<number, number>()
+
+      // Cache total incomplete prereqs count per task
+      const totalIncompletePrereqs = new Map<number, number>()
+
+      // Incremental prerequisite satisfaction tracking
+      const prereqsSatisfiedCount = new Map<number, number>()
+
+      // Cache star weights to avoid recomputation during binary search
+      const starWeightCache = new Map<number, number>()
+
+      // Shared memo for inherited deadline computation
+      const deadlineMemo = new Map<number, InheritedDeadlineResult | null>()
+      const deadlineVisited = new Set<number>()
+
+      // Helper to calculate priority weight for a task (with caching)
+      const getPriorityWeight = (task: Task): number => {
+        const cached = starWeightCache.get(task.id)
+        if (cached !== undefined) return cached
+
+        const layer = taskLayers.get(task.id) ?? 0
+        const layerWeight = (100 - layer) * 10
+
+        const isStarred = taskStarredStore.isStarred(task.id) ? 2 : 0
+        const descendantCount = taskStarredStore.getStarredDescendantCount(task.id) > 0 ? 1 : 0
+        const starWeight = (isStarred + descendantCount) * 100
+
+        const apdResult = associatedProjectDepth.get(task.id)
+        const apd = apdResult?.depth ?? -1
+        const projectLayerWeight = apd === -1 ? 300 : 250 - (apd * 50)
+
+        const inProgressBonus = apdResult?.inprogress ? 50 : 0
+
+        let dueDateBonus = 0
+        const inherited = computeInheritedDeadline(task, deadlineMemo, deadlineVisited, localSettingsStore.defaultTaskDuration)
+        if (inherited) {
+          const hoursRemaining = (inherited.deadline.getTime() - Date.now()) / (1000 * 60 * 60)
+          if (hoursRemaining > 0) {
+            dueDateBonus = Math.min(100, 100 * Math.pow(0.5, hoursRemaining / 24))
+          }
+        }
+
+        // Schedule bonus: tasks whose schedule is active right now get boosted
+        let scheduleBonus = 0
+        const taskSchedule = resolveTaskSchedule(task)
+        if (taskSchedule && taskSchedule.isActiveAt(currentDay, currentTimeHHmm)) {
+          // Only boost if unblocked or only blocked by degree-1 prereqs
+          const incompletePres = getIncompletePres(task)
+          const onlyWeakBlocks = incompletePres.every(r => r.degree === 1)
+          if (incompletePres.length === 0 || onlyWeakBlocks) {
+            scheduleBonus = 500
+          }
+        }
+
+        const weight = layerWeight + starWeight + projectLayerWeight + inProgressBonus + dueDateBonus + scheduleBonus
+        starWeightCache.set(task.id, weight)
+        return weight
+      }
+
+      // Compute task layer based on max prereq layer + 1, then insert into ready queue
+      const insertIntoReadyQueue = (queue: Task[], newTask: Task) => {
+        const insertTime = performance.now()
+
+        if (!taskLayers.has(newTask.id)) {
+          const incompletePres = getIncompletePres(newTask)
+          let maxPrereqLayer = -1
+
+          for (const ref of incompletePres) {
+            const prereqLayer = taskLayers.get(ref.task.id) ?? 0
+            maxPrereqLayer = Math.max(maxPrereqLayer, prereqLayer)
+          }
+
+          taskLayers.set(newTask.id, maxPrereqLayer + 1)
+        }
+
+        const newWeight = getPriorityWeight(newTask)
+
+        let left = 0
+        let right = queue.length
+
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2)
+          const midWeight = getPriorityWeight(queue[mid]!)
+
+          if (midWeight >= newWeight) {
+            left = mid + 1
+          } else {
+            right = mid
+          }
+        }
+
+        queue.splice(left, 0, newTask)
+        timings.insertionTotal += performance.now() - insertTime
+      }
+
+      // Pre-register ALL filteredTasks
+      const registrationTime = performance.now()
+      for (const task of filteredTasks) {
+        taskStarredStore.computeDescendants(task.id, taskMap, visited)
+
+        const incompletePres = getIncompletePres(task)
+        totalIncompletePrereqs.set(task.id, incompletePres.length)
+        prereqsSatisfiedCount.set(task.id, 0)
+
+        if (incompletePres.length === 0) {
+          insertIntoReadyQueue(readyQueue, task)
+        }
+      }
+      timings.registrationTotal = performance.now() - registrationTime
+
+      let hundos = 0
+      const maxIterations = 3 * filteredTasks.length
+
+      // Main sorting loop
+      while (readyQueue.length > 0 && hundos < maxIterations) {
+        hundos++
+        timings.mainLoopIterations++
+
+        const task = readyQueue.shift()!
+        timings.tasksChecked++
+
+        if (finalList.has(task.id)) continue
+
+        const prereqCheckTime = performance.now()
+        const totalPrereqs = totalIncompletePrereqs.get(task.id) ?? 0
+        const satisfiedCount = prereqsSatisfiedCount.get(task.id) ?? 0
+
+        const allPresSatisfied = satisfiedCount === totalPrereqs
+        timings.prerequisiteCheckTotal += performance.now() - prereqCheckTime
+
+        if (allPresSatisfied) {
+          timings.tasksProcessed++
+          finalList.set(task.id, task)
+
+          const incrementTime = performance.now()
+          for (const ref of getIncompletePosts(task)) {
+            const postId = ref.task.id
+            if (!totalIncompletePrereqs.has(postId)) continue
+
+            const currentCount = prereqsSatisfiedCount.get(postId) ?? 0
+            const newCount = currentCount + 1
+            prereqsSatisfiedCount.set(postId, newCount)
+
+            const postTotalPrereqs = totalIncompletePrereqs.get(postId) ?? 0
+            if (newCount === postTotalPrereqs && !finalList.has(postId)) {
+              insertIntoReadyQueue(readyQueue, ref.task)
+            }
+          }
+          timings.incrementCounterTotal += performance.now() - incrementTime
+        } else {
+          TaskSortingLogger.warn(`Task ${task.id} in ready queue but prereqs not satisfied: ${satisfiedCount}/${totalPrereqs}`)
+        }
+      }
+
+      if (hundos >= maxIterations) {
+        TaskSortingLogger.warn('Agenda sorting exceeded maximum iterations - bailing out')
+        errorNotification(new Error('Agenda sorting exceeded maximum iterations - bailing out'), 'Agenda sorting exceeded maximum iterations')
+      }
+
+      // Check for stuck tasks
+      const notInFinalArray = filteredTasks.filter(x => !finalList.has(x.id))
+        .filter(x => !x.completed)
+        .filter(x => getIncompletePres(x).length > 0)
+
+      stuckTasks.value.clear()
+      if (notInFinalArray.length > 0) {
+        TaskSortingLogger.warn(`${notInFinalArray.length} tasks not processed - potential cycle detected`)
+        notInFinalArray.forEach(x => stuckTasks.value.add(x.id))
+      }
+
+      timings.agendaSort = performance.now() - timings.agendaSort
+      TaskSortingLogger.log(`SORTTASK TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
+
+      return Array.from(finalList.values())
     } else {
       return tasks
     }
   }
 
-  return { sortTasks }
+  function sortRoutineTasks(tasks: Task[]): Task[] {
+    if (currentSortingMode.value === 'sortByPostreqs') {
+      return sortByPostreqs(tasks, hideCompleted.value)
+    } else if(currentSortingMode.value === 'sortByAgenda') {
+      // Pre-compute task IDs as Set for O(1) lookups
+      const taskIds = new Set(tasks.map(x => x.id))
+
+      // Find first layer - tasks with no prerequisites in this set
+      const firstLayer = tasks.filter(x =>
+        x.pres.every(r => !taskIds.has(r.task.id))
+      )
+
+      const finalList = new Map<number, Task>()
+      const addedToQueue = new Set<number>()
+      const queue: Map<number, Task[]> = new Map()
+      const sortedKeys: number[] = []
+
+      const enqueue = (tasksToEnqueue: Task[]) => {
+        for (const task of tasksToEnqueue) {
+          const postCount = task.grabPostreqs(true).length
+
+          if (!queue.has(postCount)) {
+            queue.set(postCount, [])
+            insertSorted(sortedKeys, postCount)
+          }
+
+          queue.get(postCount)!.push(task)
+          addedToQueue.add(task.id)
+        }
+      }
+
+      const insertSorted = (arr: number[], value: number) => {
+        let left = 0, right = arr.length
+        while (left < right) {
+          const mid = Math.floor((left + right) / 2)
+          if (arr[mid]! > value) left = mid + 1
+          else right = mid
+        }
+        arr.splice(left, 0, value)
+      }
+
+      const removeKey = (arr: number[], value: number) => {
+        const index = arr.indexOf(value)
+        if (index !== -1) arr.splice(index, 1)
+      }
+
+      enqueue(firstLayer)
+
+      let hundos = 0
+      const maxIterations = 3 * tasks.length
+
+      while (sortedKeys.length > 0 && hundos < maxIterations) {
+        hundos++
+        let processed = false
+
+        for (let keyIndex = 0; keyIndex < sortedKeys.length; keyIndex++) {
+          const postCount = sortedKeys[keyIndex]!
+          const queuedTasks = queue.get(postCount)!
+
+          for (let taskIndex = 0; taskIndex < queuedTasks.length; taskIndex++) {
+            const task = queuedTasks[taskIndex]!
+
+            const prereqs = task.grabPrereqs(false).filter(y => taskIds.has(y.id))
+            const allPresSatisfied = prereqs.every(prereq => finalList.has(prereq.id))
+
+            if (allPresSatisfied) {
+              finalList.set(task.id, task)
+
+              const newTasks: Task[] = []
+              for (const ref of task.posts) {
+                const postTask = ref.task
+                if (postTask.completed) continue
+                if (!addedToQueue.has(postTask.id) && taskIds.has(postTask.id)) {
+                  newTasks.push(postTask)
+                }
+              }
+
+              if (newTasks.length > 0) {
+                enqueue(newTasks)
+              }
+
+              // Remove efficiently
+              queuedTasks[taskIndex] = queuedTasks[queuedTasks.length - 1]!
+              queuedTasks.pop()
+
+              processed = true
+              break
+            }
+          }
+
+          if (queuedTasks.length === 0) {
+            queue.delete(postCount)
+            removeKey(sortedKeys, postCount)
+            keyIndex--
+          }
+
+          if (processed) break
+        }
+
+        if (!processed) break
+      }
+
+      if (hundos >= maxIterations) {
+        TaskSortingLogger.warn('Routine task sorting exceeded maximum iterations')
+      }
+
+      const finalArray = Array.from(finalList.values())
+
+      return finalArray
+    } else {
+      return tasks
+    }
+  }
+
+  return { sortTasks, sortRoutineTasks }
 }

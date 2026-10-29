@@ -4,7 +4,12 @@
       <div class="col-grow">
         <q-card class="full-height q-pl-md text-primary" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <SettingsButton v-model:settings="taskTreeSettings" name="Task Tree Settings" />
+            <GloriousSettingsPopup>
+              <GloriousToggle v-model:model-value="incompleteOnly" label="Hide Completed Tasks" />
+              <GloriousToggle v-model:model-value="expandAllWithSameID" label="Expand Task Everywhere It's Found" />
+              <GloriousToggle v-model:model-value="toggleRGB" label="Toggle RGB" />
+              <GloriousToggle v-model:model-value="reverseOrder" label="Reverse Task Order" />
+            </GloriousSettingsPopup>
             <q-space />
             <q-item-label>{{ layerZero.length }} tasks</q-item-label>
             <q-space />
@@ -69,11 +74,11 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useMeta } from 'quasar'
-  import { details, QTreeComponent, SimpleTreeNode } from 'src/utils/quasar-interfaces'
+  import type { details, QTreeComponent, SimpleTreeNode } from 'src/utils/quasar-interfaces'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  // import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'
-  import SettingsButton from 'src/components/SettingsButton.vue'
-  import { NodeKey, λ } from 'src/utils/types'
+  // import { ExpandedStateRepo } from 'src/stores/task-meta/expanded-state'  
+  import type { λ } from 'src/utils/types'
+  import { NodeKey } from 'src/utils/types'
   import { useRawExpandedStateStore } from 'src/stores/task-meta/raw-expanded-state-store'
   import { storeToRefs } from 'pinia'
   import { notifySuccess } from 'src/utils/notification-utils'
@@ -81,8 +86,10 @@
   import { openUpdateTaskDialog, openSearchDialog } from 'src/utils/dialog-utils'
 
   useMeta(() => ({ title: 'Tree | TDL App' }))
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
 
   // const tr = computed(() => useRepo(TaskRepo))
   // const esr = computed(() => useRepo(ExpandedStateRepo))
@@ -139,7 +146,7 @@
     array.value
       .filter((x) => (incompleteOnly.value ? !x.completed : true))
       .filter((x) =>
-        reverseOrder.value ? x.incomplete_postreqs.length === 0 : x.incomplete_prereqs.length === 0
+        reverseOrder.value ? x.grabPostreqs(true).length === 0 : x.grabPrereqs(true).length === 0
       )
       .map((x) => x.treeNode(reverseOrder.value, incompleteOnly.value))
   )

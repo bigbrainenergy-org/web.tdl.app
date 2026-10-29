@@ -22,6 +22,12 @@
               data-cy="task_title_input"
               @enter-key="updateProcedure({ title: editTitle })"
             />
+            <q-item-label class="text-h5 text-primary">
+              Est. {{ procedure.tasks.map(x => x.task_duration_in_minutes ?? 15).reduce((acc, cur) => acc += cur) }} minutes total
+            </q-item-label>
+            <q-item-label class="text-h5 text-primary">
+              Est. {{ procedure.tasks.filter(x => !x.completed).map(x => x.task_duration_in_minutes ?? 15).reduce((acc, cur) => acc += cur) }} minutes remaining
+            </q-item-label>
           </div>
           <div class="col-12 col-md">
             <q-toggle
@@ -50,25 +56,29 @@
   import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
   import { computed, ref } from 'vue'
   import DependencyList from '../DependencyList.vue'
-  import {
+  import type {
     AllOptionalProcedureProperties,
     Procedure,
-    ProcedureRepo,
     UpdateProcedureOptions
   } from 'src/stores/procedures/procedure'
+  import {
+    ProcedureRepo
+  } from 'src/stores/procedures/procedure'
   import { useRepo } from 'pinia-orm'
-  import GloriousTextInput from '../GloriousTextInput.vue'
+  import GloriousTextInput from '../glorious/GloriousTextInput.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { hardCheck } from 'src/utils/type-utils'
-  import { Button, λ } from 'src/utils/types'
+  import type { Button, λ } from 'src/utils/types'
   import { handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
   import {
     openBespokeSearchDialog,
     // openSearchDialog,
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
+  import { acceptHMRUpdate } from 'pinia'
+  import { useTaskSorting } from 'src/composables/use-task-sorting'
 
   const props = defineProps<{ procedure: Procedure }>()
   const procedureRef = ref(props.procedure)
@@ -88,7 +98,7 @@
 
   const procedureTasks = computed<Task[]>(() => {
     console.log('fetching proceduretasks again!!')
-    const tasksArr = (useTaskStore().array as Task[]).filter((x) =>
+    const tasksArr = useTaskStore().array.filter((x) =>
       x.procedure_ids?.includes(props.procedure.id)
     )
     // const prm_tasks = props.procedure.grabTasks()
@@ -128,22 +138,21 @@
 
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
-  // const tr = useRepo(TaskRepo)
-
-  // TODO: sort procedure tasks using the Agenda Sort algorithm
-  // onMounted(() => {
-  //   procedureRef.value.hard_postreqs.sort(
-  //     (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-  //   )
-  // })
-
   useMeta(() => ({ title: procedureRef.value.title + ' | TDL App' }))
 
   const editTitle = ref(procedureRef.value.title)
 
-  const allTasks = computed<Task[]>(() =>
-    incompleteOnly.value ? procedureTasks.value.filter((x) => !x.completed) : procedureTasks.value
-  )
+  const allTasks = computed<Task[]>(() => {
+    const completedProcedureTasks = useTaskStore().array
+      .filter(x => x.procedure_ids?.includes(props.procedure.id))
+      .filter((a) => a.completed)
+    //.filter(x => incompleteOnly.value ? !x.completed : true)
+    const incompleteProcedureTasks = useTaskSorting().sortTasks(useTaskStore().array
+      .filter(x => x.procedure_ids?.includes(props.procedure.id))
+      .filter((a) => !a.completed)
+    )
+    return [...completedProcedureTasks, ...incompleteProcedureTasks]
+  })
 
   function deleteProcedure(procedure: Procedure) {
     $q.dialog({

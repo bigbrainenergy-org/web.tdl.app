@@ -2,15 +2,15 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { useDialogPluginComponent } from 'quasar'
   import { storeToRefs } from 'pinia'
-  import GloriousSlider from '../GloriousSlider.vue'
-  import GloriousToggle from '../GloriousToggle.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
 
   const {
     disableQuickSort,
+    disableTaskBreakdown,
     enableQuickSortOnNewTask,
     enableQuickSortOnLayerZeroQTY,
-    enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize
+    disableQuickSortPosts
   } = storeToRefs(useLocalSettingsStore())
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
@@ -30,6 +30,8 @@
         <div class="row q-gutter-md q-pa-sm">
           <div class="col-12">
             <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+            <GloriousToggle v-model:model-value="disableTaskBreakdown" label="Disable Task Breakdown" />
+            <GloriousToggle v-model:model-value="disableQuickSortPosts" label="Disable Quick Sort Postreqs" />
             <GloriousSlider
               v-model:model-value="enableQuickSortOnLayerZeroQTY"
               :min="1"
@@ -40,17 +42,6 @@
             <GloriousToggle
               v-model:model-value="enableQuickSortOnNewTask"
               label="Quick Sort on Any Task w/o Postreqs"
-            />
-            <GloriousToggle
-              v-model:model-value="enableQuickSortBailOnBigTask"
-              label="Abort quick sort if there is a task with gobs of postreqs"
-            />
-            <GloriousSlider
-              v-model:model-value="quickSortBailOnTaskSize"
-              :min="3"
-              :max="30"
-              :step="1"
-              cute-name="How many postreqs is too many?"
             />
           </div>
         </div>

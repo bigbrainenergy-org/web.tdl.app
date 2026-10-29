@@ -1,4 +1,4 @@
-import { NodeKey } from './types'
+import type { NodeKey } from './types'
 
 export function arrayDelete<T>(arr: Array<T>, element: T, key?: keyof T) {
   if (arr.length === 0) {

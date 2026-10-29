@@ -14,7 +14,8 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { useRepo } from 'pinia-orm'
-  import { TimeZone, TimeZoneRepo } from 'src/stores/time-zones/time-zone'
+  import type { TimeZone} from 'src/stores/time-zones/time-zone'
+  import { TimeZoneRepo } from 'src/stores/time-zones/time-zone'
   import { UserRepo } from 'src/stores/users/user'
   import { hardCheck } from 'src/utils/type-utils'
 

@@ -70,6 +70,10 @@
       displayClearButton: {
         type: Boolean,
         default: false
+      },
+      defaultTime: {
+        type: String,
+        default: ''
       }
     },
 
@@ -85,7 +89,7 @@
       function init(datetime) {
         if (!datetime) {
           date.value = DEFAULT_DATE
-          time.value = DEFAULT_TIME
+          time.value = props.defaultTime || DEFAULT_TIME
           return
         }
 

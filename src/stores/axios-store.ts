@@ -1,5 +1,6 @@
 // import axiosMockInstance from 'app/test/mock/axios-mock'
-import axios, { AxiosInstance } from 'axios'
+import type { AxiosInstance } from 'axios'
+import axios from 'axios'
 import { defineStore } from 'pinia'
 
 interface IServerUrlState {

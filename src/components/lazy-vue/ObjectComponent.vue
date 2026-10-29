@@ -1,10 +1,11 @@
 <script setup lang="ts">
-  import { GenericPropStructure, WTF, isNotObject } from './lazyVueUtils'
+  import type { GenericPropStructure, WTF} from './lazyVueUtils'
+  import { isNotObject } from './lazyVueUtils'
   import EditModeSwitch from './EditModeSwitch.vue'
   import { ref } from 'vue'
   import LazyVueComponent from './LazyVueComponent.vue'
   const data = defineModel<any>('data')
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  
   if (isNotObject(data.value)) throw new Error('ObjectComponent: data provided was not an object!')
   const edit = defineModel<boolean | undefined>('edit')
   withDefaults(defineProps<GenericPropStructure>(), { showEdit: true })
@@ -31,7 +32,7 @@
         <LazyVueComponent
           :key="key"
           v-model:data="data[item]"
-          :name="Object.keys(data)[key]"
+          :name="Object.keys(data)[key]!"
           :edit="edit"
           :show-edit="false"
           @update:data="(x: WTF) => customUpdate(/*item, x*/)"

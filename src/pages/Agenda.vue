@@ -4,7 +4,13 @@
       <div class="col-grow">
         <q-card class="full-height" style="background-color: #1d1d1df6">
           <q-card-actions>
-            <SettingsButton v-model:settings="tasksPageSettings" name="Tasks Page Settings" />
+            <GloriousSettingsPopup>
+              <GloriousToggle v-model:model-value="layerZeroOnly" label="Unblocked Only" />
+              <GloriousToggle v-model:model-value="hideCompleted" label="Hide Completed Tasks" />
+              <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+              <GloriousSlider v-if="!disableQuickSort" v-model:model-value="enableQuickSortOnLayerZeroQTY" label="Quick Sort When Layer Zero Has x Tasks" />
+              <GloriousToggle v-model:model-value="autoScalePriority" label="Auto Scale Priority Coloring" />
+            </GloriousSettingsPopup>
             <q-space />
             <q-item-label class="text-primary">{{ tasks.length }} tasks</q-item-label>
             <q-space />
@@ -44,10 +50,10 @@
                     </q-avatar>
                   </q-item-section>
 
-                  <q-item-section v-if="currentTask.incomplete_postreqs.length" side>
+                  <q-item-section v-if="currentTask.grabPostreqs(true).length" side>
                     <q-chip
                       :style="
-                        currentTask.incomplete_postreqs.length > sortQty
+                        currentTask.grabPostreqs(true).length > sortQty
                           ? 'background-color: red;'
                           : 'background-color: gray;'
                       "
@@ -61,7 +67,7 @@
                       outline
                       rounded
                       label="ADD PRE"
-                      @click.stop="addPrerequisitesDialog(currentTask)"
+                      @click.stop="openTaskBreakdownDialog(currentTask)"
                     />
                   </q-item-section>
                 </q-item>
@@ -81,13 +87,17 @@
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import { storeToRefs } from 'pinia'
   import {
-    addPrerequisitesDialog,
+    openTaskBreakdownDialog,
     considerOpeningQuickSortDialog,
     openSearchDialog,
     openUpdateTaskDialog
   } from 'src/utils/dialog-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import GloriousSettingsPopup from 'src/components/glorious/GloriousSettingsPopup.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import { Logger } from 'src/utils/d'
 
   const $q = useQuasar()
 
@@ -113,18 +123,20 @@
     'Auto Scale Priority': autoScalePriority
   })
 
+  const AgendaLogger = new Logger('Agenda Page')
+
   // fancy footwork
   const tasks = computed(() => {
-    console.debug('recalculating agenda.')
-    const layerZero = (useTaskStore().array as Task[]).filter(
+    AgendaLogger.debug('recalculating agenda.')
+    const layerZero = useTaskStore().array.filter(
       (task: Task) =>
         !task.completed &&
-        task.hard_prereqs.filter((prereq) => !prereq.completed).length === 0
+        task.grabPrereqs(false).filter((prereq) => !prereq.completed).length === 0
     )
     layerZero.sort(
-      (a: Task, b: Task) => b.incomplete_postreqs.length - a.incomplete_postreqs.length
+      (a: Task, b: Task) => b.grabPostreqs(true).length - a.grabPostreqs(true).length
     )
-    console.debug({ layerZero })
+    AgendaLogger.debug({ layerZero })
     const finalList = new Set<Task>()
     const queue: Map<number, Task[]> = new Map()
     const addedToQueue = new Set<number>()
@@ -134,7 +146,7 @@
     }
     const enqueue = (tasks: Task[]) => {
       tasks.forEach((x) => {
-        safeAccess(queue, x.incomplete_postreqs.length).push(x)
+        safeAccess(queue, x.grabPostreqs(true).length).push(x)
         addedToQueue.add(x.id)
       })
     }
@@ -147,32 +159,33 @@
         qkeys = Array.from(queue.keys()).sort((a, b) => b - a)
         hundos++
         const duration = performance.now() - start
-        console.assert(duration < 10, 'checking keys took too long.')
+        AgendaLogger.assert(duration < 10, 'checking keys took too long.')
         return qkeys.length > 0
       }
       while (hasKeys()) {
-        if (hundos > 4 * addedToQueue.size) {
-          console.warn('agenda calc is taking too long. bailing out. Also TODO')
+        // if (hundos > 4 * addedToQueue.size) { // get back to this speed
+        if (hundos > 32 * addedToQueue.size) {
+          AgendaLogger.warn('agenda calc is taking too long. bailing out. Also TODO')
           break
         }
         let bail = false
         const start = performance.now()
         for (let i = 0; i < qkeys.length; i++) {
-          const k = qkeys[i]
+          const k = qkeys[i]!
           const qk = queue.get(k)!
           for (let j = 0; j < qk.length; j++) {
-            const t = qk[j]
-            const ip = t.incomplete_prereqs
+            const t = qk[j]!
+            const ip = t.grabPrereqs(true)
             if (ip.every((y) => finalList.has(y))) {
               finalList.add(t)
-              enqueue(t.incomplete_postreqs.filter((x) => !addedToQueue.has(x.id)))
+              enqueue(t.grabPostreqs(true).filter((x) => !addedToQueue.has(x.id)))
               qk.splice(j, 1)
               if (qk.length === 0) {
                 queue.delete(k)
                 qkeys.splice(i, 1)
               }
               const duration = performance.now() - start
-              console.assert(duration < 8, 'agenda main loop is taking too long per task')
+              AgendaLogger.assert(duration < 8, 'agenda main loop is taking too long per task')
               bail = true
               break
             }
@@ -188,15 +201,15 @@
     const sampleSize = Math.min(tasks.value.length, 11)
     const samplePriorities = []
     for (let i = 0; i < sampleSize; i++) {
-      samplePriorities.push(tasks.value[i].incomplete_postreqs.length)
+      samplePriorities.push(tasks.value[i]!.grabPostreqs(true).length)
     }
     samplePriorities.sort((a, b) => a - b)
     const sampleIndex = Math.max(Math.floor(sampleSize / 2), 1)
-    return samplePriorities[sampleIndex]
+    return samplePriorities[sampleIndex]! // todo: figure out how to avoid ! here.
   })
 
   const sortQty = computed(() => {
-    const len0 = useTaskStore().layerZero.length
+    const len0 = useTaskStore().layerZero.value.length
     if (disableQuickSort.value) return len0
     return autoScalePriority.value
       ? autoThreshold.value

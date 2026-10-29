@@ -1,9 +1,10 @@
 import { Model } from 'pinia-orm'
-import iRecord, { iOptions } from '../generics/i-record'
-import { Num, Str } from 'pinia-orm/dist/decorators'
+import type { iOptions } from '../generics/i-record'
+import type iRecord from '../generics/i-record'
+import { Attr, Num, Str } from 'pinia-orm/dist/decorators'
 import GenericRepo from '../generics/generic-repo'
 import { useTaskStore } from 'src/stores/tasks/task-store'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 export interface CreateListOptions {
   title: string
@@ -16,6 +17,7 @@ export interface UpdateListOptions extends iOptions {
     list: {
       title?: string
       order?: number
+      schedule_id?: number | null
     }
   }
 }
@@ -28,14 +30,15 @@ export class List extends Model implements iRecord {
   @Str('') declare color: string
   @Num(0) declare order: number
   @Str('') declare notes: string
+  @Attr(undefined) declare schedule_id: number | undefined
 
   // @HasMany(() => Task, 'list_id') declare tasks: Task[]
   get tasks(): Task[] {
-    return (useTaskStore().array as Task[]).filter((x) => x.list_id === this.id)
+    return useTaskStore().array.filter((x) => x.list_id === this.id)
   }
 
   get incompleteTaskCount() {
-    return this.tasks.filter((task) => !task.completed && task.incomplete_prereqs.length === 0).length
+    return this.tasks.filter((task) => !task.completed && task.grabPrereqs(true).length === 0).length
   }
 
   static override piniaOptions = {

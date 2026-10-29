@@ -43,7 +43,8 @@
   import { useDialogPluginComponent } from 'quasar'
   import { ref } from 'vue'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+  import type { Task } from 'src/stores/tasks/task-model'
 
   interface Props {
     task: Task
@@ -53,24 +54,28 @@
   const prop = defineProps<Props>()
   const emit = defineEmits([...useDialogPluginComponent.emits])
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
+  const lzerotasks = useTaskStore().layerZero
   const layerZero = ref<{ selected: boolean; obj: Task }[]>(
-    useTaskStore()
-      .layerZero.filter((x: Task) => {
-        if (x.id === prop.task.id) return false
-        if (prop.task.anyIDsBelow([x.id])) return false
-        return true
-      })
-      .map((x: Task) => ({ selected: false, obj: x }))
+    lzerotasks.value.filter((x) => {
+      if (x.id === prop.task.id) return false
+      if (prop.task.anyIDsBelow([x.id])) return false
+      return true
+    })
+      .map((x) => ({ selected: false, obj: x }))
   )
-  const saveNewRules = () => {
+  const saveNewRules = async () => {
     const selectedTasks = layerZero.value.filter((x) => x.selected)
+    if (selectedTasks.length === 0) {
+      onDialogCancel()
+      return
+    }
     saveProgress.value = 0
-    // TODO: batch update this!
+
+    // Sequential awaits - parallel would race since all rules share the same first task
     for (let i = 0; i < selectedTasks.length; i++) {
-      const element = layerZero.value[i]
-      useTaskStore()
-        .addRule(prop.task.id, element.obj.id)
-        .then(() => (saveProgress.value = (i + 1) / selectedTasks.length))
+      const element = selectedTasks[i]!
+      await useDependencyStore().addRule(prop.task.id, element.obj.id)
+      saveProgress.value = (i + 1) / selectedTasks.length
     }
     onDialogCancel()
   }

@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
   import { useRepo } from 'pinia-orm'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { updateTask } from 'src/utils/task-utils'
   import { computed, ref } from 'vue'
   import { ListRepo } from 'src/stores/lists/list'

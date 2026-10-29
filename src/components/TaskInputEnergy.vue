@@ -18,13 +18,13 @@
 </template>
 
 <script setup lang="ts">
-  import GloriousSlider from 'src/components/GloriousSlider.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
 
   import { updateTask } from 'src/utils/task-utils'
   import { storeToRefs } from 'pinia'
-  import { GloriousSliderConfig } from 'src/utils/glorious-utils'
+  import type { GloriousSliderConfig } from 'src/utils/glorious-utils'
   import { ref } from 'vue'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
 
   const task = defineModel<Task>('task', { required: true })

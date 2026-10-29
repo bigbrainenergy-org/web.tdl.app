@@ -1,5 +1,6 @@
 {
   "name": "web-tdl-app",
+  "type": "module",
   "version": "0.0.1",
   "description": "TDL App by Big Brain Energy",
   "productName": "TDL App",
@@ -26,14 +27,20 @@
     "test:e2e:ci": "cross-env NODE_ENV=test start-test \"quasar dev\" http-get://127.0.0.1:8080 \"cypress run --e2e\"",
     "test:component": "cross-env NODE_ENV=test cypress open --component",
     "test:component:ci": "cross-env NODE_ENV=test cypress run --component",
-    "test:everything": "yarn audit && yarn lint && yarn test:unit:ci && yarn test:component:ci && yarn test:e2e:ci"
+    "test:everything": "yarn audit && yarn lint && yarn test:unit:ci && yarn test:component:ci && yarn test:e2e:ci",
+    "postinstall": "quasar prepare"
   },
   "dependencies": {
     "@capacitor/core": "latest",
     "@capacitor/local-notifications": "latest",
+    "@dagrejs/dagre": "^1.1.8",
+    "@formkit/drag-and-drop": "^0.3.1",
     "@quasar/cli": "latest",
     "@quasar/extras": "latest",
     "@types/luxon": "latest",
+    "@vue-flow/background": "^1.3.2",
+    "@vue-flow/controls": "^1.1.3",
+    "@vue-flow/core": "^1.48.0",
     "@vueuse/core": "latest",
     "axios": "latest",
     "axios-mock-adapter": "latest",
@@ -53,15 +60,15 @@
   "devDependencies": {
     "@eslint/eslintrc": "latest",
     "@eslint/js": "latest",
-    "@quasar/app-vite": "beta",
+    "@quasar/app-vite": "~2.3.0",
     "@quasar/quasar-app-extension-testing-e2e-cypress": "latest",
-    "@quasar/quasar-app-extension-testing-unit-vitest": "latest",
+    "@quasar/quasar-app-extension-testing-unit-vitest": "^1.0.0",
     "@types/body-parser": "latest",
     "@types/d3": "latest",
     "@types/eslint__js": "latest",
     "@types/node": "latest",
     "@typescript-eslint/eslint-plugin": "latest",
-    "@typescript-eslint/parser": "latest",
+    "@typescript-eslint/parser": "^8.0.0",
     "@vue/test-utils": "latest",
     "autoprefixer": "latest",
     "cypress": "latest",
@@ -72,7 +79,9 @@
     "prettier": "latest",
     "typescript": "5.5.x",
     "typescript-eslint": "latest",
-    "vitest": "latest"
+    "vite-plugin-checker": "^0.8.0",
+    "vitest": "latest",
+    "vue-tsc": "2"
   },
   "engines": {
     "node": "20.x",

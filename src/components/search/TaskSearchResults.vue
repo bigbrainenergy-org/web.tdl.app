@@ -18,17 +18,13 @@
                   @click="createTask"
                 />
               </q-item>
-              <q-item
+              <TaskItem
                 v-for="task in results"
                 :key="task.id ?? -1"
-                v-ripple
-                clickable
-                @click="selectTask(task as Task)"
-              >
-                <q-item-section :style="colorize(task.id)">
-                  {{ task.title }}
-                </q-item-section>
-              </q-item>
+                :task="task as Task"
+                @task-clicked="selectTask(task as Task)"
+                @task-completion-toggled="() => {}"
+              />
             </q-list>
           </template>
         </div>
@@ -38,13 +34,18 @@
 </template>
 
 <script setup lang="ts">
-  import Fuse, { FuseResult } from 'fuse.js'
+  import type { FuseResult } from 'fuse.js'
+  import Fuse from 'fuse.js'
   import { computed, ref } from 'vue'
   import type { λ } from '../../utils/types'
   import { timeThis, timeThisB } from 'src/utils/performance-utils'
-  import { Task } from 'src/stores/tasks/task-model'
+  import type { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { CreateTaskOptions } from 'src/stores/tasks/task-interfaces-types'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+  import type { CreateTaskOptions, TaskLike } from 'src/stores/tasks/task-interfaces-types'
+  import { filtered_tasks } from 'src/stores/tasks/task-view'
+  import TaskItem from '../TaskItem.vue'
+  import { fuseOptions } from 'src/utils/search-utils'
 
   interface Prop {
     search: string | undefined
@@ -65,7 +66,6 @@
   // }
 
   const redundantTasks = ref<Map<number, boolean>>(new Map())
-  const colorize = (id: number) => (redundantTasks.value.get(id) ? 'color: orange' : 'color: black')
 
   // const byRedundancy = (a: HasID, b: HasID) =>
   //   redundantTasks.value.has(a.id) ? (redundantTasks.value.has(b.id) ? 0 : 1) : -1
@@ -79,10 +79,13 @@
     if (typeof ct === 'undefined') {
       return simplestFilter
     } else {
+      const depStore = useDependencyStore()
+      const preIds = depStore.getPreTaskIds(currentTaskID)
+      const postIds = depStore.getPostTaskIds(currentTaskID)
       return (x: Task) => {
         if (x.completed) return false
-        if (ct.hard_prereq_ids.includes(x.id)) return false
-        if (ct.hard_postreq_ids.includes(x.id)) return false
+        if (preIds.includes(x.id)) return false
+        if (postIds.includes(x.id)) return false
         return true
       }
     }
@@ -102,17 +105,11 @@
 
   const results = ref<Task[]>([])
 
-  const searchOptions = {
-    isCaseSensitive: false,
-    ignoreLocation: true,
-    keys: ['title']
-  }
-
   const tasks = computed(
     timeThisB(
       () => {
         console.debug('recalculating tasks list for task search results')
-        const allTasks = (useTaskStore().array as Task[]).filter(filterish.value(props.taskID))
+        const allTasks = useTaskStore().array.filter(filterish.value(props.taskID))
         if (typeof props.batchFilter !== 'undefined')
           return props.batchFilter(props.taskID)(allTasks)
         return allTasks
@@ -127,7 +124,7 @@
       return
     } // Guard clause if search is empty
 
-    const fuse = new Fuse(tasks.value, searchOptions)
+    const fuse = new Fuse(filtered_tasks.value as Task[], fuseOptions)
 
     // unsanitized user input being fed into a library? what could go wrong.
     // FIXME: AKA this is a vuln waiting to happen, fix it.
@@ -165,11 +162,11 @@
     if (typeof props.search === 'undefined') return
     const toCreate: CreateTaskOptions = { title: props.search }
     const newTask = await useTaskStore().apiCreate(toCreate)
-    if (newTask === null) throw new Error('Error creating task.')
+    if (typeof newTask === 'undefined' || newTask === null) throw new Error('Error creating task.')
     if (typeof props.taskID !== 'undefined') selectTask(newTask)
   }
 
-  const selectTask = (task: Task) => {
+  const selectTask = (task: TaskLike) => {
     emit('select', { task, callback: searchForTasks })
   }
 

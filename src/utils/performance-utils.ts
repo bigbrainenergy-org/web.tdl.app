@@ -1,6 +1,7 @@
 import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-import { λ } from './types'
-import { computed, DebuggerOptions } from 'vue'
+import type { λ } from './types'
+import type { DebuggerOptions } from 'vue'
+import { computed } from 'vue'
 
 export function timeThisAB<A, B>(func: λ<A, B>, name: string, ms = 500): λ<A, B> {
   return (x: A) => {

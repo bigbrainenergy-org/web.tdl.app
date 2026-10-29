@@ -1,7 +1,8 @@
 <script setup lang="ts">
-  import {
+  import type {
     GenericPropStructure,
-    Singular,
+    Singular} from './lazyVueUtils'
+  import {
     isSingularObject,
     isSingularPrimitive,
     isArray

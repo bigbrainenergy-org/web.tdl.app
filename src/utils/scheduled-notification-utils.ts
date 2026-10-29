@@ -1,6 +1,6 @@
-import { Notification as NotificationInterface } from 'src/models/Notification'
+import type { Notification as NotificationInterface } from 'src/models/Notification'
 import { DateTime } from 'luxon'
-import { Task } from 'src/stores/tasks/task-model'
+import type { Task } from 'src/stores/tasks/task-model'
 
 // TODO: Merge with notification utils?
 
@@ -76,11 +76,11 @@ export async function syncNotifications(store: any) {
         }
       })
     if (toBeCancelled.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       cancelNotifications(toBeCancelled)
     }
     if (toBeScheduled.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      
       scheduleNotifications(toBeScheduled)
     }
   }

@@ -12,12 +12,16 @@
         <div class="text-h6">{{ layerZero.length }} Layer Zero Tasks</div>
         <div class="text-h6">{{ tasksWithoutPostreqs.length }} Tasks Without Postreqs</div>
         <p>
+          <q-btn icon="fa-solid fa-plus" class="text-white q-mr-sm" @click="openCreateTaskDialog">
+            <q-tooltip>Add Task [q]</q-tooltip>
+          </q-btn>
           <q-btn icon="fa-solid fa-gear" class="text-white">
             <q-popup-proxy class="q-pa-md">
               <q-item-section>
                 <q-item-label lines="2">{{ 'Settings' }}</q-item-label>
               </q-item-section>
               <GloriousToggle v-model:model-value="disableQuickSort" label="Disable Quick Sort" />
+              <GloriousToggle v-model:model-value="disableTaskBreakdown" label="Disable Task Breakdown" />
               <!-- <GloriousToggle
                 v-model:model-value="enableDeeperQuickSort"
                 label="Deeper Quick Sort"
@@ -41,47 +45,61 @@
                 cute-name="Max Tasks to Select at a Time"
                 @update:model-value="tryNewPair"
               />
+              <q-item>
+                <q-item-section>
+                  <q-item-label>Dependency Degree</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <DegreeStars v-model:model-value="quickSortLayerZeroDegree" size="sm" />
+                </q-item-section>
+              </q-item>
             </q-popup-proxy>
           </q-btn>
           <q-btn class="q-ma-sm" size="md" color="grey" label="Close" @click="onCancelClick" />
         </p>
       </q-card-section>
       <q-linear-progress v-if="loading" query stripe size="10px" />
-      <q-card-section v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-top">
-        <q-btn-dropdown
-          :disable="loading"
-          size="lg"
-          color="positive"
-          style="width: 100%"
-          split
-          auto-close
-          dropdown-icon="more_vert"
-          @click.stop="makeSelection(t as Task)"
-          @touchstart.stop
-          @mousedown.stop
-        >
-          <template #label>
-            <q-item-section class="vertical-top">
-              <q-item-label lines="2" class="wrapped" :style="style">
-                {{ t.title }}
-              </q-item-label>
-            </q-item-section>
-          </template>
-          <q-list>
-            <q-item
-              v-for="(menuitem, index) in menuItems"
-              :key="index"
-              v-close-popup
-              clickable
-              @click.stop="menuitem.action(t as Task)"
-            >
-              <q-item-label lines="1">{{ menuitem.label }}</q-item-label>
-              <q-space />
-              <q-icon :name="menuitem.icon" />
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
-      </q-card-section>
+      <template v-if="loading">
+        <q-item v-for="index in currentPair.length" :key="index" v-ripple>
+          <q-skeleton type="QRadio" class="q-mr-md" />
+          <q-item-section>
+            <q-skeleton type="text" />
+          </q-item-section>
+
+          <q-item-section v-if="$q.screen.gt.sm" side>
+            <q-skeleton type="QRadio" />
+          </q-item-section>
+
+          <q-item-section v-if="$q.screen.gt.sm" side>
+            <q-skeleton type="QChip" />
+          </q-item-section>
+
+          <q-item-section v-if="$q.screen.gt.sm" side>
+            <q-skeleton type="QBtn" />
+          </q-item-section>
+        </q-item>
+        <q-inner-loading
+          :showing="loading"
+          label="Loading..."
+          label-class="text-teal"
+          label-style="font-size: 1.1em"
+        />
+      </template>
+      <template v-else>
+        <ul ref="parentRef" style="list-style-type: none; margin: 0; padding: 0;">
+          <li v-for="t of currentPair" :key="t.id" class="q-ma-lg vertical-middle" style="display: flex; align-items: center;" color="positive" :disable="loading">
+            <q-avatar rounded icon="fa-solid fa-arrows-up-down" class="drag-me q-my-sm q-mr-sm" color="primary" style="cursor: grab;" />
+            <div style="flex: 1;">
+              <TaskItem
+                :task="t as Task"
+                @task-clicked="makeSelection(t as Task)"
+                @task-completion-toggled="(completed) => handleTaskCompletion(completed, t as Task)"
+              />
+            </div>
+          </li>
+        </ul>
+      </template>
+      
       <q-card-section class="q-ma-lg vertical-top text-center">
         <q-btn
           :disable="loading"
@@ -91,30 +109,39 @@
           label="SKIP"
           @click="skip"
         />
+        <q-btn
+          :disable="loading"
+          class="q-ma-lg"
+          size="lg"
+          color="positive"
+          label="CONFIRM ORDER"
+          @click="confirmOrder"
+        />
       </q-card-section>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-  import { Notify, useDialogPluginComponent } from 'quasar'
+  import { useDialogPluginComponent } from 'quasar'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
-  import { SimpleMenuItem } from 'src/utils/types'
-  import { onMounted, watch } from 'vue'
+  import { nextTick, onMounted, watch } from 'vue'
   import { computed, ref } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
-  import { useElementSize } from '@vueuse/core'
-  import {
-    addPrerequisitesDialog,
-    openTaskSlicerDialog,
-    openUpdateTaskDialog
-  } from 'src/utils/dialog-utils'
-  import { notifySuccess } from 'src/utils/notification-utils'
-  import GloriousSlider from '../GloriousSlider.vue'
-  import GloriousToggle from '../GloriousToggle.vue'
+  import GloriousSlider from 'src/components/glorious/GloriousSlider.vue'
+  import GloriousToggle from 'src/components/glorious/GloriousToggle.vue'
   import { storeToRefs } from 'pinia'
-  import { Task } from 'src/stores/tasks/task-model'
   import { useTaskStore } from 'src/stores/tasks/task-store'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import { notifySuccess } from 'src/utils/notification-utils'
+  import { openCreateTaskDialog } from 'src/utils/dialog-utils'
+  import { dragAndDrop, useDragAndDrop } from '@formkit/drag-and-drop/vue'
+  import { Logger } from 'src/utils/d'
+  import TaskItem from '../TaskItem.vue'
+  import DegreeStars from '../glorious/DegreeStars.vue'
+
+  const quickSortLogger = new Logger('Quick Sort', '#3498db')
 
   const props = withDefaults(defineProps<{ objective?: number }>(), {
     objective: 1
@@ -124,10 +151,10 @@
   const emit = defineEmits([...useDialogPluginComponent.emits])
 
   onMounted(() => {
-    console.log('busy for quick sort')
     useLoadingStateStore().busy = true
-    console.log('setting quick sort dialog active to true')
+    quickSortLogger.log('BUSY SIGNAL IS SET TO TRUE')
     useLoadingStateStore().quickSortDialogActive = true
+    quickSortLogger.log('QUICK SORT DIALOG IS ACTIVE')
   })
 
   class PostWeightedTask {
@@ -135,35 +162,82 @@
     constructor(t: Task) {
       this.t = t
     }
-    weight = () => 1 / Math.min(Math.max(1, this.t.incomplete_postreqs.length), 10)
+    weight = () => 1 / Math.min(Math.max(1, this.t.grabPostreqs(true).length), 10)
     shouldReroll = () => Math.random() - this.weight() > 0
   }
 
   const {
     disableQuickSort,
+    disableTaskBreakdown,
     // enableDeeperQuickSort,
     enableQuickSortOnLayerZeroQTY,
     // enableQuickSortOnNewTask,
     quickSortDialogMaxToShow,
-    enableQuickSortBailOnBigTask,
-    quickSortBailOnTaskSize
+    quickSortLayerZeroDegree
   } = storeToRefs(useLocalSettingsStore())
 
   const postWeightedTask = (x: Task) => new PostWeightedTask(x)
 
-  const layerZero = computed(() => {
-    const layerZeroTasks = useTaskStore().layerZero
-    return layerZeroTasks.map(postWeightedTask)
-  })
+  const taskStore = useTaskStore()
+  // Access the layerZero getter directly - it returns a computed ref
+  const layerZeroTasks = taskStore.layerZero
+  const layerZero = computed(() =>
+    layerZeroTasks.value
+      .filter(task => !(task.notes?.includes('!PROJECT') ?? false))
+      .map(postWeightedTask)
+  )
   const tasksWithoutPostreqs = computed(() =>
-    layerZero.value.filter((x) => !(x.t.incomplete_postreqs.length > 0))
+    layerZero.value.filter((x) => !(x.t.grabPostreqs(true).length > 0))
   )
   const l0len = computed(() => layerZero.value.length)
-  watch(l0len, (value: number) => {
+  watch(l0len, (value: number, oldValue: number) => {
+    quickSortLogger.debug(`Layer zero length changed from ${oldValue} to ${value}`)
     if (value < 2) {
+      quickSortLogger.debug('Layer zero has less than 2 tasks, closing dialog')
       if (dialogRef !== null) onDialogOK()
     }
   })
+
+  // Watch layerZero for changes and filter out tasks no longer in layer zero
+  watch(() => layerZero.value.map(x => x.t.id), async (newIds) => {
+    quickSortLogger.debug(`LayerZero IDs changed: ${newIds}`)
+    const layerZeroIdSet = new Set(newIds)
+    const currentIds = new Set(currentPair.value.map(t => t.id))
+    const removedCount = currentPair.value.filter(t => !layerZeroIdSet.has(t.id)).length
+
+    if (removedCount > 0) {
+      quickSortLogger.debug(`${removedCount} tasks no longer in layer zero, finding replacements`)
+
+      // Find available replacements from layer zero that aren't already in currentPair
+      const availableReplacements = layerZero.value
+        .filter(x => !currentIds.has(x.t.id) && !priorMVPs.has(x.t.id))
+        .map(x => x.t)
+
+      // Rebuild the list, replacing removed tasks with new ones at the same positions
+      const newPair: Task[] = []
+      let replacementIdx = 0
+
+      for (const task of currentPair.value) {
+        if (layerZeroIdSet.has(task.id)) {
+          // Task is still valid, keep it
+          newPair.push(task)
+        } else if (replacementIdx < availableReplacements.length) {
+          // Task was removed, insert replacement at this position
+          newPair.push(availableReplacements[replacementIdx]!)
+          replacementIdx++
+        }
+        // If no replacement available, slot is just removed
+      }
+
+      if (newPair.length < 2) {
+        // Not enough tasks to continue, try getting a whole new pair or close
+        await tryNewPair()
+      } else {
+        currentPair.value = newPair
+        await reinitializeDragAndDrop()
+      }
+    }
+  }, { deep: true })
 
   //  const layerOne = computed(() =>
   //     enableDeeperQuickSort.value
@@ -191,84 +265,6 @@
   // type pair<T> = { a: T; b: T }
   // let skippedPairs: pair<Task>[] = []
 
-  const addPres = (x: Task) => {
-    addPrerequisitesDialog(x)
-      .onOk(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onCancel(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onDismiss(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-  }
-
-  const sliceTask = (x: Task) => {
-    openTaskSlicerDialog(x)
-      .onOk(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onCancel(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-      .onDismiss(() => {
-        console.debug('getting a new pair now')
-        skip()
-      })
-  }
-
-  const reloadTasks = () => {
-    tryNewPair()
-  }
-
-  const complete = async (x: Task) => {
-    try {
-      await x.toggleCompleted()
-      reloadTasks()
-    } catch (error: any) {
-      Notify.create('Failed to mark the task complete.')
-      console.error(error)
-    }
-  }
-  const taskDetails = (x: Task) => {
-    console.debug(`opening details for task ID ${x.id}`)
-    openUpdateTaskDialog(x).onCancel(reloadTasks).onDismiss(reloadTasks).onOk(reloadTasks)
-  }
-
-  const menuItems: SimpleMenuItem<Task>[] = [
-    {
-      label: 'Mark Complete',
-      icon: 'fa-solid fa-clipboard-check',
-      action: complete
-    },
-    {
-      label: 'Details',
-      icon: 'fa-solid fa-circle-info',
-      action: taskDetails
-    },
-    {
-      label: 'Slice Into Pieces',
-      icon: 'fa-solid fa-scissors',
-      action: sliceTask
-    },
-    {
-      label: 'Add Prerequisite',
-      icon: 'fa-solid fa-square-plus',
-      action: addPres
-    },
-    {
-      label: 'Do This ASAP',
-      icon: 'fa-solid fa-fire',
-      action: doASAP
-    }
-  ]
-
   const finishedSorting = (msg = 'Finished Sorting') => {
     notifySuccess(msg)
     useLoadingStateStore().busy = false
@@ -276,8 +272,7 @@
     if (dialogRef !== null) onDialogHide()
   }
 
-  // type withID<T> = { id: number | null; data: T }
-
+  // type pair<T> = { a: T; b: T }
   // let skippedLayerOnePairs: withID<pair<Task>[]>[] = []
 
   // const getSkippedPairsForID = (id: number | null): pair<Task>[] => {
@@ -295,6 +290,8 @@
 
   // const permutations = (arr: Array<any>) => 0.5 * arr.length * (arr.length - 1)
 
+  const priorMVPs = new Set<number>()
+
   /**
    * generateNewPair:
    * - throw an error if sorting is done
@@ -303,28 +300,31 @@
   const generateNewPair = (): Task[] => {
     const metLayerZeroLengthObjective = l0len.value <= props.objective
     if (metLayerZeroLengthObjective) throw new Error('reached layer zero length objective.')
-    if (enableQuickSortBailOnBigTask.value) {
-      if (
-        layerZero.value.filter(
-          (x) => x.t.incomplete_postreqs.length > enableQuickSortOnLayerZeroQTY.value
-        ).length > 0
-      )
-        throw new Error('There is already a layer zero task that is big')
-    }
     const howManyToSelect = Math.min(l0len.value, quickSortDialogMaxToShow.value)
-    return layerZero.value.slice(0, howManyToSelect).map((x) => x.t)
+    let toGenerateFrom = []
+    if(layerZero.value.length - priorMVPs.size > howManyToSelect) toGenerateFrom = layerZero.value.filter(x => !priorMVPs.has(x.t.id))
+    else toGenerateFrom = layerZero.value
+    const shuffled = [...toGenerateFrom]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!]
+    }
+    return shuffled.slice(0, howManyToSelect).map((x) => x.t)
   }
 
   let firstPair
   try {
     firstPair = generateNewPair()
   } catch (e: any) {
-    console.warn(e)
+    quickSortLogger.warn(e)
     finishedSorting()
   }
   if (firstPair === null || typeof firstPair === 'undefined')
     throw new Error('Could not generate first pair')
-  const currentPair = ref(firstPair)
+
+  const [parentRef, currentPair] = useDragAndDrop(firstPair, {
+    dragHandle: '.drag-me' // IMPORTANT: the drag and drop plugin only searches maybe 2 elements deep for this class.
+  })
 
   // const forget = (id: number) => {
   //   const idInSkippedPair = (x: pair<Task>) => x.a.id !== id && x.b.id !== id
@@ -335,78 +335,148 @@
   //   skippedPairs = skippedPairs.filter(idInSkippedPair)
   // }
 
-  const tryNewPair = () => {
+
+  type ResolveFunc<T> = (value: T | PromiseLike<T>) => void
+
+  /**
+   * Wait for the input number of seconds.
+   * @param ms to idle/sleep
+   * @returns an awaitable Promise<void> that will resolve after the time has elapsed
+   * @example
+   * console.log("I need to be right back.")
+   * await idle_s(2)
+   * console.log("I am back after 2 seconds.")
+   */
+  const idle_ms = async (ms: number): Promise<void> => {
+    const timer_function = (resolve: ResolveFunc<void>) => setTimeout(resolve, ms)
+    return new Promise(timer_function)
+  }
+  const reinitializeDragAndDrop = async () => {
+    await idle_ms(200)
+    nextTick(() => {
+      // Force a reactive update by creating a new array reference
+      // if (currentPair.value && currentPair.value.length > 0) {
+      //   currentPair.value = [...currentPair.value]
+      // }
+      dragAndDrop({
+        parent: parentRef,
+        values: currentPair,
+        dragHandle: '.drag-me'
+      })
+    })
+  }
+
+  const tryNewPair = async () => {
     try {
       currentPair.value = generateNewPair()
+      await reinitializeDragAndDrop()
     } catch (e) {
       notifySuccess('Nothing more to sort')
       if (dialogRef !== null) onDialogOK()
     }
   }
 
-  const makeSelection = (mvp: Task) => {
+  const handleTaskCompletion = async (completed: boolean, task: Task) => {
+    if (!completed) {
+      // Task was uncompleted, no need to do anything
+      return
+    }
+
+    quickSortLogger.debug(`Task ${task.id} completed, removing from quick sort`)
+    quickSortLogger.debug(`Layer zero length before API update: ${layerZero.value.length}`)
+
+    // The checkbox already toggled task.completed optimistically via v-model
+    // Now we need to persist it to the API and update the store
+    await task.updateTaskCompletionStatus()
+
+    // Wait for reactivity to update
+    await nextTick()
+    quickSortLogger.debug(`Layer zero length after API update: ${layerZero.value.length}`)
+
+    // The task's completed status changed, so layerZero should eventually update
+    // But it might be async, so let's just work with what we know:
+    // This task is now completed and should be removed from currentPair
+
+    // Remove the completed task from the current pair
+    const remainingTasks = currentPair.value.filter((x) => x.id !== task.id)
+
+    // If we have less than 2 tasks left, get a whole new pair
+    if (remainingTasks.length < 2) {
+      quickSortLogger.debug('Less than 2 tasks remaining, getting new pair')
+      await tryNewPair()
+      return
+    }
+
+    // Try to find a replacement task from layerZero that's not already in the current pair
+    // Filter out completed tasks manually since layerZero might not have updated yet
+    // const currentIds = new Set(currentPair.value.map(t => t.id))
+    // const availableReplacements = taskStore.array.filter(task => {
+    //   // Must be incomplete
+    //   if (task.completed) return false
+    //   // Must not be in current pair
+    //   if (currentIds.has(task.id)) return false
+    //   // Must not have been a prior MVP
+    //   if (priorMVPs.has(task.id)) return false
+    //   // Must have no incomplete prereqs (layer zero)
+    //   const incompletePres = task.grabPrereqs(true).filter(p => !p.completed)
+    //   if (incompletePres.length > 0) return false
+    //   return true
+    // })
+
+    // if (availableReplacements.length > 0) {
+    //   // Pick a random replacement
+    //   const replacement = availableReplacements[Math.floor(Math.random() * availableReplacements.length)]!
+    //   quickSortLogger.debug(`Adding replacement task ${replacement.id}`)
+    //   currentPair.value = [...remainingTasks, replacement]
+    // } else {
+    //   // No replacement available, just use the remaining tasks
+    //   quickSortLogger.debug('No replacement available, continuing with remaining tasks')
+    //   currentPair.value = remainingTasks
+    // }
+
+    await reinitializeDragAndDrop()
+  }
+
+  const makeSelection = async (mvp: Task) => {
     loading.value = true
+    const depStore = useDependencyStore()
     const selected_tasks = currentPair.value.filter((x) => x.id !== mvp.id)
-    const selected_ids = selected_tasks.map((x) => x.id)
-    mvp.hard_postreq_ids.push(...selected_ids)
-    selected_tasks.forEach((x) => {
-      x.hard_prereq_ids.push(mvp.id)
-    })
-    useTaskStore()
-      .apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(() => {
-        tryNewPair()
-        loading.value = false
-      })
+    for (const t of selected_tasks) {
+      await depStore.addRule(mvp.id, t.id, { degree: quickSortLayerZeroDegree.value })
+    }
+    await tryNewPair()
+    loading.value = false
   }
 
-  const doASAP = (mvp: Task) => {
+  const confirmOrder = async () => {
     loading.value = true
-    const allOtherLayerZero = layerZero.value.filter((x: Task) => x.id !== mvp.id)
-    // TODO: write a bulk_add_posts action on the model
-    mvp.hard_postreq_ids.push(...allOtherLayerZero.map((x: Task) => x.id))
-    allOtherLayerZero.forEach((x: Task) => {
-      x.hard_prereq_ids.push(mvp.id)
-    })
-    useTaskStore().apiUpdate(mvp.id, { hard_postreq_ids: mvp.hard_postreq_ids })
-      .then(() => {
-        tryNewPair()
-        loading.value = false
-      })
+    const depStore = useDependencyStore()
+    const taskIds = currentPair.value.map(t => t.id)
+    await depStore.stringTasks(taskIds, quickSortLayerZeroDegree.value)
+    await tryNewPair()
+    loading.value = false
   }
 
-  const skip = () => {
-    tryNewPair()
+  const skip = async () => {
+    await tryNewPair()
   }
 
   const onCancelClick = () => {
-    console.log('onCancelClick')
+    quickSortLogger.log('onCancelClick')
     useLoadingStateStore().busy = false
-    console.log('setting quick sort dialog active to false')
+    quickSortLogger.log('setting quick sort dialog active to false')
     useLoadingStateStore().quickSortDialogActive = false
     onDialogOK()
   }
 
   const hideDialog = () => {
-    console.log('hideDialog')
+    quickSortLogger.log('hideDialog')
     useLoadingStateStore().busy = false
-    console.log('setting quick sort dialog active to false')
+    quickSortLogger.log('setting quick sort dialog active to false')
     useLoadingStateStore().quickSortDialogActive = false
     onDialogHide()
   }
 
-  const el = ref()
-  const { width } = useElementSize(el)
-  // fixme - I could not get q-item-label lines="x" to work in dynamic-width parent elements. This is a workaround to bind a px width.
-  const style = computed(() => {
-    //margins are 2(24+16) = 80px
-    //dropdown section is 35px; total is 115px.
-
-    return {
-      width: `${width.value - 152}px`,
-      'max-width': `${width.value - 152}px`
-    }
-  })
 </script>
 
 <style>

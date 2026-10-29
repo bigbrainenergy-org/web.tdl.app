@@ -6,6 +6,7 @@
           <q-datetime
             v-model="datetime"
             :label="label"
+            :default-time="defaultTime"
             @cancel="onCancel"
             @update:model-value="onSave"
           />
@@ -34,6 +35,10 @@
         default: ''
       },
       label: {
+        type: String,
+        default: ''
+      },
+      defaultTime: {
         type: String,
         default: ''
       }

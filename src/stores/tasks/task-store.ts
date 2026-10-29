@@ -1,73 +1,113 @@
-import { defineStore, PiniaPluginContext, StateTree } from 'pinia'
-import {
+import type { PiniaPluginContext, StateTree } from 'pinia'
+import { defineStore } from 'pinia'
+import { shallowRef, computed, markRaw } from 'vue'
+import type {
   AllOptionalTaskProperties,
   CreateTaskOptions,
   TaskState,
   TaskLike
 } from './task-interfaces-types'
 import { Task } from './task-model'
-import { AxiosResponse } from 'axios'
+import type { AxiosError, AxiosResponse } from 'axios'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
 import { useAxiosStore } from '../axios-store'
-import { retrieve } from './task-utils'
 import { hardCheck } from 'src/utils/type-utils'
-import { handleError, handleSuccess, notifySuccess } from 'src/utils/notification-utils'
-import { arrayDelete } from 'src/utils/array-utils'
-import { Queue } from 'src/utils/types'
+import { handleError, notifySuccess } from 'src/utils/notification-utils'
+import { Logger } from 'src/utils/d'
+import { useTaskStarredStore } from './task-starred'
+import { useTaskNeedsRefinementStore } from './task-needs-refinement'
+import { recalculate } from './task-view'
+import { useDependencyStore } from '../dependencies/dependency-store'
+
+const TaskStoreLogger = new Logger('Task Store', '#ea00ff')
 
 export const useTaskStore = defineStore('tasks', {
   state: (): TaskState => ({
-    mapp: new Map<number, Task>(),
-    array: [] as Task[]
+    array: shallowRef([]) as any,
+    mapp: markRaw(new Map()),
+    arrayVersion: 0
   }),
   persist: {
     afterRestore: (context: PiniaPluginContext) => {
-      const store = context.store
-      console.debug({ msg: 'restoring tasks store.', mapp: store.mapp, array: store.array })
-        ; (store.mapp as Map<number, Task>).forEach((val: Task) => {
-          val.fullSyncPosts()
-          val.fullSyncPres()
-        })
-      console.debug({ 'after restore': store })
+      TaskStoreLogger.log('afterRestore starting')
+      const map = markRaw(new Map())
+      context.store.array.forEach((x: Task) => map.set(x.id, x))
+      context.store.mapp = map
+      TaskStoreLogger.log('afterRestore complete')
     },
-    paths: ['array'],
     debug: true,
     serializer: {
       serialize: (value: StateTree) => {
-        console.debug('SERIALIZE: stringifying tasks into localStorage')
-        return JSON.stringify(value.array.map((x: Task) => x.rawData))
+        const time = performance.now()
+        const tasks = value.array ?? []
+        const json = JSON.stringify(tasks.map((x: Task) => x.rawData))
+        TaskStoreLogger.log(`SERIALIZE took ${performance.now() - time}ms for ${tasks.length} tasks`)
+        return json
       },
       deserialize: (value: string): StateTree => {
-        console.debug('DESERIALIZE: parsing local storage for tasks')
-        const parsed = JSON.parse(value) as TaskLike[]
-        const mapp: Map<number, Task> = new Map(parsed.map((x: TaskLike) => [x.id, new Task(x)]))
-        const array = Array.from(mapp.values())
-        return { array, mapp }
+        const time = performance.now()
+        const parseStart = performance.now()
+        const rawTasks = JSON.parse(value) as TaskLike[]
+        TaskStoreLogger.log(`JSON.parse took ${performance.now() - parseStart}ms`)
+
+        const taskCreationStart = performance.now()
+        const array = rawTasks.map(x => new Task(x))
+        TaskStoreLogger.log(`Task creation took ${performance.now() - taskCreationStart}ms for ${array.length} tasks`)
+
+        const shallowRefStart = performance.now()
+        const result = { array: shallowRef(array) }
+        TaskStoreLogger.log(`shallowRef creation took ${performance.now() - shallowRefStart}ms`)
+
+        TaskStoreLogger.log(`DESERIALIZE took ${performance.now() - time}ms for ${array.length} tasks`)
+        TaskStoreLogger.log('DESERIALIZE returning state to Pinia...')
+        return result
       }
     }
   },
   actions: {
+    boop() {
+      this.arrayVersion++
+    },
     updateSingle(data: TaskLike) {
       const newTask = new Task(data)
-      const index = this.array.findIndex((x) => x.id === newTask.id)
-      if (index < 0) {
-        this.array.push(newTask)
-      } else this.array[index] = newTask
-      let inMap = this.mapp.get(newTask.id)
-      if (typeof inMap === 'undefined')
-        inMap = (this.mapp as Map<number, Task>).set(newTask.id, newTask).get(newTask.id)!
-      else Object.assign(inMap, newTask)
-      return newTask
+      const inMap = this.mapp.get(data.id)
+      if(!inMap) {
+        this.array = [...this.array, newTask]
+        this.mapp.set(data.id, newTask)
+      }
+      else {
+        Object.assign(inMap, newTask)
+        this.boop()
+      }
+      return inMap ?? newTask
     },
     update(data: TaskLike[]) {
-      this.array = data.map((x) => new Task(x))
-      this.mapp = new Map((this.array as Task[]).map((x: Task) => [x.id, x]))
-        ; (this.mapp as Map<number, Task>).forEach((val: Task) => {
-          val.fullSyncPosts()
-          val.fullSyncPres()
-        })
-      console.debug({ 'after bulk update': this.array })
-      return this.array
+      TaskStoreLogger.log(`BULK UPDATE: ${data.length} tasks`)
+
+      const newTasks: Task[] = []
+      const updatedTasks: Task[] = []
+
+      data.forEach(x => {
+        const newTask = new Task(x)
+        const existing = this.mapp.get(x.id) as Task | undefined
+        if(!existing) {
+          newTasks.push(newTask)
+          this.mapp.set(x.id, newTask)
+        } else {
+          Object.assign(existing, newTask)
+          updatedTasks.push(existing)
+        }
+      })
+
+      if (newTasks.length > 0) {
+        this.array.push(...newTasks)
+      }
+
+      if (updatedTasks.length > 0 || newTasks.length > 0) {
+        this.boop()
+      }
+
+      TaskStoreLogger.log(`Added ${newTasks.length}, updated ${updatedTasks.length} tasks`)
     },
     hardGet(id: number): Task {
       return hardCheck(this.mapp.get(id) as Task, `attempted to access Task with ID of ${id}`)
@@ -77,18 +117,19 @@ export const useTaskStore = defineStore('tasks', {
         const auth = useAuthenticationStore()
         return { headers: { Authorization: auth.bearerToken } }
       } catch (error) {
-        console.error(`error in commonHeader: ${error}`)
+        TaskStoreLogger.error(`error in commonHeader: ${error}`)
       }
     },
     api() {
       try {
         return useAxiosStore().axios()
       } catch (error) {
-        console.error(`error in api dynamic assembly: ${error}`)
+        TaskStoreLogger.error(`error in api dynamic assembly: ${error}`)
         throw new Error(`error in api dynamic assembly: ${error}`)
       }
     },
     apiGetAll() {
+      TaskStoreLogger.log('API GET ALL')
       return this.api()
         .get('/tasks', this.commonHeader())
         .then((result: AxiosResponse<TaskLike[]>) => {
@@ -103,137 +144,152 @@ export const useTaskStore = defineStore('tasks', {
           return this.updateSingle(result.data)
         }, handleError('Error getting '))
     },
-    apiCreate(task: CreateTaskOptions) {
+    apiCreate(task: CreateTaskOptions, { skipRecalculate = false }: { skipRecalculate?: boolean } = {}) {
+      const createStart = performance.now()
+      TaskStoreLogger.log('apiCreate: starting POST...')
       return this.api()
         .post('/tasks', task, this.commonHeader())
         .then((result: AxiosResponse<TaskLike>) => {
-          return this.updateSingle(result.data)
+          TaskStoreLogger.log(`apiCreate: POST completed in ${performance.now() - createStart}ms`)
+
+          const updateStart = performance.now()
+          const r = this.updateSingle(result.data)
+          TaskStoreLogger.log(`apiCreate: updateSingle took ${performance.now() - updateStart}ms`)
+
+          const refineStart = performance.now()
+          useTaskNeedsRefinementStore().markNeedsRefinement(result.data.id)
+          TaskStoreLogger.log(`apiCreate: markNeedsRefinement took ${performance.now() - refineStart}ms`)
+
+          notifySuccess('Task was created')
+          if (!skipRecalculate) {
+            const recalcStart = performance.now()
+            recalculate('apicreate')
+            TaskStoreLogger.log(`apiCreate: recalculate took ${performance.now() - recalcStart}ms`)
+          }
+          TaskStoreLogger.log(`apiCreate: total .then() took ${performance.now() - createStart}ms`)
+          return r
         }, handleError('Error creating a task.'))
     },
-    /**
-     *
-     * @param id the task ID
-     * @param task an object containing ONLY the properties getting updated.
-     * @returns
-     */
-    async apiUpdate(id: number, task: AllOptionalTaskProperties) {
-      try {
-        await this.api()
-          .patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
-          .then((result: AxiosResponse<TaskLike>) => {
-            this.updateSingle(result.data)
-            const tmp = this.hardGet(result.data.id)
-            tmp.hard_prereqs.forEach((x) => x.fullSyncPosts())
-            tmp.hard_postreqs.forEach((x) => x.fullSyncPres())
-            tmp.fullSyncPres()
-            tmp.fullSyncPosts()
-          })
-      } catch (e) {
-        console.error(e)
+    async apiUpdate(id: number, task: AllOptionalTaskProperties, options: { skipRecalculate?: boolean } = { skipRecalculate: false }) {
+      const timings: any = {
+        apiUpdateTotal: performance.now(),
+        overNetwork: 0
       }
-      this.array = [...this.array] // deep reactivity more like deep apathy am I right
-      return
+
+      const existingTask = this.hardGet(id)
+
+      timings.overNetwork = performance.now()
+      const result = await this.apiPushChanges(id, task)
+      timings.overNetwork = performance.now() - timings.overNetwork
+
+      this.updateSingle(result.data)
+
+      if (!options.skipRecalculate) recalculate('apiUpdate')
+
+      timings.apiUpdateTotal = performance.now() - timings.apiUpdateTotal
+      TaskStoreLogger.log(`APIUPDATE TIMINGS: ${JSON.stringify(timings, undefined, '\n')}`)
+    },
+    async apiPushChanges(id: number, task: AllOptionalTaskProperties) {
+      const result = await this.api().patch<TaskLike>(`/tasks/${id}`, { task }, this.commonHeader())
+      return result
     },
     apiDelete(id: number) {
       return this.api()
         .delete(`/tasks/${id}`, this.commonHeader())
         .then(() => {
-          const theTask = this.hardGet(id)
-          arrayDelete(this.array, theTask, 'id')
+          this.array = this.array.filter(x => x.id !== id)
           this.mapp.delete(id)
+          useDependencyStore().removeTaskEntries(id)
+          recalculate('apiDelete')
           notifySuccess('Task was deleted.')
-        }, handleError('Error deleting task.'))
+        }, (error: AxiosError) => {
+          if (error?.response?.status === 404) {
+            this.array = this.array.filter(x => x.id !== id)
+            this.mapp.delete(id)
+            useDependencyStore().removeTaskEntries(id)
+            recalculate('apiDelete')
+            notifySuccess('Task was deleted.')
+            return
+          }
+          handleError('Error deleting task.')(error)
+        })
     },
-    /**
-     *
-     * @param id the task ID to begin the traversal
-     * @param incompleteOnly stop traversal on completed tasks? defaults to true
-     * @returns a Set<number> of task IDs that are ordered before the task ID given as input
-     */
-    idsBefore(id: number, incompleteOnly = true) {
-      const task = this.hardGet(id)
-      const allPres = new Set<number>()
-      const queue = new Queue<number>()
-      const preIDs = incompleteOnly
-        ? (t: Task) => {
-          const pres = task.hard_prereq_ids.map(retrieve).filter((x) => !x.completed)
-          return pres.map((x) => x.id)
+    apiBulkDelete(ids: number[]) {
+      const idSet = new Set(ids)
+      const removeLocally = () => {
+        this.array = this.array.filter(x => !idSet.has(x.id))
+        const depStore = useDependencyStore()
+        for (const id of ids) {
+          this.mapp.delete(id)
+          depStore.removeTaskEntries(id)
         }
-        : (t: Task) => {
-          const pres = task.hard_prereq_ids.map(retrieve)
-          return pres.map((x) => x.id)
-        }
-      const thisPres = preIDs(task)
-      queue.enqueueAll(thisPres)
-      while (queue.size > 0) {
-        const tmpID = queue.dequeue()
-        if (allPres.has(tmpID)) continue
-        allPres.add(tmpID)
-        const tmpTask = this.hardGet(tmpID)
-        queue.enqueueAll(preIDs(tmpTask))
+        recalculate('apiBulkDelete')
       }
-      return allPres
+      return Promise.all(
+        ids.map(id =>
+          this.api().delete(`/tasks/${id}`, this.commonHeader())
+            .catch((error: AxiosError) => {
+              if (error?.response?.status === 404) return
+              throw error
+            })
+        )
+      ).then(() => {
+        removeLocally()
+        notifySuccess(`Deleted ${ids.length} tasks.`)
+      }, handleError('Error bulk-deleting tasks.'))
     },
-    idsAfter(id: number, incompleteOnly = true) {
-      const task = this.hardGet(id)
-      const allPosts = new Set<number>()
-      const queue = new Queue<number>()
-      const postIDs = incompleteOnly
-        ? (t: Task) => {
-          const posts = task.hard_postreq_ids.map(retrieve).filter((x) => !x.completed)
-          return posts.map((x) => x.id)
-        }
-        : (t: Task) => {
-          const posts = task.hard_postreq_ids.map(retrieve)
-          return posts.map((x) => x.id)
-        }
-      const thisPosts = postIDs(task)
-      queue.enqueueAll(thisPosts)
-      while (queue.size > 0) {
-        const tmpID = queue.dequeue()
-        if (allPosts.has(tmpID)) continue
-        allPosts.add(tmpID)
-        const tmpTask = this.hardGet(tmpID)
-        queue.enqueueAll(postIDs(tmpTask))
-      }
-      return allPosts
+    refreshStarredCache() {
+      const starredStore = useTaskStarredStore()
+      starredStore.recomputeDescendantCache(this.array)
     },
-    addRule(first_id: number, second_id: number) {
-      const first = this.hardGet(first_id)
-      const second = this.hardGet(second_id)
-      // check validity/redundancy, then add the rule and update the first and second record.
-      const ids_before_first = this.idsBefore(first_id)
-      const ids_after_first = this.idsAfter(first_id)
-      if (ids_before_first.has(second_id)) {
-        throw new Error('Second task is already scheduled to happen before the first.')
-      }
-      if (ids_after_first.has(second_id)) {
-        throw new Error('First task is already scheduled to happen before the second.')
-      }
-      first.hard_postreq_ids.push(second_id)
-      second.hard_prereq_ids.push(first_id)
-      // const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
-      return this.apiUpdate(first.id, { hard_postreq_ids: first.hard_postreq_ids }).then(() => {
-        notifySuccess('Added the dependency.')
-      }, handleError('Failed to add the dependency.'))
-    },
-    removeRule(first_id: number, second_id: number) {
-      const first = this.hardGet(first_id)
-      const second = this.hardGet(second_id)
-      arrayDelete(first.hard_postreq_ids, second_id)
-      arrayDelete(second.hard_prereq_ids, first_id)
-      const first_payload = { hard_postreq_ids: first.hard_postreq_ids }
-      return this.apiUpdate(first.id, first_payload).then(
-        handleSuccess('Removed the dependency.'),
-        handleError('Failed to remove the dependency.')
-      )
-    }
   },
   getters: {
-    incompleteOnly: (state) => state.array.filter((x) => !x.completed),
-    layerZero: (state): Task[] =>
-      (state.array as Task[]).filter((x) => !x.completed && x.incomplete_prereqs.length === 0),
-    allTasks: (state): Task[] =>
-      (state.array as Task[])
+    incompleteOnly: (state) => {
+      return computed(() => state.array.filter(x => !x.completed))
+    },
+    layerZero: (state) => {
+      return computed((): Task[] => {
+        const depStore = useDependencyStore()
+        void depStore._mapVersion // reactive dependency on dep changes
+        const taskStore = useTaskStore()
+        const LayerZeroLogger = new Logger('Layer Zero Getter', '#FFFFFF')
+        const incompleteTasks = state.array.filter(x => !x.completed)
+
+        const noincompletepres = incompleteTasks.filter(x => {
+          const pres = depStore.getPres(x.id)
+          return !pres.some(e => {
+            const t = taskStore.mapp.get(e.task_id)
+            return t && !t.completed
+          })
+        })
+
+        LayerZeroLogger.log(`layerzero: (all: ${state.array.length}) => (incomplete: ${incompleteTasks.length}) => (noincompletepres: ${noincompletepres.length})`)
+        return noincompletepres
+      })
+    },
+
+    taskCount: (state) => state.array.length,
+    completedCount: (state) => computed(() => state.array.filter(x => x.completed).length),
+
+    paginatedTasks: (state) => (page: number = 0, pageSize: number = 200) => {
+      const start = page * pageSize
+      const end = start + pageSize
+      return state.array.slice(start, end)
+    },
+
+    reminders: (state) => {
+      return computed(() => {
+        const incompleteTasks = state.array.filter(x => !x.completed)
+        const now = new Date()
+        const reminderTasks: Task[] = []
+        const overdueTasks: Task[] = []
+        incompleteTasks.forEach(x => {
+          if(x.remind_me_at && new Date(x.remind_me_at) < now) reminderTasks.push(x)
+          if(x.deadline_at && new Date(x.deadline_at) < now) overdueTasks.push(x)
+        })
+        const count = reminderTasks.length + overdueTasks.length
+        return { reminderTasks, overdueTasks, count }
+      })
+    }
   }
 })

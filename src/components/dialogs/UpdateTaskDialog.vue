@@ -3,7 +3,7 @@
   <q-dialog ref="dialogRef" maximized data-cy="update_task_dialog" @hide="onDialogHide">
     <q-card class="q-dialog-plugin">
       <q-card-section class="bg-primary text-white text-center">
-        <div class="text-h6">Task Details</div>
+        <div class="text-h6">Task {{ currentTask.id }} Details</div>
         <ButtonBarComponent :buttons="topButtonBar" :target="currentTask as Task" />
       </q-card-section>
 
@@ -11,17 +11,29 @@
 
       <q-card-section>
         <div class="row q-gutter-md q-pa-sm">
-          <div class="col-12 col-md">
-            <q-item-label class="text-h4 text-primary" lines="3" data-cy="task_title">
-              {{ currentTask.title }}
-            </q-item-label>
-            <TaskInputTitle :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputList :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputProcedures :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputRemindMeAt :key="currentTask.id" v-model:task="currentTask as Task" />
-            <TaskInputEnergy :key="currentTask.id" v-model:task="currentTask as Task" />
+          <div :key="currentTask.id" class="col-12 col-md">
+            <div class="row items-center q-gutter-sm">
+              <q-btn 
+                :icon="useTaskStarredStore().isStarred(currentTask.id) ? 'fas fa-star' : 'far fa-star'"
+                flat
+                round
+                size="lg"
+                :color="useTaskStarredStore().isStarred(currentTask.id) ? 'yellow' : 'grey'" 
+                @click="useTaskStarredStore().toggle(currentTask.id)"
+              />
+              <div class="col">
+                <TaskInputTitle v-model:task="currentTask as Task" />
+              </div>
+            </div>
+            <TaskInputList v-model:task="currentTask as Task" />
+            <TaskInputSchedule v-model="currentTask.schedule_id" @update:schedule="updateSchedule" />
+            <TaskInputProcedures v-model:task="currentTask as Task" />
+            <TaskInputRemindMeAt v-model:task="currentTask as Task" />
+            <TaskInputDueAt v-model:task="currentTask as Task" />
+            <TaskInputDuration v-model="currentTask.task_duration_in_minutes" @update:duration="updateDuration" />
+            <TaskInputEnergy v-model:task="currentTask as Task" />
             <br>
-            <TaskInputNotes :key="currentTask.id" v-model:task="currentTask as Task" />
+            <TaskInputNotes v-model:task="currentTask as Task" />
           </div>
           <div class="col-12 col-md">
             <IncompleteOnlyToggle />
@@ -29,23 +41,29 @@
               :items="allPres"
               :dependency-type="preDepType"
               :menu-items="prereqMenuItems"
+              :degrees="preDegrees"
               show-prune
               @prune-dependencies="prunePres"
               @add-item="openPrerequisiteDialog"
               @remove-item="removePre"
               @select-item="setCurrentTask"
               @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
+              @update-degree="(p) => depStore.updateDegree(p.taskId, currentTask.id, p.degree)"
             />
+            <q-btn label="Sort Postreqs" @click="openSortPostreqsDialog" />
             <DependencyList
               :items="allPosts"
               :dependency-type="postDepType"
               :menu-items="postreqMenuItems"
+              :degrees="postDegrees"
               show-prune
               @prune-dependencies="prunePosts"
+              @prune-posts-one-star="unloadOneStarPosts"
               @add-item="openPostrequisiteDialog"
               @remove-item="removePost"
               @select-item="setCurrentTask"
               @toggle-completed-item="(x: Task) => x.updateTaskCompletionStatus()"
+              @update-degree="(p) => depStore.updateDegree(currentTask.id, p.taskId, p.degree)"
             />
             <div class="row">
               <div class="col">
@@ -71,40 +89,46 @@
   import { useDialogPluginComponent, useQuasar, useMeta } from 'quasar'
   import { computed, ref } from 'vue'
   import DependencyList from '../DependencyList.vue'
-  import { syncWithBackend } from 'src/utils/sync-utils'
   import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
   import QuickPrioritizeDialog from './QuickPrioritizeDialog.vue'
   import {
-    errorNotification,
     handleError,
     handleSuccess,
     notifySuccess
   } from 'src/utils/notification-utils'
   import TaskSearchDialog from './TaskSearchDialog.vue'
-  import { Button, unknownishλ, λ } from 'src/utils/types'
+  import type { Button, unknownishλ, λ } from 'src/utils/types'
   import { onMounted } from 'vue'
   import { useLoadingStateStore } from 'src/stores/performance/loading-state'
   import IncompleteOnlyToggle from 'src/components/Settings/IncompleteOnlyToggle.vue'
   import TaskInputTitle from 'src/components/TaskInputTitle.vue'
   import TaskInputList from 'src/components/TaskInputList.vue'
+  import TaskInputSchedule from 'src/components/TaskInputSchedule.vue'
   import TaskInputProcedures from 'src/components/TaskInputProcedures.vue'
   import TaskInputRemindMeAt from 'src/components/TaskInputRemindMeAt.vue'
+  import TaskInputDueAt from '../TaskInputDueAt.vue'
   import TaskInputEnergy from 'src/components/TaskInputEnergy.vue'
   import TaskInputNotes from 'src/components/TaskInputNotes.vue'
+  import TaskInputDuration from '../TaskInputDuration.vue'
   import ButtonBarComponent from '../ButtonBarComponent.vue'
 
   import { storeToRefs } from 'pinia'
   import { hardCheck } from 'src/utils/type-utils'
   import {
     addPostrequisiteDialog,
-    addPrerequisitesDialog,
-    openTaskSlicerDialog
+    openTaskBreakdownDialog,
+    openTaskSlicerDialog,
+    quickSortPostreqsDialog
   } from 'src/utils/dialog-utils'
   import { blockingFunc } from 'src/utils/performance-utils'
 
   import { useTaskStore } from 'src/stores/tasks/task-store'
-  import { Task } from 'src/stores/tasks/task-model'
-  import { arrayDelete } from 'src/utils/array-utils'
+  import type { Task } from 'src/stores/tasks/task-model'
+  import { Logger } from 'src/utils/d'
+  import { useDependencyStore } from 'src/stores/dependencies/dependency-store'
+  import { useTaskStarredStore } from 'src/stores/tasks/task-starred'
+
+  const updateTaskDialogger = new Logger('Update Task Dialog', '#008800')
 
   // HACK: The `:key="currentTask.id"` works for refreshing on task change, but isn't ideal
   // FIXME: Find a better way to switch between tasks
@@ -173,32 +197,49 @@
   const { dialogRef, onDialogHide, onDialogCancel } = useDialogPluginComponent()
   const $q = useQuasar()
 
-  // const tr = useRepo(TaskRepo)
-  const usr = useLocalSettingsStore()
-
-  onMounted(() => {
-    currentTask.value.hard_postreqs.sort(
-      (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-    )
-    currentTask.value.hard_prereqs.sort(
-      (a, b) => b.hard_postreq_ids.length - a.hard_postreq_ids.length
-    )
-  })
-
   let currentPre: Task | null = null
   // let currentPost: Task | null = null
 
-  console.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
+  // updateTaskDialogger.debug('UpdateTaskDialog: task prop value: ', currentTask.value)
 
   useMeta(() => ({ title: currentTask.value.title + ' | TDL App' }))
 
-  const { hideCompleted } = storeToRefs(usr)
+  const { hideCompleted } = storeToRefs(useLocalSettingsStore())
 
-  const allPres = computed(() => currentTask.value.grabPrereqs(hideCompleted.value))
-  const allPosts = computed(() => currentTask.value.grabPostreqs(hideCompleted.value))
+  const currentTaskFromStore = computed(() => {
+    const t = useTaskStore().hardGet(currentTask.value.id)
+    return t
+  })
+
+  const depStore = useDependencyStore()
+
+  const allPres = computed(() => {
+    const taskStore = useTaskStore()
+    const entries = hideCompleted.value ? depStore.getIncompletePres(currentTaskFromStore.value.id) : depStore.getPres(currentTaskFromStore.value.id)
+    return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
+  })
+  const allPosts = computed(() => {
+    const taskStore = useTaskStore()
+    const entries = hideCompleted.value ? depStore.getIncompletePosts(currentTaskFromStore.value.id) : depStore.getPosts(currentTaskFromStore.value.id)
+    return entries.map(e => taskStore.mapp.get(e.task_id)).filter(Boolean) as Task[]
+  })
+
+  const preDegrees = computed(() => {
+    const entries = depStore.getPres(currentTaskFromStore.value.id)
+    const map = new Map<number, 1 | 2 | 3 | null>()
+    for (const e of entries) map.set(e.task_id, e.degree)
+    return map
+  })
+
+  const postDegrees = computed(() => {
+    const entries = depStore.getPosts(currentTaskFromStore.value.id)
+    const map = new Map<number, 1 | 2 | 3 | null>()
+    for (const e of entries) map.set(e.task_id, e.degree)
+    return map
+  })
 
   function setCurrentTask(newTask: Task) {
-    console.debug('setCurrentTask')
+    updateTaskDialogger.debug('setCurrentTask')
     currentTask.value = newTask
   }
 
@@ -214,7 +255,7 @@
         color: 'grey'
       }
     }).onOk(() => {
-      console.debug('deleting task')
+      updateTaskDialogger.debug('deleting task')
       useTaskStore()
         .apiDelete(task.id)
         .then(
@@ -224,40 +265,54 @@
     })
   }
 
-  const openPrerequisiteDialog = () => addPrerequisitesDialog(currentTask.value as Task)
+  const openPrerequisiteDialog = () => openTaskBreakdownDialog(currentTask.value as Task)
   const openPostrequisiteDialog = () => addPostrequisiteDialog(currentTask.value as Task)
+  const openSortPostreqsDialog = () => quickSortPostreqsDialog(currentTask.value.id)
 
+  // FIXME: this destroys everything
   const mvpPostrequisite = async (post: Task) => {
-    console.debug(post)
-    const allOtherPosts = allPosts.value.filter((x) => !x.completed && x.id !== post.id)
-    for (let i = 0; i < allOtherPosts.length; i++) {
-      const pid = allOtherPosts[i].id
-      arrayDelete(currentTask.value.hard_postreq_ids, pid)
-      post.hard_postreq_ids.push(pid)
+    updateTaskDialogger.debug(post)
+    const allPostreqs = currentTaskFromStore.value.grabPostreqs(false)
+    const postPostIds = depStore.getPostTaskIds(post.id)
+    for (let i = 0; i < allPostreqs.length; i++) {
+      const tmp = allPostreqs[i]!
+      updateTaskDialogger.debug(`now evaluating ${tmp.title}`)
+      if(tmp.id === post.id) {
+        updateTaskDialogger.debug(`skipping this task because it is the post being promoted to mvp: ${tmp.title}`)
+        continue
+      }
+      if(tmp.completed) {
+        updateTaskDialogger.debug(`skipping this task because it is already completed: ${tmp.title}`)
+        continue
+      }
+      // Remove dependency from current task to tmp
+      await depStore.removeRule(currentTask.value.id, tmp.id)
+      if(postPostIds.includes(tmp.id)) {
+        updateTaskDialogger.debug(`removed postreq from original, but not adding to mvp as it is already a postreq of mvp: ${tmp.title}`)
+      }
+      else {
+        await depStore.addRule(post.id, tmp.id)
+      }
     }
 
-    await useTaskStore().apiUpdate(currentTask.value.id, {
-      hard_postreq_ids: currentTask.value.hard_postreq_ids
-    })
-    await useTaskStore().apiUpdate(post.id, { hard_postreq_ids: post.hard_postreq_ids })
-
-    const syncResult = await syncWithBackend()
-    if (syncResult === 1)
-      errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
-    else notifySuccess('Refreshed All')
+    // const syncResult = await syncWithBackend()
+    // if (syncResult === 1)
+    //   errorNotification(new Error('Failed to refresh local storage'), 'Error Refreshing All')
+    // else notifySuccess('Refreshed All')
   }
 
   const insertBetweenPre = async (payload: { task: Task }) => {
     const oldPre = hardCheck(currentPre)
-    await useTaskStore().removeRule(oldPre.id, currentTask.value.id)
-    await useTaskStore()
+    await depStore.removeRule(oldPre.id, currentTask.value.id)
+    await depStore
       .addRule(oldPre.id, payload.task.id)
       .then(
         handleSuccess('successfully moved prerequisite!'),
         handleError('error moving prerequisite!')
       )
-    if (!currentTask.value.hard_prereq_ids.includes(payload.task.id)) {
-      await useTaskStore()
+    const currentPreIds = depStore.getPreTaskIds(currentTask.value.id)
+    if (!currentPreIds.includes(payload.task.id)) {
+      await depStore
         .addRule(payload.task.id, currentTask.value.id)
         .then(
           handleSuccess('added new pre to current task'),
@@ -286,17 +341,17 @@
     //       initialFilter: insertBetweenFilter,
     //       batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
     //         if (typeof taskID === 'undefined') {
-    //           console.warn('task id is undefined')
+    //           updateTaskDialogger.warn('task id is undefined')
     //           return []
     //         }
     //         const ct = useTaskStore().hardGet(taskID)
     //         if (ct === null) {
-    //           console.warn('current task was not found (by id)')
+    //           updateTaskDialogger.warn('current task was not found (by id)')
     //           return []
     //         }
     //         const relationInfo = ct.anyIDsAbove(tasks.map((x) => x.id))
     //         if (currentPost === null) {
-    //           console.warn('current postrequisite info was not passed in')
+    //           updateTaskDialogger.warn('current postrequisite info was not passed in')
     //           return []
     //         }
     //         const postRelationInfo = currentPost.anyIDsBelow(tasks.map((x) => x.id))
@@ -322,17 +377,17 @@
         initialFilter: insertBetweenFilter,
         batchFilter: (taskID: number | undefined) => (tasks: Task[]) => {
           if (typeof taskID === 'undefined') {
-            console.warn('task id is undefined')
+            updateTaskDialogger.warn('task id is undefined')
             return []
           }
           const ct = useTaskStore().hardGet(taskID)
           if (ct === null) {
-            console.warn('current task was not found (by id)')
+            updateTaskDialogger.warn('current task was not found (by id)')
             return []
           }
           const relationInfo = ct.anyIDsBelow(tasks.map((x) => x.id))
           if (currentPre === null) {
-            console.warn('current prerequisite info was not passed in')
+            updateTaskDialogger.warn('current prerequisite info was not passed in')
             return []
           }
           const preRelationInfo = currentPre.anyIDsAbove(tasks.map((x) => x.id))
@@ -358,7 +413,7 @@
     {
       label: 'Unlink this Prerequisite',
       icon: 'fas fa-unlink',
-      action: (x: Task) => useTaskStore().removeRule(x.id, currentTask.value.id)
+      action: (x: Task) => depStore.removeRule(x.id, currentTask.value.id)
     },
     {
       label: 'Add Task Between This Prereq and This Task',
@@ -371,7 +426,7 @@
     {
       label: 'Unlink this Postrequisite',
       icon: 'fas fa-unlink',
-      action: (x: Task) => useTaskStore().removeRule(currentTask.value.id, x.id)
+      action: (x: Task) => depStore.removeRule(currentTask.value.id, x.id)
     },
     {
       label: 'Move all Postreqs from Current Task to This Task',
@@ -391,33 +446,51 @@
       (x) => payload.below.has(x.id) && !payload.above.has(x.id)
     )
     for (let i = 0; i < toRemove.length; i++) {
-      await useTaskStore().removeRule(currentTask.value.id, toRemove[i].id)
+      await depStore.removeRule(currentTask.value.id, toRemove[i]!.id)
     }
     useLoadingStateStore().busy = false
   })
+
+  const unloadOneStarPosts = async () => {
+    const posts = useDependencyStore().getPosts(currentTask.value.id)
+    const unsetDegree = useLocalSettingsStore().unsetDegreeBehavior
+    for (let i = 0; i < posts.length; i++) {
+      if((posts[i]!.degree ?? unsetDegree) === 1) {
+        await depStore.removeRule(currentTask.value.id, posts[i]!.task_id)
+      } 
+    }
+  }
 
   const prunePres = blockingFunc(async (payload: { above: Set<number>; below: Set<number> }) => {
     const toRemove = allPres.value.filter((x) => {
       const hasRelationsAbove = payload.above.has(x.id)
       const hasRelationsBelow = payload.below.has(x.id)
-      console.log({ hasRelationsAbove, hasRelationsBelow, x })
+      updateTaskDialogger.log({ hasRelationsAbove, hasRelationsBelow, x })
       return hasRelationsAbove && !hasRelationsBelow
     })
-    console.log('pruning prerequisites', { payload, toRemove })
+    updateTaskDialogger.log('pruning prerequisites', { payload, toRemove })
     for (let i = 0; i < toRemove.length; i++) {
-      await useTaskStore().removeRule(toRemove[i].id, currentTask.value.id)
+      await depStore.removeRule(toRemove[i]!.id, currentTask.value.id)
     }
   })
 
   const removePre = (task: Task, id_of_prereq: number) => {
-    useTaskStore()
+    depStore
       .removeRule(id_of_prereq, task.id)
       .then(handleSuccess('Removed a prerequisite'), handleError('Error removing the prerequisite'))
   }
 
   const removePost = (task: Task, id_of_postreq: number) => {
-    useTaskStore()
+    depStore
       .removeRule(task.id, id_of_postreq)
-      .then(handleSuccess('Removed a prerequisite'), handleError('Error removing the prerequisite'))
+      .then(handleSuccess('Removed a postrequisite'), handleError('Error removing the postrequisite'))
+  }
+
+  const updateDuration = async (task_duration_in_minutes: number | undefined) => {
+    await useTaskStore().apiUpdate(currentTask.value.id, { task_duration_in_minutes })
+  }
+
+  const updateSchedule = async (schedule_id: number | undefined) => {
+    await useTaskStore().apiUpdate(currentTask.value.id, { schedule_id })
   }
 </script>

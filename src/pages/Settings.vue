@@ -20,6 +20,10 @@
           <DefaultPageSwitcher />
           <BackgroundSwitcher />
           <NotificationTimeSetting />
+          <q-separator class="q-my-md" />
+          <p>Default Due Time</p>
+          <q-input v-model="defaultDueTime" filled type="time" style="max-width: 200px; margin: auto" />
+          <q-separator class="q-my-md" />
         </div>
         <q-btn class="q-ma-md" icon="fas fa-bell" color="indigo" label="Test Notification" />
 
@@ -38,6 +42,12 @@
           label="Toolbar Settings"
           @click="openToolbarSettingsDialog"
         />
+
+        <q-btn class="q-ma-md" icon="settings" color="indigo" label="Task Appearance Settings" @click="openTaskAppearanceSettingsDialog" />
+
+        <q-btn class="q-ma-md" icon="fa-solid fa-star" color="indigo" label="Dependency Degree Settings" @click="openDependencyDegreeSettingsDialog" />
+
+        <q-btn class="q-ma-md" icon="fa-solid fa-calendar-check" color="indigo" label="Manage Schedules" @click="openScheduleManagerDialog" />
 
         <q-separator class="q-my-md" />
 
@@ -73,6 +83,13 @@
   import NotificationTimeSetting from 'src/components/NotificationTimeSetting.vue'
   import DefaultPageSwitcher from 'src/components/inputs/DefaultPageSwitcher.vue'
   import CurrentTimeIndicator from 'src/components/CurrentTimeIndicator.vue'
+  import TaskAppearanceSetting from 'src/components/TaskAppearanceSetting.vue'
+  import DependencyDegreeSettingsDialog from 'src/components/dialogs/DependencyDegreeSettingsDialog.vue'
+  import { openScheduleManagerDialog } from 'src/utils/dialog-utils'
+  import { storeToRefs } from 'pinia'
+  import { useLocalSettingsStore } from 'src/stores/local-settings/local-setting'
+
+  const { defaultDueTime } = storeToRefs(useLocalSettingsStore())
 
   useMeta(() => ({ title: 'Settings | TDL App' }))
 
@@ -96,6 +113,18 @@
   const openToolbarSettingsDialog = () => {
     $q.dialog({
       component: ToolbarSettingsDialog
+    })
+  }
+
+  const openTaskAppearanceSettingsDialog = () => {
+    $q.dialog({
+      component: TaskAppearanceSetting
+    })
+  }
+
+  const openDependencyDegreeSettingsDialog = () => {
+    $q.dialog({
+      component: DependencyDegreeSettingsDialog
     })
   }
 </script>

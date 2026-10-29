@@ -1,9 +1,10 @@
 import { Repository } from 'pinia-orm'
-import iRecord, { iOptions } from './i-record'
+import type { iOptions } from './i-record'
+import type iRecord from './i-record'
 import { useAuthenticationStore } from '../authentication/pinia-authentication'
-import { AxiosResponse } from 'axios'
+import type { AxiosResponse } from 'axios'
 import { useAxiosStore } from '../axios-store'
-import { ApiError } from 'src/utils/types'
+import type { ApiError } from 'src/utils/types'
 import { handleError } from 'src/utils/notification-utils'
 
 interface SimpleApiBackedRepo {

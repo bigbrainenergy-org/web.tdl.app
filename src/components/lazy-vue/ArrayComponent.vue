@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { GenericPropStructure, WTF, isNotArray } from './lazyVueUtils'
+  import type { GenericPropStructure, WTF} from './lazyVueUtils'
+  import { isNotArray } from './lazyVueUtils'
   import EditModeSwitch from './EditModeSwitch.vue'
   import LazyVueComponent from './LazyVueComponent.vue'
 

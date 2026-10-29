@@ -5,6 +5,7 @@ interface loadingState {
   createTaskDialogActive: boolean
   addDependencyDialogActive: boolean
   quickSortDialogActive: boolean
+  breakdownDialogActive: boolean
 }
 
 export const useLoadingStateStore = defineStore('loading-state', {
@@ -12,7 +13,8 @@ export const useLoadingStateStore = defineStore('loading-state', {
     busy: false,
     createTaskDialogActive: false,
     addDependencyDialogActive: false,
-    quickSortDialogActive: false
+    quickSortDialogActive: false,
+    breakdownDialogActive: false
   }),
   getters: {
     dialogOpen: (state) =>

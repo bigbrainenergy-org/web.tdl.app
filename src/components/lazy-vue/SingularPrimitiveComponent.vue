@@ -2,12 +2,13 @@
   import BooleanItemComponent from './BooleanItemComponent.vue'
   import EditModeSwitch from './EditModeSwitch.vue'
   import PlaintextItemComponent from './PlaintextItemComponent.vue'
-  import { GenericPropStructure, SingularPrimitive, isSingularPrimitive } from './lazyVueUtils'
+  import type { GenericPropStructure, SingularPrimitive} from './lazyVueUtils'
+  import { isSingularPrimitive } from './lazyVueUtils'
 
   const data = defineModel<SingularPrimitive>('data')
   if (!isSingularPrimitive(data.value))
     throw new Error('SingularPrimitiveComponent: provided data was not a singular primitive!')
-  const edit = defineModel<boolean>('edit', { required: true })
+  const edit = defineModel<boolean | undefined>('edit', { required: true })
   const props = withDefaults(defineProps<GenericPropStructure>(), {
     showEdit: true
   })
@@ -25,14 +26,14 @@
         v-if="nbool(data)"
         v-model:data="data"
         :name="props.name"
-        :edit="edit"
+        :edit="edit ?? false"
         class="col"
       />
       <PlaintextItemComponent
         v-if="nplaintext(data)"
         v-model:data="data"
         :name="props.name"
-        :edit="edit"
+        :edit="edit ?? false"
         class="col"
       />
     </div>
